@@ -3,9 +3,9 @@
 > **What it uses** — NumPy for the arithmetic over a handful of positions and
 > widths, and nothing else. Carrying the jaw to the places the arithmetic names
 > belongs to the cell rather than to this solution: on the examiner's tables the
-> physics engine does it, and in the real cell MoveIt does.
-> There is no model, no weights file, no training set and no licence
-> condition, because not one number in this solution was fitted to anything.
+> physics engine does it, and in the real cell MoveIt does. There is no model,
+> no weights file and no training set, because not one number in this solution
+> was fitted to anything.
 > **What it does** — When a glass has no clear room for the gripper to close
 > round it, the method finds the one neighbour whose edge reaches furthest
 > into that room, works out how much room the glass is short of, and pushes
@@ -26,13 +26,12 @@
 > the start point on that same line, a little outside the glass's widest part;
 > and hand the result over as one parameterised push, which the examiner's own
 > macro expands into a jaw trajectory. Then look again and start over.
-> **What it costs** — no data, because nothing learns; no training time, for
-> the same reason; no accelerator to rent, so nothing to pay a cloud provider,
-> because the whole computation is a few hundred arithmetic operations on four
-> to six glasses and it finishes long before the arm has moved; and no licence
-> condition, because the two libraries are already in the cell and neither
-> constrains what is done with them. The entire cost is arm time, paid in
-> pushes and in looks.
+> **What it costs** — nothing that is bought. Nothing learns, so there is no
+> data and no training time. The whole computation is a few hundred arithmetic
+> operations on four to six glasses and it finishes long before the arm has
+> moved, so there is no accelerator to rent. Nothing is fitted, so there are no
+> weights to redistribute and no licence inherited with them. The entire cost
+> is arm time, paid in pushes and in looks.
 
 > **The cell is described once, in [the cell](../../08_seeing-the-glasses/01_the-cell.md)** — the
 > layout, the two places the camera works from, from the top and from the
@@ -64,17 +63,15 @@ nobody pays anything at all, and that is the number this document is here to
 define. Every other solution in the set has to beat a fixed nudge, and if it
 cannot, it has earned nothing.
 
-By the end you will understand what the shortfall is and why it is measured to
-the neighbour's edge rather than to its middle, which makes the test on a pair
-of glasses asymmetric. You will understand what closed-loop control is, in
-plain words and as a piece of programming, and why this solution is nothing
-else. You will understand why pushing a fraction of the gap converges where
-pushing the whole gap overshoots, and why that argument rests entirely on
-nobody knowing the friction. You will understand why never predicting means
-never being wrong about physics the method never claimed to know, and what
-that costs, which is pushes rather than error. And you will understand the one
-thing this solution cannot do that its nearest neighbour in the set can: it
-produces no scored candidates, so it is the teacher for nobody.
+By the end you will understand what the shortfall is, and why measuring it to
+the neighbour's edge rather than to its middle makes the test on a pair of
+glasses asymmetric. You will understand what closed-loop control is and why
+this solution is nothing else. You will understand why pushing a fraction of
+the gap converges where pushing the whole gap overshoots, and why that
+argument rests entirely on nobody knowing the friction. And you will
+understand the one thing this solution cannot do that its nearest neighbour in
+the set can: it produces no scored candidates, so it is the teacher for
+nobody.
 
 Two honest notes before the method starts, because both change how the rest
 should be read.
@@ -90,7 +87,9 @@ describes is a design that would sit inside them.
 dimensions are written down anywhere, so this document speaks in relations —
 wider than its neighbour, standing on the narrowest foot its kind allows — and
 quotes numbers only where they belong to the gripper, to the cell, or to a
-results file in the repository.
+results file in the repository. The pictures may draw the *range* a kind of
+glass is drawn from, because that range is a rule about what the examiner may
+put on a table rather than a measurement of anything standing on one.
 
 ![The camera measures the table, the glass with the worst shortfall of clear room is chosen along with the neighbour responsible for it, the glass is checked against the tipping rule, and it is pushed a fixed fraction of the shortfall straight away from that neighbour before the arm looks again.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-flow-what-it-does.png)
 
@@ -137,24 +136,24 @@ support, and it can then fix the distance by repeating rather than by knowing.
 From that, the method makes four decisions and no others, and each one is a
 single line of arithmetic on numbers the arm already has.
 
-**Which glass.** Take the glass that is short of the most room. The next
-section defines that shortfall exactly.
+**Which glass to push.** It takes the glass that is short of the most room.
+[The shortfall](02_how-it-works.md#2-the-shortfall-and-why-it-is-measured-to-the-neighbours-edge)
+defines that quantity exactly.
 
-**Which direction.** Straight away from the neighbour whose edge reaches
+**Which way to push it.** Straight away from the neighbour whose edge reaches
 furthest into that glass's room. The heading is the direction of the line that
 runs from the neighbour's middle through the glass's middle, continued
 outwards.
 
-**How far.** A fixed fraction of the shortfall. The fraction is less than one,
-so the push closes part of the gap rather than all of it, and the rest is left
-to the next pass.
+**How far to push it.** A fixed fraction of the shortfall. The fraction is
+less than one, so the push closes part of the gap rather than all of it, and
+the rest is left to the next pass.
 
-**How high.** As low as the gripper can reach, always. This is not really a
-decision, because there is never a reason to push higher: the lower the
-contact, the further the glass is from tipping, so the only question the height
-raises is whether even the lowest contact is low enough. That question is
-answered in [when a glass cannot be pushed
-safely](04_a-worked-example.md#1-when-a-glass-cannot-be-pushed-safely).
+**How high to touch it.** As low as the gripper can reach, always. There is
+never a reason to push higher, because the lower the contact the further the
+glass is from tipping. The only question the height raises is whether even the
+lowest contact is low enough, and that is answered in [when a glass cannot be
+pushed safely](04_a-worked-example.md#1-when-a-glass-cannot-be-pushed-safely).
 
 Then the arm looks at the table again, and the four decisions are made afresh
 from the new measurements. Nothing is remembered from one pass to the next

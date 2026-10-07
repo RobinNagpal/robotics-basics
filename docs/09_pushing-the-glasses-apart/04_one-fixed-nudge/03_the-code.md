@@ -25,9 +25,9 @@ decision rather than after it.
 
 The tipping test, from
 [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py).
-No library decides anything in it. The whole of it is a few divisions, two
-comparisons and two arctangents from Python's own `math`, which is the plainest
-illustration of what this solution being the control means.
+No library decides anything in it. The whole of it is three divisions, three
+comparisons and two arctangents from Python's own `math`, which is the
+plainest illustration of what this solution being the control means.
 
 ```python
 # Glass on a dry wooden top is somewhere in here. Nothing in the cell measures
@@ -50,6 +50,19 @@ def slides(glass: Seen) -> str:
     falls_past = math.atan2(half_foot, CENTRE_OF_MASS_SHARE * glass.height)
     return "try" if math.atan2(PROBE, JAW_TOP) < PROBE_LEAN_SHARE * falls_past else "no"
 ```
+
+Read the first two comparisons as a question about the foot. A glass slides
+when the push is lower than half its foot divided by the friction, so the
+first comparison asks whether the foot is wide enough for that to hold even at
+the grippiest end of the range, and the second asks whether it is so narrow
+that the limit is below the jaw's top edge even at the slipperiest end.
+Between those two widths the arithmetic has nothing left to say.
+
+![The foot a glass stands on, with the two widths the arithmetic compares against marked on it: below 26 mm a glass tips at every friction in the range and is refused, above 65 mm it slides at every friction and is pushed, and between the two the answer depends on a number nobody has. The ranges the four kinds of glass are drawn from show that neither the tapered kind nor the short stemmed one ever reaches the right-hand zone.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-pages-three-answers.png)
+
+The last line of the function is the one exception to that. A glass tall
+enough that even the short test push could lean it most of the way to falling
+is refused rather than tried, which is what the two arctangents compare.
 
 A glass that comes back "try" gets the fixed nudge, which is the same file's
 `probe`: the chosen push cut down to one constant length, aimed along the same
@@ -98,6 +111,8 @@ every parameterised push from every solution is expanded by that same macro. So
 the simplicity of this solution costs it nothing in the comparison and gains it
 nothing either.
 
+![One push drawn on the table: where the fingertips come down, 10 mm outside the glass's widest part; the heading the jaw points and travels along; how far forward to feel, which is 30 mm past the glass's middle; how far to push; and where the glass is expected to arrive.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-pages-the-parameters.png)
+
 The field that names where the glass is expected to arrive deserves a word,
 because it looks like a prediction and this document has insisted there is
 none. The examiner asks for it so that it can measure how far each glass ended
@@ -112,12 +127,12 @@ The approach to the glass is the one part of the push that is not arithmetic,
 and it matters more than it looks. The jaw does not drive to a computed contact
 point. It comes down behind the glass, a little outside the glass's widest
 part, and then feels forward slowly until the force it feels passes a small
-threshold. A motion that is commanded with a sensor condition that stops it
-early is called a **guarded move**, and it is used here because the glass's
-wall sits at its measured middle minus half its measured width, so the error in
-the position and the error in the width add together. A step that drove to that
-computed point would either stop short and push nothing or arrive past the wall
-at speed, which is a knock. Where the sensor fired beats what the camera said.
+threshold. A motion commanded with a sensor condition that stops it early is
+called a **guarded move**, and it is used here because the glass's wall sits at
+its measured middle minus half its measured width, so the error in the position
+and the error in the width add together. A step that drove to that computed
+point would either stop short and push nothing or arrive past the wall at
+speed, which is a knock.
 
 The push then reports what the jaw felt: whether it was blocked on the way
 down, how far it travelled before touching or that it never touched, whether it
@@ -140,22 +155,15 @@ document describes is what happens to the glasses that are left.
 ## 3. How the concepts fit together
 
 The pieces can now be put in the order the arm meets them, which is also the
-order in which each one depends only on what came before.
-
-The **room test** turns a table into a list of glasses that cannot be gripped,
-and because it measures to the neighbour's edge it is asymmetric, so it is
-applied in both directions for every pair. The **shortfall** turns each of
-those glasses into a single number, which is the error a closed loop needs. The
-**blocking neighbour** is whichever glass produced that number, and the line
-from its middle through the crowded glass's middle is the **direction**, which
-is the one claim the method makes that does not need the friction. The **gain**
-turns the error into a distance, and it is small so that the sequence of
-shortfalls decreases even though the factor relating a commanded push to a
-delivered movement is unknown. The **tipping rule** then decides whether this
-glass may be touched at all, at the lowest height the gripper can reach, and
-refuses it if it may not. The **guarded move** finds the glass without striking
-it. And the **loop** closes the whole thing, because a fresh `look()` replaces
-every assumption the previous pass made.
+order in which each one depends only on what came before. The room test turns
+a table into a list of glasses that cannot be gripped. The shortfall turns
+each of those glasses into a single number, which is the error a closed loop
+needs. The blocking neighbour is whichever glass produced that number, and the
+line from its middle through the crowded glass's middle is the direction. The
+gain turns the error into a distance. The tipping rule decides whether the
+glass may be touched at all. The guarded move finds it without striking it.
+And the loop closes the whole thing, because a fresh `look()` replaces every
+assumption the previous pass made.
 
 Written as the loop it is:
 

@@ -17,8 +17,8 @@ all follow from the same thing, which is what makes it a clean control rather
 than merely a weak solution.
 
 **It cannot be wrong about pushing, because it says nothing about pushing.**
-Every other solution has a prediction somewhere that can be wrong. This one has
-a direction, which is right for any friction, and a distance that is
+Every other solution has a prediction somewhere that can be wrong. This one
+has only a direction, which is right for any friction, and a distance that is
 deliberately too small.
 
 **Its answer can be read.** Every step is a number that can be printed, so a
@@ -48,16 +48,16 @@ instinct for free.
 The weaknesses divide into one that makes the others academic and several that
 matter in their own right.
 
-**It has nowhere to stand.** The approach runs along the same line as the push,
-so pushing a glass straight away from its neighbour asks the arm to put 270 mm
-of tool where the neighbour is. In a tight group that is impossible, and the
-method cannot offer a second heading, so it refuses. The honest reading is that
-**the approach is a harder constraint than the departure**, and this solution
-is the one that cannot choose its approach at all.
+**It has nowhere to stand.** The approach runs along the same line as the
+push, so pushing a glass straight away from its neighbour asks the arm to put
+270 mm of tool where the neighbour is. The honest reading is that **the
+approach is a harder constraint than the departure**, and this solution is the
+one that cannot choose its approach at all.
 
-**It cannot help a glass that is crowded from two sides.** A push away from one
-neighbour is a push towards the other, so the method oscillates or runs out of
-budget. No gain fixes it, because the difficulty is in the direction.
+**It cannot help a glass that is crowded from two sides.** A push away from
+one neighbour is a push towards the other, so the method oscillates until the
+budget stops it. No gain fixes that, because the difficulty is in the
+direction.
 
 **It never looks at the free table.** The shortfall says how far, and nothing
 in the method says where to. It does not ask whether the place the glass is
@@ -82,14 +82,13 @@ tipping check the method refuses rather than pushing the other one. That is
 safe, but it costs yield, and it is the kind of easy improvement a baseline has
 to decline in order to remain a baseline.
 
-**It throws away the force report.** The force the jaw felt and the distance the
-glass moved for it are consequences of the friction, so they are the only
+**It throws away the force report.** The force the jaw felt and the distance
+the glass moved for it are consequences of the friction, so they are the only
 evidence about the friction that this cell can produce. The method reads none
 of it, which is exactly why every other solution has something to improve on.
 
-**It pays in pushes, and the currency is limited.** The budget bounds the
-repetition, so a method whose only recovery is to repeat can run out of
-recoveries on a table that needs many.
+**It pays in pushes, and the budget is finite.** A method whose only recovery
+is to repeat can run out of recoveries on a table that needs many.
 
 ## 2. The general ideas behind this
 
@@ -232,8 +231,8 @@ prediction worth more than a repetition?**
 
 **Against [solution 5](../08_a-foundation-model-as-it-downloads/01_what-it-is.md)** the two of them are the
 only solutions in the set that fit nothing here, which makes the pair worth
-reading together even though they have nothing else in common. This one carries
-one argued constant. Solution 5 carries SmolVLA as it downloads, which is about
+reading together even though they have nothing else in common. This one
+carries one argued constant. Solution 5 carries SmolVLA as it downloads, about
 450 million parameters pretrained on 487 community datasets of real
 teleoperation, so it fits nothing in *this cell* while resting entirely on
 fitting done somewhere else. **Against [solution

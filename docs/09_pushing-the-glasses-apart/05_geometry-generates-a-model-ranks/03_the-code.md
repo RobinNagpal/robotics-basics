@@ -12,15 +12,15 @@ which is why they are on one page.
 
 ## 1. The code at the heart of it
 
-Everything this solution adds to [solution 1](../04_one-fixed-nudge/01_what-it-is.md) sits in
-two places, and they are small enough to read here. The first is the model
-itself: scikit-learn's boosted trees, fitted once and then asked for one number
-per candidate so that the candidates can be sorted. The second is the number
-those trees are asked to predict, which is measured by making the push on the
-examiner and reading the table afterwards. Those two are the heart of this
-solution because the candidates themselves are not its own — they come from
-solution 1's enumerator unchanged — so the choosing is the only thing that
-differs, and the label is what the choosing is taught to want.
+Everything this solution adds to [solution
+1](../04_one-fixed-nudge/01_what-it-is.md) sits in two places, and they are small
+enough to read here. The first is the model itself: scikit-learn's boosted
+trees, fitted once and then asked for one number per candidate so that the
+candidates can be sorted. The second is the number those trees are asked to
+predict, which is measured by making the push on the examiner and reading the
+table afterwards. The candidates themselves are not this solution's own — they
+come from solution 1's enumerator unchanged — so the choosing is the only thing
+that differs, and the label is what the choosing is taught to want.
 
 The borrowed library does its work in a constructor and one call to `fit`, and
 the sort that follows is the model's entire effect on the run. Both are in
@@ -86,29 +86,30 @@ One point about the output has to be clear, because it decides what a
 comparison with the other five is a comparison of.
 
 This solution thinks in **parameterised pushes**: which glass to move, where to
-put the fingertips down, which way to point the jaw, how far to feel forward
-and how far to push once it has touched. That is exactly what the examiner's
+put the fingertips down, which way to point the jaw, how far to feel forward and
+how far to push once it has touched. That is exactly what the examiner's
 `push()` already accepts, and **the expansion of those numbers into a jaw
-trajectory is a macro the examiner owns.** The examiner brings the closed jaw down at
-the chosen start point, feels forward slowly until the force passes a small
-threshold, pushes the asked-for distance, backs off a couple of centimetres and
-lifts clear. Every parameterised push is expanded the same way by the same
+trajectory is a macro the examiner owns.** The examiner brings the closed jaw
+down at the chosen start point, feels forward slowly until the force passes a
+small threshold, pushes the asked-for distance, backs off a couple of centimetres
+and lifts clear. Every parameterised push is expanded the same way by the same
 code, so this solution gains nothing and loses nothing in that step.
 
-It follows that **what this solution contributes is the choice of push and
-nothing else**. The trajectory is the examiner's, the physics is MuJoCo's, and the
-marking reads the table afterwards rather than the action, which is what lets a
-three-number push and a chunk of waypoints from a learned policy be compared at
-all. [The examiner](../02_the-examiner.md) states that once so that no solution has
-to argue it again.
+![One glass, with the five numbers of a parameterised push marked on it: where the fingertips come down, which way the jaw points, how far forward it feels, and how far the glass travels, all of them on the same straight line.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-pages-a-push-is-five-numbers.png)
 
-One consequence is worth drawing out, because it is a genuine limitation rather
-than a formality. A parameterised push is a straight drag along one heading. A
-policy that emits waypoints directly can describe a push that curves, slows,
-or changes direction partway through, and no member of this solution's
-candidate set can express any of those. That is part of the ceiling named in
-the previous section, and it is the clearest example of what the enumeration
-costs.
+So **what this solution contributes is the choice of push and nothing else**.
+The trajectory is the examiner's, the physics is MuJoCo's, and the marking reads
+the table afterwards rather than the action, which is what lets a five-number
+push and a chunk of waypoints from a learned policy be compared at all. [The
+examiner](../02_the-examiner.md) states that once so that no solution has to
+argue it again.
+
+The limitation that follows is genuine rather than a formality. A parameterised
+push is a straight drag along one heading. A policy that emits waypoints
+directly can describe a push that curves, slows, or changes direction partway
+through, and no member of this solution's candidate set can express any of
+those. That is part of the ceiling named in the previous section, and it is the
+clearest example of what the enumeration costs.
 
 ## 3. How the concepts fit together
 
@@ -121,37 +122,33 @@ examiner, each is labelled with the clear room the table gained and with whether
 the glass toppled, and a few hundred boosted regression trees are fitted to
 those labels on a table of a few thousand rows.
 
-At run time, one pass of the loop goes like this. `look()` hands over where
-each glass stands and how wide it is at its widest and at its foot, carrying
-the measurement error [the camera work
+At run time, one pass of the loop goes like this. `look()` hands over where each
+glass stands and how wide it is at its widest and at its foot, carrying the
+measurement error [the camera work
 reports](../../08_seeing-the-glasses/11_the-results.md). Any glass that already
 has room is racked and removed from the problem. For each glass that is still
-crowded, the topple limit is evaluated from its measured foot across the
-believed range of friction, and a glass that tips before it slides at every
-friction in that range is refused with the reason. For the glasses that remain,
-the enumerator sweeps the headings, steps the travel out, applies its four
-tests and keeps the survivors. Each survivor is turned into the short list of
-lengths, angles, counts and ratios described above, the model scores it, and
-the candidates are sorted. The highest-scoring push is handed to the examiner,
-which expands it into a trajectory, carries it out, and reports what the jaw
-felt. Then the arm looks again, and the loop repeats with the arrangement as it
-now is rather than as it was planned to be.
+crowded, the topple limit is evaluated from its measured foot across the believed
+range of friction, and a glass that tips before it slides at every friction in
+that range is refused with the reason. For the glasses that remain, the
+enumerator sweeps the headings, steps the travel out, applies its four tests and
+keeps the survivors. Each survivor is turned into the short list of lengths,
+angles, counts and ratios described above, the model scores it, and the
+candidates are sorted. The highest-scoring push is handed to the examiner, which
+expands it into a trajectory, carries it out, and reports what the jaw felt. Then
+the arm looks again, and the loop repeats with the arrangement as it now is
+rather than as it was planned to be.
 
-Three things are worth holding on to from all of that.
-
-**The safety is the geometry's and the ordering is the model's**, which is the
-whole design, and deleting the model leaves a working run rather than a broken
-one.
+Two things are worth holding on to from that.
 
 **The loop is what recovers from a bad prediction.** Nothing here trusts that a
-push lands where it was aimed. The arrangement is re-read after every push, so
-a push that fell short, went too far or turned the glass is simply the state of
-the table that the next pass plans against. That is why a wrong ordering costs
-a push rather than a run.
+push lands where it was aimed. The arrangement is re-read after every push, so a
+push that fell short, went too far or turned the glass is simply the state of the
+table that the next pass plans against. That is why a wrong ordering costs a push
+rather than a run.
 
 **What the loop cannot recover is a toppled glass**, because nothing here lifts
-anything. That single fact is why the topple limit is a refusal rule rather
-than a risk weighed against the value of moving the glass, and it is why the
-model's position after the refusal matters more than the model's accuracy.
+anything. That single fact is why the topple limit is a refusal rule rather than
+a risk weighed against the value of moving the glass, and it is why the model's
+position after the refusal matters more than the model's accuracy.
 
 ← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →

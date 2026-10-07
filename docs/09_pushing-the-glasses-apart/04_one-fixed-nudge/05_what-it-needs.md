@@ -24,8 +24,10 @@ the 270 mm of tool behind the fingertips and the 90 mm width of its body. All of
 these belong to the hardware rather than to any glass, so the project allows
 them to be written down, and none of them is tuned.
 
-**One constant of its own**, the gain, chosen by the convergence argument above
-and then frozen. That is the entire configuration of the method.
+**One constant of its own**, which is the gain. It is chosen by [the
+convergence
+argument](02_how-it-works.md#3-why-the-push-is-a-fraction-of-the-shortfall-rather-than-all-of-it)
+and then frozen, and it is the entire configuration of the method.
 
 **One library, and it is NumPy.** The arithmetic over a handful of positions
 and widths is all this solution does for itself. Carrying the jaw to the place
@@ -33,19 +35,18 @@ that arithmetic names is not part of it, because every solution here hands the
 same kind of instruction to the same cell: the examiner carries the jaw with
 its physics engine, and the real cell carries it with MoveIt. Both libraries
 are permissively licensed, and because nothing is fitted there is no weights
-file to redistribute and no licence inherited from somebody else's training
-data.
+file to redistribute and no licence inherited with it.
 
-**Compute to rent: none, and the number is zero.** The room test compares a
-pair of distances for every pair of glasses, so its cost grows as the square of
-the number of glasses, and there are four to six of them. The shortfall, the
-heading and the travel are a few arithmetic operations each. The whole decision
-is a few hundred floating-point operations, it needs no accelerator, and it
-finishes in far less time than the arm takes to move anywhere. On the compute
-column that [the examiner](../02_the-examiner.md) describes for the scorecard, this
-solution is the zero against which the others are read, and solutions that plan
-through a learned model at run time or evaluate a large neural network sit
-hundreds or thousands of times above it.
+**No compute to rent.** The room test compares a pair of distances for every
+pair of glasses, so its cost grows as the square of the number of glasses, and
+there are four to six of them. The shortfall, the heading and the travel are a
+few arithmetic operations each. The whole decision is a few hundred
+floating-point operations and it finishes in far less time than the arm takes
+to move anywhere. On the compute column that [the
+examiner](../02_the-examiner.md) describes for the scorecard, this solution is
+the zero the others are read against, and a solution that plans through a
+learned model at run time or evaluates a large neural network sits hundreds or
+thousands of times above it.
 
 **What it does need is arm time.** The honest cost of this method is pushes and
 looks, and the budget is what bounds them.

@@ -16,26 +16,27 @@ from there rather than copied, so the heading sweep, the stepped travel, the
 four tests and the tipping rule have one definition in this repository. It is
 also the part that decides the ceiling.
 
-It needs a **training set**, which is a few thousand pairs of a candidate and
-what happened to it, generated on the training half of the examiner's tables and
-executed there. That is minutes of examiner time and no human labelling at all,
-because the examiner measures the table after every push in any case. It needs the
-**held-out half** of the tables for marking, which the examiner already enforces by
-splitting its table numbers.
+It needs a **training set**, which was 4,844 pairs of a candidate and what
+happened to it, generated on 190 of the examiner's training tables and executed
+there. That is minutes of examiner time and no human labelling at all, because
+the examiner measures the table after every push in any case. It needs the
+**held-out half** of the tables for marking, which the examiner already enforces
+by splitting its table numbers.
 
 It needs **no accelerator**, and this is the clearest cost difference between
-this solution and the four that follow it. A few hundred shallow trees on a few
-thousand rows trains in seconds to minutes on an ordinary processor. There is
-nothing to rent for a weekend and nothing to rent by the month, so the figure
-to quote against the other solutions' rental costs is zero.
+this solution and the four that follow it. Fitting the two hundred trees on
+those rows took 2.2 seconds on a laptop processor, with most of the five minutes
+`make train` spends going on making the pushes rather than on the fit. There is
+nothing to rent for a weekend and nothing to rent by the month, so the figure to
+quote against the other solutions' rental costs is zero.
 
 At run time it needs **one pass of the trees per candidate**, which is
 arithmetic: each tree is three levels deep, so it asks three threshold
 questions, and there are two hundred of them, which is six hundred comparisons
-in all and no matrix multiplication anywhere. Even a candidate set in the thousands
-costs a small fraction of the seconds one arm movement takes, so the compute
-column on the scorecard is close to the fixed nudge's rather than to a
-foundation model's.
+in all and no matrix multiplication anywhere. The whole of one pass of the loop,
+enumeration included, took 81 milliseconds against the printed rule's 82, so the
+trees are not what the thinking time is spent on, and the compute column on the
+scorecard is close to the fixed nudge's rather than to a foundation model's.
 
 And once fitted it needs **a model file kept in step with the cell**. Change
 the heading sweep, the step length, the glass zone or the way the examiner draws

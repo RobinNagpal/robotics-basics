@@ -41,6 +41,7 @@ as a failed check rather than as a wrong picture.
 
 from __future__ import annotations
 
+import json
 import math
 import random
 import sys
@@ -182,13 +183,33 @@ ORACLE = {"tables": 12, "glasses": 60,
           "plan_racked": 44, "plan_refused": 16, "plan_pushes": 29,
           "best_racked": 46, "best_refused": 14, "best_pushes": 29}
 
-# What the two reference implementations scored on the fifty held-out tables,
-# read from their own results.json files.
+# What the two reference implementations scored on the held-out tables. These
+# are read out of their own results.json at drawing time rather than copied
+# here, because they were copied here once and then the runs moved on: the
+# picture claimed 199 racked and 52 refused when the files said 195 and 56, and
+# the comment above it said the numbers had been read from those files. A
+# number a picture copies is a number that goes stale without anybody noticing.
+def _scored(folder: str) -> dict:
+    """One solution's own scorecard, straight out of the file it wrote."""
+    where = (Path(__file__).resolve().parents[3] / "code" / "src"
+             / "09_pushing-the-glasses-apart" / folder / "results.json")
+    got = json.loads(where.read_text())
+    ended, pushes = got["glasses_end"], got["pushes"]
+    return {
+        "racked": ended["racked"],
+        "refused": ended["refused"],
+        "toppled": ended["toppled"],
+        "pushes": pushes["total"],
+        "repeats": pushes["repeats"],
+        "aim_median_mm": pushes["aim_mm_median"],
+        "aim_worst_mm": pushes["aim_mm_worst"],
+        "done": got["outcome"].get("done"),
+    }
+
+
 SCORED = {
-    "programmed": {"racked": 199, "refused": 52, "toppled": 0, "pushes": 212, "repeats": 90,
-                   "aim_median_mm": 1.0, "aim_worst_mm": 3.9, "done": 35},
-    "learned": {"racked": 208, "refused": 43, "toppled": 0, "pushes": 113, "repeats": 15,
-                "aim_median_mm": 1.7, "aim_worst_mm": 24.8, "done": 34},
+    "programmed": _scored("01-one-fixed-nudge"),
+    "learned": _scored("04-a-world-model"),
 }
 
 # ---------------------------------------------------------------------------

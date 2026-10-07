@@ -44,6 +44,8 @@ circular:
 - To take that photograph, it needs a viewpoint that is not blocked — which is
   exactly what the crowding has taken away.
 
+![Four needs in a ring, each one waiting on the next: lifting needs a chosen grip place, which needs the glass's profile, which needs a side-on photograph, which needs a viewpoint the crowding has taken away.](../../images/pushing-the-glasses-apart/what-is-asked-for/asked-the-circle-lifting-cannot-break.png)
+
 Dragging breaks the circle because it needs almost nothing. A push needs a
 contact and a direction. It does not need to know the glass's height, its shape,
 its weight, or where its stem is. All it needs is where the glass stands and
@@ -102,7 +104,7 @@ refusal is a result.
 
 ## 6. The gap that matters is not the gap between the glasses
 
-![The room a gripper needs round a glass](../../images/pushing-the-glasses-apart/what-is-asked-for/the-room-a-gripper-needs.png)
+![The open jaw needs about 70 mm from a glass's middle outwards before it fits round it, so the gap that decides whether a glass can be gripped is the one between a middle and a neighbour's edge rather than the one between two glasses.](../../images/pushing-the-glasses-apart/what-is-asked-for/the-room-a-gripper-needs.png)
 
 Two glasses with a centimetre of daylight between them are not touching. A
 person would call them separate. The gripper cannot pick up either of them, and
@@ -134,7 +136,7 @@ and moving a glass changes it too.
 
 ## 7. How low the push has to be, and why it is a property of the glass
 
-![Push low or it topples](../../images/pushing-the-glasses-apart/what-is-asked-for/push-low-or-it-topples.png)
+![A push above a certain height on the glass tips it instead of sliding it, and how low that height is follows from the width of the foot the glass stands on and from a friction nothing in the cell can measure.](../../images/pushing-the-glasses-apart/what-is-asked-for/push-low-or-it-topples.png)
 
 A pushed object either slides or tips over, and which one happens is decided by
 where it is pushed. Push near the base and it slides. Push near the rim and it
@@ -227,6 +229,8 @@ there is nowhere clear to push it to.
 A run is **wrong** if a glass is toppled, pushed out of reach, pushed off the
 table, or pushed into the rack. Toppling is the failure to watch, because a
 toppled glass cannot be recovered by anything else in this project.
+
+![The three endings side by side: done, correct but incomplete where a glass was refused with its reason, and wrong where a glass was toppled or pushed somewhere it cannot be recovered from.](../../images/pushing-the-glasses-apart/what-is-asked-for/asked-three-ways-a-run-ends.png)
 
 Scored against the simulator's record, the numbers worth watching are: how many
 glasses ended up grippable, how many pushes it took, how far each glass ended

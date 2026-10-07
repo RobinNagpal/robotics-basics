@@ -38,13 +38,13 @@ of room, measure the shortfall, push, and measure the shortfall again. The
 condition is not a count that was worked out before the run. It is a fresh
 reading of the world.
 
-The maths comparison says the same thing from the other side. Newton's method
-finds the root of a function without anybody having a formula for the root. All
-it needs is a way to measure how wrong the current guess is and a rule that
-makes the wrongness smaller, applied over and over. This solution is in exactly
-that position. Nobody can write down where a glass will be after a push, but
-anybody can measure how much room it is short of, and the rule that makes that
-smaller is to push it away from whatever is crowding it.
+Newton's method is the same idea in arithmetic: it finds the root of a
+function without anybody having a formula for the root, using only a way to
+measure how wrong the current guess is and a rule that makes the wrongness
+smaller. This solution is in that position. Nobody can write down where a
+glass will be after a push, but anybody can measure how much room it is short
+of, and the rule that makes that smaller is to push it away from whatever is
+crowding it.
 
 The three parts map onto the cell directly. The measurement is `look()`, which
 the examiner provides. The error is the shortfall. The correction is the nudge,
@@ -96,6 +96,11 @@ and the neighbour that produced the largest value is the one whose edge is
 nearest to the glass's middle. So **the blocking neighbour and the deepest
 intruder are the same glass**, and the method needs no separate rule to find
 it.
+
+Written as a subtraction the shortfall is three numbers. Drawn on the table it
+is one length, and it is the length the whole method is built around.
+
+![The crowded glass with the 70 mm ring the open jaw needs round it, the neighbour's rim reaching inside that ring, and the overlap marked: the shortfall is how far the neighbour's edge comes inside the ring, which is the same thing as 70 mm plus half the neighbour's width minus the distance between the two middles.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-pages-the-error.png)
 
 Two consequences matter, and both are easy to miss.
 
@@ -158,12 +163,13 @@ it was and the glass crosses the line. The method does not need to know which
 geometric sequence it is on. It only needs the sequence to be decreasing, and
 that is what the small gain guarantees.
 
+![What is left of the shortfall after each of four passes, for four values of the product g · k: at 0.3 it shrinks slowly and steadily, at 1 it lands exactly but only because the product happened to be 1, at 1.8 it crosses the line each time and still shrinks, and at 2.4 it grows.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-pages-the-gain.png)
+
 What the small gain costs is **the number of steps**, because the number of
 pushes needed to close a given shortfall grows as the logarithm of the
 reduction divided by the logarithm of `1 − g · k`. A smaller gain is therefore
 safer and slower in a way that can be written down exactly, and the price is
-paid in arm time rather than in risk. That trade is the subject of the next
-section.
+paid in arm time rather than in risk.
 
 One more point about the gain, and it is about honesty rather than about
 control. The gain could be chosen by trying many values over the training
@@ -193,15 +199,13 @@ whether this table is slippery or sticky. Every solution that fails because its
 model of pushing was wrong fails on a claim this one does not make.
 
 The price is arm time, and it should be read as a real price rather than as a
-rhetorical one. One push is a sequence: the closed jaw is carried to a start
-point, comes down to the lowest height the gripper can reach, feels forward
-very slowly until the force it feels passes a small threshold, pushes at a
-steady speed, backs off a couple of centimetres and lifts clear. Then the arm
-has to take a fresh look. **Every push is seconds of arm time, and the
-scorecard counts pushes against a fixed budget**, so the currency this method
-pays in is finite. A method that converges in four pushes where another
-converges in one has not failed, but it has spent four times the time and four
-times the travel, and travel is where a glass gets knocked.
+rhetorical one. One push is a whole sequence of arm movements, set out in [the
+pushes are what this contributes](03_the-code.md#2-the-pushes-are-what-this-contributes), and
+every one of them is followed by a fresh look. **Every push is seconds of arm
+time, and the scorecard counts pushes against a fixed budget**, so the
+currency this method pays in is finite. A method that converges in four pushes
+where another converges in one has not failed, but it has spent four times the
+time and four times the travel, and travel is where a glass gets knocked.
 
 So the honest summary of this solution's position is that it moves its cost out
 of error and into time. Every other solution in the set is buying a way to
@@ -240,7 +244,9 @@ real code is involved and it would be easy to over-claim.
   the small test push that settles the glasses the range cannot;
 - the loop, in [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py):
   look, rack every glass that already has room, choose one push, make it, look
-  again, with a budget of pushes per glass and a budget per table;
+  again. The budget is the examiner's rather than this solution's, so that the
+  six are allowed the same number of tries: four pushes at any one glass, and
+  sixteen on any one table;
 - the refusal reasons, and the scorecard that counts them with the outcome
   rather than the action.
 
@@ -291,8 +297,8 @@ and is also the best of a set that was written down and scored first. It is
 what earns solution 2 its place in the set beyond being a second baseline.
 
 **This solution leaves behind nothing of the kind.** It generates exactly one
-push per pass and it scores nothing, because there is no alternative to compare
-the one push against. A record of its runs would say only that a particular
+push per pass and it scores nothing, because there is no alternative to
+compare the one push against. A record of its runs would say that a particular
 push was made and that the glass afterwards was in a particular place, with no
 indication of whether a better push existed. That is a log rather than a
 scored candidate set, so no ranker can be fitted to it, and a policy fitted to

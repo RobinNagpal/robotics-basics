@@ -389,6 +389,58 @@ def action_vector() -> None:
     _save(fig, BC_DOC, 'action-vector.svg')
 
 
+def loss_shares() -> None:
+    """Who the summed squared error listens to, before and after rescaling.
+
+    The policy is supposed to be wrong by the same fraction of every output's own
+    range, one per cent of it. In raw units a degree-sized joint then contributes
+    far more squared error than a gripper that runs from 0 to 1; after rescaling
+    every output has the same range of 2, so the seven shares are equal.
+    """
+    names = JOINT_NAMES + ['gripper']
+    raw_range = np.append(JOINT_HI - JOINT_LO, 1.0)
+    fine_range = np.full(7, 2.0)
+    raw_sq = (0.01 * raw_range) ** 2
+    fine_sq = (0.01 * fine_range) ** 2
+    raw_share = 100.0 * raw_sq / raw_sq.sum()
+    fine_share = 100.0 * fine_sq / fine_sq.sum()
+    print('[bc] share of the summed squared error when every output is wrong by '
+          '1 per cent of its own range:')
+    for nm, rg, a, b in zip(names, raw_range, raw_share, fine_share):
+        print(f'[bc]   {nm:9s} range {rg:6.1f} -> raw {a:9.5f} per cent, '
+              f'rescaled {b:6.3f} per cent')
+    print(f'[bc] the gripper goes from {raw_share[-1]:.5f} per cent of the loss to '
+          f'{fine_share[-1]:.2f}, a factor of {fine_share[-1] / raw_share[-1]:,.0f}')
+
+    fig, ax = plt.subplots(figsize=(10.4, 4.9), facecolor='white')
+    _plain(ax)
+    x = np.arange(7)
+    w = 0.38
+    ax.bar(x - w / 2, raw_share, width=w, color=GRIP, alpha=0.9,
+           label='raw units: degrees for the joints, 0 to 1 for the gripper')
+    ax.bar(x + w / 2, fine_share, width=w, color=LINK, alpha=0.9,
+           label='rescaled: every output runs from -1 to +1')
+    for i in range(7):
+        txt = f'{raw_share[i]:.2f}' if raw_share[i] >= 1 else f'{raw_share[i]:.5f}'
+        ax.text(i - w / 2, raw_share[i] * 1.25, txt, ha='center', fontsize=8.6,
+                color=GRIP)
+        ax.text(i + w / 2, fine_share[i] * 1.25, f'{fine_share[i]:.1f}', ha='center',
+                fontsize=8.6, color=LINK)
+    ax.set_yscale('log')
+    ax.set_ylim(5e-5, 400)
+    ax.set_xticks(x)
+    ax.set_xticklabels(names, fontsize=9.2)
+    ax.set_ylabel('share of the summed squared error (per cent, log scale)',
+                  fontsize=9.5)
+    ax.set_xlabel('the seven numbers the policy puts out', fontsize=9.5)
+    ax.legend(fontsize=9.2, frameon=False, loc='lower left')
+    ax.set_title(f'The same one per cent mistake everywhere: in raw units the gripper '
+                 f'is {raw_share[-1]:.5f} per cent of the loss', fontsize=11.5,
+                 weight='bold')
+    fig.tight_layout()
+    _save(fig, BC_DOC, 'loss-shares.svg')
+
+
 def control_loop() -> None:
     period = 1000.0 / RATE
     parts = [('camera picture ready', 8.0, WRIST),
@@ -583,8 +635,7 @@ def dataset_size() -> None:
           f'and the {N_EPISODES * EP_STEPS * 14:,} action and state numbers are '
           f'{N_EPISODES * EP_STEPS * 14 * 4 / 1e6:.2f} MB as 4-byte numbers')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.8, 4.5), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.0, 4.7), facecolor='white')
     _plain(ax)
     eps = np.array([1, 10, 50, 200, 1000])
     ax.plot(eps, eps * EP_STEPS, 'o-', color=LINK, lw=2.0, ms=7)
@@ -598,9 +649,17 @@ def dataset_size() -> None:
     ax.set_ylim(200, 1000 * EP_STEPS * 6)
     ax.set_xlabel('episodes recorded (log scale)', fontsize=9.5)
     ax.set_ylabel('training examples (log scale)', fontsize=9.5)
-    ax.set_title(f'Each episode gives {EP_STEPS} examples', fontsize=11.5, weight='bold')
+    ax.set_title(f'Each episode gives {EP_STEPS} examples', fontsize=11.8, weight='bold')
+    fig.tight_layout()
+    _save(fig, BC_DOC, 'dataset-size.svg')
 
-    ax = axes[1]
+
+def dataset_bytes() -> None:
+    """Where the bytes of a fifty-episode set sit, raw against stored as video."""
+    per_cam = CAM_H * CAM_W * CAM_C
+    raw_set = per_cam * N_CAMS * EP_STEPS * N_EPISODES
+    ratio = 40.0
+    fig, ax = plt.subplots(figsize=(9.0, 4.7), facecolor='white')
     _plain(ax)
     labels = ['camera frames\nkept raw', 'camera frames\nas video',
               'joint and action\nnumbers']
@@ -615,9 +674,9 @@ def dataset_size() -> None:
     ax.set_ylim(2e-4, vals[0] * 12)
     ax.set_ylabel('gigabytes for 50 episodes (log scale)', fontsize=9.5)
     ax.set_title(f'Where the {raw_set / 1e9:.1f} GB sits, with video at '
-                 f'{ratio:.0f} to 1', fontsize=11.5, weight='bold')
+                 f'{ratio:.0f} to 1', fontsize=11.8, weight='bold')
     fig.tight_layout()
-    _save(fig, BC_DOC, 'dataset-size.svg')
+    _save(fig, BC_DOC, 'dataset-bytes.svg')
 
 
 def hours_of_a_day() -> None:
@@ -640,8 +699,7 @@ def hours_of_a_day() -> None:
         tt = tk * per_take + setup
         print(f'[bc]   {n} episodes -> {tt / 3600.0:.1f} human hours, {n * EP_STEPS:,} examples')
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.6), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.4, 4.3), facecolor='white')
     _plain(ax)
     parts = [('moving the arm', motion * takes / 60.0, LINK),
              ('resetting the scene', reset * takes / 60.0, WRIST),
@@ -661,9 +719,17 @@ def hours_of_a_day() -> None:
     ax.set_xlabel('minutes of one person\'s day', fontsize=9.5)
     ax.set_title(f'{N_EPISODES} usable episodes cost {total / 60.0:.0f} minutes, and only '
                  f'{motion * takes / 60.0:.0f} of them are arm movement',
-                 fontsize=11.2, weight='bold')
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, BC_DOC, 'hours-of-a-day.svg')
 
-    ax = axes[1]
+
+def hours_against_examples() -> None:
+    """How many hours of a person's time each size of training set costs."""
+    per_take = EP_SECONDS + 20.0 + 8.0
+    keep = 5.0 / 6.0
+    setup = 10.0 * 60.0
+    fig, ax = plt.subplots(figsize=(9.4, 4.7), facecolor='white')
     _plain(ax)
     ns = np.array([50, 200, 1000, 5000])
     hrs = (ns / keep * per_take + setup) / 3600.0
@@ -679,10 +745,10 @@ def hours_of_a_day() -> None:
     ax.set_ylim(0, hrs[-1] * 1.3)
     ax.set_xlabel('training examples (log scale)', fontsize=9.5)
     ax.set_ylabel('hours of a person\'s time', fontsize=9.5)
-    ax.set_title('Robot data is bought in hours, not downloads', fontsize=11.5,
+    ax.set_title('Every training example costs a person\'s time', fontsize=11.8,
                  weight='bold')
     fig.tight_layout()
-    _save(fig, BC_DOC, 'hours-of-a-day.svg')
+    _save(fig, BC_DOC, 'hours-against-examples.svg')
 
 
 # --------------------------------------------------------------------------
@@ -710,8 +776,8 @@ def drift_paths() -> None:
         ax.plot(s.goals[idx, 0], s.goals[idx, 1], '*', color=col, ms=15)
         ax.annotate(f'{err[-1, idx]:.1f} cm out',
                     xy=(path[-1, idx, 0], path[-1, idx, 1]),
-                    xytext=(path[-1, idx, 0] - 11, path[-1, idx, 1] + np.sign(
-                        path[-1, idx, 1] - s.goals[idx, 1]) * 3.0),
+                    xytext=(path[-1, idx, 0] - 13, path[-1, idx, 1] + np.sign(
+                        path[-1, idx, 1] - s.goals[idx, 1]) * 4.5),
                     fontsize=9.5, color=col,
                     arrowprops=dict(arrowstyle='-|>', color=col, lw=1.2))
     ax.set_xlabel('distance along the reach (cm)', fontsize=9.5)
@@ -729,9 +795,7 @@ def drift_paths() -> None:
 def error_over_time() -> None:
     s = _sim()
     t = np.arange(REACH_STEPS + 1) * DT
-    fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.9), facecolor='white',
-                             gridspec_kw={'width_ratios': [1.4, 1]})
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.6, 5.0), facecolor='white')
     _plain(ax)
     err = s.error(1)
     ax.plot(t, err, color=GRIP, lw=2.4, label='the policy, deciding one step at a time')
@@ -739,9 +803,10 @@ def error_over_time() -> None:
     ax.plot(t, walk, color=MUTED, ls=':', lw=1.8,
             label='how far it would be if the mistakes were unrelated wobble')
     ax.fill_between(t, walk, err, color=GRIP, alpha=0.12)
+    j = int(0.86 * REACH_STEPS)
     ax.annotate(f'{err[-1] - walk[-1]:.2f} cm more than wobble explains',
-                xy=(t[-1], (err[-1] + walk[-1]) / 2),
-                xytext=(1.5, err[-1] * 0.72), fontsize=9.5, color=GRIP,
+                xy=(t[j], (err[j] + walk[j]) / 2),
+                xytext=(0.55, err[-1] * 0.86), fontsize=9.5, color=GRIP,
                 arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.2))
     ax.set_xlim(0, t[-1])
     ax.set_ylim(0, err[-1] * 1.2)
@@ -753,40 +818,50 @@ def error_over_time() -> None:
     print(f'[bc] one-step drift: 1 s {err[30]:.2f} cm, 2 s {err[60]:.2f} cm, '
           f'3 s {err[90]:.2f} cm, 4 s {err[-1]:.2f} cm; unrelated wobble would give '
           f'{walk[-1]:.2f} cm')
+    fig.tight_layout()
+    _save(fig, BC_DOC, 'error-over-time.svg')
 
-    ax = axes[1]
+
+def servo_noise() -> None:
+    """The same run with three amounts of error in the joints themselves."""
+    s = _sim()
+    fig, ax = plt.subplots(figsize=(8.6, 4.9), facecolor='white')
     _plain(ax)
-    vals, names = [], []
+    vals = []
     for sigma in (0.0, 0.02, 0.06):
         path, _c, _g = rollout(s.policy, s.starts, s.goals, 1,
                                np.random.default_rng(42), sigma=sigma)
         v = np.linalg.norm(path - s.ref, axis=2).mean(1)[-1]
         vals.append(v)
-        names.append(f'{sigma:.2f}')
         print(f'[bc] servo error {sigma:.2f} cm a step -> final drift {v:.2f} cm')
     ax.bar(np.arange(3), vals, color=[LINK, WRIST, GRIP], width=0.55, alpha=0.9)
     for i, v in enumerate(vals):
-        ax.text(i, v * 1.02, f'{v:.2f} cm', ha='center', fontsize=9.5, color=INK)
+        ax.text(i, v * 1.02, f'{v:.2f} cm', ha='center', fontsize=10, color=INK)
     ax.set_xticks(np.arange(3))
     ax.set_xticklabels(['perfect\njoints', '0.02 cm\na step', '0.06 cm\na step'],
-                       fontsize=9.2)
+                       fontsize=9.5)
     ax.set_ylim(0, max(vals) * 1.2)
     ax.set_xlabel('how much the joints themselves get wrong', fontsize=9.5)
     ax.set_ylabel('distance from where it should be after 4 s (cm)', fontsize=9.5)
     ax.set_title('Perfect joints barely help: the drift is the model\'s',
-                 fontsize=11.5, weight='bold')
+                 fontsize=11.8, weight='bold')
     fig.tight_layout()
-    _save(fig, BC_DOC, 'error-over-time.svg')
+    _save(fig, BC_DOC, 'servo-noise.svg')
 
 
-def more_demos() -> None:
-    t = np.arange(REACH_STEPS + 1) * DT
+DEMO_SIZES: tuple[int, ...] = (5, 25, 100, 400)
+_DEMO_SWEEP: tuple[Arr, list[float], list[float]] | None = None
+
+
+def _demo_sweep() -> tuple[Arr, list[float], list[float]]:
+    """Fit the policy to 5, 25, 100 and 400 demonstrations and measure both errors."""
+    global _DEMO_SWEEP
+    if _DEMO_SWEEP is not None:
+        return _DEMO_SWEEP
     starts, goals = test_starts(150, seed=303)
     ref = reference_paths(starts, goals)
-    fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.9), facecolor='white')
-    finals, steps_err = [], []
-    sizes = (5, 25, 100, 400)
-    for n, col in zip(sizes, (GRIP, WRIST, LINK, PURPLE)):
+    curves, finals, steps_err = [], [], []
+    for n in DEMO_SIZES:
         store = ChunkStore(n, seed=11)
         pol = KnnChunkPolicy(store)
         errs = []
@@ -794,22 +869,40 @@ def more_demos() -> None:
             path, _c, _g = rollout(pol, starts, goals, 1, np.random.default_rng(sd))
             errs.append(np.linalg.norm(path - ref, axis=2).mean(1))
         err = np.mean(errs, axis=0)
-        axes[0].plot(t, err, color=col, lw=2.2, label=f'{n} demonstrations')
-        finals.append(err[-1])
+        curves.append(err)
+        finals.append(float(err[-1]))
         se = one_step_error(pol)
         steps_err.append(se)
         print(f'[bc] {n:4d} demonstrations ({store.obs.shape[0]:,} recorded moments): '
               f'one-step error on fresh demonstrations {se * 10:.3f} mm, '
               f'drift after 1 s {err[30]:.2f} cm, after 4 s {err[-1]:.2f} cm')
-    _plain(axes[0])
-    axes[0].set_xlabel('time through the reach (seconds)', fontsize=9.5)
-    axes[0].set_ylabel('average distance from where it should be (cm)', fontsize=9.5)
-    axes[0].legend(fontsize=9.2, frameon=False, loc='upper left')
-    axes[0].set_xlim(0, t[-1])
-    axes[0].set_ylim(0, max(finals) * 1.2)
-    axes[0].set_title('Eighty times the data, and the same climbing shape',
-                      fontsize=11.5, weight='bold')
-    ax = axes[1]
+    _DEMO_SWEEP = (np.array(curves), finals, steps_err)
+    return _DEMO_SWEEP
+
+
+def more_demos() -> None:
+    t = np.arange(REACH_STEPS + 1) * DT
+    curves, finals, _se = _demo_sweep()
+    fig, ax = plt.subplots(figsize=(10.6, 5.0), facecolor='white')
+    _plain(ax)
+    for n, err, col in zip(DEMO_SIZES, curves, (GRIP, WRIST, LINK, PURPLE)):
+        ax.plot(t, err, color=col, lw=2.2, label=f'{n} demonstrations')
+    ax.set_xlabel('time through the reach (seconds)', fontsize=9.5)
+    ax.set_ylabel('average distance from where it should be (cm)', fontsize=9.5)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.set_xlim(0, t[-1])
+    ax.set_ylim(0, max(finals) * 1.2)
+    ax.set_title('Eighty times the data, and the same climbing shape',
+                 fontsize=11.8, weight='bold')
+    fig.tight_layout()
+    _save(fig, BC_DOC, 'more-demos.svg')
+
+
+def more_demos_scaling() -> None:
+    """What eighty times the data buys: a little on one step, a little on the drift."""
+    _curves, finals, steps_err = _demo_sweep()
+    sizes = DEMO_SIZES
+    fig, ax = plt.subplots(figsize=(9.6, 4.9), facecolor='white')
     _plain(ax)
     ax.plot(sizes, [v * 10 for v in steps_err], 'o-', color=LINK, lw=2.2, ms=7)
     for n, v in zip(sizes, steps_err):
@@ -818,31 +911,31 @@ def more_demos() -> None:
     ax.set_xscale('log')
     ax.set_xticks(list(sizes))
     ax.set_xticklabels([str(n) for n in sizes])
-    ax.set_ylim(0, max(steps_err) * 10 * 1.3)
+    ax.set_ylim(0, max(steps_err) * 10 * 1.45)
     ax.set_xlabel('demonstrations in the training set (log scale)', fontsize=9.5)
     ax.set_ylabel('error of one predicted step (mm)', fontsize=9.5, color=LINK)
     ax2 = ax.twinx()
     ax2.plot(sizes, finals, 's--', color=GRIP, lw=2.0, ms=7)
     for n, v in zip(sizes, finals):
-        ax2.text(n, v * 0.90, f'{v:.2f} cm', ha='center', fontsize=9, color=GRIP,
+        ax2.text(n, v * 0.92, f'{v:.2f} cm', ha='center', fontsize=9, color=GRIP,
                  va='top')
-    ax2.set_ylim(0, max(finals) * 1.3)
+    ax2.set_ylim(0, max(finals) * 1.45)
     ax2.set_ylabel('distance from where it should be after 4 s (cm)', fontsize=9.5,
                    color=GRIP)
     ax2.tick_params(labelsize=9.5, colors=GRIP)
-    ax.set_title(f'One step\'s error falls by {100 * (1 - steps_err[-1] / steps_err[0]):.0f} '
-                 f'per cent, the drift by {100 * (1 - finals[-1] / finals[0]):.0f} per cent',
+    ax.set_title(f'Blue: one step\'s error, down {100 * (1 - steps_err[-1] / steps_err[0]):.0f} '
+                 f'per cent. Red: the drift, down '
+                 f'{100 * (1 - finals[-1] / finals[0]):.0f} per cent',
                  fontsize=11.0, weight='bold')
     fig.tight_layout()
-    _save(fig, BC_DOC, 'more-demos.svg')
+    _save(fig, BC_DOC, 'more-demos-scaling.svg')
 
 
 def unseen_inputs() -> None:
     s = _sim()
     t = np.arange(REACH_STEPS) * DT
     path, _c, gap = s.runs[1]
-    fig, axes = plt.subplots(1, 2, figsize=(13.2, 4.9), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.6, 5.0), facecolor='white')
     _plain(ax)
     keep = s.store.obs
     sub = np.random.default_rng(1).choice(len(keep), 2500, replace=False)
@@ -859,7 +952,16 @@ def unseen_inputs() -> None:
     ax.legend(fontsize=9.2, frameon=False, loc='lower left')
     ax.set_title('One run, coloured by how new its input was', fontsize=11.5,
                  weight='bold')
-    ax = axes[1]
+    fig.tight_layout()
+    _save(fig, BC_DOC, 'unseen-inputs.svg')
+
+
+def gap_over_time() -> None:
+    """How far the policy's own questions drift from anything it was fitted to."""
+    s = _sim()
+    t = np.arange(REACH_STEPS) * DT
+    _path, _c, gap = s.runs[1]
+    fig, ax = plt.subplots(figsize=(10.2, 4.9), facecolor='white')
     _plain(ax)
     mean_gap = gap.mean(1)
     lo = np.percentile(gap, 10, axis=1)
@@ -881,7 +983,7 @@ def unseen_inputs() -> None:
           f'after 4 s {mean_gap[-1]:.2f} cm, against {held:.2f} cm along a fresh '
           f'demonstration, so {mean_gap[-1] / held:.0f} times further out')
     fig.tight_layout()
-    _save(fig, BC_DOC, 'unseen-inputs.svg')
+    _save(fig, BC_DOC, 'gap-over-time.svg')
 
 
 # --------------------------------------------------------------------------
@@ -952,23 +1054,26 @@ def chunk_drift() -> None:
 def chunk_smoothness() -> None:
     s = _sim()
     t = np.arange(1, REACH_STEPS) * DT
-    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.8), facecolor='white',
-                             gridspec_kw={'width_ratios': [1.35, 1]})
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.6, 4.9), facecolor='white')
     _plain(ax)
-    jerks = {}
     for c, col in zip((1, 16), (GRIP, LINK)):
         cmds = s.runs[c][1]
         d = np.linalg.norm(np.diff(cmds, axis=0), axis=2).mean(1)
-        jerks[c] = d
         ax.plot(t, d * 10.0, color=col, lw=1.6, label=f'chunk of {c}')
     ax.set_xlim(0, t[-1])
     ax.set_xlabel('time through the reach (seconds)', fontsize=9.5)
     ax.set_ylabel('change in the command from one step to the next (mm)', fontsize=9.5)
     ax.legend(fontsize=9.5, frameon=False, loc='upper right')
     ax.set_title('One step at a time jitters all the way; a chunk only jumps at the '
-                 'joins', fontsize=11.2, weight='bold')
-    ax = axes[1]
+                 'joins', fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, BC_DOC, 'chunk-smoothness.svg')
+
+
+def smoothness_by_chunk() -> None:
+    """How rough the command is, against how many steps are played per decision."""
+    s = _sim()
+    fig, ax = plt.subplots(figsize=(9.6, 4.9), facecolor='white')
     _plain(ax)
     cs = (1, 2, 4, 8, 16, 32, 48)
     vals = [np.linalg.norm(np.diff(s.runs[c][1], axis=0), axis=2).mean() * 10.0
@@ -982,11 +1087,11 @@ def chunk_smoothness() -> None:
     ax.set_xlabel('steps played per decision', fontsize=9.5)
     ax.set_ylabel('average change per step (mm)', fontsize=9.5)
     ax.set_title(f'From {vals[0]:.3f} mm a step down to {min(vals):.3f} mm',
-                 fontsize=11.5, weight='bold')
+                 fontsize=11.8, weight='bold')
     print('[bc] average change in the command from step to step (mm): ' +
           ', '.join(f'chunk {c}: {v:.3f}' for c, v in zip(cs, vals)))
     fig.tight_layout()
-    _save(fig, BC_DOC, 'chunk-smoothness.svg')
+    _save(fig, BC_DOC, 'smoothness-by-chunk.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1074,10 +1179,52 @@ def act_shapes() -> None:
     _save(fig, BC_DOC, 'act-shapes.svg')
 
 
+def picture_into_tokens() -> None:
+    """One camera frame cut into the grid of cells that become tokens."""
+    c = _act_counts()
+    gh, gw = c['gh'], c['gw']
+    print(f'[bc] one {ACT_H} x {ACT_W} frame at stride {ACT_STRIDE} becomes {gh} rows by '
+          f'{gw} columns = {c["cells"]} cells, each cell covering '
+          f'{ACT_STRIDE} x {ACT_STRIDE} pixels and becoming one token of {ACT_WIDTH} '
+          f'numbers')
+    fig, ax = plt.subplots(figsize=(10.0, 5.4), facecolor='white')
+    ax.axis('off')
+    ax.set_xlim(-30, ACT_W + 250)
+    ax.set_ylim(-70, ACT_H + 60)
+    ax.set_aspect('equal')
+    ax.invert_yaxis()
+    ax.add_patch(plt.Rectangle((0, 0), ACT_W, ACT_H, facecolor=LINK_PALE, alpha=0.45,
+                               edgecolor=INK, lw=1.6))
+    for i in range(1, gw):
+        ax.plot([i * ACT_STRIDE] * 2, [0, ACT_H], color=INK, lw=0.5, alpha=0.45)
+    for j in range(1, gh):
+        ax.plot([0, ACT_W], [j * ACT_STRIDE] * 2, color=INK, lw=0.5, alpha=0.45)
+    cx, cy = 7 * ACT_STRIDE, 5 * ACT_STRIDE
+    ax.add_patch(plt.Rectangle((cx, cy), ACT_STRIDE, ACT_STRIDE, facecolor=GRIP,
+                               alpha=0.85, edgecolor=GRIP, lw=1.4, zorder=4))
+    ax.annotate('', xy=(ACT_W + 60, cy + ACT_STRIDE / 2),
+                xytext=(cx + ACT_STRIDE, cy + ACT_STRIDE / 2),
+                arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.6))
+    ax.add_patch(plt.Rectangle((ACT_W + 65, cy - 14), 170, ACT_STRIDE + 28,
+                               facecolor=PURPLE, alpha=0.2, edgecolor=PURPLE, lw=1.4))
+    ax.text(ACT_W + 150, cy + ACT_STRIDE / 2, f'one token\n{ACT_WIDTH} numbers',
+            ha='center', va='center', fontsize=9.5, color=INK)
+    ax.text(ACT_W / 2, -26, f'{ACT_W} pixels across', ha='center', fontsize=9.5,
+            color=INK)
+    ax.text(-16, ACT_H / 2, f'{ACT_H} pixels down', ha='center', va='center',
+            fontsize=9.5, color=INK, rotation=90)
+    ax.text(ACT_W / 2, ACT_H + 34,
+            f'{gh} rows x {gw} columns = {c["cells"]} cells, each {ACT_STRIDE} by '
+            f'{ACT_STRIDE} pixels', ha='center', fontsize=10, color=INK)
+    ax.set_title(f'One camera picture becomes {c["cells"]} tokens', fontsize=12.5,
+                 weight='bold')
+    fig.tight_layout()
+    _save(fig, BC_DOC, 'picture-into-tokens.svg')
+
+
 def act_attention_cost() -> None:
     c = _act_counts()
-    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.7), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.2, 4.9), facecolor='white')
     _plain(ax)
     cams = np.arange(1, 5)
     toks = cams * c['cells'] + 2
@@ -1095,7 +1242,14 @@ def act_attention_cost() -> None:
     print('[bc] attention pairs per head per layer: ' +
           ', '.join(f'{n} cameras ({tk} tokens): {p:,}'
                     for n, tk, p in zip(cams, toks, pairs)))
-    ax = axes[1]
+    fig.tight_layout()
+    _save(fig, BC_DOC, 'act-attention-cost.svg')
+
+
+def act_chunk_cost() -> None:
+    """What a longer chunk costs the decoder, measured in the same token pairs."""
+    c = _act_counts()
+    fig, ax = plt.subplots(figsize=(9.6, 4.9), facecolor='white')
     _plain(ax)
     chunks = np.array([25, 50, 100, 200])
     dec = chunks * c['tokens'] + chunks ** 2
@@ -1114,7 +1268,7 @@ def act_attention_cost() -> None:
     print('[bc] decoder pairs by chunk length: ' +
           ', '.join(f'{ch}: {d:,}' for ch, d in zip(chunks, dec)))
     fig.tight_layout()
-    _save(fig, BC_DOC, 'act-attention-cost.svg')
+    _save(fig, BC_DOC, 'act-chunk-cost.svg')
 
 
 def act_output_block() -> None:
@@ -1163,6 +1317,59 @@ def act_output_block() -> None:
     _save(fig, BC_DOC, 'act-output-block.svg')
 
 
+def fast_and_slow_takes() -> None:
+    """Why ACT gives the training network a style number of its own.
+
+    The same person does the same reach quickly on some takes and slowly on others.
+    A model with one answer per situation has to put that answer between the two,
+    and the gap between the two groups is what the style number carries instead.
+    """
+    rng = np.random.default_rng(314)
+    t = np.arange(REACH_STEPS + 1) * DT
+    start = np.array([0.0, 0.0])
+    goal = np.array([40.0, 0.0])
+    groups = {}
+    for nm, g in (('quick takes', 0.62), ('slow takes', 1.70)):
+        paths = []
+        for _ in range(20):
+            p = reach_path(start, goal, 6.0, g + rng.normal(0, 0.03), REACH_STEPS)
+            paths.append(p + _tremor(rng, REACH_STEPS + 1, 0.20))
+        groups[nm] = np.stack(paths)
+    allp = np.concatenate([groups['quick takes'], groups['slow takes']])
+    mean_all = allp.mean(0)
+    k = 60
+    q = groups['quick takes'].mean(0)[k, 0]
+    s = groups['slow takes'].mean(0)[k, 0]
+    print(f'[bc] at {t[k]:.1f} s into the reach the quick takes are {q:.1f} cm along '
+          f'and the slow takes {s:.1f} cm along, a gap of {q - s:.1f} cm')
+    print(f'[bc] one answer for both sits at {mean_all[k, 0]:.1f} cm, which is '
+          f'{q - mean_all[k, 0]:.1f} cm behind the quick takes and '
+          f'{mean_all[k, 0] - s:.1f} cm ahead of the slow ones')
+
+    fig, ax = plt.subplots(figsize=(10.4, 5.0), facecolor='white')
+    _plain(ax)
+    for nm, col in (('quick takes', LINK), ('slow takes', TEAL)):
+        for i in range(groups[nm].shape[0]):
+            ax.plot(t, groups[nm][i, :, 0], color=col, lw=0.9, alpha=0.45,
+                    label=nm if i == 0 else None)
+    ax.plot(t, mean_all[:, 0], color=GRIP, lw=3.0,
+            label='the one answer squared error asks for')
+    ax.plot([t[k], t[k]], [s, q], color=INK, lw=1.2)
+    ax.plot([t[k]], [mean_all[k, 0]], 'o', color=GRIP, ms=9, zorder=5)
+    ax.annotate(f'{q - s:.1f} cm apart at {t[k]:.0f} s',
+                xy=(t[k], (q + s) / 2), xytext=(t[k] + 0.35, (q + s) / 2 - 7.5),
+                fontsize=9.5, color=INK,
+                arrowprops=dict(arrowstyle='-|>', color=INK, lw=1.2))
+    ax.set_xlim(0, t[-1])
+    ax.set_xlabel('time through the reach (seconds)', fontsize=9.5)
+    ax.set_ylabel('distance along the reach (cm)', fontsize=9.5)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.set_title('The same reach done quickly and slowly, and the single answer that '
+                 'fits neither', fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, BC_DOC, 'fast-and-slow-takes.svg')
+
+
 # --------------------------------------------------------------------------
 # section 6 --- temporal ensembling and the length of a chunk
 # --------------------------------------------------------------------------
@@ -1172,7 +1379,14 @@ def ensembling_weights(m: int, k: float = 0.01) -> Arr:
     return w / w.sum()
 
 
-def temporal_ensembling() -> None:
+_ENS: tuple[Arr, Arr, list[Arr], Arr, float, float] | None = None
+
+
+def _ensemble_run() -> tuple[Arr, Arr, list[Arr], Arr, float, float]:
+    """Run the policy twice over, once taking the newest chunk and once averaging."""
+    global _ENS
+    if _ENS is not None:
+        return _ENS
     s = _sim()
     m = 8
     w = ensembling_weights(m)
@@ -1205,14 +1419,19 @@ def temporal_ensembling() -> None:
     print(f'[bc] average step-to-step change: newest chunk only {jr:.3f} mm, '
           f'weighted average of {m} chunks {je:.3f} mm, a drop of '
           f'{100 * (1 - je / jr):.1f} per cent')
+    _ENS = (raw_a, ens_a, store_blocks, w, jr, je)
+    return _ENS
 
+
+def temporal_ensembling() -> None:
+    """The several chunks that all hold a guess for the step about to be sent."""
+    raw_a, ens_a, store_blocks, _w, _jr, _je = _ensemble_run()
     k = 40
     picks = store_blocks[k]
     print(f'[bc] at step {k} the {len(picks)} chunks in hand guess ' +
           ', '.join(f'{v[1] * 10:.3f}' for v in picks) +
           f' mm sideways, and their weighted average is {ens_a[k][1] * 10:.3f} mm')
-    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.9), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.8, 4.9), facecolor='white')
     _plain(ax)
     vs = picks[:, 1] * 10
     span = max(vs.max() - vs.min(), 1e-3)
@@ -1230,9 +1449,17 @@ def temporal_ensembling() -> None:
                   fontsize=9.5)
     ax.set_ylabel('guess for this step, sideways part (mm)', fontsize=9.5)
     ax.legend(fontsize=9.2, frameon=False, loc='upper right')
-    ax.set_title(f'{len(picks)} chunks all hold a guess for step {k}', fontsize=11.2,
+    ax.set_title(f'{len(picks)} chunks all hold a guess for step {k}', fontsize=11.5,
                  weight='bold')
-    ax = axes[1]
+    fig.tight_layout()
+    _save(fig, BC_DOC, 'temporal-ensembling.svg')
+
+
+def ensembling_smoothing() -> None:
+    """The command with and without the average, over one simulated run."""
+    raw_a, ens_a, _blocks, _w, jr, je = _ensemble_run()
+    m = 8
+    fig, ax = plt.subplots(figsize=(10.2, 4.9), facecolor='white')
     _plain(ax)
     tt = np.arange(len(raw_a)) * DT
     ax.plot(tt, raw_a[:, 1] * 10, color=GRIP, lw=1.5, label='newest chunk only')
@@ -1242,9 +1469,9 @@ def temporal_ensembling() -> None:
     ax.set_ylabel('command, sideways part (mm)', fontsize=9.5)
     ax.legend(fontsize=9.2, frameon=False, loc='lower right')
     ax.set_title(f'The averaged command changes {100 * (1 - je / jr):.0f} per cent less '
-                 f'from step to step', fontsize=11.2, weight='bold')
+                 f'from step to step', fontsize=11.5, weight='bold')
     fig.tight_layout()
-    _save(fig, BC_DOC, 'temporal-ensembling.svg')
+    _save(fig, BC_DOC, 'ensembling-smoothing.svg')
 
 
 def ensembling_weights_picture() -> None:
@@ -1663,8 +1890,7 @@ def label_spread() -> None:
           f'over the next {CHUNK2} steps they move sideways by '
           f'{lab[lab > 0].mean():+.2f} cm one way and {lab[lab < 0].mean():+.2f} cm the '
           f'other, and the average of all of them is {lab.mean():+.3f} cm')
-    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.6), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.6, 4.7), facecolor='white')
     _plain(ax)
     ax.hist(lab, bins=40, color=LINK, alpha=0.8)
     ax.axvline(lab.mean(), color=GRIP, lw=2.4,
@@ -1676,9 +1902,18 @@ def label_spread() -> None:
     ax.set_ylabel('recorded moments', fontsize=9.5)
     ax.set_ylim(0, ax.get_ylim()[1] * 1.45)
     ax.legend(fontsize=9.2, frameon=False, loc='upper left')
-    ax.set_title('One question, two very different labels', fontsize=11.5,
+    ax.set_title('One question, two very different labels', fontsize=11.8,
                  weight='bold')
-    ax = axes[1]
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'label-spread.svg')
+
+
+def squared_error_curve() -> None:
+    """The score of every single number the policy could give at that one moment."""
+    d = _pol().data
+    near = np.abs(d.obs_raw[:, 0] - SPLIT) < 0.6
+    lab = d.chunks_raw[near].sum(axis=1)[:, 1]
+    fig, ax = plt.subplots(figsize=(9.6, 4.7), facecolor='white')
     _plain(ax)
     qs = np.linspace(lab.min() * 1.1, lab.max() * 1.1, 400)
     se = ((lab[None, :] - qs[:, None]) ** 2).mean(1)
@@ -1691,20 +1926,19 @@ def label_spread() -> None:
     for v, nm in ((lab[lab > 0].mean(), 'one way'), (lab[lab < 0].mean(), 'the other')):
         k = int(np.argmin(np.abs(qs - v)))
         ax.plot([v], [se[k]], 's', color=TEAL, ms=8)
-        ax.text(v, se[k] * 0.86, nm, ha='center', fontsize=9, color=TEAL, va='top')
+        ax.text(v, se[k] * 0.70, nm, ha='center', fontsize=9.5, color=TEAL, va='top')
     ax.set_xlabel('the one number the policy could put out (cm)', fontsize=9.5)
     ax.set_ylabel('average squared error against the labels', fontsize=9.5)
-    ax.set_title('Squared error is lowest exactly at the average', fontsize=11.5,
+    ax.set_title('Squared error is lowest exactly at the average', fontsize=11.8,
                  weight='bold')
     print(f'[df] squared error: {se.min():.2f} at the average, '
           f'{se[int(np.argmin(np.abs(qs - lab[lab > 0].mean())))]:.2f} at the one way')
     fig.tight_layout()
-    _save(fig, DF_DOC, 'label-spread.svg')
+    _save(fig, DF_DOC, 'squared-error-curve.svg')
 
 
 def averaging_rollouts() -> None:
-    rng = np.random.default_rng(31)
-    path = obst_rollout('average', 200, rng)
+    path = _runs200('average')
     hit = hits_box(path)
     end = np.linalg.norm(path[-1] - GOAL2, axis=1)
     print(f'[df] the averaging policy: {hit.mean() * 100:.1f} per cent of 200 runs go '
@@ -1866,13 +2100,77 @@ def conditioning() -> None:
     _save(fig, DF_DOC, 'conditioning.svg')
 
 
+def noise_level_matters() -> None:
+    """Why the noise level is an input: the denoiser's job changes with it.
+
+    One real chunk is spoiled to each level in turn and handed to the trained
+    network. How far the network then has to move the block is measured, and that
+    distance is what the noise level tells it to expect.
+    """
+    p = _pol()
+    d = p.data
+    rng = np.random.default_rng(404)
+    near = np.abs(d.obs_raw[:, 0] - SPLIT) < 1.0
+    idx = rng.choice(np.flatnonzero(near), 300, replace=True)
+    x0 = d.y[idx]
+    obs = d.x[idx]
+    levels = np.arange(5, K_STEPS + 1, 5)
+    moves, kept = [], []
+    for lv in levels:
+        ab = AB[lv]
+        xt = (np.sqrt(ab) * x0 +
+              np.sqrt(1 - ab) * rng.normal(size=x0.shape)).astype(np.float32)
+        u = np.full(len(x0), lv / K_STEPS, dtype=np.float32)
+        guess = p.diff(np.concatenate([xt, obs, _temb(u)], 1))
+        moves.append(float(np.linalg.norm(guess - xt, axis=1).mean()))
+        kept.append(float(np.sqrt(ab)))
+    for lv, m, k in zip(levels, moves, kept):
+        if lv in (10, 50, 90):
+            print(f'[df] at noise step {lv:3d} the block keeps {k:.3f} of the real chunk '
+                  f'and the denoiser moves it {m:.2f}')
+    fig, ax = plt.subplots(figsize=(9.8, 4.8), facecolor='white')
+    _plain(ax)
+    ax.plot(levels, moves, 'o-', color=PURPLE, lw=2.2, ms=5)
+    for lv in (10, 50, 90):
+        i = int(np.flatnonzero(levels == lv)[0])
+        ax.plot([lv], [moves[i]], 'o', color=GRIP, ms=9, zorder=4)
+        if lv < 20:          # below and to the right, where the curve has not reached
+            ax.text(lv + 3, moves[i] - max(moves) * 0.04,
+                    f'step {lv}: moves {moves[i]:.1f}', ha='left', va='top',
+                    fontsize=9.5, color=GRIP)
+        else:                # above and to the left, over the empty upper corner
+            ax.text(lv - 3, moves[i] + max(moves) * 0.10,
+                    f'step {lv}: moves {moves[i]:.1f}', ha='right',
+                    fontsize=9.5, color=GRIP)
+    ax.set_xlim(0, K_STEPS + 2)
+    ax.set_ylim(0, max(moves) * 1.25)
+    ax.set_xlabel('how spoiled the chunk is, as a noise step from 0 to 100', fontsize=9.5)
+    ax.set_ylabel('how far the denoiser moves the block in one pass', fontsize=9.5)
+    ax.set_title('The same network, a different job at every noise level',
+                 fontsize=11.8, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'noise-level-matters.svg')
+
+
 # --------------------------------------------------------------------------
 # page 2, section 3 --- the two policies side by side
 # --------------------------------------------------------------------------
 
+_RUNS200: dict[str, Arr] = {}
+
+
+def _runs200(kind: str) -> Arr:
+    """The 200 simulated runs of one policy that sections 1 and 3 measure.
+
+    Every picture that counts these runs reads this one set, so that the numbers
+    in the pictures agree with each other.
+    """
+    if kind not in _RUNS200:
+        _RUNS200[kind] = obst_rollout(kind, 200, np.random.default_rng(31))
+    return _RUNS200[kind]
+
 def diffusion_rollouts() -> None:
-    rng = np.random.default_rng(31)
-    path = obst_rollout('diffusion', 200, rng)
+    path = _runs200('diffusion')
     hit = hits_box(path)
     end = np.linalg.norm(path[-1] - GOAL2, axis=1)
     up = (path[OBST_STEPS // 2, :, 1] > 0)
@@ -1897,49 +2195,124 @@ def diffusion_rollouts() -> None:
     _save(fig, DF_DOC, 'diffusion-rollouts.svg')
 
 
-def side_counts() -> None:
-    rng = np.random.default_rng(31)
+def swing_too_small() -> None:
+    """The failure left in section 3: the policy picks a side but under-swings.
+
+    Every run that hits the box is drawn in red over the runs that miss it. No run
+    changes side half way: what the failures share is a swing that does not reach
+    as far out as the demonstrations do, so the gripper clips the corner of the box
+    on its way past.
+    """
+    p = _pol()
+    path = _runs200('diffusion')
+    x = path[:, :, 0]
+    y = path[:, :, 1]
+    runs = np.arange(path.shape[1])
+    hit = hits_box(path)
+    near = (x > 8.0) & (x < 30.0)
+    hi = np.where(near, y, -1e9).max(axis=0)
+    lo = np.where(near, y, 1e9).min(axis=0)
+    swing = np.maximum(hi, -lo)
+    swapped = int(((hi > 2.5) & (lo < -2.5)).sum())
+    demo_swing = float(np.abs(p.data.paths[:, :, 1]).max(axis=0).mean())
+    half = (BOX[3] - BOX[2]) / 2.0
+    print(f'[df] of 200 diffusion runs, {swapped} are more than 2.5 cm above the centre '
+          f'line and more than 2.5 cm below it while passing the box, so no run changes '
+          f'side')
+    print(f'[df] the runs that miss the box swing {swing[~hit].mean():.2f} cm out at '
+          f'their widest, the runs that hit it swing only {swing[hit].mean():.2f} cm, '
+          f'and the demonstrations swing {demo_swing:.2f} cm against a box half width '
+          f'of {half:.1f} cm')
+    fig, ax = plt.subplots(figsize=(10.4, 5.0), facecolor='white')
+    _plain(ax)
+    for n, i in enumerate(runs[~hit][::2]):
+        ax.plot(x[:, i], y[:, i], color=GRID, lw=0.7, alpha=0.9,
+                label='a run that misses the box' if n == 0 else None)
+    for n, i in enumerate(runs[hit]):
+        ax.plot(x[:, i], y[:, i], color=GRIP, lw=1.0, alpha=0.75,
+                label='a run that hits it' if n == 0 else None)
+    ax.axhline(half, color=INK, ls='--', lw=1.1)
+    ax.axhline(-half, color=INK, ls='--', lw=1.1)
+    ax.axhline(demo_swing, color=TEAL, ls=':', lw=1.8,
+               label=f'how far the demonstrations swing, {demo_swing:.1f} cm')
+    ax.axhline(-demo_swing, color=TEAL, ls=':', lw=1.8)
+    _draw_box(ax)
+    ax.plot(*GOAL2, '*', color=INK, ms=16, zorder=7)
+    ax.set_xlabel('distance along the reach (cm)', fontsize=9.5)
+    ax.set_ylabel('sideways (cm)', fontsize=9.5)
+    ax.set_ylim(-13, 13)
+    ax.legend(fontsize=9.2, frameon=False, loc='lower left', ncol=3)
+    ax.set_title(f'The {int(hit.sum())} failing runs pick a side and swing too little: '
+                 f'{swing[hit].mean():.1f} cm against {swing[~hit].mean():.1f} cm',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'swing-too-small.svg')
+
+
+POLICY_NAMES: list[str] = ['averaging\n(squared error)', 'diffusion\n(20 passes)',
+                           'flow\n(20 passes)']
+_SIDES: dict[str, tuple[float, int, int, int, float]] | None = None
+
+
+def _side_counts() -> dict[str, tuple[float, int, int, int, float]]:
+    """Run all three policies 200 times each and count where the runs went."""
+    global _SIDES
+    if _SIDES is not None:
+        return _SIDES
     out = {}
     for kind in ('average', 'diffusion', 'flow'):
-        path = obst_rollout(kind, 200, rng)
+        path = _runs200(kind)
         hit = hits_box(path)
         mid = path[OBST_STEPS // 2, :, 1]
         end = np.linalg.norm(path[-1] - GOAL2, axis=1)
-        out[kind] = (hit.mean() * 100, (mid > 2).sum(), (mid < -2).sum(),
-                     int(((mid >= -2) & (mid <= 2)).sum()), end.mean())
+        out[kind] = (float(hit.mean() * 100), int((mid > 2).sum()), int((mid < -2).sum()),
+                     int(((mid >= -2) & (mid <= 2)).sum()), float(end.mean()))
         print(f'[df] {kind:10s}: {hit.mean() * 100:5.1f} per cent hit the box, '
               f'{out[kind][1]:3d} go up, {out[kind][2]:3d} go down, '
               f'{out[kind][3]:3d} go straight at it, end {end.mean():.2f} cm from the goal')
-    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.6), facecolor='white')
-    ax = axes[0]
+    _SIDES = out
+    return out
+
+
+def side_counts() -> None:
+    out = _side_counts()
+    fig, ax = plt.subplots(figsize=(9.2, 4.7), facecolor='white')
     _plain(ax)
-    names = ['averaging\n(squared error)', 'diffusion\n(20 steps)', 'flow\n(20 steps)']
     vals = [out[k][0] for k in ('average', 'diffusion', 'flow')]
     ax.bar(np.arange(3), vals, color=[GRIP, LINK, TEAL], width=0.55, alpha=0.9)
     for i, v in enumerate(vals):
-        ax.text(i, v + 1.5, f'{v:.1f}%', ha='center', fontsize=10, color=INK)
+        ax.text(i, v + 1.5, f'{v:.1f}%', ha='center', fontsize=10.5, color=INK)
     ax.set_xticks(np.arange(3))
-    ax.set_xticklabels(names, fontsize=9.2)
+    ax.set_xticklabels(POLICY_NAMES, fontsize=9.5)
     ax.set_ylim(0, max(max(vals) * 1.25, 10))
     ax.set_ylabel('runs that go through the box (per cent)', fontsize=9.5)
     ax.set_title('The same training data, three ways of giving an answer',
-                 fontsize=11.5, weight='bold')
-    ax = axes[1]
-    _plain(ax)
-    w = 0.27
-    for i, k in enumerate(('average', 'diffusion', 'flow')):
-        ax.bar([i - w, i, i + w], [out[k][1], out[k][3], out[k][2]], width=w * 0.92,
-               color=[TEAL, GRIP, LINK], alpha=0.9)
-        for dx, v in zip((-w, 0, w), (out[k][1], out[k][3], out[k][2])):
-            ax.text(i + dx, v + 3, str(v), ha='center', fontsize=8.8, color=INK)
-    ax.set_xticks(np.arange(3))
-    ax.set_xticklabels(names, fontsize=9.2)
-    ax.set_ylim(0, 230)
-    ax.set_ylabel('runs out of 200', fontsize=9.5)
-    ax.set_title('Left bar: passes above. Middle: straight at the box. Right: below',
-                 fontsize=10.8, weight='bold')
+                 fontsize=11.8, weight='bold')
     fig.tight_layout()
     _save(fig, DF_DOC, 'side-counts.svg')
+
+
+def which_side_counts() -> None:
+    """How the 200 runs of each policy split between above, at, and below the box."""
+    out = _side_counts()
+    fig, ax = plt.subplots(figsize=(9.6, 4.7), facecolor='white')
+    _plain(ax)
+    w = 0.27
+    labels = ['passes above the box', 'heads straight at the box', 'passes below the box']
+    for i, k in enumerate(('average', 'diffusion', 'flow')):
+        for dx, v, col, nm in zip((-w, 0, w), (out[k][1], out[k][3], out[k][2]),
+                                  (TEAL, GRIP, LINK), labels):
+            ax.bar([i + dx], [v], width=w * 0.92, color=col, alpha=0.9,
+                   label=nm if i == 0 else None)
+            ax.text(i + dx, v + 3, str(v), ha='center', fontsize=9, color=INK)
+    ax.set_xticks(np.arange(3))
+    ax.set_xticklabels(POLICY_NAMES, fontsize=9.5)
+    ax.set_ylim(0, 230)
+    ax.set_ylabel('runs out of 200', fontsize=9.5)
+    ax.legend(fontsize=9.2, frameon=False, ncol=3, loc='upper center')
+    ax.set_title('Which way each run went round the box', fontsize=11.8, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'which-side-counts.svg')
 
 
 def crossing_histogram() -> None:
@@ -2011,12 +2384,20 @@ def straight_versus_curved() -> None:
     _save(fig, DF_DOC, 'straight-versus-curved.svg')
 
 
-def steps_versus_quality() -> None:
+PASS_COUNTS: list[int] = [1, 2, 4, 8, 16, 32, 50]
+_QUALITY: tuple[dict[str, list[float]], dict[str, list[float]], float, float] | None = None
+
+
+def _steps_quality() -> tuple[dict[str, list[float]], dict[str, list[float]], float, float]:
+    """Make 300 chunks with each generator at each pass budget and score them."""
+    global _QUALITY
+    if _QUALITY is not None:
+        return _QUALITY
     p = _pol()
     d = p.data
     rng = np.random.default_rng(55)
     obs = np.repeat(ObstacleData.norm_obs(np.array([[SPLIT, 0.0]])), 300, axis=0)
-    counts = [1, 2, 4, 8, 16, 32, 50]
+    counts = PASS_COUNTS
     res: dict[str, list[float]] = {'diffusion': [], 'flow': []}
     fence: dict[str, list[float]] = {'diffusion': [], 'flow': []}
     near = (np.abs(d.obs_raw[:, 0] - SPLIT) < 0.8) & (np.abs(d.obs_raw[:, 1]) < 1.2)
@@ -2041,9 +2422,64 @@ def steps_versus_quality() -> None:
               f'{res["diffusion"][-1]:.2f}, flow {res["flow"][-1]:.2f}; chunks that sit '
               f'on the fence, diffusion {fence["diffusion"][-1]:.1f}%, flow '
               f'{fence["flow"][-1]:.1f}%')
-    fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.8), facecolor='white')
+    _QUALITY = (res, fence, base, cut)
+    return _QUALITY
+
+
+def the_flow_field() -> None:
+    """What a flow network gives back: a direction to travel at every point.
+
+    The chunk has 64 numbers, so the field cannot be drawn whole. The picture
+    takes one generated chunk half way along its walk, holds 62 of its numbers
+    still, and sweeps the other two over a grid, drawing the direction the network
+    gives at each place on that grid.
+    """
+    p = _pol()
+    rng = np.random.default_rng(13)
+    obs = ObstacleData.norm_obs(np.array([[SPLIT, 0.0]]))
+    _final, trace = p.euler(obs, 20, rng, trace=True)
+    mid = trace[10][0].copy()
+    span = 2.6
+    g = np.linspace(-span, span, 13)
+    gx, gy = np.meshgrid(g, g)
+    pts = np.repeat(mid[None, :], gx.size, axis=0)
+    pts[:, 0] = gx.ravel()
+    pts[:, 1] = gy.ravel()
+    u = np.full(len(pts), 0.5, dtype=np.float32)
+    v = p.flow(np.concatenate([pts.astype(np.float32), np.repeat(obs, len(pts), axis=0),
+                               _temb(u)], 1))
+    vx = v[:, 0].reshape(gx.shape)
+    vy = v[:, 1].reshape(gy.shape)
+    sizes = np.sqrt(vx ** 2 + vy ** 2)
+    print(f'[df] half way along the walk the flow field points with length '
+          f'{sizes.mean():.2f} on average, from {sizes.min():.2f} to {sizes.max():.2f}, '
+          f'over a grid of {gx.size} places in the first two of the {ADIM} numbers')
+    fig, ax = plt.subplots(figsize=(9.4, 5.4), facecolor='white')
+    _plain(ax)
+    ax.quiver(gx, gy, vx, vy, angles='xy', scale_units='xy', scale=14.0, width=0.004,
+              color=MUTED, zorder=2)
+    ax.plot(trace[:, 0, 0], trace[:, 0, 1], '-o', color=GRIP, ms=4, lw=1.8, zorder=4,
+            label='one walk, following the arrows')
+    ax.plot(trace[0, 0, 0], trace[0, 0, 1], 'o', color=GRIP, ms=10, zorder=5)
+    ax.plot(trace[-1, 0, 0], trace[-1, 0, 1], '*', color=SLIDE, ms=18, zorder=6,
+            label='the chunk it ends on')
+    ax.set_xlim(-span - 0.3, span + 0.3)
+    ax.set_ylim(-span - 0.3, span + 0.3)
+    ax.set_xlabel('first number of the chunk', fontsize=9.5)
+    ax.set_ylabel('second number of the chunk', fontsize=9.5)
+    ax.legend(fontsize=9.2, frameon=True, framealpha=0.92, edgecolor='white',
+              loc='upper right')
+    ax.set_title('A flow network answers with a direction, one for every place it '
+                 'could be', fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'the-flow-field.svg')
+
+
+def steps_versus_quality() -> None:
+    res, _fence, base, _cut = _steps_quality()
+    counts = PASS_COUNTS
+    fig, ax = plt.subplots(figsize=(9.8, 4.8), facecolor='white')
     x = np.arange(len(counts))
-    ax = axes[0]
     _plain(ax)
     ax.plot(x, res['diffusion'], 'o-', color=PURPLE, lw=2.2, ms=7, label='diffusion')
     ax.plot(x, res['flow'], 's-', color=TEAL, lw=2.2, ms=7, label='flow matching')
@@ -2061,8 +2497,17 @@ def steps_versus_quality() -> None:
     ax.set_ylim(0, max(res['diffusion'] + res['flow']) * 1.12)
     ax.legend(fontsize=9.2, frameon=False)
     ax.set_title('How real the chunk is against how many passes it took',
-                 fontsize=11.2, weight='bold')
-    ax = axes[1]
+                 fontsize=11.8, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'steps-versus-quality.svg')
+
+
+def fence_sitting() -> None:
+    """How often a generated chunk refuses to commit to either way round the box."""
+    _res, fence, _base, _cut = _steps_quality()
+    counts = PASS_COUNTS
+    fig, ax = plt.subplots(figsize=(9.8, 4.8), facecolor='white')
+    x = np.arange(len(counts))
     _plain(ax)
     w = 0.38
     ax.bar(x - w / 2, fence['diffusion'], width=w, color=PURPLE, alpha=0.85,
@@ -2075,17 +2520,17 @@ def steps_versus_quality() -> None:
         ax.text(x[i] + w / 2, fence['flow'][i] + 1.5, f'{fence["flow"][i]:.0f}',
                 ha='center', fontsize=8.4, color=TEAL)
     ax.axhline(20, color=MUTED, ls=':', lw=1.6,
-               label='one real chunk in five is this straight')
+               label='one real chunk in five swings this little')
     ax.set_xticks(x)
     ax.set_xticklabels([str(c) for c in counts])
     ax.set_xlabel('passes through the network to make one chunk', fontsize=9.5)
-    ax.set_ylabel('chunks that sit on the fence (per cent)', fontsize=9.5)
+    ax.set_ylabel('chunks that commit to neither side (per cent)', fontsize=9.5)
     ax.set_ylim(0, max(fence['diffusion'] + fence['flow'] + [25]) * 1.25)
     ax.legend(fontsize=8.8, frameon=False, loc='upper right')
     ax.set_title('With too few passes the answer slides back to the middle',
-                 fontsize=11.2, weight='bold')
+                 fontsize=11.8, weight='bold')
     fig.tight_layout()
-    _save(fig, DF_DOC, 'steps-versus-quality.svg')
+    _save(fig, DF_DOC, 'neither-side.svg')
 
 
 ENCODE_MS: float = 11.0
@@ -2116,12 +2561,12 @@ def timing_table() -> None:
     for i, t in enumerate(totals):
         ax.text(i, t + 8, f'{t:.0f}', ha='center', fontsize=9.2, color=INK)
     ax.axhline(budget, color=INK, lw=1.6, ls='--')
-    ax.text(len(counts) - 0.4, budget + 10, f'{budget:.0f} ms: the time {EXEC2} steps '
-                                            f'of the last chunk last', fontsize=9.2,
-            ha='right', color=INK)
+    ax.text(-0.42, budget + 12, f'{budget:.0f} ms: the time {EXEC2} steps '
+                                f'of the last chunk last', fontsize=9.2,
+            ha='left', color=INK)
     ax.axhline(tight, color=GRIP, lw=1.6, ls=':')
-    ax.text(len(counts) - 0.4, tight + 10, f'{tight:.0f} ms: the time 3 steps last',
-            fontsize=9.2, ha='right', color=GRIP)
+    ax.text(-0.42, tight + 22, f'{tight:.0f} ms: the time 3 steps last',
+            fontsize=9.2, ha='left', color=GRIP)
     ax.set_xticks(x)
     ax.set_xticklabels([str(c) for c in counts])
     ax.set_xlabel('passes through the network to make one chunk', fontsize=9.5)
@@ -2340,21 +2785,31 @@ def no_notion_of_the_goal() -> None:
     _save(fig, DF_DOC, 'no-notion-of-the-goal.svg')
 
 
-def outside_the_demonstrations() -> None:
-    offsets = [0.0, 3.0, 6.0, 10.0, 15.0]
-    ends, hits = [], []
-    for off in offsets:
+START_OFFSETS: list[float] = [0.0, 3.0, 6.0, 10.0, 15.0]
+_OUTSIDE: list[float] | None = None
+
+
+def _outside_ends() -> list[float]:
+    """How far from the goal the diffusion policy ends, by how odd its start was."""
+    global _OUTSIDE
+    if _OUTSIDE is not None:
+        return _OUTSIDE
+    ends = []
+    for off in START_OFFSETS:
         rng = np.random.default_rng(101)
         path = obst_rollout('diffusion', 60, rng, start_offset=off)
         ends.append(float(np.linalg.norm(path[-1] - GOAL2, axis=1).mean()))
-        hits.append(float(hits_box(path).mean() * 100))
+        hit = float(hits_box(path).mean() * 100)
         print(f'[df] starting {off:4.1f} cm away from any demonstrated start: '
-              f'ends {ends[-1]:5.2f} cm from the goal, {hits[-1]:5.1f} per cent hit the box')
-    fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.7), facecolor='white',
-                             gridspec_kw={'width_ratios': [1.25, 1]})
-    ax = axes[0]
+              f'ends {ends[-1]:5.2f} cm from the goal, {hit:5.1f} per cent hit the box')
+    _OUTSIDE = ends
+    return ends
+
+
+def outside_the_demonstrations() -> None:
+    fig, ax = plt.subplots(figsize=(10.2, 5.0), facecolor='white')
     _plain(ax)
-    for off, col in zip(offsets, (LINK, TEAL, PURPLE, WRIST, GRIP)):
+    for off, col in zip(START_OFFSETS, (LINK, TEAL, PURPLE, WRIST, GRIP)):
         rng = np.random.default_rng(101)
         path = obst_rollout('diffusion', 12, rng, start_offset=off)
         for i in range(12):
@@ -2364,39 +2819,57 @@ def outside_the_demonstrations() -> None:
     ax.plot(*GOAL2, '*', color=INK, ms=16, zorder=7)
     ax.set_xlabel('distance along the reach (cm)', fontsize=9.5)
     ax.set_ylabel('sideways (cm)', fontsize=9.5)
-    ax.legend(fontsize=8.6, frameon=False, loc='lower right', ncol=2)
+    ax.legend(fontsize=9.0, frameon=False, loc='lower right', ncol=2)
     ax.set_ylim(-16, 52)
-    ax.set_title('Starting where nobody ever started', fontsize=11.5, weight='bold')
-    ax = axes[1]
-    _plain(ax)
-    ax.plot(offsets, ends, 'o-', color=GRIP, lw=2.2, ms=7)
-    for o, e in zip(offsets, ends):
-        ax.text(o, e * 1.06, f'{e:.1f}', ha='center', fontsize=9, color=GRIP)
-    ax.set_xlabel('how far the start is from any demonstrated start (cm)', fontsize=9.5)
-    ax.set_ylabel('distance from the goal at the end (cm)', fontsize=9.5)
-    ax.set_ylim(0, max(ends) * 1.2)
-    ax.set_title('It does not come back', fontsize=11.5, weight='bold')
+    ax.set_title('Starting where nobody ever started', fontsize=11.8, weight='bold')
     fig.tight_layout()
     _save(fig, DF_DOC, 'outside-the-demonstrations.svg')
+
+
+def error_against_start() -> None:
+    """The final miss against how far the start was from any demonstrated one."""
+    ends = _outside_ends()
+    fig, ax = plt.subplots(figsize=(9.2, 4.7), facecolor='white')
+    _plain(ax)
+    ax.plot(START_OFFSETS, ends, 'o-', color=GRIP, lw=2.2, ms=7)
+    for o, e in zip(START_OFFSETS, ends):
+        ax.text(o + 0.3, e - max(ends) * 0.03, f'{e:.2f} cm', ha='left', va='top',
+                fontsize=9.5, color=GRIP)
+    ax.set_xlabel('how far the start is from any demonstrated start (cm)', fontsize=9.5)
+    ax.set_ylabel('distance from the goal at the end (cm)', fontsize=9.5)
+    ax.set_xlim(-0.9, 17.6)
+    ax.set_ylim(0, max(ends) * 1.25)
+    ax.set_title('The further out it starts, the further out it ends',
+                 fontsize=11.8, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'error-against-start.svg')
 
 
 # ==========================================================================
 # main
 # ==========================================================================
 
-PAGE1 = [action_vector, control_loop, absolute_versus_delta,
-         one_example, one_episode, dataset_size, hours_of_a_day,
-         drift_paths, error_over_time, more_demos, unseen_inputs,
-         chunk_timeline, chunk_drift, chunk_smoothness,
-         act_shapes, act_attention_cost, act_output_block,
-         temporal_ensembling, ensembling_weights_picture, chunk_length_trade]
+PAGE1 = [action_vector, loss_shares, control_loop, absolute_versus_delta,
+         one_example, one_episode, dataset_size, dataset_bytes,
+         hours_of_a_day, hours_against_examples,
+         drift_paths, error_over_time, servo_noise, more_demos, more_demos_scaling,
+         unseen_inputs, gap_over_time,
+         chunk_timeline, chunk_drift, chunk_smoothness, smoothness_by_chunk,
+         act_shapes, picture_into_tokens, act_attention_cost, act_chunk_cost,
+         act_output_block, fast_and_slow_takes,
+         temporal_ensembling, ensembling_smoothing, ensembling_weights_picture,
+         chunk_length_trade]
 
-PAGE2 = [two_ways_one_average, label_spread, averaging_rollouts,
-         noising_a_chunk, denoiser_shapes, reverse_walk, conditioning,
-         diffusion_rollouts, side_counts, crossing_histogram,
-         straight_versus_curved, steps_versus_quality, timing_table,
+PAGE2 = [two_ways_one_average, label_spread, squared_error_curve, averaging_rollouts,
+         noising_a_chunk, denoiser_shapes, noise_level_matters, reverse_walk,
+         conditioning,
+         diffusion_rollouts, swing_too_small, side_counts, which_side_counts,
+         crossing_histogram,
+         straight_versus_curved, the_flow_field, steps_versus_quality, fence_sitting,
+         timing_table,
          receding_horizon, late_chunk, latency_stack,
-         copied_mistake, no_notion_of_the_goal, outside_the_demonstrations]
+         copied_mistake, no_notion_of_the_goal, outside_the_demonstrations,
+         error_against_start]
 
 
 def main() -> None:

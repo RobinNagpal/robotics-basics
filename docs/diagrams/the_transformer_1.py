@@ -347,15 +347,74 @@ def before_and_after() -> None:
           title=None)
     ax.text(w1 + 0.65, -h1 / 2, 'attention', ha='center', va='center', fontsize=10,
             color=MUTED, rotation=90)
-    ax.text(w1 + 1.3 + w2 / 2, -h1 - 0.45,
-            'rows 1 and 2 come out close together, because both tokens drew most of their\n'
-            'mix from the same place; rows 3 and 4 stay different', ha='center',
-            va='top', fontsize=9.5, color=MUTED)
+    print('[toy] size of the change per token', np.round(diff.ravel(), 3))
     ax.set_xlim(-1.5, w1 + 1.3 + w2 + 0.7 + 1.5)
-    ax.set_ylim(-h1 - 1.5, 0.85)
+    ax.set_ylim(-h1 - 0.5, 0.85)
     _fit(fig, ax)
     _title(fig, 'What attention changes: every token is replaced by a mix')
     _save(fig, ATT_DOC, 'before-and-after.svg')
+
+
+def same_token_two_sentences() -> None:
+    """The embedding table gives one token the same numbers in any sentence."""
+    vec = TOY.X[3]
+    left = ['a', 'cube', 'of', 'ice']
+    right = ['a', 'wooden', 'cube']
+    fig, ax = plt.subplots(figsize=(10.2, 3.6), facecolor='white')
+    _blank(ax)
+    for row, (words, y) in enumerate(((left, 0.0), (right, -2.1))):
+        x = 0.0
+        for word in words:
+            hit = word == 'cube'
+            _box(ax, x, y - 0.5, 1.5, 0.55, word,
+                 face=_mix(LINK, 0.22) if hit else 'white',
+                 edge=LINK if hit else GRID, size=10.5,
+                 weight='bold' if hit else 'normal')
+            if hit:
+                _arrow(ax, x + 0.75, y - 0.58, x + 0.75, y - 1.0, colour=LINK, lw=1.2)
+                _grid(ax, vec.reshape(1, 4), x0=x + 0.75 - 2.0, y0=y - 1.05,
+                      cw=1.0, ch=0.58, fmt='{:+.1f}')
+            x += 1.7
+        ax.text(-0.25, y - 0.22, f'sentence {row + 1}', ha='right', va='center',
+                fontsize=10, color=MUTED)
+    ax.text(3.6, -3.95, 'the same four numbers both times',
+            ha='center', va='top', fontsize=10.5, color=INK)
+    ax.set_xlim(-2.4, 7.3)
+    ax.set_ylim(-4.45, 0.4)
+    _fit(fig, ax)
+    _title(fig, 'The embedding table cannot tell the two sentences apart')
+    _save(fig, ATT_DOC, 'same-token-two-sentences.svg')
+
+
+def _conv_weights() -> Arr:
+    """Fixed three-wide mixing weights, the same pattern on every row."""
+    base = np.array([0.25, 0.50, 0.25])
+    W = np.zeros((4, 4))
+    for i in range(4):
+        for k, off in enumerate((-1, 0, 1)):
+            j = i + off
+            if 0 <= j < 4:
+                W[i, j] = base[k]
+    return W / W.sum(axis=1, keepdims=True)
+
+
+def convolution_weight_grid() -> None:
+    """The rejected alternative: weights fixed by position, not by content."""
+    W = _conv_weights()
+    print('[conv] fixed three-wide mixing weights\n', np.round(W, 3))
+    fig, ax = plt.subplots(figsize=(8.6, 3.5), facecolor='white')
+    _blank(ax)
+    rows = [f'new "{t}"' for t in TOKENS]
+    cols = [f'old "{t}"' for t in TOKENS]
+    w, h = _grid(ax, W, cw=1.3, ch=0.72, fmt='{:.3f}', rows=rows, cols=cols,
+                 colour=WRIST, vmax=1.0)
+    ax.text(w / 2, -h - 0.25, 'the same pattern on every row, moved one place along',
+            ha='center', va='top', fontsize=10, color=INK)
+    ax.set_xlim(-2.0, w + 0.3)
+    ax.set_ylim(-h - 0.72, 0.62)
+    _fit(fig, ax)
+    _title(fig, 'A convolution fixes its weights by position before it sees the words')
+    _save(fig, ATT_DOC, 'convolution-weight-grid.svg')
 
 
 # --------------------------------------------------------------------------
@@ -420,6 +479,50 @@ def qkv_grids() -> None:
     _save(fig, ATT_DOC, 'qkv-grids.svg')
 
 
+def query_meets_key() -> None:
+    """The three jobs for one pair: "cube" asks, "pick" offers, "pick" gives."""
+    ask, give = 3, 0
+    score = float(TOY.raw[ask, give])
+    weight = float(TOY.A[ask, give])
+    print(f'[pair] query of "{TOKENS[ask]}" against key of "{TOKENS[give]}": '
+          f'raw {score:.4f}, divided {score / 2:.4f}, weight {weight:.3f}')
+    fig, ax = plt.subplots(figsize=(10.8, 4.2), facecolor='white')
+    _blank(ax)
+    ax.text(1.1, 0.34, f'"{TOKENS[ask]}" is asking', ha='center', va='bottom',
+            fontsize=10.5, color=LINK, weight='bold')
+    _grid(ax, TOY.Q[ask].reshape(1, 4), x0=0.0, y0=0.0, cw=0.55, ch=0.55,
+          fmt='{:+.2f}', fontsize=8.0, rows=['query'], rowsize=9.5)
+    ax.text(6.9, 0.34, f'"{TOKENS[give]}" is offering', ha='center', va='bottom',
+            fontsize=10.5, color=TEAL, weight='bold')
+    _grid(ax, TOY.K[give].reshape(1, 4), x0=5.8, y0=0.0, cw=0.55, ch=0.55,
+          fmt='{:+.2f}', fontsize=8.0, rows=['key'], rowsize=9.5)
+    _arrow(ax, 2.3, -0.28, 3.3, -0.28, colour=MUTED, lw=1.2)
+    _arrow(ax, 5.0, -0.28, 4.1, -0.28, colour=MUTED, lw=1.2)
+    ax.text(3.7, -0.12, 'dot product', ha='center', va='bottom', fontsize=9.5, color=MUTED)
+    ax.text(3.7, -0.75, f'raw score {score:+.2f}', ha='center', va='center',
+            fontsize=10.5, color=INK)
+    ax.text(3.7, -1.2, f'divide by 2:  {score / 2:+.2f}', ha='center', va='center',
+            fontsize=10.5, color=INK)
+    _arrow(ax, 3.7, -1.5, 3.7, -2.0, colour=MUTED, lw=1.2)
+    ax.text(3.95, -1.75, 'softmax, with the other three scores', ha='left', va='center',
+            fontsize=9.5, color=MUTED)
+    ax.text(3.7, -2.35, f'weight {weight:.3f}', ha='center', va='center',
+            fontsize=11.5, color=GRIP, weight='bold')
+    ax.text(6.9, -2.1, f'"{TOKENS[give]}" is giving', ha='center', va='bottom',
+            fontsize=10.5, color=PURPLE, weight='bold')
+    _grid(ax, TOY.V[give].reshape(1, 4), x0=5.8, y0=-2.2, cw=0.55, ch=0.55,
+          fmt='{:+.2f}', fontsize=8.0, rows=['value'], rowsize=9.5)
+    _arrow(ax, 5.6, -2.48, 4.55, -2.48, colour=PURPLE, lw=1.4)
+    ax.text(1.4, -3.25, f'{weight:.3f} of that value vector goes into the new "{TOKENS[ask]}"',
+            ha='center', va='center', fontsize=10, color=INK)
+    _arrow(ax, 3.4, -2.65, 2.7, -3.05, colour=PURPLE, lw=1.4)
+    ax.set_xlim(-1.3, 9.1)
+    ax.set_ylim(-3.7, 0.8)
+    _fit(fig, ax)
+    _title(fig, 'One pair of tokens: the query asks, the key answers, the value travels')
+    _save(fig, ATT_DOC, 'query-meets-key.svg')
+
+
 # --------------------------------------------------------------------------
 # section 3: the score, and why it is divided
 # --------------------------------------------------------------------------
@@ -443,6 +546,42 @@ def dot_product_worked_out() -> None:
     _fit(fig, ax)
     _title(fig, 'One query against four keys: four dot products')
     _save(fig, ATT_DOC, 'dot-product-worked-out.svg')
+
+
+def dot_product_vs_angle() -> None:
+    """Why a dot product measures fit: it follows the angle between the vectors."""
+    length = 2.0
+    deg = np.linspace(0.0, 180.0, 361)
+    dot = length * length * np.cos(np.deg2rad(deg))
+    marks = [0, 60, 90, 120, 180]
+    print(f'[angle] two vectors of length {length:.0f} each:')
+    for a in marks:
+        print(f'[angle] {a:3d} degrees apart -> dot product '
+              f'{length * length * math.cos(math.radians(a)):+.2f}')
+    fig, ax = plt.subplots(figsize=(9.2, 4.2), facecolor='white')
+    _plain(ax)
+    ax.plot(deg, dot, color=LINK, lw=2.4)
+    ax.axhline(0.0, color=MUTED, ls=':', lw=1.0)
+    for a in marks:
+        v = length * length * math.cos(math.radians(a))
+        ax.plot([a], [v], marker='o', color=GRIP, ms=7)
+        ax.text(a, v + (0.22 if a <= 90 else -0.22), f'{v:+.2f}', ha='center',
+                va='bottom' if a <= 90 else 'top', fontsize=10, color=INK)
+    ax.text(4, -3.2, 'pointing the same way:\nlarge and positive', ha='left', va='bottom',
+            fontsize=9.5, color=MUTED)
+    ax.text(90, -3.2, 'at right angles:\nzero', ha='center', va='bottom',
+            fontsize=9.5, color=MUTED)
+    ax.text(176, -3.2, 'pointing opposite ways:\nlarge and negative', ha='right',
+            va='bottom', fontsize=9.5, color=MUTED)
+    ax.set_xticks(marks)
+    ax.set_xticklabels([f'{a}' for a in marks])
+    ax.set_xlabel('angle between the query and the key, in degrees', fontsize=10)
+    ax.set_ylabel('their dot product', fontsize=10)
+    ax.set_ylim(-5.4, 5.0)
+    ax.set_title(f'Two vectors of length {length:.0f}, turned away from each other',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, ATT_DOC, 'dot-product-vs-angle.svg')
 
 
 def raw_score_grid() -> None:
@@ -482,55 +621,80 @@ def scaled_score_grid() -> None:
     _save(fig, ATT_DOC, 'why-divide-by-two.svg')
 
 
-def why_divide() -> None:
-    sizes = [4, 16, 64, 256, 1024]
-    n_keys = 64
+_HEAD_SIZES: list[int] = [4, 16, 64, 256, 1024]
+_N_KEYS: int = 64
+
+
+def head_size_experiment() -> tuple[list[float], list[float], list[float], list[float]]:
+    """Random queries and keys at five head sizes, measured twice over."""
     spread_raw, spread_scaled, top_raw, top_scaled = [], [], [], []
-    for d in sizes:
+    for d in _HEAD_SIZES:
         rng = np.random.default_rng(100 + d)
         q = rng.normal(0.0, 1.0, (400, d))
-        k = rng.normal(0.0, 1.0, (400, n_keys, d))
+        k = rng.normal(0.0, 1.0, (400, _N_KEYS, d))
         s = np.einsum('bd,bkd->bk', q, k)
         spread_raw.append(float(s.std()))
         spread_scaled.append(float((s / math.sqrt(d)).std()))
         top_raw.append(float(_softmax(s).max(axis=1).mean()))
         top_scaled.append(float(_softmax(s / math.sqrt(d)).max(axis=1).mean()))
-    print('[scale] head sizes            ', sizes)
+    print('[scale] head sizes            ', _HEAD_SIZES)
     print('[scale] spread of raw scores  ', [round(v, 2) for v in spread_raw])
     print('[scale] spread after dividing ', [round(v, 2) for v in spread_scaled])
     print('[scale] biggest weight, raw   ', [round(v, 3) for v in top_raw])
     print('[scale] biggest weight, scaled', [round(v, 3) for v in top_scaled])
+    return spread_raw, spread_scaled, top_raw, top_scaled
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.0), facecolor='white')
-    ax = axes[0]
+
+def score_spread_vs_head_size() -> None:
+    """Idea one: the raw scores grow with the head size, and the division undoes it."""
+    spread_raw, spread_scaled, _, _ = head_size_experiment()
+    fig, ax = plt.subplots(figsize=(9.0, 4.2), facecolor='white')
     _plain(ax)
-    ax.plot(sizes, spread_raw, marker='o', color=GRIP, lw=2, label='raw dot product')
-    ax.plot(sizes, spread_scaled, marker='o', color=TEAL, lw=2, label='after dividing by the square root')
-    ax.plot(sizes, [math.sqrt(d) for d in sizes], ls='--', color=MUTED, lw=1.2,
-            label='the square root of the head size')
+    ax.plot(_HEAD_SIZES, spread_raw, marker='o', color=GRIP, lw=2,
+            label='raw dot product')
+    ax.plot(_HEAD_SIZES, spread_scaled, marker='o', color=TEAL, lw=2,
+            label='after dividing by the square root')
+    ax.plot(_HEAD_SIZES, [math.sqrt(d) for d in _HEAD_SIZES], ls='--', color=MUTED,
+            lw=1.2, label='the square root of the head size')
+    for d, v in zip(_HEAD_SIZES, spread_raw):
+        ax.text(d, v * 1.1, f'{v:.2f}', ha='center', va='bottom', fontsize=9.5, color=INK)
     ax.set_xscale('log')
     ax.set_yscale('log')
-    ax.set_xticks(sizes)
-    ax.set_xticklabels([str(s) for s in sizes])
-    ax.set_xlabel('head size (how many numbers in a query)', fontsize=10)
+    ax.set_xticks(_HEAD_SIZES)
+    ax.set_xticklabels([str(s) for s in _HEAD_SIZES])
+    ax.set_xlabel('head size (how many numbers in one query)', fontsize=10)
     ax.set_ylabel('typical spread of the scores', fontsize=10)
-    ax.set_title('Raw scores grow with head size', fontsize=11, weight='bold')
-    ax.legend(fontsize=9, frameon=False, loc='upper left')
-    ax = axes[1]
+    ax.set_title('Raw scores grow with the head size; the division takes that back out',
+                 fontsize=11.5, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    fig.tight_layout()
+    _save(fig, ATT_DOC, 'score-spread-vs-head-size.svg')
+
+
+def sharpness_vs_head_size() -> None:
+    """Idea two: without the division, one key alone takes nearly all the weight."""
+    _, _, top_raw, top_scaled = head_size_experiment()
+    fig, ax = plt.subplots(figsize=(9.0, 4.2), facecolor='white')
     _plain(ax)
-    ax.plot(sizes, top_raw, marker='o', color=GRIP, lw=2, label='raw dot product')
-    ax.plot(sizes, top_scaled, marker='o', color=TEAL, lw=2, label='after dividing by the square root')
+    ax.plot(_HEAD_SIZES, top_raw, marker='o', color=GRIP, lw=2, label='raw dot product')
+    ax.plot(_HEAD_SIZES, top_scaled, marker='o', color=TEAL, lw=2,
+            label='after dividing by the square root')
+    for d, v in zip(_HEAD_SIZES, top_raw):
+        ax.text(d, v + 0.035, f'{v:.3f}', ha='center', va='bottom', fontsize=9.5, color=INK)
+    for d, v in zip(_HEAD_SIZES, top_scaled):
+        ax.text(d, v + 0.035, f'{v:.3f}', ha='center', va='bottom', fontsize=9.5, color=INK)
     ax.axhline(1.0, color=MUTED, ls=':', lw=1.0)
     ax.set_xscale('log')
-    ax.set_xticks(sizes)
-    ax.set_xticklabels([str(s) for s in sizes])
-    ax.set_ylim(0, 1.08)
-    ax.set_xlabel('head size (how many numbers in a query)', fontsize=10)
-    ax.set_ylabel(f'biggest of the {n_keys} weights', fontsize=10)
-    ax.set_title('Without the division, one key takes everything', fontsize=11, weight='bold')
-    ax.legend(fontsize=9, frameon=False, loc='center left')
+    ax.set_xticks(_HEAD_SIZES)
+    ax.set_xticklabels([str(s) for s in _HEAD_SIZES])
+    ax.set_ylim(0, 1.12)
+    ax.set_xlabel('head size (how many numbers in one query)', fontsize=10)
+    ax.set_ylabel(f'biggest of the {_N_KEYS} weights, on average', fontsize=10)
+    ax.set_title(f'Choosing between {_N_KEYS} keys: without the division one key takes '
+                 'everything', fontsize=11.5, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='center left')
     fig.tight_layout()
-    _save(fig, ATT_DOC, 'why-divide.svg')
+    _save(fig, ATT_DOC, 'sharpness-vs-head-size.svg')
 
 
 # --------------------------------------------------------------------------
@@ -550,11 +714,10 @@ def softmax_steps() -> None:
                  rows=['scaled score', 'raised to a power', 'weight'],
                  cols=[f'key "{t}"' for t in TOKENS], rowsize=9.5, fmt='{:.3f}')
     ax.text(w / 2, -h - 0.25,
-            f'the four raised values add up to {ex.sum():.3f}, and each weight is one of\n'
-            f'them divided by that total, so the weights add up to {wts.sum():.3f}',
-            ha='center', va='top', fontsize=9.5, color=MUTED)
+            f'the four raised values add up to {ex.sum():.3f}',
+            ha='center', va='top', fontsize=10, color=MUTED)
     ax.set_xlim(-2.4, w + 0.3)
-    ax.set_ylim(-h - 1.3, 0.95)
+    ax.set_ylim(-h - 0.9, 0.95)
     ax.set_title('The query of "cube", step by step', fontsize=11, weight='bold')
     ax = axes[1]
     _plain(ax)
@@ -569,6 +732,34 @@ def softmax_steps() -> None:
     ax.set_title('The same four weights as shares', fontsize=11, weight='bold')
     fig.tight_layout()
     _save(fig, ATT_DOC, 'softmax-steps.svg')
+
+
+def softmax_sharpness() -> None:
+    """Two keys only: how much weight a lead in the score is worth."""
+    lead = np.linspace(0.0, 6.0, 241)
+    share = 1.0 / (1.0 + np.exp(-lead))
+    marks = [0.0, 0.5, 1.0, 2.0, 4.0]
+    print('[sharp] two keys, one ahead of the other:')
+    for g in marks:
+        print(f'[sharp] lead of {g:.1f} in the score -> '
+              f'{1 / (1 + math.exp(-g)):.3f} of the mix')
+    fig, ax = plt.subplots(figsize=(9.2, 4.2), facecolor='white')
+    _plain(ax)
+    ax.plot(lead, share, color=TEAL, lw=2.4)
+    ax.axhline(0.5, color=MUTED, ls=':', lw=1.0)
+    for g in marks:
+        v = 1 / (1 + math.exp(-g))
+        ax.plot([g], [v], marker='o', color=GRIP, ms=7)
+        ax.text(g + 0.07, v - 0.015, f'{v:.3f}', ha='left', va='top', fontsize=10,
+                color=INK)
+    ax.set_xlabel('how far the leading score is ahead of the other one', fontsize=10)
+    ax.set_ylabel("the leader's share of the mix", fontsize=10)
+    ax.set_ylim(0.4, 1.04)
+    ax.set_xlim(-0.2, 6.3)
+    ax.set_title('A lead of 1 in the score is already 0.731 of the mix',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, ATT_DOC, 'softmax-sharpness.svg')
 
 
 def weight_grid() -> None:
@@ -1189,44 +1380,86 @@ def rms_norm_worked_out() -> None:
     _save(fig, BLK_DOC, 'rms-norm-worked-out.svg')
 
 
-def pre_vs_post_norm() -> None:
-    fig, axes = plt.subplots(1, 2, figsize=(10.8, 4.6), facecolor='white')
-    for ax, mode in zip(axes, ('pre', 'post')):
-        _blank(ax)
-        ax.set_xlim(-0.4, 5.6)
-        ax.set_ylim(-0.4, 5.4)
-        if mode == 'pre':
-            _box(ax, 1.4, 1.0, 2.4, 0.6, 'normalise', face=_mix(TEAL, 0.18), edge=TEAL)
-            _box(ax, 1.4, 2.1, 2.4, 0.6, 'attention', face=_mix(LINK, 0.18), edge=LINK)
-            ax.add_patch(plt.Circle((2.6, 3.6), 0.22, facecolor='white', edgecolor=JOINT, lw=1.8))
-            ax.text(2.6, 3.6, '+', ha='center', va='center', fontsize=13, color=JOINT)
-            _arrow(ax, 2.6, 0.3, 2.6, 0.95, colour=INK)
-            _arrow(ax, 2.6, 1.62, 2.6, 2.05, colour=INK)
-            _arrow(ax, 2.6, 2.72, 2.6, 3.35, colour=INK)
-            _arrow(ax, 2.6, 3.84, 2.6, 4.6, colour=INK)
-            ax.plot([0.6, 0.6], [0.5, 3.6], color=JOINT, lw=2.6)
-            _arrow(ax, 0.6, 3.6, 2.35, 3.6, colour=JOINT, lw=2.0)
-            ax.plot([2.6, 0.6], [0.5, 0.5], color=JOINT, lw=2.6)
-            ax.text(0.45, 2.0, 'untouched path', rotation=90, ha='right', va='center',
-                    fontsize=10, color=JOINT)
-            ax.set_title('Pre-norm: normalise, then add on', fontsize=11.5, weight='bold')
-        else:
-            _box(ax, 1.4, 1.6, 2.4, 0.6, 'attention', face=_mix(LINK, 0.18), edge=LINK)
-            ax.add_patch(plt.Circle((2.6, 3.0), 0.22, facecolor='white', edgecolor=JOINT, lw=1.8))
-            ax.text(2.6, 3.0, '+', ha='center', va='center', fontsize=13, color=JOINT)
-            _box(ax, 1.4, 3.8, 2.4, 0.6, 'normalise', face=_mix(TEAL, 0.18), edge=TEAL)
-            _arrow(ax, 2.6, 0.3, 2.6, 1.55, colour=INK)
-            _arrow(ax, 2.6, 2.22, 2.6, 2.75, colour=INK)
-            _arrow(ax, 2.6, 3.24, 2.6, 3.75, colour=INK)
-            _arrow(ax, 2.6, 4.42, 2.6, 4.9, colour=INK)
-            ax.plot([0.6, 0.6], [0.5, 3.0], color=JOINT, lw=2.6)
-            _arrow(ax, 0.6, 3.0, 2.35, 3.0, colour=JOINT, lw=2.0)
-            ax.plot([2.6, 0.6], [0.5, 0.5], color=JOINT, lw=2.6)
-            ax.text(0.45, 1.8, 'the path passes\nthrough every normalisation',
-                    rotation=90, ha='right', va='center', fontsize=10, color=GRIP)
-            ax.set_title('Post-norm: add on, then normalise', fontsize=11.5, weight='bold')
+def token_sizes_before_and_after() -> None:
+    """Normalisation pulls four tokens of different sizes onto one scale."""
+    b = BLOCK
+    before = [float(np.sqrt((row ** 2).mean())) for row in b.x]
+    after = [float(np.sqrt((row ** 2).mean())) for row in b.n1]
+    print('[norm] typical size of each token before', [round(v, 3) for v in before])
+    print('[norm] typical size of each token after ', [round(v, 3) for v in after])
+    fig, ax = plt.subplots(figsize=(9.2, 4.2), facecolor='white')
+    _plain(ax)
+    xs = np.arange(4)
+    b1 = ax.bar(xs - 0.19, before, width=0.38, color=_mix(MUTED, 0.5), edgecolor=MUTED,
+                label='before normalising')
+    b2 = ax.bar(xs + 0.19, after, width=0.38, color=_mix(TEAL, 0.5), edgecolor=TEAL,
+                label='after normalising')
+    for bars, vals in ((b1, before), (b2, after)):
+        for bb, v in zip(bars, vals):
+            ax.text(bb.get_x() + bb.get_width() / 2, v + 0.02, f'{v:.2f}', ha='center',
+                    va='bottom', fontsize=10, color=INK)
+    ax.set_xticks(xs)
+    ax.set_xticklabels([f'"{t}"' for t in TOKENS], fontsize=10.5)
+    ax.set_ylim(0, 1.35)
+    ax.set_ylabel('typical size of that token\'s four numbers', fontsize=10)
+    ax.set_title('Four tokens of four different sizes all come out at exactly 1.00',
+                 fontsize=11.5, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
     fig.tight_layout()
-    _save(fig, BLK_DOC, 'pre-vs-post-norm.svg')
+    _save(fig, BLK_DOC, 'token-sizes-before-and-after.svg')
+
+
+def _norm_order_drawing(mode: str, name: str, title: str) -> None:
+    """Draw one of the two orders on its own, because a drawing is a whole argument."""
+    fig, ax = plt.subplots(figsize=(6.6, 5.2), facecolor='white')
+    _blank(ax)
+    if mode == 'pre':
+        _box(ax, 1.4, 1.0, 2.4, 0.6, 'normalise', face=_mix(TEAL, 0.18), edge=TEAL)
+        _box(ax, 1.4, 2.1, 2.4, 0.6, 'attention', face=_mix(LINK, 0.18), edge=LINK)
+        ax.add_patch(plt.Circle((2.6, 3.6), 0.22, facecolor='white', edgecolor=JOINT, lw=1.8))
+        ax.text(2.6, 3.6, '+', ha='center', va='center', fontsize=13, color=JOINT)
+        _arrow(ax, 2.6, 0.3, 2.6, 0.95, colour=INK)
+        _arrow(ax, 2.6, 1.62, 2.6, 2.05, colour=INK)
+        _arrow(ax, 2.6, 2.72, 2.6, 3.35, colour=INK)
+        _arrow(ax, 2.6, 3.84, 2.6, 4.6, colour=INK)
+        ax.plot([0.6, 0.6], [0.5, 3.6], color=JOINT, lw=2.6)
+        _arrow(ax, 0.6, 3.6, 2.35, 3.6, colour=JOINT, lw=2.0)
+        ax.plot([2.6, 0.6], [0.5, 0.5], color=JOINT, lw=2.6)
+        ax.text(0.45, 2.0, 'nothing rescales this path', rotation=90, ha='right',
+                va='center', fontsize=10, color=JOINT)
+    else:
+        _box(ax, 1.4, 1.6, 2.4, 0.6, 'attention', face=_mix(LINK, 0.18), edge=LINK)
+        ax.add_patch(plt.Circle((2.6, 3.0), 0.22, facecolor='white', edgecolor=JOINT, lw=1.8))
+        ax.text(2.6, 3.0, '+', ha='center', va='center', fontsize=13, color=JOINT)
+        _box(ax, 1.4, 3.8, 2.4, 0.6, 'normalise', face=_mix(TEAL, 0.18), edge=TEAL)
+        _arrow(ax, 2.6, 0.3, 2.6, 1.55, colour=INK)
+        _arrow(ax, 2.6, 2.22, 2.6, 2.75, colour=INK)
+        _arrow(ax, 2.6, 3.24, 2.6, 3.75, colour=INK)
+        _arrow(ax, 2.6, 4.42, 2.6, 4.9, colour=INK)
+        ax.plot([0.6, 0.6], [0.5, 3.0], color=JOINT, lw=2.6)
+        _arrow(ax, 0.6, 3.0, 2.35, 3.0, colour=JOINT, lw=2.0)
+        ax.plot([2.6, 0.6], [0.5, 0.5], color=JOINT, lw=2.6)
+        ax.text(0.45, 1.75, 'this path is rescaled\nat every block', rotation=90,
+                ha='right', va='center', fontsize=10, color=GRIP)
+    ax.text(2.6, 0.08, 'the stream arrives', ha='center', va='top', fontsize=9.5,
+            color=MUTED)
+    ax.text(2.6, 5.0, 'the stream leaves', ha='center', va='bottom', fontsize=9.5,
+            color=MUTED)
+    ax.set_xlim(-1.3, 4.4)
+    ax.set_ylim(-0.5, 5.5)
+    _fit(fig, ax)
+    _title(fig, title)
+    _save(fig, BLK_DOC, name)
+
+
+def pre_norm_order() -> None:
+    _norm_order_drawing('pre', 'pre-norm-order.svg',
+                        'Pre-norm: normalise the branch, then add it on')
+
+
+def post_norm_order() -> None:
+    _norm_order_drawing('post', 'post-norm-order.svg',
+                        'Post-norm: add the branch on, then normalise everything')
 
 
 def depth_experiment() -> tuple[list[float], list[float], list[float], list[float]]:
@@ -1267,32 +1500,52 @@ def depth_experiment() -> tuple[list[float], list[float], list[float], list[floa
     return pre_size, post_size, pre_sens, post_sens
 
 
-def gradient_through_depth() -> None:
-    pre_size, post_size, pre_sens, post_sens = depth_experiment()
+def stream_size_through_depth() -> None:
+    """Idea one: what the two orders do to the size of the stream."""
+    pre_size, post_size, _, _ = depth_experiment()
     depth = len(pre_size) - 1
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.2), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.2, 4.2), facecolor='white')
     _plain(ax)
-    ax.plot(range(depth + 1), pre_size, color=TEAL, lw=2, label='pre-norm')
-    ax.plot(range(depth + 1), post_size, color=GRIP, lw=2, label='post-norm')
-    ax.plot(range(depth + 1), [math.sqrt(1 + l) for l in range(depth + 1)], ls='--',
+    ax.plot(range(depth + 1), pre_size, color=TEAL, lw=2.2, label='pre-norm')
+    ax.plot(range(depth + 1), post_size, color=GRIP, lw=2.2, label='post-norm')
+    ax.plot(range(depth + 1), [math.sqrt(1 + i) for i in range(depth + 1)], ls='--',
             color=MUTED, lw=1.2, label='the square root of the depth')
+    ax.text(depth + 0.8, pre_size[-1], f'{pre_size[-1]:.2f}', ha='left', va='center',
+            fontsize=10, color=TEAL)
+    ax.text(depth + 0.8, post_size[-1], f'{post_size[-1]:.2f}', ha='left', va='center',
+            fontsize=10, color=GRIP)
+    ax.set_xlim(-1.5, depth + 5.0)
     ax.set_xlabel('blocks passed', fontsize=10)
     ax.set_ylabel('typical size of the numbers in the stream', fontsize=10)
-    ax.set_title('Pre-norm lets the stream grow; post-norm pins it', fontsize=11, weight='bold')
+    ax.set_ylim(0, max(pre_size) * 1.2)
+    ax.set_title(f'{depth} simulated blocks: pre-norm lets the stream grow, post-norm '
+                 'pins it', fontsize=11.5, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='upper left')
-    ax = axes[1]
+    fig.tight_layout()
+    _save(fig, BLK_DOC, 'stream-size-through-depth.svg')
+
+
+def nudge_through_depth() -> None:
+    """Idea two: how far a small change at the bottom travels in each order."""
+    _, _, pre_sens, post_sens = depth_experiment()
+    depth = len(pre_sens) - 1
+    fig, ax = plt.subplots(figsize=(9.2, 4.2), facecolor='white')
     _plain(ax)
-    ax.plot(range(depth + 1), pre_sens, color=TEAL, lw=2, label='pre-norm')
-    ax.plot(range(depth + 1), post_sens, color=GRIP, lw=2, label='post-norm')
+    ax.plot(range(depth + 1), pre_sens, color=TEAL, lw=2.2, label='pre-norm')
+    ax.plot(range(depth + 1), post_sens, color=GRIP, lw=2.2, label='post-norm')
     ax.axhline(1.0, color=MUTED, ls=':', lw=1.0)
+    ax.text(depth, pre_sens[-1] * 1.1, f'{pre_sens[-1]:.2f} times', ha='right',
+            va='bottom', fontsize=10, color=TEAL)
+    ax.text(depth, post_sens[-1] * 0.88, f'{post_sens[-1]:.2f} times', ha='right',
+            va='top', fontsize=10, color=GRIP)
     ax.set_yscale('log')
     ax.set_xlabel('blocks passed', fontsize=10)
-    ax.set_ylabel('how much a small nudge at the bottom moves the top', fontsize=10)
-    ax.set_title('The same nudge, carried through 48 blocks', fontsize=11, weight='bold')
-    ax.legend(fontsize=9.5, frameon=False, loc='best')
+    ax.set_ylabel('how much the same small nudge has moved things', fontsize=10)
+    ax.set_title(f'One nudge at the bottom, carried up through {depth} blocks',
+                 fontsize=11.5, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='lower left')
     fig.tight_layout()
-    _save(fig, BLK_DOC, 'gradient-through-depth.svg')
+    _save(fig, BLK_DOC, 'nudge-through-depth.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1385,11 +1638,44 @@ def how_much_each_block_changes() -> None:
     _save(fig, BLK_DOC, 'how-much-each-block-changes.svg')
 
 
+def additions_partly_cancel() -> None:
+    """Why twelve additions of size 1 do not give a stream of size 12."""
+    adds, sizes = stream_experiment()
+    depth = len(adds)
+    aligned = [sizes[0]]
+    for a in adds:
+        aligned.append(aligned[-1] + a)
+    root = [sizes[0] * math.sqrt(1 + i) for i in range(depth + 1)]
+    print(f'[cancel] if every addition pointed the same way the stream would reach '
+          f'{aligned[-1]:.2f}; it actually reaches {sizes[-1]:.2f}')
+    fig, ax = plt.subplots(figsize=(9.4, 4.2), facecolor='white')
+    _plain(ax)
+    ax.plot(range(depth + 1), aligned, color=GRIP, lw=2.2, marker='o',
+            label='if every addition pointed the same way')
+    ax.plot(range(depth + 1), sizes, color=JOINT, lw=2.4, marker='o',
+            label='what the simulated stream actually does')
+    ax.plot(range(depth + 1), root, ls='--', color=MUTED, lw=1.2,
+            label='the start times the square root of the count')
+    ax.text(depth, aligned[-1] + 0.3, f'{aligned[-1]:.2f}', ha='right', va='bottom',
+            fontsize=10.5, color=GRIP)
+    ax.text(depth, sizes[-1] + 0.4, f'{sizes[-1]:.2f}', ha='right', va='bottom',
+            fontsize=10.5, color=JOINT)
+    ax.set_xticks(range(depth + 1))
+    ax.set_xlabel('blocks passed', fontsize=10)
+    ax.set_ylabel('typical size of the numbers in the stream', fontsize=10)
+    ax.set_ylim(0, aligned[-1] * 1.18)
+    ax.set_title(f'{depth} additions of size about 1 give a stream of {sizes[-1]:.2f}, '
+                 f'not of {aligned[-1]:.2f}', fontsize=11.5, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    fig.tight_layout()
+    _save(fig, BLK_DOC, 'additions-partly-cancel.svg')
+
+
 # --------------------------------------------------------------------------
 # page 2, section 4: the feed-forward part
 # --------------------------------------------------------------------------
 
-def feed_forward_numbers() -> None:
+def feed_forward_middle_numbers() -> None:
     b = BLOCK
     row = 0
     hid, out = b.hidden[row], b.hidden_gelu[row]
@@ -1399,36 +1685,80 @@ def feed_forward_numbers() -> None:
     print(f'[ff] how many of the 16 went to almost nothing: '
           f'{int((out < 0.01).sum())} of 16')
     print('[ff] back down to four       ', np.round(b.ff[row], 2))
-    fig, axes = plt.subplots(2, 1, figsize=(10.4, 5.0), facecolor='white',
-                             gridspec_kw={'height_ratios': [1.0, 1.0]})
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.4, 4.0), facecolor='white')
     _plain(ax)
     ax.bar(np.arange(16) - 0.19, hid, width=0.38, color=_mix(MUTED, 0.5),
            edgecolor=MUTED, label='the 16 widened numbers')
     ax.bar(np.arange(16) + 0.19, out, width=0.38, color=_mix(PURPLE, 0.5),
            edgecolor=PURPLE, label='after the smooth rule')
     ax.axhline(0, color=INK, lw=0.8)
+    quiet = int((out < 0.01).sum())
     ax.set_xticks(range(16))
     ax.set_xticklabels([str(i + 1) for i in range(16)], fontsize=9)
     ax.set_xlabel('which of the 16 middle numbers', fontsize=10)
     ax.set_ylabel('value', fontsize=10)
     ax.legend(fontsize=9.5, frameon=False, loc='lower right')
-    ax.set_title(f'The widened middle of the feed-forward part, for "{TOKENS[row]}"',
-                 fontsize=11.5, weight='bold')
-    ax = axes[1]
-    _blank(ax)
-    w1, h = _grid(ax, b.n2[row].reshape(1, 4), cw=1.0, ch=0.6, rows=['4 numbers in'],
-                  rowsize=9.5)
-    w2, _ = _grid(ax, out.reshape(1, 16), x0=w1 + 2.0, cw=0.62, ch=0.6, fmt='{:+.1f}',
-                  fontsize=7.5, colour=PURPLE)
-    ax.text(w1 + 2.0 + w2 / 2, 0.1, '16 numbers in the middle', ha='center', va='bottom',
-            fontsize=9.5, color=PURPLE)
-    _grid(ax, b.ff[row].reshape(1, 4), x0=w1 + 2.0 + w2 + 1.6, cw=1.0, ch=0.6,
-          cols=['4 numbers out'], rowsize=9.5)
-    ax.set_xlim(-2.2, w1 + 2.0 + w2 + 1.6 + 4.4)
-    ax.set_ylim(-1.1, 0.75)
+    ax.set_title(f'The smooth rule leaves {quiet} of the 16 detectors at almost nothing, '
+                 f'for "{TOKENS[row]}"', fontsize=11.5, weight='bold')
     fig.tight_layout()
-    _save(fig, BLK_DOC, 'feed-forward-numbers.svg')
+    _save(fig, BLK_DOC, 'feed-forward-middle-numbers.svg')
+
+
+def feed_forward_shape() -> None:
+    """The same token as four numbers, then sixteen, then four again."""
+    b = BLOCK
+    row = 0
+    out = b.hidden_gelu[row]
+    fig, ax = plt.subplots(figsize=(11.0, 2.8), facecolor='white')
+    _blank(ax)
+    w1, h = _grid(ax, b.n2[row].reshape(1, 4), cw=1.0, ch=0.62, rows=['4 numbers in'],
+                  rowsize=9.5)
+    x = w1 + 2.2
+    w2, _ = _grid(ax, out.reshape(1, 16), x0=x, cw=0.62, ch=0.62, fmt='{:+.1f}',
+                  fontsize=7.5, colour=PURPLE)
+    ax.text(x + w2 / 2, 0.12, '16 numbers in the middle', ha='center', va='bottom',
+            fontsize=9.5, color=PURPLE)
+    _arrow(ax, w1 + 0.3, -h / 2, x - 0.3, -h / 2, colour=MUTED, lw=1.2,
+           label='widen', dy=0.12)
+    x2 = x + w2 + 2.2
+    _grid(ax, b.ff[row].reshape(1, 4), x0=x2, cw=1.0, ch=0.62, title='4 numbers out')
+    _arrow(ax, x + w2 + 0.3, -h / 2, x2 - 0.3, -h / 2, colour=MUTED, lw=1.2,
+           label='narrow', dy=0.12)
+    ax.set_xlim(-2.4, x2 + 4.3)
+    ax.set_ylim(-h - 0.35, 0.6)
+    _fit(fig, ax)
+    _title(fig, f'The token "{TOKENS[0]}" goes in as four numbers and comes out as four')
+    _save(fig, BLK_DOC, 'feed-forward-shape.svg')
+
+
+def two_matrices_collapse() -> None:
+    """With nothing between them, the two matrices are one matrix."""
+    b, t = BLOCK, TOY
+    prod = t.W1 @ t.W2
+    row = b.n2[0]
+    two_steps = (row @ t.W1) @ t.W2
+    one_step = row @ prod
+    print('[collapse] W1 @ W2 (4 by 4)\n', np.round(prod, 3))
+    print('[collapse] widen then narrow with no rule in between', np.round(two_steps, 3))
+    print('[collapse] the one matrix, straight                 ', np.round(one_step, 3))
+    fig, ax = plt.subplots(figsize=(10.6, 3.6), facecolor='white')
+    _blank(ax)
+    w1, h = _grid(ax, prod, cw=1.15, ch=0.68, fmt='{:+.2f}',
+                  title='W_1 times W_2, worked out once: one 4 by 4 matrix')
+    ax.text(w1 / 2, -h - 0.25, 'the smooth rule is what stops this happening',
+            ha='center', va='top', fontsize=10, color=INK)
+    x = w1 + 1.4
+    _grid(ax, two_steps.reshape(1, 4), x0=x, y0=-0.3, cw=1.15, ch=0.62, fmt='{:+.3f}',
+          title='widen, then narrow, with no rule between')
+    _grid(ax, one_step.reshape(1, 4), x0=x, y0=-1.7, cw=1.15, ch=0.62, fmt='{:+.3f}',
+          title='the one matrix on its own')
+    ax.text(x + 2.3, -2.6, f'the same four numbers out, for the token "{TOKENS[0]}"',
+            ha='center', va='top', fontsize=9.5, color=MUTED)
+    ax.set_xlim(-0.4, x + 4.9)
+    ax.set_ylim(-h - 0.85, 0.85)
+    _fit(fig, ax)
+    _title(fig, 'Two matrices with nothing between them collapse into one')
+    _save(fig, BLK_DOC, 'two-matrices-collapse.svg')
 
 
 def model_counts(d: int = 768, L: int = 12, h: int = 12, dff: int = 3072,
@@ -1822,16 +2152,22 @@ def main() -> None:
 
     report_toy()
     token_vectors()
+    same_token_two_sentences()
     one_token_draws_from_four()
     before_and_after()
+    convolution_weight_grid()
     projection_matrices()
     one_query_worked_out()
     qkv_grids()
+    query_meets_key()
     dot_product_worked_out()
+    dot_product_vs_angle()
     raw_score_grid()
     scaled_score_grid()
-    why_divide()
+    score_spread_vs_head_size()
+    sharpness_vs_head_size()
     softmax_steps()
+    softmax_sharpness()
     weight_grid()
     output_mix_worked_out()
     attention_as_matrices()
@@ -1853,12 +2189,18 @@ def main() -> None:
     numbers_through_a_block()
     size_of_each_change()
     rms_norm_worked_out()
-    pre_vs_post_norm()
-    gradient_through_depth()
+    token_sizes_before_and_after()
+    pre_norm_order()
+    post_norm_order()
+    stream_size_through_depth()
+    nudge_through_depth()
     residual_add_arithmetic()
     stream_is_a_sum()
     how_much_each_block_changes()
-    feed_forward_numbers()
+    additions_partly_cancel()
+    feed_forward_middle_numbers()
+    feed_forward_shape()
+    two_matrices_collapse()
     model_counts()
     widen_then_narrow()
     where_the_parameters_sit()

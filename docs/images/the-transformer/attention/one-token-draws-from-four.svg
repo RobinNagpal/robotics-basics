@@ -6,11 +6,11 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-10-03T03:35:18.402146</dc:date>
+    <dc:date>2026-10-07T09:34:34.313721</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
-      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+      <dc:title>Matplotlib v3.11.1, https://matplotlib.org/</dc:title>
      </cc:Agent>
     </dc:creator>
    </cc:Work>
@@ -40,7 +40,7 @@ Q 100.465563 74.8608 100.465563 80.3648
 L 100.465563 107.8848 
 Q 100.465563 113.3888 105.969563 113.3888 
 z
-" clip-path="url(#p1e28471fba)" style="fill: #e4eef7; stroke: #222222; stroke-width: 1.3; stroke-linejoin: miter"/>
+" clip-path="url(#p322d7526c3)" style="fill: #e4eef7; stroke: #222222; stroke-width: 1.3; stroke-linejoin: miter"/>
    </g>
    <g id="patch_3">
     <path d="M 105.969563 168.4288 
@@ -53,7 +53,7 @@ Q 100.465563 129.9008 100.465563 135.4048
 L 100.465563 162.9248 
 Q 100.465563 168.4288 105.969563 168.4288 
 z
-" clip-path="url(#p1e28471fba)" style="fill: #e4eef7; stroke: #222222; stroke-width: 1.3; stroke-linejoin: miter"/>
+" clip-path="url(#p322d7526c3)" style="fill: #e4eef7; stroke: #222222; stroke-width: 1.3; stroke-linejoin: miter"/>
    </g>
    <g id="patch_4">
     <path d="M 105.969563 223.4688 
@@ -66,7 +66,7 @@ Q 100.465563 184.9408 100.465563 190.4448
 L 100.465563 217.9648 
 Q 100.465563 223.4688 105.969563 223.4688 
 z
-" clip-path="url(#p1e28471fba)" style="fill: #e4eef7; stroke: #222222; stroke-width: 1.3; stroke-linejoin: miter"/>
+" clip-path="url(#p322d7526c3)" style="fill: #e4eef7; stroke: #222222; stroke-width: 1.3; stroke-linejoin: miter"/>
    </g>
    <g id="patch_5">
     <path d="M 105.969563 278.5088 
@@ -79,7 +79,7 @@ Q 100.465563 239.9808 100.465563 245.4848
 L 100.465563 273.0048 
 Q 100.465563 278.5088 105.969563 278.5088 
 z
-" clip-path="url(#p1e28471fba)" style="fill: #e4eef7; stroke: #222222; stroke-width: 1.3; stroke-linejoin: miter"/>
+" clip-path="url(#p322d7526c3)" style="fill: #e4eef7; stroke: #222222; stroke-width: 1.3; stroke-linejoin: miter"/>
    </g>
    <g id="patch_6">
     <path d="M 484.369562 194.5728 
@@ -92,7 +92,7 @@ Q 478.865562 153.2928 478.865562 158.7968
 L 478.865562 189.0688 
 Q 478.865562 194.5728 484.369562 194.5728 
 z
-" clip-path="url(#p1e28471fba)" style="fill: #fcefd1; stroke: #222222; stroke-width: 1.3; stroke-linejoin: miter"/>
+" clip-path="url(#p322d7526c3)" style="fill: #fcefd1; stroke: #222222; stroke-width: 1.3; stroke-linejoin: miter"/>
    </g>
    <g id="text_1">
     <!-- "pick" -->
@@ -1389,7 +1389,7 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="p1e28471fba">
+  <clipPath id="p322d7526c3">
    <rect x="81.201563" y="48.7168" width="619.2" height="282.08"/>
   </clipPath>
  </defs>

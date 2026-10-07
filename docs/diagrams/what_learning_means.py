@@ -213,9 +213,8 @@ def mm_to_m() -> None:
         ax2.text(0.55, yy, f'{b:.4f}', fontsize=10, color=LINK, family='monospace')
     ax2.set_title('Seven lengths and their answers', fontsize=11.2, weight='bold',
                   color=INK)
-    ax2.text(0.02, 0.055, f'Checked on 1,000,000 random lengths: the largest error\n'
-                          f'anywhere was {worst:.1e} mm, which is the computer\'s own '
-                          f'rounding',
+    ax2.text(0.02, 0.055, f'over 1,000,000 random lengths the largest\nerror '
+                          f'anywhere was {worst:.1e} mm',
              fontsize=10, color=SLIDE)
     fig.suptitle('metres = millimetres / 1000, and that is the whole rule',
                  fontsize=12.5, weight='bold', color=INK)
@@ -552,41 +551,45 @@ def full_or_empty_cup() -> None:
     print(f'[cup] best single threshold on that one number: {acc_in:.3f} on the cups '
           f'it was chosen on, {held_in:.3f} on cups it had not seen')
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.8), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.8, 5.2), facecolor='white')
     _plain(ax)
     bins = np.linspace(50, 230, 37)
     ax.hist(empty, bins=bins, color=LINK, alpha=0.62, label='empty cups')
     ax.hist(full, bins=bins, color=GRIP, alpha=0.62, label='full cups')
-    ax.set_xlabel('average brightness inside the rim (0 to 255)', fontsize=10)
-    ax.set_ylabel('number of cups', fontsize=10)
-    ax.set_title(f'Completely overlapping, so the best threshold gets only '
-                 f'{held_in:.2f}', fontsize=11.2, weight='bold', color=INK)
-    ax.legend(fontsize=9.5, frameon=False)
-
-    ax2 = axes[1]
-    _plain(ax2)
-    sub = slice(0, 400)
-    ax2.scatter(c.wall[sub][c.full[sub] < 0.5], c.inside[sub][c.full[sub] < 0.5],
-                s=12, color=LINK, alpha=0.7, label='empty cups')
-    ax2.scatter(c.wall[sub][c.full[sub] > 0.5], c.inside[sub][c.full[sub] > 0.5],
-                s=12, color=GRIP, alpha=0.7, label='full cups')
-    lim = np.array([60, 225])
-    ax2.plot(lim, lim, color=MUTED, ls='--', lw=1.2)
-    ax2.text(70, 218, 'the two clouds separate once the wall\nbrightness is known too, '
-                      'because the full cups\nsit below the dashed line and the empty '
-                      'ones above',
-             fontsize=9.3, color=INK, ha='left', va='top')
-    ax2.set_xlabel('average brightness of the cup wall (0 to 255)', fontsize=10)
-    ax2.set_ylabel('average brightness inside the rim', fontsize=10)
-    ax2.set_title('One number cannot tell them apart; two can', fontsize=11.2,
-                  weight='bold', color=INK)
-    ax2.legend(fontsize=9.5, frameon=False, loc='lower right')
-    fig.suptitle('Every cup has its own colour and its own lighting, which move the '
-                 'brightness far more than the coffee does',
-                 fontsize=12.2, weight='bold', color=INK)
-    fig.tight_layout()
+    ax.set_xlabel('average brightness inside the rim (0 to 255)', fontsize=10.5)
+    ax.set_ylabel('number of cups', fontsize=10.5)
+    ax.set_title(f'The two piles of cups sit on top of each other, so the best '
+                 f'threshold gets only {held_in:.2f}',
+                 fontsize=11.8, weight='bold', color=INK)
+    ax.legend(fontsize=9.8, frameon=False)
     _save(fig, RULES_DOC, 'full-or-empty-cup.svg')
+
+
+def two_numbers_separate_cups() -> None:
+    """The same cups separate once the brightness of the wall is known as well."""
+    c = _cups()
+    below = float(((c.inside < c.wall) == (c.full > 0.5)).mean())
+    print(f'[cup2] with both numbers known, "inside darker than the wall" is right on '
+          f'{below:.3f} of all {c.n} cups')
+
+    fig, ax = plt.subplots(figsize=(10.0, 5.6), facecolor='white')
+    _plain(ax)
+    sub = slice(0, 400)
+    ax.scatter(c.wall[sub][c.full[sub] < 0.5], c.inside[sub][c.full[sub] < 0.5],
+               s=14, color=LINK, alpha=0.7, label='empty cups')
+    ax.scatter(c.wall[sub][c.full[sub] > 0.5], c.inside[sub][c.full[sub] > 0.5],
+               s=14, color=GRIP, alpha=0.7, label='full cups')
+    lim = np.array([60, 225])
+    ax.plot(lim, lim, color=MUTED, ls='--', lw=1.3)
+    ax.text(214, 206, 'inside = wall', fontsize=9.6, color=MUTED, rotation=38,
+            ha='right', va='bottom')
+    ax.set_xlabel('average brightness of the cup wall (0 to 255)', fontsize=10.5)
+    ax.set_ylabel('average brightness inside the rim (0 to 255)', fontsize=10.5)
+    ax.set_title('Full cups sit below the dashed line and empty ones above, so two '
+                 'numbers separate what one could not',
+                 fontsize=11.4, weight='bold', color=INK)
+    ax.legend(fontsize=9.8, frameon=False, loc='lower right')
+    _save(fig, RULES_DOC, 'two-numbers-separate-cups.svg')
 
 
 # ==========================================================================
@@ -677,47 +680,58 @@ def rules_stack_up() -> None:
     _save(fig, RULES_DOC, 'rules-stack-up.svg')
 
 
-def two_kinds_of_job() -> None:
-    """One job's answer is a short formula of its input; the other job's is not."""
-    c = _cups()
+def one_answer_per_input() -> None:
+    """Where a rule works, each input value has exactly one right answer."""
     mm = np.linspace(0, 1800, 25)
-    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.9), facecolor='white')
-    ax = axes[0]
-    _plain(ax)
-    ax.scatter(mm, mm / 1000.0, s=34, color=SLIDE, zorder=4)
-    ax.plot(mm, mm / 1000.0, color=SLIDE, lw=1.4, alpha=0.5)
-    ax.set_xlabel('the one input: length in millimetres', fontsize=10)
-    ax.set_ylabel('the answer: length in metres', fontsize=10)
-    ax.set_title('One input, one answer, and the same answer every time',
-                 fontsize=11.2, weight='bold', color=INK)
-    ax.text(60, 1.55, 'the answer sits exactly on a line,\nso the line is the rule',
-            fontsize=9.6, color=SLIDE)
+    print('[kinds] the millimetre job: each input value has exactly one answer, and '
+          'the answers lie on one line')
 
-    ax2 = axes[1]
-    _plain(ax2)
-    sub = slice(0, 500)
-    jit = np.random.default_rng(7).normal(0, 0.03, 500)
-    ax2.scatter(c.inside[sub], c.full[sub] + jit, s=11,
-                color=[GRIP if f > 0.5 else LINK for f in c.full[sub]], alpha=0.6)
+    fig, ax = plt.subplots(figsize=(9.6, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot(mm, mm / 1000.0, color=SLIDE, lw=1.6, alpha=0.6)
+    ax.scatter(mm, mm / 1000.0, s=40, color=SLIDE, zorder=4)
+    ax.plot([1250, 1250], [0, 1.25], color=MUTED, ls=':', lw=1.2)
+    ax.plot([0, 1250], [1.25, 1.25], color=MUTED, ls=':', lw=1.2)
+    ax.annotate('1,250 mm has one answer, 1.250 m,\nand never any other',
+                xy=(1250, 1.25), xytext=(170, 1.46), fontsize=10, color=INK,
+                arrowprops={'arrowstyle': '-|>', 'color': INK, 'lw': 1.1})
+    ax.set_xlabel('the one input: length in millimetres', fontsize=10.5)
+    ax.set_ylabel('the answer: length in metres', fontsize=10.5)
+    ax.set_ylim(-0.05, 1.95)
+    ax.set_title('Where a rule can be written, one input value gives one answer',
+                 fontsize=11.8, weight='bold', color=INK)
+    _save(fig, RULES_DOC, 'one-answer-per-input.svg')
+
+
+def both_answers_at_one_input() -> None:
+    """Where no rule works, the same input value happens with both answers."""
+    c = _cups()
     overlap_lo = max(c.inside[c.full > 0.5].min(), c.inside[c.full < 0.5].min())
     overlap_hi = min(c.inside[c.full > 0.5].max(), c.inside[c.full < 0.5].max())
-    ax2.axvspan(overlap_lo, overlap_hi, color='#f6e6e6', zorder=0)
+    share = float(((c.inside >= overlap_lo) & (c.inside <= overlap_hi)).mean())
     print(f'[kinds] the two kinds of cup share the brightness range '
-          f'{overlap_lo:.0f} to {overlap_hi:.0f}, which holds '
-          f'{float(((c.inside >= overlap_lo) & (c.inside <= overlap_hi)).mean()):.3f} '
+          f'{overlap_lo:.0f} to {overlap_hi:.0f}, which holds {share:.3f} '
           f'of all the cups')
-    ax2.set_yticks([0, 1])
-    ax2.set_yticklabels(['empty', 'full'])
-    ax2.set_xlabel('the one input: average brightness inside the rim', fontsize=10)
-    ax2.set_title(f'Both answers happen at almost every input value',
-                  fontsize=11.2, weight='bold', color=INK)
-    ax2.text((overlap_lo + overlap_hi) / 2, 0.5,
-             f'both answers appear\nthroughout this range\n({overlap_lo:.0f} to '
-             f'{overlap_hi:.0f})', fontsize=9.6, color=GRIP, ha='center', va='center')
-    fig.suptitle('A job you can write a rule for has one answer per input; a job you '
-                 'cannot has both', fontsize=12.2, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, RULES_DOC, 'two-kinds-of-job.svg')
+
+    fig, ax = plt.subplots(figsize=(10.2, 4.8), facecolor='white')
+    _plain(ax)
+    sub = slice(0, 500)
+    jit = np.random.default_rng(7).normal(0, 0.03, 500)
+    ax.scatter(c.inside[sub], c.full[sub] + jit, s=12,
+               color=[GRIP if f > 0.5 else LINK for f in c.full[sub]], alpha=0.6)
+    ax.axvspan(overlap_lo, overlap_hi, color='#f6e6e6', zorder=0)
+    ax.set_yticks([0, 1])
+    ax.set_yticklabels(['empty', 'full'])
+    ax.set_ylim(-0.42, 1.52)
+    ax.set_xlabel('the one input: average brightness inside the rim (0 to 255)',
+                  fontsize=10.5)
+    ax.annotate(f'both answers appear everywhere in the shaded range, '
+                f'{overlap_lo:.0f} to {overlap_hi:.0f}',
+                xy=((overlap_lo + overlap_hi) / 2, 1.28), fontsize=10, color=GRIP,
+                ha='center', va='center')
+    ax.set_title('Where no rule can be written, one input value gives both answers',
+                 fontsize=11.8, weight='bold', color=INK)
+    _save(fig, RULES_DOC, 'both-answers-at-one-input.svg')
 
 
 # ==========================================================================
@@ -876,6 +890,81 @@ def error_vs_slope() -> None:
     ax.set_title('Every slope was tried, and the error has one lowest point',
                  fontsize=12, weight='bold', color=INK)
     _save(fig, RULES_DOC, 'error-vs-slope.svg')
+
+
+def signed_misses_cancel() -> None:
+    """Why the misses are squared: added as they are, they cancel each other out."""
+    s = _sag_numbers()
+    slope = 0.4
+    offset = s['ybar'] - slope * s['xbar']
+    pred = slope * SAG_X + offset
+    miss = SAG_Y - pred
+    signed = float(miss.sum())
+    squared = float((miss ** 2).sum())
+    best_signed = float((SAG_Y - (s['slope'] * SAG_X + s['intercept'])).sum())
+    print(f'[cancel] a poor line, sag = {slope:.1f} x mass + {offset:.2f}, misses by '
+          + ', '.join(f'{v:+.2f}' for v in miss))
+    print(f'[cancel] those six misses add up to {signed:+.2f} mm, and the best line\'s '
+          f'six misses add up to {best_signed:+.2f} mm as well')
+    print(f'[cancel] squared, the poor line totals {squared:.3f} and the best line '
+          f'{s["sse_fit"]:.3f}')
+
+    fig, ax = plt.subplots(figsize=(10.6, 5.6), facecolor='white')
+    _plain(ax)
+    grid = np.linspace(-0.1, 2.7, 60)
+    ax.plot(grid, slope * grid + offset, color=GRIP, lw=2.2,
+            label=f'a poor line: sag = {slope:.1f} x mass + {offset:.2f}')
+    ax.scatter(SAG_X, SAG_Y, s=58, color=INK, zorder=6, label='the six measurements')
+    for xv, yv, pv, mv in zip(SAG_X, SAG_Y, pred, miss):
+        ax.plot([xv, xv], [yv, pv], color=GRIP, lw=1.6, alpha=0.8)
+        ax.annotate(f'{mv:+.2f}', (xv, (yv + pv) / 2), fontsize=9.6, color=GRIP,
+                    textcoords='offset points', xytext=(8, -2))
+    ax.set_xlim(-0.25, 3.05)
+    ax.set_ylim(-0.1, 4.9)
+    ax.set_xlabel('mass hung on the wrist (kilograms)', fontsize=10.5)
+    ax.set_ylabel('how far the tool tip drops (millimetres)', fontsize=10.5)
+    ax.text(0.0, 4.6, f'the six misses add up to {signed:+.2f} mm, and so do the best '
+                      f'line\'s,\nso adding them cannot tell a poor line from a good '
+                      f'one',
+            fontsize=10.2, color=INK, va='top')
+    ax.set_title(f'Added as they are, the misses cancel; squared they total '
+                 f'{squared:.2f} against the best line\'s {s["sse_fit"]:.2f}',
+                 fontsize=11.6, weight='bold', color=INK)
+    ax.legend(fontsize=9.8, frameon=False, loc='lower right')
+    _save(fig, RULES_DOC, 'signed-misses-cancel.svg')
+
+
+def squaring_punishes_big_misses() -> None:
+    """Squaring a miss makes one large miss cost more than several small ones."""
+    marks = [0.5, 1.0, 2.0]
+    print('[square] what one miss adds to the score: '
+          + ', '.join(f'{m:.1f} mm -> {m * m:.2f}' for m in marks))
+    print(f'[square] doubling a miss multiplies what it adds by '
+          f'{(1.0 ** 2) / (0.5 ** 2):.0f}')
+
+    fig, ax = plt.subplots(figsize=(9.8, 5.2), facecolor='white')
+    _plain(ax)
+    e = np.linspace(0, 2.4, 200)
+    ax.plot(e, e ** 2, color=PURPLE, lw=2.4)
+    offsets = {0.5: (-10, 30), 1.0: (14, 2), 2.0: (-14, 24)}
+    for mv in marks:
+        ax.plot([mv, mv], [0, mv * mv], color=MUTED, ls=':', lw=1.0)
+        ax.plot([0, mv], [mv * mv, mv * mv], color=MUTED, ls=':', lw=1.0)
+        ax.scatter([mv], [mv * mv], s=52, color=PURPLE, zorder=6)
+        ax.annotate(f'a miss of {mv:.1f} mm\nadds {mv * mv:.2f}', (mv, mv * mv),
+                    fontsize=10, color=PURPLE, textcoords='offset points',
+                    xytext=offsets[mv], va='center',
+                    ha='left' if mv == 1.0 else 'right')
+    ax.set_xlim(0, 2.75)
+    ax.set_ylim(0, 5.0)
+    ax.set_xlabel('how far the line misses one measurement (millimetres)',
+                  fontsize=10.5)
+    ax.set_ylabel('what that one miss adds to the score\n(square millimetres)',
+                  fontsize=10.5)
+    ax.set_title('Twice the miss adds four times as much, so one large miss costs '
+                 'more than several small ones',
+                 fontsize=11.6, weight='bold', color=INK)
+    _save(fig, RULES_DOC, 'squaring-punishes-big-misses.svg')
 
 
 def three_answers() -> None:
@@ -1150,9 +1239,8 @@ def more_examples_less_error() -> None:
                     label='middle 80 per cent of 200 repeats')
     ax.plot(sizes, means, marker='o', color=LINK, lw=2.0, label='average over 200 repeats')
     ax.axhline(0.22, color=GRIP, ls='--', lw=1.4)
-    ax.text(150, 0.47, 'the dashed line is the spread of the measurements\n'
-                       'themselves, 0.22 mm, and no number of examples\n'
-                       'gets the miss below it', fontsize=9.5, color=GRIP, ha='right')
+    ax.text(150, 0.40, 'the dashed line is the spread of the\nmeasurements '
+                       'themselves, 0.22 mm', fontsize=9.8, color=GRIP, ha='right')
     for n, mu in zip(sizes, means):
         if n in (3, 5, 20):
             ax.annotate(f'{mu:.3f}', (n, mu), fontsize=9.5, color=INK,
@@ -1511,7 +1599,8 @@ def training_vs_inference_cost() -> None:
               'training the cup model\n(400 steps, 800 examples)']
     vals = [sag_infer, sag_train, cup_infer, cup_train]
     for lab, v in zip(labels, vals):
-        print(f'[cost] {lab.replace(chr(10), " "):56s} {v:,} multiply-and-add steps')
+        print(f'[cost] {lab.replace(chr(10), " "):56s} {v:,} multiplications and '
+              f'additions')
     print(f'[cost] training the cup model does {cup_train // cup_infer:,} times the '
           f'arithmetic of answering once')
 
@@ -1526,11 +1615,51 @@ def training_vs_inference_cost() -> None:
     ax.set_ylim(1, max(vals) * 30)
     ax.set_xticks(range(4))
     ax.set_xticklabels(labels, fontsize=9.3)
-    ax.set_ylabel('multiply-and-add steps (log scale)', fontsize=10.5)
+    ax.set_ylabel('multiplications and additions (log scale)', fontsize=10.5)
     ax.set_title(f'Training is done once and costs {cup_train // cup_infer:,} times an '
                  f'answer; inference is done every time the robot looks',
                  fontsize=11.6, weight='bold', color=INK)
     _save(fig, WORDS_DOC, 'training-vs-inference-cost.svg')
+
+
+def one_inference_by_hand() -> None:
+    """What inference does to one input: two fixed numbers and two operations."""
+    s = _sag_numbers()
+    x = 1.75
+    step1 = s['slope'] * x
+    out = step1 + s['intercept']
+    print(f'[infer] one answer for {x:.2f} kg: {s["slope"]:.1f} x {x:.2f} = '
+          f'{step1:.3f}, plus the offset {s["intercept"]:.1f} = {out:.3f} mm')
+    print(f'[infer] the two parameters are the same before and after, because '
+          f'inference never changes them')
+
+    fig, ax = plt.subplots(figsize=(12.2, 3.9), facecolor='white')
+    _blank(ax)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    stages = [
+        (0.005, 0.190, LINK, 'the input', f'{x:.2f} kg', 'a mass nobody measured'),
+        (0.240, 0.235, PURPLE, 'multiply by the weight',
+         f'{s["slope"]:.1f} x {x:.2f} = {step1:.2f}', 'the weight stays at 1.4'),
+        (0.520, 0.235, PURPLE, 'add the offset',
+         f'{step1:.2f} + {s["intercept"]:.1f} = {out:.2f}', 'the offset stays at 0.5'),
+        (0.800, 0.190, SLIDE, 'the output', f'{out:.2f} mm', 'one answer, one input'),
+    ]
+    for xx, w, colour, head, value, note in stages:
+        _box(ax, xx, 0.30, w, 0.44, colour, alpha=0.12)
+        ax.text(xx + w / 2, 0.675, head, fontsize=11.2, weight='bold', color=colour,
+                ha='center')
+        ax.text(xx + w / 2, 0.515, value, fontsize=11.5, color=INK, ha='center',
+                va='center', family='monospace')
+        ax.text(xx + w / 2, 0.365, note, fontsize=9.4, color=MUTED, ha='center')
+    for xx in (0.200, 0.481, 0.761):
+        _arrow(ax, xx, 0.52, xx + 0.034, 0.52, colour=INK, lw=1.6)
+    ax.text(0.5, 0.14, 'one multiplication and one addition, using the two numbers '
+                       'training left behind',
+            fontsize=10.5, color=INK, ha='center')
+    ax.set_title('Inference on the sag model: the input moves, the two parameters do '
+                 'not', fontsize=12.5, weight='bold', color=INK, pad=12)
+    _save(fig, WORDS_DOC, 'one-inference-by-hand.svg')
 
 
 # ==========================================================================
@@ -1612,8 +1741,7 @@ def seen_vs_unseen() -> None:
           f'({unseen[best]:.4f}); the most flexible has {degs[-1] + 1} '
           f'({unseen[-1]:.4f}) while fitting the examples to {seen[-1]:.4f}')
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.8, 5.2), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.4, 5.4), facecolor='white')
     _plain(ax)
     ax.plot(degs, seen, marker='o', color=LINK, lw=2.0,
             label=f'miss on the {n_ex} examples it fitted')
@@ -1630,31 +1758,40 @@ def seen_vs_unseen() -> None:
     ax.set_xticks(degs)
     ax.set_xticklabels([str(d + 1) for d in degs])
     ax.set_ylabel('typical miss (log scale)', fontsize=10.5)
-    ax.set_title('More parameters always help on the examples', fontsize=11.0,
-                 weight='bold', color=INK)
-    ax.legend(fontsize=9.5, frameon=False, loc='lower center')
+    ax.set_title('More parameters always help on the examples and stop helping on '
+                 'everything else', fontsize=11.6, weight='bold', color=INK)
+    ax.legend(fontsize=9.8, frameon=False, loc='lower center')
+    _save(fig, WORDS_DOC, 'seen-vs-unseen.svg')
 
-    ax2 = axes[1]
-    _plain(ax2)
-    ax2.plot(p['xt'], p['yt'], color=INK, lw=1.6, ls='--',
-             label='the shape the data really has')
+
+def flexible_curve_wanders() -> None:
+    """The shape a curve with too many parameters draws between its examples."""
+    p = _poly_curves()
+    degs = p['degs']
+    unseen = p['unseen']
+    best = int(np.argmin(unseen))
+    n_ex = len(np.asarray(p['x']))
+    print(f'[wander] the {degs[best] + 1}-parameter curve and the {degs[-1] + 1}-'
+          f'parameter curve pass through the same {n_ex} examples, missing unseen '
+          f'inputs by {unseen[best]:.4f} and {unseen[-1]:.4f}')
+
+    fig, ax = plt.subplots(figsize=(10.4, 5.4), facecolor='white')
+    _plain(ax)
+    ax.plot(p['xt'], p['yt'], color=INK, lw=1.6, ls='--',
+            label='the shape the data really has')
     for d, colour in ((degs[best], SLIDE), (degs[-1], GRIP)):
         co = np.polyfit(p['x'], p['y'], d)
-        ax2.plot(p['xt'], np.polyval(co, p['xt']), color=colour, lw=2.0,
-                 label=f'{d + 1} parameters, miss {unseen[degs.index(d)]:.3f}')
-    ax2.scatter(p['x'], p['y'], s=48, color=LINK, zorder=6,
-                label=f'the {n_ex} examples')
-    ax2.set_ylim(-0.1, 1.85)
-    ax2.set_xlabel('input', fontsize=10.5)
-    ax2.set_ylabel('output', fontsize=10.5)
-    ax2.set_title(f'The {degs[-1] + 1}-parameter curve wanders between the points',
-                  fontsize=11.0, weight='bold', color=INK)
-    ax2.legend(fontsize=9.2, frameon=False, loc='upper left')
-    fig.suptitle('Generalisation is doing well on inputs the model never saw, which is '
-                 'not the same as fitting the examples',
-                 fontsize=12.2, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, WORDS_DOC, 'seen-vs-unseen.svg')
+        ax.plot(p['xt'], np.polyval(co, p['xt']), color=colour, lw=2.0,
+                label=f'{d + 1} parameters, miss {unseen[degs.index(d)]:.3f}')
+    ax.scatter(p['x'], p['y'], s=48, color=LINK, zorder=6,
+               label=f'the {n_ex} examples')
+    ax.set_ylim(-0.1, 1.85)
+    ax.set_xlabel('input', fontsize=10.5)
+    ax.set_ylabel('output', fontsize=10.5)
+    ax.set_title(f'The {degs[-1] + 1}-parameter curve passes closer to the points and '
+                 f'wanders between them', fontsize=11.6, weight='bold', color=INK)
+    ax.legend(fontsize=9.6, frameon=False, loc='upper left')
+    _save(fig, WORDS_DOC, 'flexible-curve-wanders.svg')
 
 
 def generalisation_vs_size() -> None:
@@ -1806,34 +1943,39 @@ def reinforcement_tries() -> None:
     print(f'[rl] the height it settled on is {float(final[0]):.1f} mm, against the '
           f'best possible 42.0 mm')
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.2, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(mid, rate, marker='o', color=TEAL, lw=2.0)
     ax.set_xlabel('attempt number', fontsize=10.5)
     ax.set_ylabel(f'share of the last {block} attempts that worked', fontsize=10.5)
     ax.set_ylim(0, 1.0)
-    ax.set_title(f'From {rate[0]:.2f} in the first 20 attempts to {rate[-1]:.2f} in '
-                 f'the last 20', fontsize=11.2, weight='bold', color=INK)
-
-    ax2 = axes[1]
-    _plain(ax2)
-    ax2.scatter(np.arange(len(heights)), heights, s=12,
-                color=[SLIDE if r > 0.5 else GRIP for r in rewards], alpha=0.75)
-    ax2.axhline(42.0, color=INK, ls='--', lw=1.4)
-    ax2.set_ylim(-6, 92)
-    ax2.text(2, 91, 'the dashed line is the height that works best, 42 mm,\n'
-                    'and nobody told the robot where it was', fontsize=9.6,
-             color=INK, va='top')
-    ax2.set_xlabel('attempt number', fontsize=10.5)
-    ax2.set_ylabel('grasp height tried (millimetres above the table)', fontsize=10.5)
-    ax2.set_title('Green attempts lifted the object, red ones dropped it',
-                  fontsize=11.2, weight='bold', color=INK)
-    fig.suptitle('Reinforcement learning is told only whether each try worked, and it '
-                 f'finds {float(final[0]):.0f} mm on its own',
-                 fontsize=12.2, weight='bold', color=INK)
-    fig.tight_layout()
+    ax.set_title(f'Told only whether each try worked, the robot goes from '
+                 f'{rate[0]:.2f} in the first 20 attempts to {rate[-1]:.2f} in the '
+                 f'last 20', fontsize=11.4, weight='bold', color=INK)
     _save(fig, WORDS_DOC, 'reinforcement-tries.svg')
+
+
+def reinforcement_heights() -> None:
+    """Every height the search tried, and whether that try lifted the object."""
+    heights, rewards, final = _reach_run()
+    print(f'[rl2] the 400 heights tried run from {heights.min():.1f} to '
+          f'{heights.max():.1f} mm, and the search settled on {float(final[0]):.1f} mm')
+
+    fig, ax = plt.subplots(figsize=(10.6, 5.2), facecolor='white')
+    _plain(ax)
+    ax.scatter(np.arange(len(heights)), heights, s=13,
+               color=[SLIDE if r > 0.5 else GRIP for r in rewards], alpha=0.75)
+    ax.axhline(42.0, color=INK, ls='--', lw=1.4)
+    ax.annotate('the dashed line is the height that works best, 42 mm',
+                xy=(60, 42.0), xytext=(16, 84), fontsize=10, color=INK, ha='left',
+                arrowprops={'arrowstyle': '-|>', 'color': INK, 'lw': 1.1})
+    ax.set_ylim(-6, 92)
+    ax.set_xlabel('attempt number', fontsize=10.5)
+    ax.set_ylabel('grasp height tried (millimetres above the table)', fontsize=10.5)
+    ax.set_title(f'Green tries lifted the object and red ones dropped it, and the '
+                 f'search closes on {float(final[0]):.0f} mm',
+                 fontsize=11.6, weight='bold', color=INK)
+    _save(fig, WORDS_DOC, 'reinforcement-heights.svg')
 
 
 def three_signals_cost() -> None:
@@ -1889,32 +2031,26 @@ def four_names_nested() -> None:
     print(f'[nest] foundation models are deep models of the size of the 48-block '
           f'stack, {big_n:,} learned numbers, trained once and then adapted')
 
-    fig, ax = plt.subplots(figsize=(11.8, 7.6), facecolor='white')
+    fig, ax = plt.subplots(figsize=(11.8, 5.6), facecolor='white')
     _blank(ax)
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     rings = [
         (0.03, 0.030, 0.940, 0.940, LINK, 'artificial intelligence',
-         'any program that does a job people would call clever.\n'
-         'The joint-limit check of the page before is one, and it has 0 learned '
-         'numbers.'),
+         'the joint-limit check: 0 learned numbers'),
         (0.10, 0.095, 0.800, 0.740, PURPLE, 'machine learning',
-         f'the program finds the numbers inside itself from examples.\n'
-         f'The fitted wrist-sag line is one, and it has {line_n} learned numbers.'),
+         f'the fitted wrist-sag line: {line_n} learned numbers'),
         (0.17, 0.160, 0.660, 0.540, TEAL, 'deep learning',
-         f'the model is many layers of neurons stacked on top of each other.\n'
-         f'The picture network above is one, with {net_n:,} learned numbers.'),
+         f'the 64 by 64 picture network: {net_n:,} learned numbers'),
         (0.24, 0.225, 0.520, 0.340, GRIP, 'foundation models',
-         f'one deep model trained once on a huge mixed pile of data\n'
-         f'and then adapted to many jobs, at the size of the 48-block\n'
-         f'stack above: {big_n:,} learned numbers.'),
+         f'the 48-block stack: {big_n:,} learned numbers'),
     ]
     for x, y, w, h, colour, name, body in rings:
         ax.add_patch(Rectangle((x, y), w, h, facecolor=colour, alpha=0.085,
                                edgecolor=colour, lw=2.0, zorder=2))
-        ax.text(x + 0.016, y + h - 0.038, name, fontsize=13, weight='bold',
+        ax.text(x + 0.016, y + h - 0.040, name, fontsize=13.5, weight='bold',
                 color=colour, va='center')
-        ax.text(x + 0.016, y + h - 0.072, body, fontsize=9.8, color=INK, va='top')
+        ax.text(x + 0.016, y + h - 0.082, body, fontsize=10.4, color=INK, va='center')
     ax.set_title('Each name is inside the one before it, and the count of learned '
                  'numbers grows at every step', fontsize=12.5, weight='bold', color=INK)
     _save(fig, WORDS_DOC, 'four-names-nested.svg')
@@ -1989,8 +2125,7 @@ def depth_helps() -> None:
     print(f'[depth] the best is {len(shapes[best][0])} hidden layers at {errs[best]:.4f}, '
           f'which is {errs[0] / errs[best]:.1f} times better than one layer')
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.6, 5.0), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.2, 5.2), facecolor='white')
     _plain(ax)
     ax.plot([len(h) for h, _n in shapes], errs, marker='o', color=TEAL, lw=2.2)
     for i, ((hidden, _n), e, p) in enumerate(zip(shapes, errs, pars)):
@@ -2004,28 +2139,26 @@ def depth_helps() -> None:
     ax.set_xlabel('number of hidden layers, each 12 neurons wide', fontsize=10.5)
     ax.set_ylabel('typical miss on unseen inputs (log scale)', fontsize=10.5)
     ax.set_title(f'Stacking layers of the same width cuts the miss '
-                 f'{errs[0] / errs[best]:.1f} times', fontsize=11.0, weight='bold',
-                 color=INK)
-
-    ax2 = axes[1]
-    _plain(ax2)
-    ax2.plot(xt, yt, color=INK, lw=1.6, ls='--', label='the shape to be matched')
-    ax2.plot(xt, curves[0], color=GRIP, lw=1.9,
-             label=f'1 hidden layer, miss {errs[0]:.3f}')
-    ax2.plot(xt, curves[best], color=SLIDE, lw=1.9,
-             label=f'{len(shapes[best][0])} hidden layers, miss {errs[best]:.3f}')
-    ax2.scatter(x[:60], y[:60], s=12, color=MUTED, alpha=0.7,
-                label='60 of the 220 examples')
-    ax2.set_ylim(-0.4, 1.25)
-    ax2.set_xlabel('input', fontsize=10.5)
-    ax2.set_ylabel('output', fontsize=10.5)
-    ax2.set_title('The deeper one follows the bends the shallow one rounds off',
-                  fontsize=11.0, weight='bold', color=INK)
-    ax2.legend(fontsize=9.0, frameon=False, loc='upper right')
-    fig.suptitle('Deep learning means many layers, and here is what the extra layers '
-                 'buy on one simulated job', fontsize=12.2, weight='bold', color=INK)
-    fig.tight_layout()
+                 f'{errs[0] / errs[best]:.1f} times on one simulated job',
+                 fontsize=11.6, weight='bold', color=INK)
     _save(fig, WORDS_DOC, 'depth-helps.svg')
+
+    fig, ax = plt.subplots(figsize=(10.4, 5.4), facecolor='white')
+    _plain(ax)
+    ax.plot(xt, yt, color=INK, lw=1.6, ls='--', label='the shape to be matched')
+    ax.plot(xt, curves[0], color=GRIP, lw=1.9,
+            label=f'1 hidden layer, miss {errs[0]:.3f}')
+    ax.plot(xt, curves[best], color=SLIDE, lw=1.9,
+            label=f'{len(shapes[best][0])} hidden layers, miss {errs[best]:.3f}')
+    ax.scatter(x[:60], y[:60], s=12, color=MUTED, alpha=0.7,
+               label='60 of the 220 examples')
+    ax.set_ylim(-0.4, 1.35)
+    ax.set_xlabel('input', fontsize=10.5)
+    ax.set_ylabel('output', fontsize=10.5)
+    ax.set_title('The three-layer network follows the bends that the one-layer '
+                 'network rounds off', fontsize=11.6, weight='bold', color=INK)
+    ax.legend(fontsize=9.4, frameon=False, loc='upper right')
+    _save(fig, WORDS_DOC, 'deep-curve-follows-bends.svg')
 
 
 def one_model_many_jobs() -> None:
@@ -2123,38 +2256,44 @@ def cup_training_run() -> None:
     print(f'[cupfit] accuracy {float(m["acc_train"]):.3f} on the training half, '
           f'{float(m["acc_test"]):.3f} on the held-back half')
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.9), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.2, 5.0), facecolor='white')
     _plain(ax)
     ax.plot(np.arange(len(hist)), hist, color=GRIP, lw=2.2)
     for k in (0, 50, 200, 399):
         ax.scatter([k], [hist[k]], s=42, color=INK, zorder=6)
-        ax.annotate(f'{hist[k]:.3f}', (k, hist[k]), fontsize=9.6, color=INK,
+        ax.annotate(f'{hist[k]:.3f}', (k, hist[k]), fontsize=9.8, color=INK,
                     textcoords='offset points', xytext=(8, 8))
     ax.set_xlabel('training step', fontsize=10.5)
     ax.set_ylabel('score of being wrong (lower is better)', fontsize=10.5)
-    ax.set_title('400 steps changing 4 parameters', fontsize=11.2, weight='bold',
-                 color=INK)
+    ax.set_title('Training the cup model: 400 steps, each one changing all 4 '
+                 'parameters', fontsize=11.6, weight='bold', color=INK)
+    _save(fig, WORDS_DOC, 'train-and-run-the-cup-model.svg')
 
-    ax2 = axes[1]
-    _plain(ax2)
+
+def cup_model_answers() -> None:
+    """Inference 800 times over: the one number the model gives each held-back cup."""
+    m = _cup_model()
     pte = np.asarray(m['pte'])
     yte = np.asarray(m['yte'])
+    wrong = int(((pte > 0.5).astype(float) != yte).sum())
+    print(f'[answers] of the {len(yte)} held-back cups the model calls '
+          f'{int((pte > 0.5).sum())} full, and {wrong} of its answers are wrong')
+
+    fig, ax = plt.subplots(figsize=(10.2, 5.0), facecolor='white')
+    _plain(ax)
     bins = np.linspace(0, 1, 26)
-    ax2.hist(pte[yte < 0.5], bins=bins, color=TEAL, alpha=0.65, label='empty cups')
-    ax2.hist(pte[yte > 0.5], bins=bins, color=GRIP, alpha=0.65, label='full cups')
-    ax2.axvline(0.5, color=INK, ls='--', lw=1.4)
-    ax2.text(0.52, ax2.get_ylim()[1] * 0.45, 'called full above 0.5', fontsize=9.6,
-             color=INK, rotation=90, va='center')
-    ax2.set_xlabel('the one number the model gives for a held-back cup', fontsize=10.5)
-    ax2.set_ylabel('number of cups', fontsize=10.5)
-    ax2.set_title(f'Right on {float(m["acc_test"]):.3f} of the {len(yte)} held-back '
-                  f'cups', fontsize=11.2, weight='bold', color=INK)
-    ax2.legend(fontsize=9.5, frameon=False, loc='upper center')
-    fig.suptitle('Training happens once and produces four numbers; inference uses them '
-                 'on every cup after that', fontsize=12.2, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, WORDS_DOC, 'train-and-run-the-cup-model.svg')
+    ax.hist(pte[yte < 0.5], bins=bins, color=TEAL, alpha=0.65, label='empty cups')
+    ax.hist(pte[yte > 0.5], bins=bins, color=GRIP, alpha=0.65, label='full cups')
+    ax.axvline(0.5, color=INK, ls='--', lw=1.4)
+    ax.text(0.52, ax.get_ylim()[1] * 0.45, 'called full above 0.5', fontsize=9.8,
+            color=INK, rotation=90, va='center')
+    ax.set_xlabel('the one number the model gives for a held-back cup', fontsize=10.5)
+    ax.set_ylabel('number of cups', fontsize=10.5)
+    ax.set_title(f'Inference, 800 times over: {wrong} of the answers fall on the wrong '
+                 f'side of 0.5', fontsize=11.6, weight='bold', color=INK)
+    ax.legend(fontsize=9.8, frameon=False, loc='upper left',
+              bbox_to_anchor=(0.14, 1.0))
+    _save(fig, WORDS_DOC, 'cup-model-answers.svg')
 
 
 def which_word_when() -> None:
@@ -2185,10 +2324,9 @@ def which_word_when() -> None:
             label='the offset')
     ax.axvline(400, color=INK, lw=1.4)
     ax.axvspan(400, 900, color='#eef4ea', zorder=0)
-    ax.text(650, 4.85, 'training has stopped, so these four numbers\nnever change '
-                       'again, and every answer the robot\ngets from now on uses them '
-                       'exactly as they are',
-            fontsize=10, color=SLIDE, ha='center', va='center')
+    ax.text(650, 4.85, 'training has stopped, so these four\nnumbers never change '
+                       'again',
+            fontsize=10.5, color=SLIDE, ha='center', va='center')
     for j, colour in enumerate((LINK, JOINT, PURPLE)):
         ax.plot([400, 900], [track[-1][1][j]] * 2, color=colour, lw=2.0, ls=':')
     ax.plot([400, 900], [track[-1][2]] * 2, color=MUTED, lw=1.6, ls=':')
@@ -2220,12 +2358,16 @@ def main() -> None:
     threshold_sweep()
     spoon_finger_places()
     full_or_empty_cup()
+    two_numbers_separate_cups()
     how_many_pictures()
     rules_stack_up()
-    two_kinds_of_job()
+    one_answer_per_input()
+    both_answers_at_one_input()
     sag_points()
     fit_arithmetic()
     error_vs_slope()
+    signed_misses_cancel()
+    squaring_punishes_big_misses()
     three_answers()
     one_example()
     prediction_vs_label()
@@ -2243,18 +2385,22 @@ def main() -> None:
     training_curve()
     parameters_walking()
     training_vs_inference_cost()
+    one_inference_by_hand()
     dataset_split()
     seen_vs_unseen()
+    flexible_curve_wanders()
     generalisation_vs_size()
     supervised_labels()
     self_supervised_gap()
     reinforcement_tries()
+    reinforcement_heights()
     three_signals_cost()
     four_names_nested()
     depth_helps()
     one_model_many_jobs()
     words_on_one_job()
     cup_training_run()
+    cup_model_answers()
     which_word_when()
 
     print(f'wrote the diagrams under {IMAGES}')

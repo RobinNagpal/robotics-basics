@@ -268,8 +268,7 @@ def fig_causes_ruled_out() -> None:
     print('[1.3] causes still open after each rung: ' + '  '.join(
         f'{i}:{v}' for i, v in enumerate(open_after)))
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(14.0, 5.8), facecolor='white',
-                                   gridspec_kw={'width_ratios': [2.2, 1.0]})
+    fig, axl = plt.subplots(figsize=(10.4, 5.8), facecolor='white')
     _plain(axl)
     colours = {1: TEAL, 2: SLIDE, 3: LINK, 4: PURPLE}
     ys = np.arange(len(CAUSES))[::-1]
@@ -285,20 +284,25 @@ def fig_causes_ruled_out() -> None:
     axl.set_xlabel('the rung that first rules this cause out', fontsize=10)
     axl.set_title('Thirteen things that go wrong, and where each one is caught',
                   fontsize=12, weight='bold')
+    _save(fig, DOC, 'causes-ruled-out.svg')
 
+    fig, axr = plt.subplots(figsize=(8.8, 5.0), facecolor='white')
     _plain(axr)
     axr.step(range(5), open_after, where='post', color=GRIP, lw=2.4)
     axr.scatter(range(5), open_after, s=55, color=GRIP, zorder=3)
     for i, v in enumerate(open_after):
-        axr.text(i, v + 0.45, str(v), ha='center', fontsize=11, weight='bold',
-                 color=INK)
+        last = i == len(open_after) - 1
+        axr.text(i + (0.16 if last else 0.0), v + (0.0 if last else 0.45), str(v),
+                 ha='left' if last else 'center', va='center' if last else 'baseline',
+                 fontsize=11, weight='bold', color=INK)
     axr.set_xticks(range(5))
     axr.set_xticklabels(['start', '1', '2', '3', '4'])
     axr.set_ylim(-0.6, len(CAUSES) + 1.6)
     axr.set_xlabel('rungs finished', fontsize=10)
     axr.set_ylabel('causes still open', fontsize=10)
-    axr.set_title('What is left to suspect', fontsize=12, weight='bold')
-    _save(fig, DOC, 'causes-ruled-out.svg')
+    axr.set_title('How short the list of suspects gets, rung by rung',
+                  fontsize=12, weight='bold')
+    _save(fig, DOC, 'causes-still-open.svg')
 
 
 # --------------------------------------------------------------------------
@@ -621,6 +625,78 @@ def fig_overfit_accuracy() -> None:
     _save(fig, DOC, 'overfit-accuracy.svg')
 
 
+def fig_ten_at_random() -> None:
+    """Why the ten examples are chosen one of each class rather than at random."""
+    rng = np.random.default_rng(17)
+    y = TRAIN_Y.numpy()
+    draws = 4000
+    present = np.array([len(np.unique(y[rng.choice(len(y), RUNG2_N, replace=False)]))
+                        for _ in range(draws)])
+    counts = np.bincount(present, minlength=K + 1)[1:K + 1]
+    share = counts / draws * 100
+    print(f'[3.2b] {draws} batches of {RUNG2_N} drawn at random hold '
+          f'{present.mean():.1f} of the {K} classes on average, '
+          f'and all {K} in {share[K - 1]:.1f}% of them')
+    print('[3.2b] classes present: ' + '  '.join(
+        f'{n}:{s:.1f}%' for n, s in zip(range(1, K + 1), share) if s > 0))
+
+    fig, ax = plt.subplots(figsize=(10.4, 5.2), facecolor='white')
+    _plain(ax)
+    bars = ax.bar(range(1, K + 1), share, color=LINK, width=0.64)
+    for b, s in zip(bars, share):
+        if s >= 0.2:
+            ax.text(b.get_x() + b.get_width() / 2, s + 0.8, f'{s:.1f}%', ha='center',
+                    fontsize=10, weight='bold', color=INK)
+    ax.axvline(K, color=SLIDE, lw=2.2)
+    ax.text(K - 0.2, max(share) * 1.3, 'the batch you pick by hand sits here:\n'
+            'one example of each class, all ten', fontsize=10, color=SLIDE,
+            ha='right', va='top')
+    ax.set_xticks(range(1, K + 1))
+    ax.set_xlim(0.4, K + 0.9)
+    ax.set_ylim(0, max(share) * 1.36)
+    ax.set_xlabel(f'different classes present in a batch of {RUNG2_N}', fontsize=10)
+    ax.set_ylabel(f'share of {draws:,} random batches (%)', fontsize=10)
+    ax.set_title(f'Ten examples drawn at random hold {present.mean():.1f} of the ten '
+                 'classes, so the test would prove less', fontsize=12, weight='bold')
+    _save(fig, DOC, 'ten-at-random.svg')
+
+
+def fig_rung_two_predicts_rung_three() -> None:
+    """The claim the second rung rests on, measured: what fails ten also fails 240."""
+    x, y = balanced_ten()
+    widths = [1, 2, 4, 8, 16, 64]
+    rung2: list[float] = []
+    rung3: list[float] = []
+    for w in widths:
+        losses, _a, _p = overfit(x, y, mode='correct', width=w)
+        rung2.append(max(losses[-1], 1e-7))
+        rung3.append(final_val(width=w))
+        print(f'[3.5] hidden layer {w:3d} units: ten examples end at {rung2[-1]:.4g}, '
+              f'the real run ends at a held-back loss of {rung3[-1]:.3f}')
+
+    fig, ax = plt.subplots(figsize=(10.6, 5.4), facecolor='white')
+    _plain(ax)
+    ax.plot(rung2, rung3, color=MUTED, lw=1.4, ls='--', zorder=1)
+    ax.scatter(rung2, rung3, s=110, color=[SLIDE if v < 1e-4 else GRIP for v in rung2],
+               zorder=3)
+    for w, a, b in zip(widths, rung2, rung3):
+        ax.annotate(f'{w} unit' + ('' if w == 1 else 's'), (a, b),
+                    textcoords='offset points',
+                    xytext=(10, -4) if w != 64 else (12, 2), fontsize=10, color=INK)
+    ax.axvline(1e-4, color=INK, ls=':', lw=1.5)
+    ax.text(6e-5, max(rung3) * 0.99, 'green passed the second rung:\nunder 0.0001 on '
+            'the ten examples', fontsize=9.5, color=INK, ha='right', va='top')
+    ax.set_xscale('log')
+    ax.set_xlim(2e-7, 20)
+    ax.set_xlabel('loss on the ten examples after 400 steps, the second rung '
+                  '(log scale)', fontsize=10)
+    ax.set_ylabel('held-back loss after a real run on 240 examples,\nthe third rung',
+                  fontsize=10)
+    ax.set_title('Every model that cannot memorise the ten also loses the real run',
+                 fontsize=12, weight='bold')
+    _save(fig, DOC, 'rung-two-predicts-rung-three.svg')
+
+
 def fig_plateau_fingerprints() -> None:
     x, y = balanced_ten()
     panels = [('everything correct', 'correct'),
@@ -910,7 +986,7 @@ def fig_first_curve_shapes() -> None:
         ax.legend(fontsize=9, frameon=False)
         ax.set_ylim(0, max(max(tr), max(va)) * 1.22)
         print(f'[4.4] {title:54s} training {tr[-1]:.3f}, held back {va[-1]:.3f}, '
-              f'highest held back {max(va):.3f}')
+              f'highest training {max(tr):.3f}, highest held back {max(va):.3f}')
     fig.suptitle('Four first curves from four real runs on the same job, and what each '
                  'shape is telling you', fontsize=12.5, weight='bold')
     fig.tight_layout(rect=(0, 0, 1, 0.95))
@@ -1360,10 +1436,12 @@ def main() -> None:
     fig_shape_chain()
     fig_planted_first_losses()
     fig_first_loss_regression()
+    fig_ten_at_random()
     fig_overfit_ten()
     fig_overfit_accuracy()
     fig_plateau_fingerprints()
     fig_bug_catalogue()
+    fig_rung_two_predicts_rung_three()
     fig_first_honest_curve()
     fig_three_dataset_sizes()
     fig_leaky_split()

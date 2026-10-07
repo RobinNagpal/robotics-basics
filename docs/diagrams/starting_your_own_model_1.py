@@ -575,8 +575,7 @@ def s1_rule_that_changed() -> None:
           f'{fixed[-1]:.1f}% at 0.40 A; re-tuning the one number gives back '
           f'{RESULTS["drift_18_retuned"]:.1f}% at 0.18 A')
 
-    fig, (ax, bx) = plt.subplots(1, 2, figsize=(12.4, 5.0), facecolor='white',
-                                 gridspec_kw={'width_ratios': [1.3, 1.0]})
+    fig, ax = plt.subplots(figsize=(10.2, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(drifts, fixed, marker='o', ms=4.5, color=GRIP, lw=2,
             label='threshold left at 0.45 A')
@@ -590,13 +589,24 @@ def s1_rule_that_changed() -> None:
     ax.legend(fontsize=10, frameon=False, loc='lower left')
     ax.set_title('A written rule fails by drifting, not by being wrong',
                  fontsize=12, weight='bold')
+    _save(fig, 'the-rule-that-changed.svg')
 
+    fig, bx = plt.subplots(figsize=(9.4, 5.0), facecolor='white')
     _plain(bx)
     bx.plot(drifts, cuts, marker='o', ms=4.5, color=LINK, lw=2)
+    bx.axvline(0.18, color=MUTED, ls=':', lw=1.4)
+    i18 = int(np.argmin(np.abs(drifts - 0.18)))
+    bx.annotate(f'{cuts[i18]:.2f} A after {drifts[i18]:.2f} A of drift',
+                xy=(drifts[i18], cuts[i18]), xytext=(0.035, 0.405), fontsize=10,
+                color=LINK, arrowprops=dict(arrowstyle='->', color=LINK, lw=1.3))
     bx.set_xlabel('how much lower the sensor reads (A)', fontsize=10)
     bx.set_ylabel('threshold the training readings pick (A)', fontsize=10)
-    bx.set_title('The repair is one number, found in minutes', fontsize=12, weight='bold')
-    _save(fig, 'the-rule-that-changed.svg')
+    bx.set_title('The repair is one number, and the readings hand it to you',
+                 fontsize=12, weight='bold')
+    print(f'[s1] the threshold the training readings pick falls from '
+          f'{cuts[0]:.2f} A at no drift to {cuts[i18]:.2f} A at '
+          f'{drifts[i18]:.2f} A of drift and {cuts[-1]:.2f} A at 0.40 A')
+    _save(fig, 'the-threshold-measured-again.svg')
 
 
 # ==========================================================================
@@ -631,6 +641,54 @@ def s2_input_output() -> None:
     bx.set_title('What that choice costs before you train anything',
                  fontsize=12, weight='bold')
     _save(fig, 'input-and-output-written-down.svg')
+
+
+def s2_units_matter() -> None:
+    """The same finished answer, handed the width in centimetres instead of millimetres."""
+    tr, te = CELL.split_tray == 0, CELL.split_tray == 2
+    mean, sd = CELL.X[tr].mean(axis=0), CELL.X[tr].std(axis=0)
+    X_cm = CELL.X.copy()
+    X_cm[:, 0] = X_cm[:, 0] / 10.0                  # the same width, in centimetres
+    Z_cm = (X_cm - mean) / sd
+    mm_runs, cm_runs = [], []
+    for seed in range(4):                           # the same four starts as section 3
+        net = train_classifier(CELL.Z[tr], CELL.y[tr], seed=seed)
+        mm_runs.append(float((predict_classifier(net, CELL.Z[te]) == CELL.y[te]).mean()))
+        cm_runs.append(float((predict_classifier(net, Z_cm[te]) == CELL.y[te]).mean()))
+    model_mm = float(np.mean(mm_runs)) * 100
+    model_cm = float(np.mean(cm_runs)) * 100
+    rule_mm = float((hand_rule(CELL.X[te]) == CELL.y[te]).mean()) * 100
+    rule_cm = float((hand_rule(X_cm[te]) == CELL.y[te]).mean()) * 100
+    RESULTS['unit_model_mm'] = model_mm
+    RESULTS['unit_model_cm'] = model_cm
+    RESULTS['unit_rule_mm'] = rule_mm
+    RESULTS['unit_rule_cm'] = rule_cm
+    print(f'[s2] width in millimetres, as trained: network {model_mm:.1f}%, '
+          f'written rule {rule_mm:.1f}%')
+    print(f'[s2] the same width arriving in centimetres: network {model_cm:.1f}%, '
+          f'written rule {rule_cm:.1f}%, so the change of unit costs '
+          f'{model_mm - model_cm:.1f} and {rule_mm - rule_cm:.1f} points')
+
+    fig, ax = plt.subplots(figsize=(10.2, 5.4), facecolor='white')
+    _plain(ax)
+    x = np.arange(2)
+    w = 0.33
+    b1 = ax.bar(x - w / 2, [model_mm, rule_mm], w, color=LINK,
+                label='width in millimetres, as it was written down')
+    b2 = ax.bar(x + w / 2, [model_cm, rule_cm], w, color=GRIP,
+                label='the same width arriving in centimetres')
+    ax.bar_label(b1, fmt='%.1f%%', fontsize=11, padding=3)
+    ax.bar_label(b2, fmt='%.1f%%', fontsize=11, padding=3)
+    ax.plot([-0.5, 1.5], [100.0 / 3.0] * 2, color=INK, ls=':', lw=1.5)
+    ax.text(-0.48, 100.0 / 3.0 + 2.0, 'guessing one of three', fontsize=9.5, color=INK)
+    ax.set_xticks(x)
+    ax.set_xticklabels(['the trained network', 'the written rule'], fontsize=11)
+    ax.set_ylim(0, 112)
+    ax.set_ylabel('share of held-out frames right (%)', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper center', ncol=1)
+    ax.set_title('One number arriving in the wrong unit, and nothing else changed',
+                 fontsize=12.5, weight='bold')
+    _save(fig, 'units-matter.svg')
 
 
 class Attempts:
@@ -866,6 +924,63 @@ def s3_three_baselines() -> None:
     ax.set_title('Three cheap baselines and one small network, same data, same split',
                  fontsize=12.5, weight='bold')
     _save(fig, 'three-baselines-classification.svg')
+
+
+def s3_nearest_neighbour_shown() -> None:
+    """How nearest neighbour answers: it copies the stored example that sits closest.
+
+    The distances here are worked out in the two numbers the picture draws, so the
+    lines on the page are the distances the method actually used.
+    """
+    tr, te = CELL.split_tray == 0, CELL.split_tray == 2
+    cols = [0, 3]                                   # width and shine, standardised
+    Ztr, ytr = CELL.Z[tr][:, cols], CELL.y[tr]
+    Zte, yte = CELL.Z[te][:, cols], CELL.y[te]
+    pred = nearest_neighbour(Ztr, ytr, Zte)
+    score = float((pred == yte).mean()) * 100
+    print(f'[s3] nearest neighbour on the two numbers this picture draws scores '
+          f'{score:.1f}% on the same held-out frames')
+
+    # five held-out frames, chosen as the ones nearest five places on the plot so
+    # that the picture is readable; the last is one whose neighbour answers wrongly
+    spots = [(-1.30, 0.85, (10, 12), 'left', False),
+             (0.25, -0.95, (12, 10), 'left', False),
+             (1.45, 1.25, (-12, 10), 'right', False),
+             (-0.55, -0.30, (10, 12), 'left', False),
+             (1.15, 0.20, (-12, -22), 'right', True)]
+    fig, ax = plt.subplots(figsize=(11.0, 6.2), facecolor='white')
+    _plain(ax)
+    for g in range(3):
+        m = ytr == g
+        ax.scatter(Ztr[m, 0], Ztr[m, 1], s=7, alpha=0.30, color=GRIP_COLOURS[g],
+                   edgecolors='none', label=f'stored example, answer {GRIPS[g]}')
+    for sx, sy, off, ha, want_wrong in spots:
+        ok = (pred == yte) if not want_wrong else (pred != yte)
+        cand = np.where(ok)[0]
+        q = int(cand[np.argmin((Zte[cand, 0] - sx) ** 2 + (Zte[cand, 1] - sy) ** 2)])
+        d = ((Ztr - Zte[q]) ** 2).sum(axis=1)
+        j = int(np.argmin(d))
+        right = int(ytr[j]) == int(yte[q])
+        ax.plot([Zte[q, 0], Ztr[j, 0]], [Zte[q, 1], Ztr[j, 1]], color=INK, lw=1.4,
+                zorder=3)
+        ax.scatter([Zte[q, 0]], [Zte[q, 1]], s=120, marker='D', zorder=4,
+                   color='white', edgecolors=INK, linewidths=1.6)
+        ax.scatter([Ztr[j, 0]], [Ztr[j, 1]], s=90, marker='o', zorder=4,
+                   color=GRIP_COLOURS[int(ytr[j])], edgecolors=INK, linewidths=1.2)
+        ax.annotate(f'copies {GRIPS[int(ytr[j])]}: ' + ('right' if right else 'wrong'),
+                    xy=(Zte[q, 0], Zte[q, 1]), textcoords='offset points',
+                    xytext=off, fontsize=9.5, ha=ha,
+                    color=SLIDE if right else GRIP, weight='bold')
+    ax.scatter([], [], s=120, marker='D', color='white', edgecolors=INK,
+               linewidths=1.6, label='new frame, no answer yet')
+    ax.set_xlabel('measured width, standardised', fontsize=10)
+    ax.set_ylabel('measured shine, standardised', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper center',
+              bbox_to_anchor=(0.5, -0.11), ncol=4, handletextpad=0.4,
+              columnspacing=1.2)
+    ax.set_title('Nearest neighbour answers a new frame by copying the closest '
+                 'stored one', fontsize=12.5, weight='bold')
+    _save(fig, 'nearest-neighbour-copies-the-closest.svg')
 
 
 def s3_force_baselines() -> None:
@@ -1179,12 +1294,22 @@ def s4_what_faults_cost() -> None:
     _save(fig, 'what-the-faults-cost.svg')
 
 
-def s4_labellers_disagree() -> None:
+def second_labeller() -> Ints:
+    """A second person's answer for every part, wrong more often on the close calls.
+
+    Both section 4 pictures read this one function, so they cannot disagree about
+    what the second person said.
+    """
     rng = np.random.default_rng(55)
-    margin = CELL.margin
-    flip = rng.random(CELL.n_parts) < np.exp(-margin / 0.22) * 0.5
+    flip = rng.random(CELL.n_parts) < np.exp(-CELL.margin / 0.22) * 0.5
     second = CELL.grip.copy()
     second[flip] = (CELL.grip[flip] + rng.integers(1, 3, int(flip.sum()))) % 3
+    return second
+
+
+def s4_labellers_disagree() -> None:
+    margin = CELL.margin
+    second = second_labeller()
     agree = float((second == CELL.grip).mean()) * 100
     edges = [0.0, 0.1, 0.25, 0.5, 1.0, 3.0]
     rates, labels, counts = [], [], []
@@ -1224,6 +1349,46 @@ def s4_labellers_disagree() -> None:
     bx.set_ylabel('number of parts', fontsize=10)
     bx.set_title('How many borderline parts there are at all', fontsize=12, weight='bold')
     _save(fig, 'labellers-disagree.svg')
+
+
+def s4_label_ceiling() -> None:
+    """What the model scores when the second person marks its answers."""
+    tr, te = CELL.split_tray == 0, CELL.split_tray == 2
+    second = second_labeller()
+    y_second = second[CELL.part_of_frame]
+    net_scores = []
+    for seed in range(4):
+        net = train_classifier(CELL.Z[tr], CELL.y[tr], seed=seed)
+        pred = predict_classifier(net, CELL.Z[te])
+        net_scores.append((float((pred == CELL.y[te]).mean()) * 100,
+                           float((pred == y_second[te]).mean()) * 100))
+    first_marked = float(np.mean([a for a, _b in net_scores]))
+    second_marked = float(np.mean([b for _a, b in net_scores]))
+    people = float((y_second[te] == CELL.y[te]).mean()) * 100
+    RESULTS['ceiling_first'] = first_marked
+    RESULTS['ceiling_second'] = second_marked
+    RESULTS['ceiling_people'] = people
+    print(f'[s4] the same model marked by the person who trained it: '
+          f'{first_marked:.1f}%, marked by the second person: {second_marked:.1f}%, '
+          f'and the two people agree on {people:.1f}% of the same held-out frames')
+
+    fig, ax = plt.subplots(figsize=(10.4, 5.4), facecolor='white')
+    _plain(ax)
+    names = ['the model, marked by\nthe person who wrote\nits training labels',
+             'the same model,\nmarked by the\nsecond person',
+             'the two people,\nmarked against\neach other']
+    vals = [first_marked, second_marked, people]
+    bars = ax.bar(names, vals, color=[LINK, WRIST, MUTED], width=0.55)
+    ax.bar_label(bars, fmt='%.1f%%', fontsize=12, padding=4)
+    ax.axhline(people, color=GRIP, ls='--', lw=1.8)
+    ax.text(-0.45, people + 2.5, 'nothing trained on one person\'s answers can be '
+            'judged above this line', fontsize=10, color=GRIP)
+    ax.set_ylim(0, 118)
+    ax.tick_params(axis='x', labelsize=9.5)
+    ax.set_ylabel('share of the same held-out frames called right (%)', fontsize=10)
+    ax.set_title('The agreement between two labellers is a ceiling on the score',
+                 fontsize=12.5, weight='bold')
+    _save(fig, 'the-label-ceiling.svg')
 
 
 # ==========================================================================
@@ -1669,10 +1834,12 @@ def main() -> None:
     s1_conditions_needed()
     s1_rule_that_changed()
     s2_input_output()
+    s2_units_matter()
     s2_vague_becomes_measurable()
     s2_wrong_one_number()
     s2_how_many_trials()
     s3_three_baselines()
+    s3_nearest_neighbour_shown()
     s3_force_baselines()
     s3_baseline_moves()
     s3_per_class()
@@ -1680,6 +1847,7 @@ def main() -> None:
     s4_looking_finds_it()
     s4_what_faults_cost()
     s4_labellers_disagree()
+    s4_label_ceiling()
     s5_three_splits()
     s5_trays_differ()
     s5_split_written_down()

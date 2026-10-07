@@ -255,15 +255,21 @@ def q_learn(episodes: int, eps0: float, seed: int, eps1: float | None = None,
             count: list[int] | None = None,
             slip_range: tuple[float, float] | None = None,
             blocked: tuple[int, int] | None = None,
-            random_block: bool = False) -> tuple[Arr, Arr, Arr, list[Arr]]:
+            random_block: bool = False,
+            snap_at: set[int] | None = None) -> tuple[Arr, Arr, Arr, list[Arr]]:
     """Tabular Q-learning. Returns Q, the return of every attempt, whether every
-    attempt put the block in the bin, and snapshots of Q at a few points."""
+    attempt put the block in the bin, and snapshots of Q at a few points.
+
+    snap_at replaces the attempt numbers the snapshots are taken at. It changes
+    nothing else, because the snapshots are only copies.
+    """
     P, R, D, OUT, STAY = t
     rng = np.random.default_rng(seed)
     Q = np.zeros((NS, NA))
     rets = np.zeros(episodes)
     succ = np.zeros(episodes)
-    marks = {0, episodes // 50, episodes // 10, episodes // 3, episodes - 1}
+    marks = (snap_at if snap_at is not None else
+             {0, episodes // 50, episodes // 10, episodes // 3, episodes - 1})
     snaps: list[Arr] = []
     for ep in range(episodes):
         e = eps0 if eps1 is None else eps0 + (eps1 - eps0) * ep / max(1, episodes - 1)
@@ -451,48 +457,16 @@ def the_little_world() -> None:
     print(f'[world] best route: {out} in {len(aa)} actions, '
           f'{[ACTIONS[a] for a in aa]}, total reward {rr.sum():.2f}')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.8, 5.4), facecolor='white',
-                             gridspec_kw={'width_ratios': [1.0, 1.0]})
-    ax = axes[0]
-    _table(ax, 'The table top, seen from above')
+    fig, ax = plt.subplots(figsize=(6.6, 6.2), facecolor='white')
+    _table(ax, '')
     r, c = START
     ax.text(c + 0.5, ROWS - 1 - r + 0.5, 'gripper', ha='center', va='center',
-            fontsize=9, color=INK, weight='bold')
+            fontsize=9.5, color=INK, weight='bold')
     r, c = BLOCK
     ax.add_patch(Rectangle((c + 0.3, ROWS - 1 - r + 0.3), 0.4, 0.4, color=WRIST, lw=0))
-    ax.text(2.5, -0.35, 'five squares across, five squares deep',
-            ha='center', fontsize=9, color=MUTED)
-
-    ax = axes[1]
-    ax.axis('off')
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    rows = [
-        ('up, down, left, right', f'{STEP_COST:+.2f}',
-         'move one square; a wall leaves\nyou where you were'),
-        ('close', f'{STEP_COST - GRIP_COST:+.2f}',
-         'shut the fingers; picks the block\nup if you are standing on it'),
-        ('open', f'{STEP_COST - GRIP_COST:+.2f}',
-         'let go: the bin pays +10, the tray\npays +2, anywhere else costs 1'),
-        ('wait', f'{STEP_COST:+.2f}', 'hold the pose and change nothing'),
-    ]
-    ax.text(0.0, 0.97, 'The seven actions', fontsize=11.5, weight='bold', color=INK)
-    ax.text(0.0, 0.89, 'action', fontsize=9.5, weight='bold', color=MUTED)
-    ax.text(0.40, 0.89, 'reward', fontsize=9.5, weight='bold', color=MUTED)
-    ax.text(0.56, 0.89, 'what it does', fontsize=9.5, weight='bold', color=MUTED)
-    y = 0.80
-    for name, rew, what in rows:
-        ax.text(0.0, y, name, fontsize=9.5, color=LINK, weight='bold', va='top')
-        ax.text(0.40, y, rew, fontsize=9.5, color=INK, va='top')
-        ax.text(0.56, y, what, fontsize=9.0, color=INK, va='top')
-        y -= 0.155
-    ax.text(0.0, y - 0.01, f'The attempt stops when the block is placed on the bin\n'
-                           f'or the tray, or after {MAXSTEPS} actions.',
-            fontsize=9.0, color=MUTED, va='top')
-    ax.text(0.0, y - 0.21, f'{ROWS * COLS} squares x 2 (holding or not) = {NS} states',
-            fontsize=10.5, color=PURPLE, weight='bold', va='top')
-    fig.suptitle('The world every picture on this page is drawn from',
-                 fontsize=13, weight='bold', color=INK)
+    ax.text(2.5, -0.38, 'five squares across, five squares deep',
+            ha='center', fontsize=9.5, color=MUTED)
+    ax.set_title('The table top, seen from above', fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, RL_DOC, 'the-little-world.svg')
 
@@ -506,16 +480,23 @@ def state_and_action() -> None:
         print(f'[state]   {ACTIONS[a]:6s} -> state {int(P[s, a]):2d} = row {r2}, column {c2}, '
               f'holding {h2}, reward {R[s, a]:+.2f}')
 
-    fig, axes = plt.subplots(1, 3, figsize=(14.6, 4.9), facecolor='white')
-    for ax, holding in ((axes[0], False), (axes[1], True)):
-        _table(ax, f'State numbers, holding = {holding}', small=True)
+    fig, axes = plt.subplots(1, 2, figsize=(11.6, 5.4), facecolor='white')
+    for ax, holding, name in ((axes[0], False, 'gripper empty'),
+                              (axes[1], True, 'gripper holding the block')):
+        _table(ax, f'State numbers, {name}', small=True)
         for r in range(ROWS):
             for c in range(COLS):
                 x, y = _cell_xy(r, c)
                 ax.text(x, y - 0.12, str(sid(r, c, holding)), ha='center', va='center',
                         fontsize=10, color=INK)
-    ax = axes[2]
-    _table(ax, 'Where each action from state 34 leads', small=True, marks=False)
+    fig.suptitle('The 50 states: one number for every square and every value of '
+                 '"holding"', fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'state-numbers.svg')
+
+    fig, ax = plt.subplots(figsize=(6.8, 6.4), facecolor='white')
+    _table(ax, 'Where each of the seven actions from state 34 leads', small=True,
+           marks=False)
     x, y = _cell_xy(*BLOCK)
     ax.add_patch(Rectangle((BLOCK[1], ROWS - 1 - BLOCK[0]), 1, 1, color=GRIP,
                            alpha=0.14, lw=0))
@@ -536,10 +517,8 @@ def state_and_action() -> None:
         ax.add_patch(Rectangle((c2, ROWS - 1 - r2), 1, 1, color=LINK, alpha=0.10, lw=0))
         ax.text(x2, y2 + (0.30 if a != 1 else -0.38), f'{ACTIONS[a]}\n-> state '
                 f'{int(P[s, a])}', ha='center', va='center', fontsize=8.5, color=LINK)
-    fig.suptitle('The state is what the learner can see, and the action is what it does',
-                 fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, RL_DOC, 'state-and-action.svg')
+    _save(fig, RL_DOC, 'where-actions-lead.svg')
 
 
 def reward_sequence() -> None:
@@ -604,8 +583,7 @@ def discounted_return() -> None:
             lo = m
     print(f'[discount] the two routes are worth the same at gamma = {hi:.4f}')
 
-    fig, axes = plt.subplots(1, 3, figsize=(15.2, 4.6), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.4, 5.2), facecolor='white')
     _plain(ax)
     ts = np.arange(0, 13)
     for g, col in ((1.0, INK), (0.9, LINK), (0.7, PURPLE), (0.5, GRIP)):
@@ -613,11 +591,14 @@ def discounted_return() -> None:
                 label=f'gamma = {g:.1f}')
     ax.set_xlabel('how many steps away the reward is', fontsize=10)
     ax.set_ylabel('how much it counts for', fontsize=10)
-    ax.set_title('The weight gamma to the power of the step', fontsize=11, weight='bold')
-    ax.legend(fontsize=9, frameon=False)
+    ax.set_title('A reward further away counts for less:\nthe weight is gamma to the '
+                 'power of the step', fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False)
     ax.set_ylim(0, 1.05)
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'the-discount-weight.svg')
 
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(8.8, 5.2), facecolor='white')
     _plain(ax)
     g = 0.9
     steps = np.arange(len(bin_r))
@@ -633,11 +614,14 @@ def discounted_return() -> None:
     ax.set_xticks(steps)
     ax.set_xlabel('step number', fontsize=10)
     ax.set_ylabel('reward', fontsize=10)
-    ax.set_title(f'The bin route at gamma = {g:.1f}: total '
-                 f'{discounted(bin_r, g):.3f}', fontsize=11, weight='bold')
-    ax.legend(fontsize=9, frameon=False, loc='upper left')
+    ax.set_title(f'The same ten rewards, before and after the weight:\n'
+                 f'at gamma = {g:.1f} the route is worth {discounted(bin_r, g):.2f} '
+                 f'instead of {bin_r.sum():.2f}', fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'weighting-one-route.svg')
 
-    ax = axes[2]
+    fig, ax = plt.subplots(figsize=(8.6, 5.2), facecolor='white')
     _plain(ax)
     xs = np.arange(len(gammas))
     b = [discounted(bin_r, g) for g in gammas]
@@ -656,13 +640,11 @@ def discounted_return() -> None:
     ax.set_xticklabels([f'{g:.1f}' for g in gammas])
     ax.set_xlabel('discount factor gamma', fontsize=10)
     ax.set_ylabel('discounted return', fontsize=10)
-    ax.set_title(f'Below gamma = {hi:.2f} the near tray wins', fontsize=11,
-                 weight='bold')
-    ax.legend(fontsize=8.5, frameon=False, loc='upper right')
-    fig.suptitle('Discounting: a reward now counts for more than the same reward later',
-                 fontsize=13, weight='bold', color=INK)
+    ax.set_title(f'Which route is worth more depends on gamma:\nbelow gamma = {hi:.2f} '
+                 f'the near tray wins', fontsize=12, weight='bold')
+    ax.legend(fontsize=9, frameon=False, loc='upper right')
     fig.tight_layout()
-    _save(fig, RL_DOC, 'discounted-return.svg')
+    _save(fig, RL_DOC, 'which-route-wins.svg')
 
 
 def episodes_and_returns() -> None:
@@ -766,8 +748,8 @@ def value_on_the_grid() -> None:
 def policy_and_value_together() -> None:
     V, Q = value_iteration(0.95)
     fig, axes = plt.subplots(1, 2, figsize=(11.6, 5.4), facecolor='white')
-    for ax, holding, name in ((axes[0], False, 'empty gripper: walk to the block, then C'),
-                              (axes[1], True, 'holding it: walk to the bin, then O')):
+    for ax, holding, name in ((axes[0], False, 'empty gripper: move to the block, then C'),
+                              (axes[1], True, 'holding it: move to the bin, then O')):
         _table(ax, name, small=True, label_top=True)
         _draw_numbers(ax, V, holding, '{:.2f}', 8.5, dy=-0.34)
         _draw_policy(ax, Q, holding, PURPLE, 12.0)
@@ -816,8 +798,7 @@ def learning_curve() -> None:
     V, Qs = value_iteration(0.95)
     best = float(greedy_path(Qs)[2].sum())
     k = 200
-    fig, axes = plt.subplots(1, 2, figsize=(12.6, 4.8), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.0, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(np.arange(len(rets)), _smooth(rets, k), color=LINK, lw=1.8,
             label=f'average of the last {k} attempts')
@@ -825,32 +806,39 @@ def learning_curve() -> None:
                label=f'the best possible, {best:.2f}')
     ax.set_xlabel('attempt number', fontsize=10)
     ax.set_ylabel('total reward collected in the attempt', fontsize=10)
-    ax.set_title('The learning curve', fontsize=11.5, weight='bold', color=INK)
-    ax.legend(fontsize=9, frameon=False, loc='lower right')
-    ax = axes[1]
+    ax.set_title(f'The learning curve: {MAIN_EPISODES:,} attempts, learned from nothing '
+                 f'but the reward', fontsize=12, weight='bold', color=INK)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'learning-curve.svg')
+
+    fig, ax = plt.subplots(figsize=(9.0, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(np.arange(len(succ)), _smooth(succ, k), color=PURPLE, lw=1.8)
     ax.set_ylim(-0.03, 1.03)
     ax.set_xlabel('attempt number', fontsize=10)
     ax.set_ylabel('share of attempts that reached the bin', fontsize=10)
-    ax.set_title('How often the block ended up in the bin', fontsize=11.5,
-                 weight='bold', color=INK)
     sm = _smooth(succ, k)
     for frac in (0.25, 0.5, 0.75, 1.0):
         i = int(frac * len(succ)) - 1
-        ax.text(i, sm[i] - 0.07, f'{sm[i]:.2f}', ha='right', fontsize=9, color=PURPLE)
+        ax.text(i + 70, sm[i] - 0.085, f'{sm[i]:.2f}', ha='left', fontsize=9,
+                color=PURPLE)
+    first = int(np.argmax(succ > 0)) if succ.any() else -1
+    ax.annotate(f'the first attempt that reached\nthe bin at all was number {first}',
+                xy=(first, 0.015), xytext=(60, 0.42), fontsize=9.5, color=PURPLE,
+                arrowprops={'arrowstyle': '->', 'color': PURPLE, 'lw': 1.2})
+    ax.set_title('How often the block finished in the bin, over the same run',
+                 fontsize=12, weight='bold', color=INK)
     print(f'[curve] smoothed success rate at a quarter, half, three quarters and the '
           f'end: ' + ', '.join(f'{_smooth(succ, k)[int(f * len(succ)) - 1]:.2f}'
                                for f in (0.25, 0.5, 0.75, 1.0)))
-    fig.suptitle(f'{MAIN_EPISODES} attempts in the little world, learned from nothing '
-                 f'but the reward', fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, RL_DOC, 'learning-curve.svg')
+    _save(fig, RL_DOC, 'how-often-the-bin.svg')
 
 
 def policy_before_after() -> None:
     Q, rets, succ, snaps = main_run()
-    start = snaps[0]
+    start = np.zeros((NS, NA))          # the table every run begins with
     fig, axes = plt.subplots(2, 2, figsize=(10.6, 10.0), facecolor='white')
     for col, (Qx, name) in enumerate(((start, 'before training'),
                                       (Q, 'after training'))):
@@ -885,6 +873,112 @@ def value_before_after() -> None:
                  'goes on', fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, RL_DOC, 'value-before-after.svg')
+
+
+def the_update_rule() -> None:
+    """One stored number, watched over the updates that changed it.
+
+    The run is the worked example again, with the number for one state and action
+    written down every time the rule touches it.
+    """
+    P, R, D, OUT, STAY = WORLD
+    gamma, alpha = 0.95, 0.3
+    s_track, a_track = sid(*BLOCK, True), 0            # holding the block, action "up"
+    rng = np.random.default_rng(7)
+    Q = np.zeros((NS, NA))
+    olds: list[float] = []
+    targets: list[float] = []
+    news: list[float] = []
+    for ep in range(MAIN_EPISODES):
+        e = 1.0 + (0.05 - 1.0) * ep / max(1, MAIN_EPISODES - 1)
+        ss, aa, rr, out = rollout(Q, rng, e, WORLD)
+        for i in range(len(ss) - 1, -1, -1):
+            s, a = int(ss[i]), int(aa[i])
+            tgt = rr[i] if D[s, a] else rr[i] + gamma * Q[P[s, a]].max()
+            if s == s_track and a == a_track:
+                olds.append(float(Q[s, a]))
+                targets.append(float(tgt))
+            Q[s, a] += alpha * (tgt - Q[s, a])
+            if s == s_track and a == a_track:
+                news.append(float(Q[s, a]))
+    V, Qstar = value_iteration(gamma)
+    exact = float(Qstar[s_track, a_track])
+    print(f'[update rule] the number for state {s_track}, action "{ACTIONS[a_track]}" was '
+          f'updated {len(news)} times in the {MAIN_EPISODES}-attempt run')
+    for i in (0, 1, 2):
+        print(f'[update rule]   update {i + 1}: held {olds[i]:+.3f}, aimed at '
+              f'{targets[i]:+.3f}, became {news[i]:+.3f}')
+    print(f'[update rule] after all of them it holds {news[-1]:.2f}, and the exact '
+          f'answer is {exact:.2f}')
+    n = 40
+    fig, ax = plt.subplots(figsize=(9.4, 5.2), facecolor='white')
+    _plain(ax)
+    xs = np.arange(1, n + 1)
+    ax.scatter(xs, targets[:n], s=40, color=WRIST, zorder=5,
+               label='the target: reward plus 0.95 times the best value of the next state')
+    ax.step(np.concatenate(([0], xs)), np.concatenate(([0.0], news[:n])), where='post',
+            color=LINK, lw=2.2, label='the number the learner stores')
+    for i in (15, 16, 17):
+        ax.annotate('', xy=(i + 1, news[i]), xytext=(i + 1, targets[i]),
+                    arrowprops={'arrowstyle': '->', 'color': MUTED, 'lw': 1.1})
+    ax.text(23.5, 0.30, 'each update moves the number three\ntenths of the way to its '
+            'target,\nnot all the way', fontsize=9.5, color=MUTED, va='top')
+    ax.set_xlabel(f'how many times the rule has touched this one number '
+                  f'(state {s_track}, action "{ACTIONS[a_track]}")', fontsize=10)
+    ax.set_ylabel('value', fontsize=10)
+    ax.set_title(f'The first {n} updates of one stored number, which ends at '
+                 f'{exact:.2f}\nafter all {len(news):,} of them', fontsize=12,
+                 weight='bold', color=INK)
+    ax.set_ylim(min(min(targets[:n]), 0.0) - 0.25, max(targets[:n]) + 0.75)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'the-update-rule.svg')
+
+
+def value_spreads_backwards() -> None:
+    """The learned value of the holding states, grouped by how far they are from
+    the bin, at four points just after the first attempt that reached the bin.
+
+    The run is the worked example again, with the snapshots taken at attempts
+    chosen around the first success rather than at the usual points, because
+    before that success nothing about the bin has been learned at all.
+    """
+    at = [660, 800, 1000, 1500]
+    _, _, _, snaps = q_learn(MAIN_EPISODES, 1.0, seed=7, eps1=0.05,
+                             snap_at=set(at))
+    V, Qstar = value_iteration(0.95)
+    dists = sorted({manhattan((r, c), BIN) for r in range(ROWS) for c in range(COLS)})
+    marks = [(snaps[0], f'after {at[0]} attempts', JOINT),
+             (snaps[1], f'after {at[1]} attempts', LINK),
+             (snaps[2], f'after {at[2]} attempts', PURPLE),
+             (snaps[3], f'after {at[3]} attempts', TEAL)]
+
+    def by_distance(table: Arr) -> list[float]:
+        out = []
+        for d in dists:
+            vals = [float(table[sid(r, c, True)].max()) for r in range(ROWS)
+                    for c in range(COLS) if manhattan((r, c), BIN) == d]
+            out.append(float(np.mean(vals)))
+        return out
+
+    fig, ax = plt.subplots(figsize=(9.0, 5.2), facecolor='white')
+    _plain(ax)
+    for table, name, colour in marks:
+        ys = by_distance(table)
+        ax.plot(dists, ys, marker='o', ms=4.5, color=colour, lw=2.0, label=name)
+        print(f'[spread] {name}: learned value by distance from the bin ' +
+              ', '.join(f'{d}:{v:.2f}' for d, v in zip(dists, ys)))
+    ax.plot(dists, by_distance(Qstar), ls='--', color=MUTED, lw=1.5,
+            label='the exact answer')
+    ax.set_xlabel('squares between the gripper and the bin, holding the block',
+                  fontsize=10)
+    ax.set_ylabel('learned value of the square', fontsize=10)
+    ax.set_title('Once one attempt has reached the bin, the value travels\nbackwards '
+                 'from it, a few squares at a time', fontsize=12, weight='bold',
+                 color=INK)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper right')
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'value-spreads-backwards.svg')
 
 
 def q_values_one_state() -> None:
@@ -954,8 +1048,7 @@ def explore_or_not() -> None:
     runs = explore_runs()
     V, Qs = value_iteration(0.95)
     best = float(greedy_path(Qs)[2].sum())
-    fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.9), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.2, 5.2), facecolor='white')
     _plain(ax)
     for name, colour in (('never explores', GRIP), ('explores 70% of the time', LINK)):
         arr = runs[name][0]
@@ -965,10 +1058,13 @@ def explore_or_not() -> None:
     ax.axhline(1.30, color=JOINT, ls=':', lw=1.3, label='the tray route, 1.30')
     ax.set_xlabel('attempt number', fontsize=10)
     ax.set_ylabel('reward collected in the attempt', fontsize=10)
-    ax.set_title(f'Reward during training, averaged over {EXPLORE_SEEDS} runs',
-                 fontsize=11.5, weight='bold', color=INK)
-    ax.legend(fontsize=9, frameon=False, loc='lower right')
-    ax = axes[1]
+    ax.set_title(f'Reward while training, averaged over {EXPLORE_SEEDS} runs of each '
+                 f'kind', fontsize=12, weight='bold', color=INK)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'explore-or-not.svg')
+
+    fig, ax = plt.subplots(figsize=(8.8, 5.2), facecolor='white')
     _plain(ax)
     names = ['never explores', 'explores 70% of the time']
     final = [float(np.mean([evaluate(q, 40, seed=1200 + i)[1]
@@ -989,16 +1085,14 @@ def explore_or_not() -> None:
     ax.set_ylabel('reward', fontsize=10)
     ax.set_ylim(-4.0, 11.0)
     ax.set_title('Exploring costs reward now and buys a better answer later',
-                 fontsize=11.5, weight='bold', color=INK)
-    ax.legend(fontsize=9, frameon=False, loc='upper left')
+                 fontsize=12, weight='bold', color=INK)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
     print(f'[explore] average reward while training: never {during[0]:.2f}, '
           f'exploring {during[1]:.2f}')
     print(f'[explore] reward of the finished policy: never {final[0]:.2f}, '
           f'exploring {final[1]:.2f}')
-    fig.suptitle('A run that never explores settles for the near tray',
-                 fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, RL_DOC, 'explore-or-not.svg')
+    _save(fig, RL_DOC, 'two-ways-to-measure-exploring.svg')
 
 
 def where_each_one_ends_up() -> None:
@@ -1022,8 +1116,7 @@ def where_each_one_ends_up() -> None:
 
 def first_time_at_the_bin() -> None:
     runs = explore_runs()
-    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.7), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(7.6, 5.0), facecolor='white')
     _plain(ax)
     names = ['never explores', 'explores 70% of the time']
     got = [int(sum(e['bin'] > 0.5 for e in runs[n][3])) for n in names]
@@ -1035,8 +1128,12 @@ def first_time_at_the_bin() -> None:
     ax.set_xticklabels(names, fontsize=10)
     ax.set_ylim(0, EXPLORE_SEEDS + 1.4)
     ax.set_ylabel('runs whose finished policy goes to the bin', fontsize=10)
-    ax.set_title('How many runs found the better answer', fontsize=11.5, weight='bold')
-    ax = axes[1]
+    ax.set_title(f'How many of the {EXPLORE_SEEDS} runs of each kind\nfound the better '
+                 f'answer', fontsize=12, weight='bold')
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'how-many-runs-found-the-bin.svg')
+
+    fig, ax = plt.subplots(figsize=(9.0, 5.0), facecolor='white')
     _plain(ax)
     for name, colour in ((names[0], GRIP), (names[1], LINK)):
         arr = runs[name][0]
@@ -1045,15 +1142,14 @@ def first_time_at_the_bin() -> None:
     ax.set_xlabel('attempt number', fontsize=10)
     ax.set_ylabel('share of runs that have reached the bin at least once', fontsize=10)
     ax.set_ylim(-0.03, 1.05)
-    ax.set_title('When the bin was first found at all', fontsize=11.5, weight='bold')
-    ax.legend(fontsize=9, frameon=False, loc='center right')
+    ax.set_title('When each run first reached the bin at all', fontsize=12,
+                 weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='center right')
     for name in names:
         arr = runs[name][0]
         first = [int(np.argmax(r > 5.0)) if (r > 5.0).any() else -1 for r in arr]
         print(f'[explore] {name}: attempt at which each run first reached the bin: '
               f'{first}')
-    fig.suptitle('Finding the bin at all is the whole difficulty',
-                 fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, RL_DOC, 'first-time-at-the-bin.svg')
 
@@ -1230,30 +1326,35 @@ def learning_from_old_attempts() -> None:
         Q = Qn.reshape(NS, NA)
         curve.append(evaluate(Q, 20, seed=2000)[1])
     V, Qstar = value_iteration(gamma)
+    best = float(greedy_path(Qstar)[2].sum())
+    reach = next((i + 1 for i, v in enumerate(curve) if v >= best - 1e-6), -1)
     print(f'[off-policy] after one pass the policy is worth {curve[0]:.2f}, '
           f'after five {curve[4]:.2f}, after forty {curve[-1]:.2f}; '
-          f'the best possible is {float(greedy_path(Qstar)[2].sum()):.2f}')
-    fig, axes = plt.subplots(1, 2, figsize=(12.6, 4.8), facecolor='white')
-    ax = axes[0]
+          f'the best possible is {best:.2f}')
+    print(f'[off-policy] the best route is first read off the table after '
+          f'{reach} passes')
+    fig, ax = plt.subplots(figsize=(9.0, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(np.arange(1, 41), curve, marker='o', ms=3.5, color=TEAL, lw=1.9)
-    ax.axhline(float(greedy_path(Qstar)[2].sum()), color=SLIDE, ls='--', lw=1.3,
-               label='the best possible')
+    ax.axhline(best, color=SLIDE, ls='--', lw=1.3, label='the best possible')
     ax.set_xlabel('passes over the stored attempts', fontsize=10)
     ax.set_ylabel('reward of the policy read off the table', fontsize=10)
-    ax.set_title(f'Learning from {n_ep} attempts that the learner never made',
-                 fontsize=11.5, weight='bold', color=INK)
+    ax.set_title(f'Off-policy learning: a table built from {n_ep:,} attempts\nthat this '
+                 f'learner never made', fontsize=12, weight='bold', color=INK)
     ax.legend(fontsize=9.5, frameon=False, loc='lower right')
-    ax = axes[1]
-    _table(ax, 'The route it ends up with', small=True)
-    ss, aa, rr, out = greedy_path(Q)
-    _draw_path(ax, ss, aa, TEAL)
-    ax.text(2.5, -0.32, f'{len(aa)} actions, reward {rr.sum():.2f}, ends at the {out}',
-            ha='center', fontsize=10, color=INK)
-    fig.suptitle('Off-policy learning: the attempts can come from anywhere',
-                 fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, RL_DOC, 'learning-from-old-attempts.svg')
+
+    fig, ax = plt.subplots(figsize=(6.8, 6.4), facecolor='white')
+    _table(ax, '', small=True)
+    ss, aa, rr, out = greedy_path(Q)
+    _draw_path(ax, ss, aa, TEAL)
+    ax.text(2.5, -0.34, f'{len(aa)} actions, reward {rr.sum():.2f}, ends at the {out}',
+            ha='center', fontsize=10, color=INK)
+    ax.set_title('The route read off a table built from\nsomebody else\'s attempts',
+                 fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'route-from-old-attempts.svg')
 
 
 def on_policy_goes_stale() -> None:
@@ -1335,6 +1436,39 @@ def the_clip() -> None:
     _save(fig, RL_DOC, 'the-clip.svg')
 
 
+def several_passes_over_one_batch() -> None:
+    """What reusing a batch buys: the same reward from fewer fresh attempts.
+
+    Three settings of how many gradient passes are made over each batch before
+    the batch is thrown away, all with the limit switched on.
+    """
+    settings = [(1, GRIP, 'one pass over each batch'),
+                (5, JOINT, 'five passes over each batch'),
+                (20, LINK, 'twenty passes over each batch')]
+    iters, n_ep = 60, 20
+    fig, ax = plt.subplots(figsize=(9.2, 5.2), facecolor='white')
+    _plain(ax)
+    for epochs, colour, name in settings:
+        hs = []
+        for seed in (0, 1):
+            _, h, _ = ppo_train(iters=iters, n_ep=n_ep, epochs=epochs, seed=seed)
+            hs.append(h)
+        h = np.array(hs).mean(0)
+        attempts = np.arange(1, iters + 1) * n_ep
+        ax.plot(attempts, h, color=colour, lw=2.0, label=name)
+        print(f'[batch passes] {epochs:2d} passes over each batch: after '
+              f'{attempts[-1]} attempts the reward is {h[-10:].mean():.2f}')
+    ax.axhline(1.30, color=SLIDE, ls=':', lw=1.3, label='the tray route, 1.30')
+    ax.set_xlabel('fresh attempts collected so far', fontsize=10)
+    ax.set_ylabel('average reward of the attempts in the round', fontsize=10)
+    ax.set_ylim(-11.0, 3.0)
+    ax.set_title('Reusing each batch gets the same reward out of\nfewer fresh attempts '
+                 '(two runs of each, averaged)', fontsize=12, weight='bold', color=INK)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'several-passes-over-one-batch.svg')
+
+
 def with_and_without_the_limit() -> None:
     seeds = [0, 1, 2]
     res: dict[bool, tuple[Arr, Arr]] = {}
@@ -1349,8 +1483,7 @@ def with_and_without_the_limit() -> None:
         print(f'[limit] clip={use_clip}: best reward on the way {h.max(1).mean():.2f}, '
               f'reward over the last ten rounds {h[:, -10:].mean():.2f}, '
               f'biggest change in one action chance {np.array(sts).max():.3f}')
-    fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.9), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.2, 5.2), facecolor='white')
     _plain(ax)
     for use_clip, colour, name in ((True, LINK, 'with the limit'),
                                    (False, GRIP, 'without the limit')):
@@ -1361,11 +1494,14 @@ def with_and_without_the_limit() -> None:
     ax.axhline(1.30, color=JOINT, ls=':', lw=1.3, label='the tray route, 1.30')
     ax.set_xlabel('round of collect-and-improve', fontsize=10)
     ax.set_ylabel('average reward of the 20 attempts in the round', fontsize=10)
-    ax.set_ylim(-11.0, 3.0)
-    ax.set_title('Three runs each, drawn faintly, with their average',
-                 fontsize=11.5, weight='bold', color=INK)
-    ax.legend(fontsize=9, frameon=False, loc='lower left')
-    ax = axes[1]
+    ax.set_ylim(-13.6, 3.0)
+    ax.set_title('Take the limit away and the reward collapses\n(three runs each, drawn '
+                 'faintly, with their average)', fontsize=12, weight='bold', color=INK)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower left', ncol=3)
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'with-and-without-the-limit.svg')
+
+    fig, ax = plt.subplots(figsize=(9.2, 5.2), facecolor='white')
     _plain(ax)
     for use_clip, colour, name in ((True, LINK, 'with the limit'),
                                    (False, GRIP, 'without the limit')):
@@ -1376,14 +1512,12 @@ def with_and_without_the_limit() -> None:
                 label=f'{name} (worst of the three)')
     ax.set_xlabel('round of collect-and-improve', fontsize=10)
     ax.set_ylabel('biggest change in one action chance, in one round', fontsize=10)
-    ax.set_ylim(0, 1.05)
-    ax.set_title('How far the policy moved in a single round', fontsize=11.5,
+    ax.set_ylim(0, 1.42)
+    ax.set_title('How far the policy moved in a single round', fontsize=12,
                  weight='bold', color=INK)
-    ax.legend(fontsize=9, frameon=False, loc='center right')
-    fig.suptitle('Take the limit away and the policy jumps, then collapses',
-                 fontsize=13, weight='bold', color=INK)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
     fig.tight_layout()
-    _save(fig, RL_DOC, 'with-and-without-the-limit.svg')
+    _save(fig, RL_DOC, 'how-far-the-policy-moved.svg')
 
 
 # ==========================================================================
@@ -1407,8 +1541,7 @@ def how_many_attempts() -> None:
           f'{arm_h:.0f} hours, or {arm_h / 24:.1f} days of running')
     print(f'[cost] the first attempt that reached the bin was number 658, so 657 '
           f'attempts paid for nothing')
-    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.9), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.0, 5.2), facecolor='white')
     _plain(ax)
     k = 200
     ax.plot(np.arange(len(lens)), _smooth(np.array(lens, dtype=float), k), color=TEAL,
@@ -1416,11 +1549,14 @@ def how_many_attempts() -> None:
     ax.set_xlabel('attempt number', fontsize=10)
     ax.set_ylabel('actions used in the attempt', fontsize=10)
     ax.set_title(f'{total:,} actions in all, over {MAIN_EPISODES:,} attempts',
-                 fontsize=11.5, weight='bold', color=INK)
+                 fontsize=12, weight='bold', color=INK)
     ax.text(len(lens) * 0.35, max(_smooth(np.array(lens, dtype=float), k)) * 0.8,
             'early attempts run to the\ntime limit of 80 actions', fontsize=9.5,
             color=MUTED)
-    ax = axes[1]
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'how-many-attempts.svg')
+
+    fig, ax = plt.subplots(figsize=(7.4, 5.2), facecolor='white')
     _plain(ax)
     hours = [sim_h, arm_h]
     ax.bar([0, 1], hours, width=0.5, color=[LINK, GRIP], edgecolor=INK, lw=0.7)
@@ -1433,12 +1569,10 @@ def how_many_attempts() -> None:
                        fontsize=10)
     ax.set_ylabel('hours of running (log scale)', fontsize=10)
     ax.set_ylim(1e-3, arm_h * 12)
-    ax.set_title('The same learning, done in the two places', fontsize=11.5,
-                 weight='bold', color=INK)
-    fig.suptitle('The number of attempts is why this is done in a simulator',
-                 fontsize=13, weight='bold', color=INK)
+    ax.set_title(f'The same {total:,} actions, run in the two places',
+                 fontsize=12, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, RL_DOC, 'how-many-attempts.svg')
+    _save(fig, RL_DOC, 'hours-in-each-place.svg')
 
 
 SIM2REAL: tuple[list[Arr], list[Arr]] | None = None
@@ -1491,7 +1625,7 @@ def the_reality_gap() -> None:
                                         tie='first')[0]['bin'] for q in clean]))
     print(f'[gap] over {len(clean)} runs: reaches the bin on {rate_sim:.2f} of attempts '
           f'in the simulator and {rate_real:.2f} in the cell with the fixture')
-    fig, axes = plt.subplots(1, 3, figsize=(15.2, 5.0), facecolor='white')
+    fig, axes = plt.subplots(1, 2, figsize=(11.6, 5.4), facecolor='white')
     _table(axes[0], 'In the simulator', small=True)
     _draw_path(axes[0], ok[0], ok[1], SLIDE)
     axes[0].text(2.5, -0.32, f'{len(ok[1])} actions, reward {ok[2].sum():.2f}',
@@ -1508,7 +1642,12 @@ def the_reality_gap() -> None:
                 ha='center', arrowprops={'arrowstyle': '->', 'color': GRIP, 'lw': 1.2})
     ax.text(2.5, -0.32, f'{len(bad[1])} actions, reward {bad[2].sum():.2f}, '
                         f'ends as "{bad[3]}"', ha='center', fontsize=10, color=INK)
-    ax = axes[2]
+    fig.suptitle('The reality gap: the same policy, in the simulator and in a cell with '
+                 'one square of furniture', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'the-reality-gap.svg')
+
+    fig, ax = plt.subplots(figsize=(7.4, 5.2), facecolor='white')
     _plain(ax)
     ax.bar([0, 1], [rate_sim, rate_real], width=0.5, color=[SLIDE, GRIP], edgecolor=INK,
            lw=0.7)
@@ -1518,11 +1657,10 @@ def the_reality_gap() -> None:
     ax.set_xticklabels(['in the simulator', 'in the real cell'], fontsize=10.5)
     ax.set_ylim(0, 1.15)
     ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
-    ax.set_title(f'{len(clean)} runs, each tried six times', fontsize=11.5, weight='bold')
-    fig.suptitle('The reality gap: one square of furniture the simulator did not have',
-                 fontsize=13, weight='bold', color=INK)
+    ax.set_title(f'The gap in numbers: {len(clean)} policies,\neach tried six times in '
+                 f'each place', fontsize=12, weight='bold')
     fig.tight_layout()
-    _save(fig, RL_DOC, 'the-reality-gap.svg')
+    _save(fig, RL_DOC, 'the-gap-in-numbers.svg')
 
 
 def P_OF(s: int, a: int) -> int:
@@ -1540,8 +1678,7 @@ def domain_randomisation() -> None:
               f'randomised simulator {y:.2f}')
     print(f'[randomise] averaged over the {len(INTERIOR)} squares: '
           f'{float(np.mean(a)):.2f} against {float(np.mean(b)):.2f}')
-    fig, axes = plt.subplots(1, 2, figsize=(13.2, 5.0), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.6, 5.2), facecolor='white')
     _plain(ax)
     xs = np.arange(len(INTERIOR))
     ax.bar(xs - 0.2, a, width=0.4, color=GRIP, edgecolor=INK, lw=0.6,
@@ -1555,25 +1692,36 @@ def domain_randomisation() -> None:
     ax.axhline(float(np.mean(a)), color=GRIP, ls=':', lw=1.3)
     ax.axhline(float(np.mean(b)), color=SLIDE, ls=':', lw=1.3)
     ax.set_ylim(0, 1.5)
-    ax.set_title(f'Eight places the fixture could be: average '
+    ax.set_title(f'Eight places the fixture could really be: average '
                  f'{float(np.mean(a)):.2f} against {float(np.mean(b)):.2f}',
-                 fontsize=11.5, weight='bold')
+                 fontsize=12, weight='bold')
     ax.legend(fontsize=9, frameon=False, loc='upper center', ncol=2)
-    ax = axes[1]
-    _table(ax, 'The route the randomised learner picks', small=True)
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'domain-randomisation.svg')
+
+    fig, ax = plt.subplots(figsize=(6.8, 6.4), facecolor='white')
+    _table(ax, '', small=True)
     ok = _route(rand[0])
     _draw_path(ax, ok[0], ok[1], SLIDE)
     for bl in INTERIOR:
         r, c = bl
         ax.add_patch(Rectangle((c, ROWS - 1 - r), 1, 1, fill=False, edgecolor=INK,
                                lw=1.0, ls=':'))
-    ax.text(2.5, -0.32, 'dotted squares are where a fixture may stand; the route\n'
-                        'crosses as few of them as it can', ha='center', fontsize=9.5,
-            color=INK)
-    fig.suptitle('Domain randomisation: change the simulator every attempt, and the '
-                 'policy stops relying on it', fontsize=13, weight='bold', color=INK)
+
+    def risky(ss: NDArray[np.int64]) -> int:
+        return len({unsid(int(s))[:2] for s in ss} & set(INTERIOR))
+
+    n_rand, n_clean = risky(ok[0]), risky(_route(clean[0])[0])
+    print(f'[randomise] the randomised route crosses {n_rand} of the {len(INTERIOR)} '
+          f'squares a fixture may stand on; the route from the perfect simulator '
+          f'crosses {n_clean}')
+    ax.text(2.5, -0.34, 'dotted squares are where a fixture may stand',
+            ha='center', fontsize=9.5, color=INK)
+    ax.set_title(f'The route the randomised learner picks: it crosses\n{n_rand} of the '
+                 f'risky squares, where the other route crosses {n_clean}',
+                 fontsize=12, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, RL_DOC, 'domain-randomisation.svg')
+    _save(fig, RL_DOC, 'the-randomised-route.svg')
 
 
 def what_randomising_costs() -> None:
@@ -1591,8 +1739,7 @@ def what_randomising_costs() -> None:
           f'perfect simulator {A.mean():.3f}, randomised {B.mean():.3f}')
     print(f'[cost of randomising] back in the perfect simulator the two policies collect '
           f'{ret_a:.2f} and {ret_b:.2f}')
-    fig, axes = plt.subplots(1, 2, figsize=(12.6, 4.9), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.2, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(np.arange(A.shape[1]), _smooth(A.mean(0), 300), color=GRIP, lw=2.0,
             label='one perfect simulator')
@@ -1601,9 +1748,13 @@ def what_randomising_costs() -> None:
     ax.set_ylim(-0.03, 1.05)
     ax.set_xlabel('attempt number', fontsize=10)
     ax.set_ylabel('share of attempts reaching the bin while training', fontsize=10)
-    ax.set_title('Randomising makes the learning slower', fontsize=11.5, weight='bold')
-    ax.legend(fontsize=9, frameon=False, loc='lower right')
-    ax = axes[1]
+    ax.set_title('Randomising makes the learning slower\n(four runs of each, averaged)',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'what-randomising-costs.svg')
+
+    fig, ax = plt.subplots(figsize=(7.4, 5.2), facecolor='white')
     _plain(ax)
     xs = np.arange(2)
     ax.bar(xs, [ret_a, ret_b], width=0.5, color=[GRIP, SLIDE], edgecolor=INK, lw=0.6)
@@ -1613,11 +1764,10 @@ def what_randomising_costs() -> None:
     ax.set_xticklabels(['one perfect simulator', 'randomised simulator'], fontsize=10)
     ax.set_ylim(0, 10.6)
     ax.set_ylabel('reward in the perfect simulator', fontsize=10)
-    ax.set_title('What it costs back in the easy world', fontsize=11.5, weight='bold')
-    fig.suptitle('Randomising buys a policy that survives the gap, and the bill is '
-                 'training time', fontsize=13, weight='bold', color=INK)
+    ax.set_title('Back in the easy world the two policies\ncollect the same reward',
+                 fontsize=12, weight='bold')
     fig.tight_layout()
-    _save(fig, RL_DOC, 'what-randomising-costs.svg')
+    _save(fig, RL_DOC, 'cost-back-in-the-easy-world.svg')
 
 
 # ==========================================================================
@@ -1735,20 +1885,26 @@ def the_hovering_policy() -> None:
           f'time runs out')
     print(f'[hover] it collects {rr.sum():.2f} of the written reward, ends as "{out}", '
           f'and scores {true_reward:.2f} on the real job')
-    fig, axes = plt.subplots(1, 3, figsize=(15.0, 5.0), facecolor='white')
-    _table(axes[0], 'The route it takes', small=True)
-    _draw_path(axes[0], ss, aa, GRIP)
-    axes[0].text(2.5, -0.32, f'{len(aa)} actions, then the time limit', ha='center',
-                 fontsize=10, color=INK)
-    _table(axes[1], 'Best action, empty gripper', small=True, label_top=True)
-    _draw_policy(axes[1], Q, False, PURPLE, 12.0)
-    _table(axes[2], 'Best action, holding the block', small=True, label_top=True)
-    _draw_policy(axes[2], Q, True, PURPLE, 12.0)
-    fig.suptitle(f'The policy walks to the block and waits: written reward '
-                 f'{rr.sum():.2f}, block in the bin 0 times',
-                 fontsize=13, weight='bold', color=INK)
+    fig, ax = plt.subplots(figsize=(6.8, 6.6), facecolor='white')
+    _table(ax, '', small=True)
+    _draw_path(ax, ss, aa, GRIP)
+    ax.text(2.5, -0.34, f'three moves, then {MAXSTEPS - 3} waits on the same square',
+            ha='center', fontsize=10, color=INK)
+    ax.set_title(f'The best policy under the written reward: move to the\nblock and '
+                 f'wait there, for {rr.sum():.2f}', fontsize=12.5, weight='bold',
+                 color=INK)
     fig.tight_layout()
     _save(fig, RW_DOC, 'the-hovering-policy.svg')
+
+    fig, axes = plt.subplots(1, 2, figsize=(11.6, 5.4), facecolor='white')
+    _table(axes[0], 'empty gripper', small=True, label_top=True)
+    _draw_policy(axes[0], Q, False, PURPLE, 12.0)
+    _table(axes[1], 'holding the block', small=True, label_top=True)
+    _draw_policy(axes[1], Q, True, PURPLE, 12.0)
+    fig.suptitle('The best action in every square under the written reward: W is wait, '
+                 'and no square says open', fontsize=12, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'best-action-under-the-written-reward.svg')
 
 
 def reward_up_task_flat() -> None:
@@ -1820,7 +1976,7 @@ def three_behaviours_scored() -> None:
     ax.set_xticks(xs)
     ax.set_xticklabels(names, fontsize=10)
     ax.set_ylim(0, 1.25)
-    ax.set_ylabel('block ended up in the bin', fontsize=10)
+    ax.set_ylabel('block finished in the bin', fontsize=10)
     ax.set_title('Scored by the job that was wanted', fontsize=11.5, weight='bold')
     fig.suptitle('The behaviour that wins under the written reward is the one that '
                  'never does the job', fontsize=13, weight='bold', color=INK)
@@ -1919,15 +2075,18 @@ def shaping_that_changes_the_answer() -> None:
           f'as "{out}"')
     print(f'[hold bonus] a learner trained on it reaches the bin on {rate:.2f} of '
           f'attempts')
-    fig, axes = plt.subplots(1, 3, figsize=(15.0, 5.0), facecolor='white')
-    _table(axes[0], 'The route under the holding bonus', small=True)
-    _draw_path(axes[0], ss, aa, GRIP)
-    axes[0].text(2.5, -0.32, f'{len(aa)} actions, shaped reward {rr.sum():.2f}, '
-                             f'real reward {true_r:.2f}', ha='center', fontsize=9.5,
-                 color=INK)
-    _table(axes[1], 'Best action while holding', small=True, label_top=True)
-    _draw_policy(axes[1], Q, True, PURPLE, 12.0)
-    ax = axes[2]
+    fig, ax = plt.subplots(figsize=(6.8, 6.6), facecolor='white')
+    _table(ax, '', small=True)
+    _draw_path(ax, ss, aa, GRIP)
+    ax.text(2.5, -0.34, f'{len(aa)} actions, shaped reward {rr.sum():.2f}, '
+                        f'real reward {true_r:.2f}', ha='center', fontsize=9.5,
+            color=INK)
+    ax.set_title('With a bonus for holding the block, the best policy\npicks it up and '
+                 'never puts it down', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'shaping-that-changes-the-answer.svg')
+
+    fig, ax = plt.subplots(figsize=(8.6, 5.2), facecolor='white')
     _plain(ax)
     held = np.array([HOLD_BONUS * t for t in range(MAXSTEPS + 1)])
     ax.plot(np.arange(MAXSTEPS + 1), held, color=GRIP, lw=2.2,
@@ -1935,12 +2094,11 @@ def shaping_that_changes_the_answer() -> None:
     ax.axhline(10.0, color=SLIDE, ls='--', lw=1.8, label='put it in the bin: +10, once')
     ax.set_xlabel('steps spent holding the block', fontsize=10)
     ax.set_ylabel('reward collected', fontsize=10)
-    ax.set_title('Why carrying it beats placing it', fontsize=11.5, weight='bold')
+    ax.set_title('Why carrying the block beats placing it:\n1.00 a step for ever against '
+                 '10 once', fontsize=12, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='upper left')
-    fig.suptitle('A bonus for holding the block changes which behaviour is best, not '
-                 'just how fast it is found', fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, RW_DOC, 'shaping-that-changes-the-answer.svg')
+    _save(fig, RW_DOC, 'carrying-beats-placing.svg')
 
 
 def shaping_that_keeps_the_answer() -> None:
@@ -1955,13 +2113,17 @@ def shaping_that_keeps_the_answer() -> None:
     print(f'[potential] the potential-based reward agrees with the plain one on '
           f'{same_pot} of {NS} states')
     print(f'[potential] the plain dense reward agrees on {same_dense} of {NS} states')
-    fig, axes = plt.subplots(1, 3, figsize=(15.2, 5.0), facecolor='white')
-    _table(axes[0], 'The number attached to each square, empty gripper', small=True,
-           label_top=True)
+    fig, axes = plt.subplots(1, 2, figsize=(11.6, 5.4), facecolor='white')
+    _table(axes[0], 'empty gripper', small=True, label_top=True)
     _draw_numbers(axes[0], phi, False, '{:+.1f}', 10.0, dy=-0.2)
-    _table(axes[1], 'The same, holding the block', small=True, label_top=True)
+    _table(axes[1], 'holding the block', small=True, label_top=True)
     _draw_numbers(axes[1], phi, True, '{:+.1f}', 10.0, dy=-0.2)
-    ax = axes[2]
+    fig.suptitle('The number attached to each state, which the shaping payment is the '
+                 'difference of', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'shaping-that-keeps-the-answer.svg')
+
+    fig, ax = plt.subplots(figsize=(7.6, 5.2), facecolor='white')
     _plain(ax)
     xs = np.arange(2)
     ax.bar(xs, [same_dense, same_pot], width=0.5, color=[WRIST, SLIDE], edgecolor=INK,
@@ -1972,11 +2134,10 @@ def shaping_that_keeps_the_answer() -> None:
     ax.set_xticklabels(['plain dense reward', 'potential-based reward'], fontsize=10)
     ax.set_ylim(0, NS + 6)
     ax.set_ylabel('states where the best action is unchanged', fontsize=10)
-    ax.set_title('Does the shaping change the answer?', fontsize=11.5, weight='bold')
-    fig.suptitle('Shaping written as the difference of a number attached to each state '
-                 'leaves the best behaviour alone', fontsize=13, weight='bold', color=INK)
+    ax.set_title('Does the shaping change the answer?\nOne shape of shaping cannot',
+                 fontsize=12, weight='bold')
     fig.tight_layout()
-    _save(fig, RW_DOC, 'shaping-that-keeps-the-answer.svg')
+    _save(fig, RW_DOC, 'does-shaping-change-the-answer.svg')
 
 
 # ---------------- section 3: a reward model learned from examples ----------------
@@ -2082,12 +2243,17 @@ def what_the_reward_model_scores() -> None:
     print(f'[reward model] score at the bin holding the block {score[sid(*BIN, True)]:.2f}; '
           f'at the bin with an empty gripper {score[sid(*BIN, False)]:.2f}; '
           f'at the start {score[S0]:.2f}')
-    fig, axes = plt.subplots(1, 3, figsize=(15.4, 5.0), facecolor='white')
+    fig, axes = plt.subplots(1, 2, figsize=(11.6, 5.4), facecolor='white')
     for ax, holding, name in ((axes[0], False, 'empty gripper'),
                               (axes[1], True, 'holding the block')):
         _table(ax, f'Score of every square, {name}', small=True, label_top=True)
         _draw_numbers(ax, score, holding, '{:.2f}', 9.5, dy=-0.2)
-    ax = axes[2]
+    fig.suptitle('The learned reward model: a score between 0 and 1 for every state',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'what-the-reward-model-scores.svg')
+
+    fig, ax = plt.subplots(figsize=(8.4, 5.0), facecolor='white')
     _plain(ax)
     ax.barh(np.arange(len(w)), w, color=[LINK if v >= 0 else GRIP for v in w],
             edgecolor=INK, lw=0.6)
@@ -2099,11 +2265,10 @@ def what_the_reward_model_scores() -> None:
     ax.axvline(0, color=INK, lw=0.9)
     ax.set_xlim(min(w) - 1.2, max(w) + 1.2)
     ax.set_xlabel('weight the model gives the measurement', fontsize=10)
-    ax.set_title('What it decided mattered', fontsize=11.5, weight='bold')
-    fig.suptitle('The learned reward model: a score between 0 and 1 for every state',
-                 fontsize=13, weight='bold', color=INK)
+    ax.set_title('What the reward model decided mattered:\nholding the block most of all',
+                 fontsize=12, weight='bold')
     fig.tight_layout()
-    _save(fig, RW_DOC, 'what-the-reward-model-scores.svg')
+    _save(fig, RW_DOC, 'the-fitted-weights.svg')
 
 
 def how_well_it_tells_them_apart() -> None:
@@ -2114,8 +2279,7 @@ def how_well_it_tells_them_apart() -> None:
     print(f'[reward model] average score {good.mean():.2f} on states from attempts that '
           f'worked and {bad.mean():.2f} on states from attempts that failed; it labels '
           f'{acc:.2f} of them right')
-    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.8), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.8, 5.2), facecolor='white')
     _plain(ax)
     bins = np.linspace(0, 1, 26)
     ax.hist(bad, bins=bins, color=GRIP, alpha=0.7, label='states from attempts that failed')
@@ -2123,10 +2287,13 @@ def how_well_it_tells_them_apart() -> None:
     ax.axvline(0.5, color=INK, ls='--', lw=1.2)
     ax.set_xlabel('score the model gives the state', fontsize=10)
     ax.set_ylabel('how many states', fontsize=10)
-    ax.set_title(f'It gets {acc:.0%} of them on the right side of 0.5', fontsize=11.5,
-                 weight='bold')
+    ax.set_title(f'How well the score tells the two groups apart:\nit gets {acc:.0%} of '
+                 f'them on the right side of 0.5', fontsize=12, weight='bold')
     ax.legend(fontsize=9, frameon=False, loc='upper right')
-    ax = axes[1]
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'how-well-it-tells-them-apart.svg')
+
+    fig, ax = plt.subplots(figsize=(8.8, 5.2), facecolor='white')
     _plain(ax)
     V, Qt = value_iteration(0.95, t=T_TRUE)
     ss, aa, rr, out = greedy_path(Qt, t=T_TRUE)
@@ -2139,13 +2306,12 @@ def how_well_it_tells_them_apart() -> None:
     ax.set_xticklabels([ACTIONS[a][:1].upper() for a in aa], fontsize=9)
     ax.set_xlabel('the ten actions of a good attempt', fontsize=10)
     ax.set_ylabel('score the model gives the state reached', fontsize=10)
-    ax.set_title('Along a good attempt the score climbs', fontsize=11.5, weight='bold')
+    ax.set_title('Along a good attempt the score climbs:\nthe model turns "did it work" '
+                 'into a number for every step', fontsize=12, weight='bold')
     print(f'[reward model] along a good attempt the score goes '
           f'{[round(float(v), 2) for v in along]}')
-    fig.suptitle('A learned reward model turns "did it work" into a number for every '
-                 'step', fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, RW_DOC, 'how-well-it-tells-them-apart.svg')
+    _save(fig, RW_DOC, 'the-score-along-a-good-attempt.svg')
 
 
 def model_reward_tables() -> Tables:
@@ -2305,12 +2471,17 @@ def what_the_preferences_taught() -> None:
           f'on the block empty {fitted[sid(*BLOCK, False)]:.2f}, on the block holding '
           f'{fitted[sid(*BLOCK, True)]:.2f}, at the bin holding '
           f'{fitted[sid(*BIN, True)]:.2f}')
-    fig, axes = plt.subplots(1, 3, figsize=(15.4, 5.0), facecolor='white')
+    fig, axes = plt.subplots(1, 2, figsize=(11.6, 5.4), facecolor='white')
     for ax, holding, name in ((axes[0], False, 'empty gripper'),
                               (axes[1], True, 'holding the block')):
         _table(ax, f'Fitted reward per square, {name}', small=True, label_top=True)
         _draw_numbers(ax, fitted, holding, '{:+.2f}', 9.0, dy=-0.2)
-    ax = axes[2]
+    fig.suptitle('From choices alone, a reward for every state',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'what-the-preferences-taught.svg')
+
+    fig, ax = plt.subplots(figsize=(8.4, 5.0), facecolor='white')
     _plain(ax)
     ax.barh(np.arange(len(w)), w, color=[LINK if v >= 0 else GRIP for v in w],
             edgecolor=INK, lw=0.6)
@@ -2322,11 +2493,83 @@ def what_the_preferences_taught() -> None:
     ax.axvline(0, color=INK, lw=0.9)
     ax.set_xlim(min(w) - 0.5, max(w) + 0.5)
     ax.set_xlabel('weight fitted from the choices', fontsize=10)
-    ax.set_title('What the choices taught it', fontsize=11.5, weight='bold')
-    fig.suptitle('From choices alone, a reward for every state',
-                 fontsize=13, weight='bold', color=INK)
+    ax.set_title('The weights the choices alone taught it:\nbe far from the block and '
+                 'near the bin', fontsize=12, weight='bold')
     fig.tight_layout()
-    _save(fig, RW_DOC, 'what-the-preferences-taught.svg')
+    _save(fig, RW_DOC, 'weights-fitted-from-choices.svg')
+
+
+def fitting_to_the_choices() -> None:
+    """The fitted score of a pair against the truth, for the pairs it was fitted on.
+
+    One idea: the fit has no numbers to copy, only an ordering, and it reproduces
+    that ordering wherever the two attempts were far apart in quality.
+    """
+    eps_list, w = preference_fit()
+    pairs = make_pairs(eps_list, 2000, PREF_TAU, 34)
+    sums = np.stack([FEAT[ss].sum(0) for ss, _, _ in eps_list])
+    sc = sums @ w
+    truth = np.array([e[1] for e in eps_list])
+    A = np.array([p[0] for p in pairs])
+    B = np.array([p[1] for p in pairs])
+    y = np.array([p[2] for p in pairs])
+    dt = truth[A] - truth[B]
+    dsc = sc[A] - sc[B]
+    agree = float(np.mean((dsc > 0) == (y > 0)))
+    near = np.abs(dt) < 2.0
+    print(f'[pref fit] the fitted score orders {agree:.2f} of the {len(pairs)} judged '
+          f'pairs the same way the judge did')
+    print(f'[pref fit] on the {int(near.sum())} pairs whose true returns differ by less '
+          f'than 2 it agrees on {float(np.mean((dsc[near] > 0) == (y[near] > 0))):.2f}, '
+          f'and on the other {int((~near).sum())} on '
+          f'{float(np.mean((dsc[~near] > 0) == (y[~near] > 0))):.2f}')
+    fig, ax = plt.subplots(figsize=(9.0, 5.4), facecolor='white')
+    _plain(ax)
+    for lab, colour, name in ((1, SLIDE, 'the judge preferred attempt A'),
+                              (0, GRIP, 'the judge preferred attempt B')):
+        m = y == lab
+        ax.scatter(dt[m], dsc[m], s=14, color=colour, alpha=0.45, lw=0, label=name)
+    ax.axhline(0, color=INK, lw=1.0)
+    ax.axvline(0, color=INK, lw=1.0)
+    ax.set_xlabel('true return of attempt A minus true return of attempt B', fontsize=10)
+    ax.set_ylabel('fitted score of A minus fitted score of B', fontsize=10)
+    ax.set_title('The fit never sees a return, only which attempt was preferred,\nand it '
+                 f'recovers the ordering on {agree:.0%} of the pairs', fontsize=12,
+                 weight='bold', color=INK)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'fitting-to-the-choices.svg')
+
+
+def ranking_two_failures() -> None:
+    """Only the attempts that failed, scored by the reward fitted from choices.
+
+    One idea: a preference can order two failures, where a label that only says
+    "did it work" gives both of them the same answer.
+    """
+    eps_list, w = preference_fit()
+    sums = np.stack([FEAT[ss].sum(0) for ss, _, _ in eps_list])
+    sc = sums @ w
+    bad = [i for i, e in enumerate(eps_list) if e[2] != 'bin']
+    truth = np.array([eps_list[i][1] for i in bad])
+    score = sc[np.array(bad)]
+    ds = score[:, None] - score[None, :]
+    dt = truth[:, None] - truth[None, :]
+    pairs = np.triu(np.abs(dt) > 1e-9, 1)
+    share = float((((ds * dt) > 0) & pairs).sum() / max(int(pairs.sum()), 1))
+    print(f'[two failures] {len(bad)} of the {len(eps_list)} attempts never reached the '
+          f'bin; over all {int(pairs.sum())} pairs of them the fitted reward orders '
+          f'{share:.2f} the same way their true returns do')
+    fig, ax = plt.subplots(figsize=(8.8, 5.2), facecolor='white')
+    _plain(ax)
+    ax.scatter(truth, score, s=22, color=GRIP, alpha=0.5, lw=0)
+    ax.set_xlabel('true return of an attempt that never reached the bin', fontsize=10)
+    ax.set_ylabel('score from the reward fitted to choices', fontsize=10)
+    ax.set_title(f'Every attempt here failed, so a yes or no label gives them all the\n'
+                 f'same answer; the fitted reward still orders {share:.0%} of their '
+                 f'pairs correctly', fontsize=12, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'ranking-two-failures.svg')
 
 
 def how_many_pairs() -> None:
@@ -2395,13 +2638,13 @@ def people_make_mistakes() -> None:
     ax.set_xticks(counts)
     ax.set_xticklabels([str(c) for c in counts])
     ax.axhline(0.5, color=MUTED, ls='--', lw=1.2)
-    ax.set_ylim(0.45, 1.06)
+    ax.set_ylim(0.45, 1.20)
     ax.set_xlabel('number of judged pairs (log scale)', fontsize=10)
     ax.set_ylabel('share of held-out pairs it orders the same way', fontsize=10)
-    ax.set_title('A careless judge costs pairs, not correctness', fontsize=12,
+    ax.set_title('More pairs cannot repair a careless judge', fontsize=12,
                  weight='bold', color=INK)
     ax.text(26, 0.515, 'guessing', fontsize=9, color=MUTED)
-    ax.legend(fontsize=9.5, frameon=False, loc='center right')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
     fig.tight_layout()
     _save(fig, RW_DOC, 'people-make-mistakes.svg')
 
@@ -2459,11 +2702,10 @@ def where_they_disagree() -> None:
     fooled = int(((model >= cut) & (passed == 0)).sum())
     missed = int(((model < cut) & (passed == 1)).sum())
     print(f'[verifier] of {len(eps_list)} attempts the verifier passes {int(passed.sum())}')
-    print(f'[verifier] taking the model score of a middling passing attempt as the bar, '
-          f'{fooled} failing attempts score above it and {missed} passing attempts score '
-          f'below it')
-    fig, axes = plt.subplots(1, 2, figsize=(12.6, 4.8), facecolor='white')
-    ax = axes[0]
+    print(f'[verifier] a middling passing attempt scores {cut:.2f}; taking that as the '
+          f'bar, {fooled} failing attempts score above it and {missed} passing attempts '
+          f'score below it')
+    fig, ax = plt.subplots(figsize=(9.0, 5.2), facecolor='white')
     _plain(ax)
     bins = np.linspace(0, 1, 26)
     ax.hist(model[passed == 0], bins=bins, color=GRIP, alpha=0.7,
@@ -2471,14 +2713,17 @@ def where_they_disagree() -> None:
     ax.hist(model[passed == 1], bins=bins, color=SLIDE, alpha=0.7,
             label='the verifier says yes')
     ax.axvline(cut, color=INK, ls='--', lw=1.3)
-    ax.text(cut - 0.02, ax.get_ylim()[1] * 0.92, f'a middling passing\nattempt scores '
+    ax.text(cut - 0.06, ax.get_ylim()[1] * 0.78, f'a middling passing\nattempt scores '
             f'{cut:.2f}', fontsize=9, color=INK, ha='right')
     ax.set_xlabel('average score the reward model gives the attempt', fontsize=10)
     ax.set_ylabel('how many attempts', fontsize=10)
     ax.set_title('The model and the verifier are not the same measurement',
-                 fontsize=11.5, weight='bold')
+                 fontsize=12, weight='bold')
     ax.legend(fontsize=9, frameon=False, loc='upper left')
-    ax = axes[1]
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'where-they-disagree.svg')
+
+    fig, ax = plt.subplots(figsize=(7.6, 5.2), facecolor='white')
     _plain(ax)
     xs = np.arange(2)
     ax.bar(xs, [fooled, missed], width=0.5, color=[GRIP, JOINT], edgecolor=INK, lw=0.6)
@@ -2489,17 +2734,23 @@ def where_they_disagree() -> None:
                        fontsize=10)
     ax.set_ylabel('number of attempts', fontsize=10)
     ax.set_ylim(0, max(fooled, missed) * 1.3 + 2)
-    ax.set_title(f'Out of {len(eps_list)} attempts', fontsize=11.5, weight='bold')
-    fig.suptitle('Where a learned score and a program disagree',
-                 fontsize=13, weight='bold', color=INK)
+    ax.set_title(f'How many of the {len(eps_list)} attempts the two\nmeasurements '
+                 f'disagree about', fontsize=12, weight='bold')
     fig.tight_layout()
-    _save(fig, RW_DOC, 'where-they-disagree.svg')
+    _save(fig, RW_DOC, 'how-many-they-disagree-about.svg')
 
 
-def what_a_program_can_check() -> None:
+def what_the_record_holds() -> None:
+    """Print the whole record of an attempt, which is what a verifier may ask about.
+
+    There is no picture here: the document carries these two lists as tables,
+    because a list of yes and no answers is easier to read as text.
+    """
     V, Qt = value_iteration(0.95, t=T_TRUE)
     ss, aa, rr, out = greedy_path(Qt, t=T_TRUE)
     r, c, h = unsid(int(ss[-1]))
+    print(f'[record] the whole record of an attempt: row {r}, column {c}, '
+          f'holding {h}, outcome "{out}"')
     checks = [
         ('the block ended up in the bin', True,
          'the outcome of the attempt is recorded', f'answer: {verifier(out)}'),
@@ -2513,43 +2764,9 @@ def what_a_program_can_check() -> None:
          'nothing in the state measures turning', 'cannot be answered'),
     ]
     for name, can, why, ans in checks:
-        print(f'[verifier] "{name}": {"a program can check it" if can else "no program here can check it"}, '
+        print(f'[record] "{name}": '
+              f'{"a program can check it" if can else "no program here can check it"}, '
               f'because {why}; {ans}')
-    fig, axes = plt.subplots(1, 2, figsize=(13.4, 4.9), facecolor='white',
-                             gridspec_kw={'width_ratios': [0.8, 1.4]})
-    ax = axes[0]
-    ax.axis('off')
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    ax.text(0.0, 0.95, 'Everything the state holds', fontsize=11.5, weight='bold',
-            color=INK)
-    fields = [('row', f'{r}'), ('column', f'{c}'), ('holding the block', f'{h}'),
-              ('how the attempt ended', f'"{out}"')]
-    y = 0.80
-    for name, val in fields:
-        ax.text(0.03, y, name, fontsize=10.5, color=LINK, weight='bold')
-        ax.text(0.75, y, val, fontsize=10.5, color=INK)
-        y -= 0.14
-    ax.text(0.0, y - 0.02, 'These four numbers are the whole record\nof an attempt in '
-                           'this world.', fontsize=9.5, color=MUTED, va='top')
-    ax = axes[1]
-    ax.axis('off')
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    ax.text(0.0, 0.95, 'What a short program can decide from them', fontsize=11.5,
-            weight='bold', color=INK)
-    y = 0.80
-    for name, can, why, ans in checks:
-        ax.text(0.0, y, 'yes' if can else 'no', fontsize=10.5,
-                color=SLIDE if can else GRIP, weight='bold')
-        ax.text(0.09, y, name, fontsize=10, color=INK)
-        ax.text(0.09, y - 0.055, why, fontsize=8.8, color=MUTED)
-        ax.text(0.99, y, ans, fontsize=9.5, color=INK, ha='right')
-        y -= 0.165
-    fig.suptitle('A verifier can only ask about things the record actually holds',
-                 fontsize=13, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, RW_DOC, 'what-a-program-can-check.svg')
 
 
 def learning_from_the_verifier_alone() -> None:
@@ -2565,6 +2782,13 @@ def learning_from_the_verifier_alone() -> None:
     print(f'[verifier] trained on the verifier alone: reaches the bin on '
           f'{Varr[:, -200:].mean():.2f} of the last 200 attempts')
     print(f'[verifier] trained on the dense reward: {runs["dense"][:, -200:].mean():.2f}')
+    for name, arr in (('verifier alone', Varr), ('dense written reward', runs['dense'])):
+        sm = _smooth(arr.mean(0), 200)
+        marks = []
+        for lvl in (0.5, 0.9, 0.99):
+            marks.append(int(np.argmax(sm >= lvl)) if (sm >= lvl).any() else -1)
+        print(f'[verifier] {name}: reaches 0.50 of attempts at {marks[0]}, 0.90 at '
+              f'{marks[1]}, 0.99 at {marks[2]}')
     fig, ax = plt.subplots(figsize=(9.6, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(np.arange(Varr.shape[1]), _smooth(Varr.mean(0), 200), color=TEAL, lw=2.1,
@@ -2602,8 +2826,8 @@ def the_tray_loop() -> None:
     _table(ax, f'The loop: block to tray, {trays} times over', small=True)
     _draw_path(ax, ss, aa, GRIP)
     ax.annotate('block picked up here and\nput down again, over and over',
-                xy=(TRAY[1] + 0.52, ROWS - 1 - TRAY[0] + 0.9),
-                xytext=(0.05, ROWS - 1 - TRAY[0] + 2.4), fontsize=9,
+                xy=(TRAY[1] + 0.05, ROWS - 1 - TRAY[0] + 0.75),
+                xytext=(0.02, ROWS - 1 - TRAY[0] + 2.3), fontsize=9,
                 color=GRIP, ha='left',
                 arrowprops={'arrowstyle': '->', 'color': GRIP, 'lw': 1.2})
     ax.text(2.5, -0.32, f'all {len(aa)} actions of one attempt, collecting '
@@ -2615,7 +2839,7 @@ def the_tray_loop() -> None:
     g2 = greedy_path(Qt, t=T_TRUE)
     honest = np.cumsum(T_FARM[1][g2[0], g2[1]])
     ax.plot(np.arange(len(run)), run, color=GRIP, lw=2.1,
-            label='the policy that farms the tray')
+            label='the policy that repeats the tray loop')
     ax.plot(np.arange(len(honest)), honest, color=SLIDE, lw=2.1,
             label='the policy that does the job')
     ax.set_xlabel('step of the attempt', fontsize=10)
@@ -2649,7 +2873,7 @@ def high_score_failed_task() -> None:
     _plain(ax)
     xs = np.arange(len(cases))
     ax.bar(xs - 0.2, hack_score, width=0.4, color=GRIP, edgecolor=INK, lw=0.6,
-           label='the policy that squeezes the written reward')
+           label='the policy that scores highest on this reward')
     ax.bar(xs + 0.2, honest_score, width=0.4, color=SLIDE, edgecolor=INK, lw=0.6,
            label='the policy that does the job')
     for x, v in zip(xs - 0.2, hack_score):
@@ -2755,8 +2979,8 @@ def two_rewards_together() -> None:
     ax.set_ylim(0, 1.18)
     ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
     ax.set_title('Four runs of 6,000 attempts each', fontsize=12, weight='bold')
-    fig.suptitle('Putting the reward nobody can argue with in charge closes the hole',
-                 fontsize=13, weight='bold', color=INK)
+    fig.suptitle('Letting the verifier decide, with the learned reward kept only as a '
+                 'nudge', fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, RW_DOC, 'two-rewards-together.svg')
 
@@ -2808,8 +3032,9 @@ def staying_near_a_trusted_policy() -> None:
     ax.set_ylabel('share of attempts, and model score', fontsize=10)
     ax.set_title('Three runs at each setting', fontsize=12, weight='bold', color=INK)
     ax.legend(fontsize=9.5, frameon=False, loc='lower right')
-    fig.suptitle('Holding the policy near one that is trusted keeps the hole from being '
-                 'found', fontsize=13, weight='bold', color=INK)
+    fig.suptitle('Holding the policy near one that is trusted stops it finding the '
+                 'states where the learned reward is wrong', fontsize=12.5,
+                 weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, RW_DOC, 'staying-near-a-trusted-policy.svg')
 
@@ -2823,19 +3048,22 @@ def main() -> None:
     for fn in (the_little_world, state_and_action, reward_sequence, discounted_return,
                episodes_and_returns, policy_as_a_table, value_on_the_grid,
                policy_and_value_together, value_vs_return, learning_curve,
-               policy_before_after, value_before_after, q_values_one_state,
+               policy_before_after, value_before_after, the_update_rule,
+               value_spreads_backwards, q_values_one_state,
                explore_or_not, where_each_one_ends_up, first_time_at_the_bin,
                the_price_of_exploring, learning_from_old_attempts, on_policy_goes_stale,
-               the_clip, with_and_without_the_limit, how_many_attempts,
+               the_clip, several_passes_over_one_batch, with_and_without_the_limit,
+               how_many_attempts,
                the_reality_gap, domain_randomisation, what_randomising_costs,
                the_written_reward, the_hovering_policy, reward_up_task_flat,
                three_behaviours_scored, sparse_against_dense, how_fast_each_one_learns,
                shaping_that_changes_the_answer, shaping_that_keeps_the_answer,
                the_examples_it_learns_from, what_the_reward_model_scores,
                how_well_it_tells_them_apart, training_against_the_model,
-               a_pair_to_judge, what_the_preferences_taught, how_many_pairs,
+               a_pair_to_judge, what_the_preferences_taught, fitting_to_the_choices,
+               ranking_two_failures, how_many_pairs,
                people_make_mistakes, the_verifier_along_an_attempt, where_they_disagree,
-               what_a_program_can_check, learning_from_the_verifier_alone,
+               what_the_record_holds, learning_from_the_verifier_alone,
                the_tray_loop, high_score_failed_task, the_two_scores_come_apart,
                two_rewards_together, staying_near_a_trusted_policy):
         fn()

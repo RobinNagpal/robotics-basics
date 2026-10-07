@@ -695,6 +695,12 @@ class Dropout:
         self.mean_scaled = float((many * self.h).sum(1).mean() * self.scale)
         self.n_zero_before = int((self.h == 0).sum())
         self.n_dropped = int((~self.keep).sum())
+        # twenty steps in a row, to show that every unit is absent on some of them
+        self.n_shown = 20
+        srng = np.random.default_rng(606)
+        self.step_keep = (srng.random((self.n_shown, 8)) >= self.p)
+        self.absent = (~self.step_keep).sum(0)
+        self.full_steps = int(self.step_keep.all(1).sum())
 
 
 DP = Dropout()
@@ -762,6 +768,166 @@ def fig_dropout_average() -> None:
     _save(fig, OVF_DOC, 'dropout-keeps-the-average.svg')
 
 
+def fig_dropout_over_steps() -> None:
+    fig, ax = plt.subplots(figsize=(8.6, 5.4))
+    _blank(ax)
+    for s in range(DP.n_shown):
+        y = -s * 0.42
+        for u in range(8):
+            kept = bool(DP.step_keep[s, u])
+            ax.add_patch(mpatches.Rectangle((u * 1.0, y), 0.9, 0.36,
+                                            facecolor=SLIDE if kept else GRIP,
+                                            edgecolor='white', linewidth=0.8))
+        ax.text(-0.25, y + 0.18, f'step {s + 1}', ha='right', va='center',
+                fontsize=8.4, color=MUTED)
+    for u in range(8):
+        ax.text(u * 1.0 + 0.45, 0.74, f'unit\n{u + 1}', ha='center',
+                va='center', fontsize=8.6, color=MUTED, linespacing=1.15)
+        ax.text(u * 1.0 + 0.45, -DP.n_shown * 0.42 - 0.22,
+                f'{DP.absent[u]}', ha='center', va='center', fontsize=10,
+                color=GRIP, weight='bold')
+    ax.text(-0.25, -DP.n_shown * 0.42 - 0.22, 'steps absent', ha='right',
+            va='center', fontsize=9.0, color=GRIP)
+    ax.add_patch(mpatches.Rectangle((8.6, -0.1), 0.42, 0.36,
+                                    facecolor=SLIDE, edgecolor='white'))
+    ax.text(9.15, 0.08, 'used on that step', fontsize=9.2, va='center',
+            color=INK)
+    ax.add_patch(mpatches.Rectangle((8.6, -0.62), 0.42, 0.36,
+                                    facecolor=GRIP, edgecolor='white'))
+    ax.text(9.15, -0.44, 'set to zero on that step', fontsize=9.2,
+            va='center', color=INK)
+    ax.set_xlim(-2.4, 12.8)
+    ax.set_ylim(-DP.n_shown * 0.42 - 0.7, 1.1)
+    _title(ax, f'Twenty steps with p = {DP.p}: every one of the 8 units is '
+               f'absent on some of them, and all 8 are used together on '
+               f'{DP.full_steps} steps out of {DP.n_shown}')
+    _save(fig, OVF_DOC, 'dropout-over-steps.svg')
+
+
+class Patience:
+    """The validation score read every 50 steps, and where a patience stops."""
+
+    every = 50
+    patience = 20
+
+    def __init__(self, net: NetRun) -> None:
+        self.steps = np.arange(self.every, len(net.ho) + 1, self.every)
+        self.scores: Arr = net.ho[self.steps - 1]
+        self.best_i = int(np.argmin(self.scores))
+        self.best_step = int(self.steps[self.best_i])
+        self.best = float(self.scores[self.best_i])
+        self.first_rise_step = int(self.steps[self.best_i + 1])
+        self.first_rise = float(self.scores[self.best_i + 1])
+        self.stop_step = int(self.steps[self.best_i + self.patience])
+        self.stop = float(self.scores[self.best_i + self.patience])
+        last = self.best_i + self.patience + 1
+        window = slice(self.best_i + 1, last)
+        self.worst_i = int(self.best_i + 1 + int(np.argmax(self.scores[window])))
+        self.worst_step = int(self.steps[self.worst_i])
+        self.worst = float(self.scores[self.worst_i])
+        later = slice(self.worst_i, last)
+        self.dip_i = int(self.worst_i + int(np.argmin(self.scores[later])))
+        self.dip_step = int(self.steps[self.dip_i])
+        self.dip = float(self.scores[self.dip_i])
+
+
+def fig_patience(pa: Patience) -> None:
+    top = pa.best_i + pa.patience + 5
+    lo = pa.best_i - 2
+    fig, ax = plt.subplots(figsize=(8.6, 4.8))
+    _plain(ax)
+    ax.plot(pa.steps[lo:top], pa.scores[lo:top], 'o-', color=GRIP, lw=1.8,
+            ms=5)
+    ax.scatter([pa.best_step], [pa.best], s=190, facecolor='none',
+               edgecolor=SLIDE, linewidth=2.2, zorder=6)
+    ax.annotate(f'lowest score {pa.best:.4f}, at step {pa.best_step}',
+                xy=(pa.best_step, pa.best), xytext=(620, 0.2208),
+                fontsize=9.5, color=SLIDE, ha='left',
+                arrowprops=dict(arrowstyle='->', color=SLIDE, lw=1.2))
+    ax.annotate(f'worst while waiting: {pa.worst:.4f} at step {pa.worst_step}',
+                xy=(pa.worst_step, pa.worst), xytext=(430, 0.2690),
+                fontsize=9.5, color=INK, ha='left',
+                arrowprops=dict(arrowstyle='->', color=INK, lw=1.1))
+    ax.annotate(f'back down to {pa.dip:.4f} at step {pa.dip_step},\n'
+                'still above the lowest score',
+                xy=(pa.dip_step, pa.dip), xytext=(1600, 0.2240),
+                fontsize=9.5, color=INK, ha='right',
+                arrowprops=dict(arrowstyle='->', color=INK, lw=1.1))
+    ax.axvline(pa.stop_step, color=PURPLE, ls='--', lw=1.5)
+    ax.text(1470, 0.2760,
+            f'{pa.patience} scores and no new low:\nstop at step '
+            f'{pa.stop_step}, and use the\nweights saved at step '
+            f'{pa.best_step}', fontsize=9.5, color=PURPLE, ha='right',
+            va='top')
+    ax.set_xlabel('training step', fontsize=10)
+    ax.set_ylabel(f'validation loss, read every {pa.every} steps', fontsize=10)
+    ax.set_xlim(330, 1620)
+    ax.set_ylim(0.2160, 0.2800)
+    ax.grid(True, color=GRID, lw=0.6)
+    _title(ax, 'The validation loss goes up and then part of the way back '
+               'down, so the rule waits before it stops')
+    _save(fig, OVF_DOC, 'patience.svg')
+
+
+class Ceiling:
+    """Two fixed degrees fitted on training sets of growing size."""
+
+    degrees = (3, 9)
+    reps = 24
+
+    def __init__(self) -> None:
+        rng = np.random.default_rng(555)
+        self.ns = [12, 20, 40, 80, 160, 320, 640, 1280]
+        x_te = np.linspace(0.0, 3.0, 4000)
+        y_te = truth(x_te)
+        self.err: dict[int, list[float]] = {d: [] for d in self.degrees}
+        for n in self.ns:
+            got: dict[int, list[float]] = {d: [] for d in self.degrees}
+            for _ in range(self.reps):
+                x = rng.uniform(0.0, 3.0, n)
+                y = truth(x) + rng.normal(0.0, NOISE_SD, n)
+                for d in self.degrees:
+                    v = np.vander((x - 1.5) / 1.5, d + 1, increasing=True)
+                    c, *_ = np.linalg.lstsq(v, y, rcond=None)
+                    vt = np.vander((x_te - 1.5) / 1.5, d + 1, increasing=True)
+                    got[d].append(float(np.sqrt(np.mean((vt @ c - y_te) ** 2))))
+            for d in self.degrees:
+                self.err[d].append(float(np.mean(got[d])))
+        self.floor = {d: self.err[d][-1] for d in self.degrees}
+
+
+def fig_small_model_ceiling(ce: Ceiling) -> None:
+    fig, ax = plt.subplots(figsize=(8.0, 4.6))
+    _plain(ax)
+    cols = {3: LINK, 9: GRIP}
+    for d in ce.degrees:
+        ax.plot(ce.ns, ce.err[d], 'o-', color=cols[d], lw=2.2, ms=6,
+                label=f'degree {d}')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xticks(ce.ns)
+    ax.set_xticklabels([str(n) for n in ce.ns])
+    ax.annotate(f'degree 3 stops at {ce.floor[3]:.3f} however much\n'
+                'data arrives, because no cubic curve\nfits the true shape '
+                'any better',
+                xy=(ce.ns[-1], ce.err[3][-1]), xytext=(70, 0.62),
+                fontsize=9.4, color=LINK,
+                arrowprops=dict(arrowstyle='->', color=LINK, lw=1.1))
+    ax.annotate(f'degree 9 is far worse on 12 examples\nand reaches '
+                f'{ce.floor[9]:.3f} on 1,280',
+                xy=(ce.ns[-1], ce.err[9][-1]), xytext=(150, 0.0145),
+                fontsize=9.4, color=GRIP, ha='center',
+                arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.1))
+    ax.set_ylim(0.0075, 900.0)
+    ax.set_xlabel('how many training examples were used', fontsize=10)
+    ax.set_ylabel('error on the true curve (log scale)', fontsize=10)
+    ax.grid(True, color=GRID, lw=0.6, which='both')
+    ax.legend(fontsize=9.5, loc='upper right')
+    _title(ax, 'A model made smaller has a floor it never gets below, '
+               'however much data you collect')
+    _save(fig, OVF_DOC, 'small-model-ceiling.svg')
+
+
 class Decay:
     """The same network trained with a range of weight decay strengths."""
 
@@ -783,6 +949,8 @@ class Decay:
         self.best_i = int(np.argmin(self.final_ho))
         self.best_wd = self.wds[self.best_i]
         self.n_params = sum(q.size for q in train_net(steps=1)[0])
+        # the histogram below draws the weight matrices only, not the biases
+        self.n_weights = int(self.weights[0.0].size)
 
 
 def fig_weight_sizes(dec: Decay) -> None:
@@ -799,8 +967,9 @@ def fig_weight_sizes(dec: Decay) -> None:
                   f'{dec.rms_w[dec.best_i]:.4f}, largest '
                   f'{dec.max_w[dec.best_i]:.2f}')
     ax.set_xlabel('value of one weight at the end of training', fontsize=10)
-    ax.set_ylabel(f'how many of the {dec.n_params:,} numbers', fontsize=10)
+    ax.set_ylabel(f'how many of the {dec.n_weights:,} weights', fontsize=10)
     ax.set_yscale('log')
+    ax.set_ylim(0.6, 2.0e4)
     ax.grid(True, color=GRID, lw=0.6)
     ax.legend(fontsize=9.0, loc='upper right')
     _title(ax, 'Weight decay pulls every weight towards zero, so the long tails '
@@ -1096,11 +1265,8 @@ def fig_interpolation_threshold() -> None:
     ax.plot(DD.ps, DD.e_te, 's-', color=GRIP, lw=1.6, ms=4, alpha=0.55,
             label='error on held-out examples, for comparison')
     ax.axvline(DD.n, color=MUTED, ls='--', lw=1.4)
-    ax.annotate(f'training error first reaches 0 at width '
-                f'{DD.ps[DD.zero_i]}, which is exactly the number of\n'
-                f'training examples, and the held-out error peaks at '
-                f'{DD.e_te[DD.peak_i]:.2f} right there',
-                xy=(DD.n, 0.02), xytext=(2.2, 1.45), fontsize=9.3, color=INK,
+    ax.annotate(f'training error reaches 0 at width {DD.ps[DD.zero_i]}',
+                xy=(DD.n, 0.02), xytext=(1.25, 0.13), fontsize=9.3, color=INK,
                 arrowprops=dict(arrowstyle='->', color=INK, lw=1.0))
     ax.set_xscale('log')
     ax.set_xlabel('width of the model (log scale)', fontsize=10)
@@ -1108,8 +1274,8 @@ def fig_interpolation_threshold() -> None:
     ax.set_ylim(-0.08, 2.3)
     ax.grid(True, color=GRID, lw=0.6, which='both')
     ax.legend(fontsize=9.5, loc='upper right')
-    _title(ax, 'The peak sits exactly where the model gains just enough room to '
-               'pass through every training point')
+    _title(ax, 'The width at which the model gains just enough room to pass '
+               'through every training point')
     _save(fig, OVF_DOC, 'interpolation-threshold.svg')
 
 
@@ -1145,6 +1311,22 @@ class Scaling:
         self.std_steps = self._steps_to(self.std, self.target)
         self.check_raw_loop, self.check_raw_formula = self._check(self.x_raw,
                                                                  self.raw, 2000)
+        # the very first gradient, from weights of zero, in raw units
+        g0 = (2.0 / self.n) * (self.x_raw.T @ (self.x_raw @ np.zeros(3) - self.y))
+        self.grad0 = g0
+        self.grad_ratio = float(abs(g0[0] / g0[1]))
+        # how far along each weight has got, as a fraction of its best value
+        self.marks = [10 ** 4, 10 ** 5, 10 ** 6, 10 ** 7]
+        path = self.weight_path(self.raw, np.array(self.marks, dtype=float))
+        w_opt = np.asarray(self.raw['w_opt'])
+        self.raw_frac: dict[int, tuple[float, float]] = {
+            t: (float(row[0] / w_opt[0]), float(row[1] / w_opt[1]))
+            for t, row in zip(self.marks, path)}
+        # the loss along the steepest and the flattest direction of the loss
+        lam = np.asarray(self.raw['lam'])
+        self.lam_flat = float(lam[0])
+        self.lam_steep = float(lam[-1])
+        self.probe = 0.01
 
     def _analyse(self, m: Arr) -> dict[str, object]:
         hess = 2.0 / self.n * m.T @ m
@@ -1285,8 +1467,9 @@ def fig_weight_paths() -> None:
         ax.set_ylabel('weight, as a fraction of its best value', fontsize=10)
         ax.set_title(name, fontsize=11, color=INK)
         ax.legend(fontsize=9.2, loc='lower right')
-    fig.suptitle('In raw units the weight on height is still near zero a '
-                 'million steps in, while standardising lands both within five '
+    fig.suptitle('In raw units the weight on height has reached only '
+                 f'{SC.raw_frac[10 ** 5][1]:.3f} of its best value after '
+                 '100,000 steps, while standardising lands both within five '
                  'steps', fontsize=11.5, weight='bold', color=INK, y=1.04)
     _save(fig, NRM_DOC, 'weight-paths.svg')
 
@@ -1316,6 +1499,45 @@ def fig_largest_learning_rate() -> None:
                f'{float(SC.std["lr_max"]) / float(SC.raw["lr_max"]):,.0f} times '
                'smaller than standardised units allow')
     _save(fig, NRM_DOC, 'largest-learning-rate.svg')
+
+
+def fig_loss_valley() -> None:
+    s = np.logspace(-5.0, 0.0, 300)
+    steep = 0.5 * SC.lam_steep * s ** 2
+    flat = 0.5 * SC.lam_flat * s ** 2
+    at_steep = 0.5 * SC.lam_steep * SC.probe ** 2
+    at_flat = 0.5 * SC.lam_flat * SC.probe ** 2
+    fig, ax = plt.subplots(figsize=(8.0, 4.6))
+    _plain(ax)
+    ax.plot(s, steep, color=GRIP, lw=2.4,
+            label=f'the steepest direction (curvature {SC.lam_steep:,.0f})')
+    ax.plot(s, flat, color=LINK, lw=2.4,
+            label=f'the flattest direction (curvature {SC.lam_flat:.4f})')
+    ax.axvline(SC.probe, color=MUTED, ls=':', lw=1.4)
+    ax.scatter([SC.probe, SC.probe], [at_steep, at_flat], s=60,
+               color=[GRIP, LINK], zorder=6)
+    ax.annotate(f'moving {SC.probe} this way\nraises the loss by '
+                f'{at_steep:,.1f}',
+                xy=(SC.probe, at_steep), xytext=(1.5e-4, 60.0),
+                fontsize=9.5, color=GRIP, ha='left',
+                arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.2))
+    ax.annotate(f'moving {SC.probe} this way\nraises it by only '
+                f'{at_flat:.2g}',
+                xy=(SC.probe, at_flat), xytext=(7.5e-3, 1.5e-10),
+                fontsize=9.5, color=LINK, ha='right',
+                arrowprops=dict(arrowstyle='->', color=LINK, lw=1.2))
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_ylim(1e-11, 1e6)
+    ax.set_xlabel('how far the weights move away from the best values '
+                  '(log scale)', fontsize=10)
+    ax.set_ylabel('loss above the best possible loss (log scale)', fontsize=10)
+    ax.grid(True, color=GRID, lw=0.6, which='both')
+    ax.legend(fontsize=9.4, loc='upper left')
+    _title(ax, 'In raw units the same movement raises the loss '
+               f'{SC.lam_steep / SC.lam_flat:,.0f} times more in one direction '
+               'than in another')
+    _save(fig, NRM_DOC, 'loss-valley.svg')
 
 
 # ==========================================================================
@@ -1349,6 +1571,11 @@ class Norms:
         self.rn_rms = float(np.sqrt(np.mean(self.rn ** 2)))
         self.diff: Arr = self.ln_out - self.rn_out
         self.max_diff = float(np.abs(self.diff).max())
+        # a scale and a shift that put the original numbers back exactly
+        self.undo_gamma = self.sd
+        self.undo_beta = self.mean
+        self.undone: Arr = self.ln * self.undo_gamma + self.undo_beta
+        self.undo_err = float(np.abs(self.undone - self.x).max())
 
 
 NM = Norms()
@@ -1432,6 +1659,21 @@ def fig_layer_vs_rms() -> None:
     _title(ax, 'The two rules give answers that differ by at most '
                f'{NM.max_diff:.3f} on this vector')
     _save(fig, NRM_DOC, 'layer-norm-vs-rms-norm.svg')
+
+
+def fig_scale_and_shift_undo() -> None:
+    fig, ax = plt.subplots(figsize=(11.0, 3.9))
+    _number_rows(ax, [
+        ('the six numbers coming in', NM.x, 'white'),
+        ('after layer normalisation', NM.ln, JOINT),
+        (f'multiplied by {NM.undo_gamma:.4f}, then {NM.undo_beta:.4f} added',
+         NM.undone, SLIDE)],
+        f'the scale is the spread that was divided out and the shift is the '
+        f'average that was taken off, so the top and bottom rows differ by at '
+        f'most {NM.undo_err:.0e}')
+    _title(ax, 'The learned scale and shift can put the numbers back exactly, '
+               'so normalisation takes nothing away')
+    _save(fig, NRM_DOC, 'scale-and-shift-undo.svg')
 
 
 class Batch:
@@ -1557,6 +1799,72 @@ def fig_batch_depends_on_batch() -> None:
                  f'{abs(BT.gap):.4f}',
                  fontsize=11.5, weight='bold', color=INK, y=1.04)
     _save(fig, NRM_DOC, 'batch-norm-depends-on-batch.svg')
+
+
+class Padded:
+    """One feature of three robot episodes of different lengths, padded."""
+
+    eps = 1e-5
+
+    def __init__(self) -> None:
+        rng = np.random.default_rng(321)
+        self.lengths = [5, 3, 2]
+        self.width = 5
+        self.a: Arr = np.round(rng.normal(0.9, 0.7, (3, self.width)), 2)
+        self.mask: NDArray[np.bool_] = np.zeros((3, self.width), dtype=bool)
+        for i, n in enumerate(self.lengths):
+            self.mask[i, :n] = True
+        self.filled: Arr = np.where(self.mask, self.a, 0.0)
+        real = self.a[self.mask]
+        self.n_real = int(real.size)
+        self.n_pad = int((~self.mask).sum())
+        self.mean_real = float(real.mean())
+        self.sd_real = float(real.std())
+        self.mean_all = float(self.filled.mean())
+        self.sd_all = float(self.filled.std())
+        self.value = float(self.a[0, 0])
+        self.out_real = (self.value - self.mean_real) / np.sqrt(
+            real.var() + self.eps)
+        self.out_all = (self.value - self.mean_all) / np.sqrt(
+            self.filled.var() + self.eps)
+        self.gap = float(abs(self.out_real - self.out_all))
+
+
+PD = Padded()
+
+
+def fig_padding_changes_the_answer() -> None:
+    fig, ax = plt.subplots(figsize=(9.8, 4.4))
+    _blank(ax)
+    for r in range(3):
+        for c in range(PD.width):
+            real = bool(PD.mask[r, c])
+            chosen = (r == 0 and c == 0)
+            face = SLIDE if chosen else (LINK_PALE if real else GRID)
+            ax.add_patch(mpatches.Rectangle((c * 1.3, -r * 0.95), 1.2, 0.8,
+                                            facecolor=face, edgecolor=INK,
+                                            linewidth=1.0))
+            ax.text(c * 1.3 + 0.6, -r * 0.95 + 0.4,
+                    f'{PD.a[r, c]:.2f}' if real else 'filler',
+                    ha='center', va='center', fontsize=9.4,
+                    color='white' if chosen else (INK if real else MUTED))
+        ax.text(-0.25, -r * 0.95 + 0.4,
+                f'episode {r + 1}, {PD.lengths[r]} steps long', ha='right',
+                va='center', fontsize=9.4, color=INK)
+    ax.text(-4.0, -3 * 0.95 - 0.05,
+            f'average of the {PD.n_real} real numbers {PD.mean_real:+.4f}, '
+            f'spread {PD.sd_real:.4f}   ->   the green number comes out as '
+            f'{PD.out_real:+.4f}', fontsize=9.8, va='top', color=INK)
+    ax.text(-4.0, -3 * 0.95 - 0.52,
+            f'average with the {PD.n_pad} fillers counted too '
+            f'{PD.mean_all:+.4f}, spread {PD.sd_all:.4f}   ->   it comes out '
+            f'as {PD.out_all:+.4f}', fontsize=9.8, va='top', color=GRIP)
+    ax.set_xlim(-4.2, PD.width * 1.3 + 0.4)
+    ax.set_ylim(-3 * 0.95 - 1.1, 0.95)
+    _title(ax, 'Counting the filler moves the average, so the same real '
+               f'number comes out as {PD.out_all:+.4f} instead of '
+               f'{PD.out_real:+.4f}')
+    _save(fig, NRM_DOC, 'padding-changes-the-answer.svg')
 
 
 def fig_batch_size_noise() -> None:
@@ -2066,6 +2374,61 @@ def fig_what_stays_float32() -> None:
     _save(fig, NRM_DOC, 'what-stays-float32.svg')
 
 
+class MasterCopy:
+    """Adding a small change to a weight, once in bfloat16 and once in float32."""
+
+    start = 1.0
+    change = -1.0e-4
+    updates = 400
+
+    def __init__(self) -> None:
+        grid = np.linspace(0.98, 1.0, 20001)
+        held = sorted({float(v) for v in to_bf16(np.float32(grid))})
+        self.below = max(v for v in held if v < self.start)
+        self.gap = self.start - self.below
+        w_bf = np.float32(self.start)
+        w_32 = np.float32(self.start)
+        self.path_bf: list[float] = [float(w_bf)]
+        self.path_32: list[float] = [float(w_32)]
+        for _ in range(self.updates):
+            w_bf = to_bf16(np.float32(w_bf + np.float32(self.change)))
+            w_32 = np.float32(w_32 + np.float32(self.change))
+            self.path_bf.append(float(w_bf))
+            self.path_32.append(float(w_32))
+        self.end_bf = self.path_bf[-1]
+        self.end_32 = self.path_32[-1]
+        self.needed = int(np.ceil(self.gap / 2 / abs(self.change)))
+
+
+MC = MasterCopy()
+
+
+def fig_master_copy_needed() -> None:
+    n = np.arange(MC.updates + 1)
+    fig, ax = plt.subplots(figsize=(8.2, 4.5))
+    _plain(ax)
+    ax.plot(n, MC.path_bf, color=GRIP, lw=2.4)
+    ax.plot(n, MC.path_32, color=LINK, lw=2.4)
+    ax.axhline(MC.below, color=MUTED, ls=':', lw=1.4)
+    ax.text(80, MC.below - 0.0030,
+            f'next bfloat16 value below {MC.start:.0f}: {MC.below:.8g}',
+            fontsize=9.3, color=MUTED)
+    ax.text(185, 0.9972, f'kept in bfloat16 only: still {MC.end_bf:.0f} after '
+                         f'{MC.updates} updates',
+            fontsize=9.6, color=GRIP, ha='center')
+    ax.text(90, 0.9690, f'kept in a float32 master copy:\n{MC.end_32:.4f} '
+                        f'after the same {MC.updates}',
+            fontsize=9.6, color=LINK, ha='left', va='top')
+    ax.set_xlabel(f'how many times a change of {MC.change} has been added',
+                  fontsize=10)
+    ax.set_ylabel('the value the weight now holds', fontsize=10)
+    ax.set_ylim(0.9555, 1.0035)
+    ax.grid(True, color=GRID, lw=0.6)
+    _title(ax, f'A change of {abs(MC.change)} added to a bfloat16 weight of '
+               f'{MC.start:.0f} rounds straight back, so the weight never moves')
+    _save(fig, NRM_DOC, 'master-copy-needed.svg')
+
+
 def fig_loss_scale_underflow() -> None:
     fig, ax = plt.subplots(figsize=(8.4, 4.6))
     _plain(ax)
@@ -2141,9 +2504,9 @@ class Spike:
         self.dim = 24
         self.lam = np.exp(np.linspace(np.log(0.02), np.log(2.0), self.dim))
         self.w0 = rng0.normal(0.0, 1.2, self.dim)
-        self.base, self.base_g = self._run()
-        self.clipped, self.clipped_g = self._run(clip=2.0)
-        self.skipped, self.skipped_g = self._run(skip=True)
+        self.base, self.base_g, self.base_div, self.base_upd = self._run()
+        self.clipped, self.clipped_g, _, _ = self._run(clip=2.0)
+        self.skipped, self.skipped_g, _, _ = self._run(skip=True)
         self.before = float(self.base[self.bad_step - 5])
         win = self.base[self.bad_step - 1:]
         self.peak = float(win.max())
@@ -2158,15 +2521,26 @@ class Spike:
         self.end_clipped = float(self.clipped[-1])
         self.end_skipped = float(self.skipped[-1])
         self.clip_at = 2.0
+        pre = slice(self.bad_step - 300, self.bad_step - 1)
+        self.usual_div = float(np.median(self.base_div[pre]))
+        self.usual_upd = float(np.median(self.base_upd[pre]))
+        self.spike_div = float(self.base_div[self.bad_step - 1])
+        self.spike_upd = float(self.base_upd[self.bad_step - 1])
+        after = self.base_div[self.bad_step - 1:]
+        back = np.nonzero(after < 2.0 * self.usual_div)[0]
+        self.div_settle = int(back[0]) if len(back) else self.steps
+        self.div_at_500 = float(self.base_div[self.bad_step + 499])
 
     def _run(self, clip: float | None = None, skip: bool = False
-             ) -> tuple[Arr, Arr]:
+             ) -> tuple[Arr, Arr, Arr, Arr]:
         rng = np.random.default_rng(5)
         w = self.w0.copy()
         m = np.zeros(self.dim)
         v = np.zeros(self.dim)
         loss = np.zeros(self.steps)
         gnorm = np.zeros(self.steps)
+        divisor = np.zeros(self.steps)
+        update = np.zeros(self.steps)
         for s in range(1, self.steps + 1):
             g = self.lam * w + rng.normal(0.0, 0.03, self.dim)
             if s == self.bad_step and not skip:
@@ -2176,10 +2550,13 @@ class Spike:
                 g = g * (clip / gnorm[s - 1])
             m = 0.9 * m + 0.1 * g
             v = 0.999 * v + 0.001 * g ** 2
-            w = w - 0.01 * (m / (1 - 0.9 ** s)) / (
-                np.sqrt(v / (1 - 0.999 ** s)) + 1e-8)
+            div = np.sqrt(v / (1 - 0.999 ** s)) + 1e-8
+            change = 0.01 * (m / (1 - 0.9 ** s)) / div
+            w = w - change
+            divisor[s - 1] = float(np.sqrt(np.mean(div ** 2)))
+            update[s - 1] = float(np.linalg.norm(change))
             loss[s - 1] = self.floor + 0.5 * float(np.sum(self.lam * w ** 2))
-        return loss, gnorm
+        return loss, gnorm, divisor, update
 
 
 SK = Spike()
@@ -2239,8 +2616,40 @@ def fig_gradient_norm_spike() -> None:
     ax.set_ylabel('size of the whole gradient (log scale)', fontsize=10)
     ax.grid(True, color=GRID, lw=0.6, which='both')
     _title(ax, 'The gradient size shows the trouble on the exact step it '
-               'happens, one step before the loss does')
+               f'happens, {SK.peak_step - SK.bad_step} steps before the loss '
+               'reaches its peak')
     _save(fig, NRM_DOC, 'gradient-norm-spike.svg')
+
+
+def fig_adam_divisor() -> None:
+    steps = np.arange(1, SK.steps + 1)
+    fig, ax = plt.subplots(figsize=(8.4, 4.5))
+    _plain(ax)
+    ax.plot(steps, SK.base_div, color=PURPLE, lw=1.6)
+    ax.axvline(SK.bad_step, color=MUTED, ls=':', lw=1.3)
+    ax.annotate(f'{SK.usual_div:.4f} before the bad batch',
+                xy=(SK.bad_step - 200, SK.usual_div), xytext=(420, 0.9),
+                fontsize=9.6, color=INK,
+                arrowprops=dict(arrowstyle='->', color=INK, lw=1.1))
+    ax.annotate(f'{SK.spike_div:.2f} on the bad step itself,\nwhich is '
+                f'{SK.spike_div / SK.usual_div:,.0f} times larger',
+                xy=(SK.bad_step, SK.spike_div), xytext=(880, 19.0),
+                fontsize=9.6, color=GRIP, ha='center',
+                arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.2))
+    ax.set_ylim(0.05, 60.0)
+    ax.annotate(f'still {SK.div_at_500:.3f} five hundred steps later,\n'
+                f'and still far above {SK.usual_div:.4f} at step {SK.steps:,}',
+                xy=(SK.bad_step + 499, SK.div_at_500), xytext=(2050, 1.6),
+                fontsize=9.6, color=INK, ha='center',
+                arrowprops=dict(arrowstyle='->', color=INK, lw=1.1))
+    ax.set_yscale('log')
+    ax.set_xlabel('training step', fontsize=10)
+    ax.set_ylabel("Adam's divisor, averaged over the weights (log scale)",
+                  fontsize=10)
+    ax.grid(True, color=GRID, lw=0.6, which='both')
+    _title(ax, 'The divisor jumps on the bad step and then falls back slowly, '
+               'so every step after the spike is a small one')
+    _save(fig, NRM_DOC, 'adam-divisor.svg')
 
 
 def fig_what_to_do() -> None:
@@ -2271,7 +2680,8 @@ def fig_what_to_do() -> None:
 # printing and running
 # ==========================================================================
 
-def report(net: NetRun, dec: Decay, ji: Jitter) -> None:
+def report(net: NetRun, dec: Decay, ji: Jitter, pa: Patience,
+           ce: Ceiling) -> None:
     p = '{:<46}{}'.format
     print('=' * 78)
     print('PAGE 1  overfitting-and-generalisation')
@@ -2314,6 +2724,17 @@ def report(net: NetRun, dec: Decay, ji: Jitter) -> None:
     print(p('accuracy, episode split', f'{FR.acc_episode * 100:.1f}%'))
     print(p('accuracy, new scene split', f'{FR.acc_scene * 100:.1f}%'))
     print(p('accuracy of guessing', f'{FR.chance * 100:.1f}%'))
+    print('--- section 4: early stopping with a patience')
+    print(p(f'validation read every {pa.every} steps, lowest at',
+            f'step {pa.best_step} ({pa.best:.4f})'))
+    print(p('the next score, which is worse',
+            f'step {pa.first_rise_step} ({pa.first_rise:.4f})'))
+    print(p('worst score while waiting',
+            f'step {pa.worst_step} ({pa.worst:.4f})'))
+    print(p('and then back down to',
+            f'{pa.dip:.4f} at step {pa.dip_step}'))
+    print(p(f'a patience of {pa.patience} scores stops at',
+            f'step {pa.stop_step} ({pa.stop:.4f})'))
     print('--- section 4: dropout on one layer of 8 units')
     print(p('p', DP.p))
     print(p('activations', ' '.join(f'{v:.2f}' for v in DP.h)))
@@ -2326,12 +2747,20 @@ def report(net: NetRun, dec: Decay, ji: Jitter) -> None:
             f'{DP.mean_raw:.4f}'))
     print(p('average sum over 40,000 masks, with scaling',
             f'{DP.mean_scaled:.4f}'))
+    print(p(f'over {DP.n_shown} steps, each unit was absent',
+            ' '.join(str(int(v)) for v in DP.absent)))
+    print(p('steps on which all 8 units were used', DP.full_steps))
     print('--- section 4: weight decay')
     for wd, tr, ho, rw, mw in zip(dec.wds, dec.final_tr, dec.final_ho,
                                   dec.rms_w, dec.max_w):
         print(f'  decay {wd:6g}:  training {tr:7.4f}  held-out {ho:8.4f}'
               f'  weight rms {rw:.4f}  largest weight {mw:.3f}')
     print(p('best decay', f'{dec.best_wd} ({dec.final_ho[dec.best_i]:.4f})'))
+    print(p('weights drawn in the histogram', f'{dec.n_weights:,}'))
+    print('--- section 4: a smaller model has a floor')
+    for i, n in enumerate(ce.ns):
+        print(f'  {n:5d} training examples:  degree 3 error '
+              f'{ce.err[3][i]:.4f}   degree 9 error {ce.err[9][i]:.4f}')
     print('--- section 5: augmentation')
     for name, v in PIC.vals.items():
         print(f'  {name:<18} mean brightness {v["mean"]:.4f}   '
@@ -2379,6 +2808,18 @@ def report(net: NetRun, dec: Decay, ji: Jitter) -> None:
             f'{SC.check_raw_loop:.6f}'))
     print(p('check: closed form at 2,000 steps gives',
             f'{SC.check_raw_formula:.6f}'))
+    print(p('first gradient in raw units (reach, height)',
+            f'{SC.grad0[0]:.2f}, {SC.grad0[1]:.4f}'))
+    print(p('so the reach gradient is bigger by a factor of',
+            f'{SC.grad_ratio:,.0f}'))
+    for t in SC.marks:
+        a, b = SC.raw_frac[t]
+        print(f'  raw units, step {t:>10,}:  reach is at {a:.4f} of its best '
+              f'value, height at {b:.4f}')
+    print(p('loss rise from moving ' + f'{SC.probe}' + ', steepest direction',
+            f'{0.5 * SC.lam_steep * SC.probe ** 2:,.2f}'))
+    print(p('the same movement in the flattest direction',
+            f'{0.5 * SC.lam_flat * SC.probe ** 2:.3g}'))
     print('--- section 2: layer norm and RMS norm on one vector')
     print(p('the six numbers', ' '.join(f'{v:.2f}' for v in NM.x)))
     print(p('average', f'{NM.mean:.4f}'))
@@ -2395,6 +2836,9 @@ def report(net: NetRun, dec: Decay, ji: Jitter) -> None:
             f'{NM.rn_mean:.4f}, {NM.rn_rms:.4f}'))
     print(p('rms norm output', ' '.join(f'{v:.4f}' for v in NM.rn_out)))
     print(p('largest difference between the two', f'{NM.max_diff:.4f}'))
+    print(p('scale and shift that undo the normalisation',
+            f'{NM.undo_gamma:.4f} and {NM.undo_beta:.4f}'))
+    print(p('largest difference after undoing it', f'{NM.undo_err:.1e}'))
     print('--- section 3: batch normalisation')
     print(p('average along one example (layer norm)',
             f'{BT.row_mean:.4f}, spread {BT.row_sd:.4f}'))
@@ -2410,6 +2854,13 @@ def report(net: NetRun, dec: Decay, ji: Jitter) -> None:
     print(p('brightness shift at prediction time', BT.shift))
     print(p('answer using the batch', f'{BT.with_batch:+.4f}'))
     print(p('answer using the stored averages', f'{BT.with_running:+.4f}'))
+    print(p(f'padding: {PD.n_real} real numbers average',
+            f'{PD.mean_real:+.4f}, spread {PD.sd_real:.4f}'))
+    print(p(f'with the {PD.n_pad} fillers counted too',
+            f'{PD.mean_all:+.4f}, spread {PD.sd_all:.4f}'))
+    print(p(f'so {PD.value:+.2f} comes out as',
+            f'{PD.out_real:+.4f} or {PD.out_all:+.4f}, a gap of '
+            f'{PD.gap:.4f}'))
     print('--- section 4: the residual stream')
     print(p('gradient at the first block over the gradient at the last',
             ' '.join(f'{d}:{v:.2f}' for d, v in zip(RS.depths,
@@ -2451,6 +2902,11 @@ def report(net: NetRun, dec: Decay, ji: Jitter) -> None:
     for v, a, b in zip(PR.over_vals, PR.over_f16, PR.over_bf16):
         print(f'  storing {v:9.3g}:  float16 gives {a:<12.6g} '
               f'bfloat16 gives {b:.6g}')
+    print(p(f'next bfloat16 value below {MC.start:.0f}',
+            f'{MC.below:.8g}, a gap of {MC.gap:.8g}'))
+    print(p(f'weight after {MC.updates} changes of {MC.change}, bfloat16 only',
+            f'{MC.end_bf:.6f}'))
+    print(p('the same with a float32 master copy', f'{MC.end_32:.6f}'))
     print(p('bytes a weight, all float32', PR.plain_bytes))
     print(p('bytes a weight, mixed precision', PR.mixed_bytes))
     print(p(f'activations for {PR.act_tokens:,} tokens of width '
@@ -2465,6 +2921,16 @@ def report(net: NetRun, dec: Decay, ji: Jitter) -> None:
     print(p('that is bigger by a factor of',
             f'{SK.spike_grad / SK.usual_grad:,.0f}'))
     print(p('steps to get back below where it was', SK.recover))
+    print(p("Adam's divisor before the bad batch", f'{SK.usual_div:.4f}'))
+    print(p('the divisor on the bad step',
+            f'{SK.spike_div:.3f}, which is '
+            f'{SK.spike_div / SK.usual_div:,.0f} times larger'))
+    print(p('the divisor 500 steps later', f'{SK.div_at_500:.4f}'))
+    print(p('divisor at the last step', f'{SK.base_div[-1]:.4f}'))
+    print(p('size of a usual weight change', f'{SK.usual_upd:.5f}'))
+    print(p('size of the weight change on the bad step',
+            f'{SK.spike_upd:.5f}, which is '
+            f'{SK.spike_upd / SK.usual_upd:,.0f} times larger'))
     print(p('loss at step 2,600, nothing done', f'{SK.end_base:.4f}'))
     print(p('loss at step 2,600, gradient clipped', f'{SK.end_clipped:.4f}'))
     print(p('loss at step 2,600, batch skipped', f'{SK.end_skipped:.4f}'))
@@ -2474,6 +2940,8 @@ def main() -> None:
     net = NetRun()
     dec = Decay()
     ji = Jitter()
+    pa = Patience(net)
+    ce = Ceiling()
 
     fig_poly_fits(net)
     fig_error_vs_degree()
@@ -2486,8 +2954,11 @@ def main() -> None:
     fig_split_kinds_score()
     fig_episodes_by_scene()
     fig_early_stopping(net)
+    fig_patience(pa)
     fig_dropout_one_layer()
     fig_dropout_average()
+    fig_dropout_over_steps()
+    fig_small_model_ceiling(ce)
     fig_weight_sizes(dec)
     fig_weight_decay_sweep(dec)
     fig_safe_augmentations()
@@ -2501,12 +2972,15 @@ def main() -> None:
     fig_steps_to_train()
     fig_weight_paths()
     fig_largest_learning_rate()
+    fig_loss_valley()
     fig_layer_norm_steps()
     fig_rms_norm_steps()
     fig_layer_vs_rms()
+    fig_scale_and_shift_undo()
     fig_which_numbers_averaged()
     fig_batch_depends_on_batch()
     fig_batch_size_noise()
+    fig_padding_changes_the_answer()
     fig_train_and_predict_gap()
     fig_residual_stream()
     fig_pre_and_post_order()
@@ -2514,13 +2988,15 @@ def main() -> None:
     fig_learning_rate_stability()
     fig_number_formats()
     fig_what_stays_float32()
+    fig_master_copy_needed()
     fig_loss_scale_underflow()
     fig_overflow()
     fig_loss_spike()
     fig_gradient_norm_spike()
+    fig_adam_divisor()
     fig_what_to_do()
 
-    report(net, dec, ji)
+    report(net, dec, ji, pa, ce)
 
 
 if __name__ == '__main__':

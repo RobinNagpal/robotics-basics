@@ -22,8 +22,8 @@ backbones](01_vision-backbones.md), because the words backbone, head, feature
 grid and stride are used here without being explained again. It also assumes
 that you know what a score between 0 and 1 means, from [the score of being
 wrong](../03_how-training-works/01_the-score-of-being-wrong.md), and that you
-know the idea of training on labelled examples from [why not just write the
-rules](../01_what-learning-means/01_why-not-just-write-the-rules.md).
+know the idea of training on labelled examples from [what a model
+is](../01_what-learning-means/03_what-a-model-is.md).
 
 Everything in the pictures is worked out by the script that draws them. The
 camera scene is simulated, which means that it is drawn out of rectangles and

@@ -23,8 +23,8 @@ The page assumes you know three things. A **weight** is one of the numbers insid
 training is allowed to change. A **loss** is a number that says how wrong one answer was, and
 training tries to make it small. A **held-out set** is a group of examples that the model never
 trains on, kept back so that you can measure the model on something it has not seen. The page
-also assumes that you have never started a model of your own. You should read [why not just
-write the rules](../01_what-learning-means/01_why-not-just-write-the-rules.md) first, because
+also assumes that you have never started a model of your own. You should read [where rules stop
+working](../01_what-learning-means/02_where-rules-stop-working.md) first, because
 section 1 returns to the question that page opened and answers it with measurements.
 
 Everything below is measured on one simulated work cell. A work cell is one robot and the

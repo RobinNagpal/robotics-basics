@@ -1,6 +1,6 @@
 # One neuron, worked out by hand
 
-The page before this one, [the words everyone uses](../01_what-learning-means/02_the-words-everyone-uses.md),
+The page before this one, [the words everyone uses](../01_what-learning-means/06_the-words-everyone-uses.md),
 gave you the words that machine learning uses. It said that a model is a function
 with numbers inside it, and that training is the search for good values for those
 numbers. This page opens one model and shows you the smallest part that the model

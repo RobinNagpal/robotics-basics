@@ -25,7 +25,7 @@ real arm can survive. By the end you will know the words that every text on this
 subject uses, you will have seen a policy learned from nothing at all, and
 you will know why this work is almost always done in a simulator. The page assumes
 you have read [gradient descent](../03_how-training-works/02_gradient-descent.md)
-and [the words everyone uses](../01_what-learning-means/02_the-words-everyone-uses.md).
+and [the words everyone uses](../01_what-learning-means/06_the-words-everyone-uses.md).
 
 The world in every picture is invented rather than measured from a real arm, and
 the program `docs/diagrams/learning_from_outcomes.py` works out every number

@@ -178,7 +178,7 @@ Every programming techniques page ends with the learned model that does the same
 job, every learned models page ends with the written technique, and both maps
 share one table that starts from the job the arm has to do.
 
-**[Neural networks and AI models](docs/05_neural-networks/01_what-learning-means/01_why-not-just-write-the-rules.md)**
+**[Neural networks and AI models](docs/05_neural-networks/01_what-learning-means/01_how-rules-do-the-work.md)**
 comes before both of them, and it is the one book that explains the machinery
 rather than cataloguing it. It is for a reader who knows some maths, some
 science and some programming, and nothing at all about machine learning, so it

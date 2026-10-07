@@ -1,8 +1,14 @@
 """Generate the diagrams for chapter 1 of docs/05_neural-networks/.
 
-    01_what-learning-means/01_why-not-just-write-the-rules.md
-        -> images/what-learning-means/why-not-just-write-the-rules/
-    01_what-learning-means/02_the-words-everyone-uses.md
+    01_what-learning-means/01_how-rules-do-the-work.md
+        -> images/what-learning-means/how-rules-do-the-work/
+    01_what-learning-means/02_where-rules-stop-working.md
+        -> images/what-learning-means/where-rules-stop-working/
+    01_what-learning-means/03_what-a-model-is.md
+        -> images/what-learning-means/what-a-model-is/
+    01_what-learning-means/04_rules-against-models.md
+        -> images/what-learning-means/rules-against-models/
+    01_what-learning-means/06_the-words-everyone-uses.md
         -> images/what-learning-means/the-words-everyone-uses/
 
 Run with:  python3 what_learning_means.py
@@ -57,7 +63,10 @@ TEAL: str = '#0f8b8d'
 INK: str = '#222222'
 MUTED: str = '#777777'
 
-RULES_DOC: str = 'why-not-just-write-the-rules'
+HOW_RULES: str = 'how-rules-do-the-work'
+WHERE_STOP: str = 'where-rules-stop-working'
+MODEL_IS: str = 'what-a-model-is'
+AGAINST: str = 'rules-against-models'
 WORDS_DOC: str = 'the-words-everyone-uses'
 
 Arr = NDArray[np.float64]
@@ -174,7 +183,7 @@ def switch_count() -> None:
     ax2.set_title(f'The same first press, magnified: 4 rising edges in 8 milliseconds',
                   fontsize=10.5, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, RULES_DOC, 'switch-count.svg')
+    _save(fig, HOW_RULES, 'switch-count.svg')
 
 
 def _glass_picture() -> tuple[Arr, NDArray[np.bool_]]:
@@ -239,7 +248,7 @@ def glass_pixels() -> None:
     fig.suptitle('A glass is see-through, so the table behind it has the same '
                  'brightness as the glass', fontsize=12.5, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, RULES_DOC, 'glass-pixels.svg')
+    _save(fig, WHERE_STOP, 'glass-pixels.svg')
 
 
 def threshold_sweep() -> None:
@@ -274,7 +283,7 @@ def threshold_sweep() -> None:
     ax.set_title('No brightness threshold finds the glass, because every one of the '
                  '512 was tried', fontsize=12, weight='bold', color=INK)
     ax.legend(fontsize=9.5, frameon=False, loc='lower right')
-    _save(fig, RULES_DOC, 'threshold-sweep.svg')
+    _save(fig, WHERE_STOP, 'threshold-sweep.svg')
 
 
 class Cups:
@@ -400,7 +409,7 @@ def full_or_empty_cup() -> None:
                  f'threshold gets only {held_in:.2f}',
                  fontsize=11.8, weight='bold', color=INK)
     ax.legend(fontsize=9.8, frameon=False)
-    _save(fig, RULES_DOC, 'full-or-empty-cup.svg')
+    _save(fig, WHERE_STOP, 'full-or-empty-cup.svg')
 
 
 def two_numbers_separate_cups() -> None:
@@ -427,7 +436,7 @@ def two_numbers_separate_cups() -> None:
                  'numbers separate what one could not',
                  fontsize=11.4, weight='bold', color=INK)
     ax.legend(fontsize=9.8, frameon=False, loc='lower right')
-    _save(fig, RULES_DOC, 'two-numbers-separate-cups.svg')
+    _save(fig, WHERE_STOP, 'two-numbers-separate-cups.svg')
 
 
 # ==========================================================================
@@ -472,7 +481,7 @@ def how_many_pictures() -> None:
     ax.set_ylim(0, max(logs) * 1.14)
     ax.set_title('A rule for the first two jobs can list every case; a rule for a '
                  'picture never can', fontsize=12, weight='bold', color=INK)
-    _save(fig, RULES_DOC, 'how-many-pictures.svg')
+    _save(fig, WHERE_STOP, 'how-many-pictures.svg')
 
 
 def rules_stack_up() -> None:
@@ -515,7 +524,7 @@ def rules_stack_up() -> None:
     ax.set_title(f'The rule only works once a person has found the right combination, '
                  f'and then fitting finds it anyway ({fitted:.3f})',
                  fontsize=11.8, weight='bold', color=INK)
-    _save(fig, RULES_DOC, 'rules-stack-up.svg')
+    _save(fig, WHERE_STOP, 'rules-stack-up.svg')
 
 
 def one_answer_per_input() -> None:
@@ -538,7 +547,7 @@ def one_answer_per_input() -> None:
     ax.set_ylim(-0.05, 1.95)
     ax.set_title('Where a rule can be written, one input value gives one answer',
                  fontsize=11.8, weight='bold', color=INK)
-    _save(fig, RULES_DOC, 'one-answer-per-input.svg')
+    _save(fig, WHERE_STOP, 'one-answer-per-input.svg')
 
 
 def both_answers_at_one_input() -> None:
@@ -569,7 +578,7 @@ def both_answers_at_one_input() -> None:
                 ha='center', va='center')
     ax.set_title('Where no rule can be written, one input value gives both answers',
                  fontsize=11.8, weight='bold', color=INK)
-    _save(fig, RULES_DOC, 'both-answers-at-one-input.svg')
+    _save(fig, WHERE_STOP, 'both-answers-at-one-input.svg')
 
 
 # ==========================================================================
@@ -640,7 +649,7 @@ def sag_points() -> None:
                  f'{slope:.1f} mm per kg plus {intercept:.1f} mm',
                  fontsize=12, weight='bold', color=INK)
     ax.legend(fontsize=9.8, frameon=False, loc='upper left')
-    _save(fig, RULES_DOC, 'sag-points.svg')
+    _save(fig, MODEL_IS, 'sag-points.svg')
 
 
 def fit_arithmetic() -> None:
@@ -691,7 +700,7 @@ def fit_arithmetic() -> None:
             fontsize=11.5, color=INK, ha='center', va='center', weight='bold')
     ax.set_title('The whole fit is six subtractions, six multiplications, two totals '
                  'and one division', fontsize=12.2, weight='bold', color=INK)
-    _save(fig, RULES_DOC, 'fit-arithmetic.svg')
+    _save(fig, MODEL_IS, 'fit-arithmetic.svg')
 
 
 def error_vs_slope() -> None:
@@ -727,7 +736,7 @@ def error_vs_slope() -> None:
     ax.set_ylim(-0.6, 13.6)
     ax.set_title('Every slope was tried, and the error has one lowest point',
                  fontsize=12, weight='bold', color=INK)
-    _save(fig, RULES_DOC, 'error-vs-slope.svg')
+    _save(fig, MODEL_IS, 'error-vs-slope.svg')
 
 
 def signed_misses_cancel() -> None:
@@ -769,7 +778,7 @@ def signed_misses_cancel() -> None:
                  f'{squared:.2f} against the best line\'s {s["sse_fit"]:.2f}',
                  fontsize=11.6, weight='bold', color=INK)
     ax.legend(fontsize=9.8, frameon=False, loc='lower right')
-    _save(fig, RULES_DOC, 'signed-misses-cancel.svg')
+    _save(fig, MODEL_IS, 'signed-misses-cancel.svg')
 
 
 def squaring_punishes_big_misses() -> None:
@@ -802,7 +811,7 @@ def squaring_punishes_big_misses() -> None:
     ax.set_title('Twice the miss adds four times as much, so one large miss costs '
                  'more than several small ones',
                  fontsize=11.6, weight='bold', color=INK)
-    _save(fig, RULES_DOC, 'squaring-punishes-big-misses.svg')
+    _save(fig, MODEL_IS, 'squaring-punishes-big-misses.svg')
 
 
 def three_answers() -> None:
@@ -839,7 +848,7 @@ def three_answers() -> None:
                  f'miss from {typical[1]:.2f} mm to {typical[2]:.2f} mm',
                  fontsize=12.2, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, RULES_DOC, 'three-answers.svg')
+    _save(fig, MODEL_IS, 'three-answers.svg')
 
 
 # ==========================================================================
@@ -881,7 +890,7 @@ def one_example() -> None:
             color=INK, ha='center')
     ax.set_title('Every word on this page names one part of this table',
                  fontsize=12.5, weight='bold', color=INK)
-    _save(fig, RULES_DOC, 'one-example.svg')
+    _save(fig, MODEL_IS, 'one-example.svg')
 
 
 def prediction_vs_label() -> None:
@@ -925,7 +934,7 @@ def prediction_vs_label() -> None:
                  f'{float(np.max(np.abs(err))):.2f} mm',
                  fontsize=11.6, weight='bold', color=INK)
     ax.legend(fontsize=9.3, frameon=False, loc='upper left')
-    _save(fig, RULES_DOC, 'prediction-vs-label.svg')
+    _save(fig, MODEL_IS, 'prediction-vs-label.svg')
 
 
 def feature_choice() -> None:
@@ -963,7 +972,7 @@ def feature_choice() -> None:
                  'because only one of them moves the answer',
                  fontsize=12.2, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, RULES_DOC, 'feature-choice.svg')
+    _save(fig, MODEL_IS, 'feature-choice.svg')
 
 
 def label_noise() -> None:
@@ -998,7 +1007,7 @@ def label_noise() -> None:
     ax.set_title(f'A label is a measurement, so twelve tries at one mass spread over '
                  f'{reps.max() - reps.min():.2f} mm',
                  fontsize=12, weight='bold', color=INK)
-    _save(fig, RULES_DOC, 'label-noise.svg')
+    _save(fig, MODEL_IS, 'label-noise.svg')
 
 
 # ==========================================================================
@@ -1045,7 +1054,7 @@ def outside_the_range() -> None:
                  f'nothing told it the belt reaches a stop',
                  fontsize=11.8, weight='bold', color=INK)
     ax.legend(fontsize=9.5, frameon=False, loc='lower right')
-    _save(fig, RULES_DOC, 'outside-the-range.svg')
+    _save(fig, AGAINST, 'outside-the-range.svg')
 
 
 def more_examples_less_error() -> None:
@@ -1095,7 +1104,7 @@ def more_examples_less_error() -> None:
     ax.set_title('More examples buy a better line, but only down to the spread of the '
                  'measurements themselves', fontsize=11.8, weight='bold', color=INK)
     ax.legend(fontsize=9.5, frameon=False)
-    _save(fig, RULES_DOC, 'more-examples-less-error.svg')
+    _save(fig, AGAINST, 'more-examples-less-error.svg')
 
 
 def one_bad_example() -> None:
@@ -1139,7 +1148,7 @@ def one_bad_example() -> None:
                  f'readings grows from {err_clean:.2f} mm to {err_dirty:.2f} mm',
                  fontsize=11.5, weight='bold', color=INK)
     ax.legend(fontsize=9.2, frameon=False, loc='upper left')
-    _save(fig, RULES_DOC, 'one-bad-example.svg')
+    _save(fig, AGAINST, 'one-bad-example.svg')
 
 
 # ==========================================================================
@@ -1175,7 +1184,7 @@ def two_numbers_inside() -> None:
     fig.suptitle('The same model three times: only the two numbers inside it changed',
                  fontsize=12.5, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, WORDS_DOC, 'two-numbers-inside.svg')
+    _save(fig, MODEL_IS, 'two-numbers-inside.svg')
 
 
 def _layer_params(sizes: list[int]) -> int:
@@ -1203,31 +1212,6 @@ def _param_cases() -> list[tuple[str, int]]:
             ('a stack of 48 blocks,\neach 2,048 wide', big),
         ]
     return PARAM_CASES
-
-
-def parameter_count() -> None:
-    """How many adjustable numbers each of four models holds."""
-    cases = _param_cases()
-    for lab, n in cases:
-        print(f'[params] {lab.replace(chr(10), " "):56s} {n:,} parameters')
-
-    fig, ax = plt.subplots(figsize=(11.4, 5.2), facecolor='white')
-    _plain(ax)
-    vals = [n for _l, n in cases]
-    bars = ax.bar(range(4), vals, color=[SLIDE, LINK, PURPLE, GRIP], alpha=0.85,
-                  edgecolor=INK, lw=0.6, width=0.6)
-    for i, v in enumerate(vals):
-        ax.text(i, v * 1.5, f'{v:,}', ha='center', fontsize=11, weight='bold',
-                color=INK)
-    ax.set_yscale('log')
-    ax.set_ylim(1, max(vals) * 25)
-    ax.set_xticks(range(4))
-    ax.set_xticklabels([lab for lab, _n in cases], fontsize=9.3)
-    ax.set_ylabel('number of adjustable numbers (log scale)', fontsize=10.5)
-    ax.set_title('Every one of these is a model, and the only difference is how many '
-                 'numbers training has to choose', fontsize=11.8, weight='bold',
-                 color=INK)
-    _save(fig, WORDS_DOC, 'parameter-count.svg')
 
 
 def weights_are_dials() -> None:
@@ -1263,52 +1247,8 @@ def weights_are_dials() -> None:
     ax.set_title('A weight is one number saying how much one input counts, and a '
                  'minus sign means it counts against',
                  fontsize=11.8, weight='bold', color=INK)
-    _save(fig, WORDS_DOC, 'weights-are-the-dials.svg')
+    _save(fig, MODEL_IS, 'weights-are-the-dials.svg')
 
-
-def model_file_size() -> None:
-    """What a parameter costs in memory at three common number sizes."""
-    cases = _param_cases()
-    kinds = [('4 bytes each (float32)', 4), ('2 bytes each (bfloat16)', 2),
-             ('1 byte each (int8)', 1)]
-
-    def pretty(b: int) -> str:
-        if b < 1024:
-            return f'{b} bytes'
-        if b < 1024 ** 2:
-            return f'{b / 1024:,.1f} KB'
-        if b < 1024 ** 3:
-            return f'{b / 1024 ** 2:,.1f} MB'
-        return f'{b / 1024 ** 3:,.2f} GB'
-
-    for lab, n in cases:
-        row = ', '.join(f'{k}: {pretty(n * by)}' for k, by in kinds)
-        print(f'[size] {lab.replace(chr(10), " "):56s} {row}')
-
-    fig, ax = plt.subplots(figsize=(11.6, 5.2), facecolor='white')
-    _plain(ax)
-    width = 0.26
-    for j, (lab, by) in enumerate(kinds):
-        vals = [n * by for _l, n in cases]
-        ax.bar(np.arange(4) + (j - 1) * width, vals, width=width,
-               color=[LINK, PURPLE, GRIP][j], alpha=0.85, edgecolor=INK, lw=0.5,
-               label=lab)
-    for i, (_l, n) in enumerate(cases):
-        ax.text(i, n * 4 * 2.6, pretty(n * 4), ha='center', fontsize=9.8, color=INK)
-    ax.set_yscale('log')
-    ax.set_xticks(range(4))
-    ax.set_xticklabels([lab for lab, _n in cases], fontsize=9.3)
-    ax.set_ylabel('size of the saved parameters, in bytes (log scale)', fontsize=10.5)
-    ax.set_ylim(1, max(n * 4 for _l, n in cases) * 90)
-    ax.set_title('A parameter count is also a file size, which is why how many bytes '
-                 'a number takes matters', fontsize=11.8, weight='bold', color=INK)
-    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
-    _save(fig, WORDS_DOC, 'model-file-size.svg')
-
-
-# ==========================================================================
-# PAGE 2, SECTION 2: training and inference
-# ==========================================================================
 
 def _sag_gd(steps: int = 300, lr: float = 0.08) -> dict[str, Arr]:
     """Train the two-number sag model by plain gradient descent, keeping the path."""
@@ -1383,7 +1323,7 @@ def training_curve() -> None:
     fig.suptitle('Training is a search: the two numbers move downhill and the score '
                  'of being wrong falls', fontsize=12.2, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, WORDS_DOC, 'training-curve.svg')
+    _save(fig, MODEL_IS, 'training-curve.svg')
 
 
 def parameters_walking() -> None:
@@ -1423,41 +1363,7 @@ def parameters_walking() -> None:
     ax.set_ylabel('the second parameter: the offset', fontsize=10.5)
     ax.set_title('Training walks the two parameters downhill across this map, in 300 '
                  'steps', fontsize=11.8, weight='bold', color=INK)
-    _save(fig, WORDS_DOC, 'parameters-walking.svg')
-
-
-def training_vs_inference_cost() -> None:
-    """How much arithmetic training does, against how much one answer costs."""
-    sag_infer = 2
-    sag_train = 300 * len(SAG_X) * 6
-    cup_infer = 2 * 3 + 1
-    cup_train = 400 * 800 * (2 * 3 + 1 + 2 * 3)
-    labels = ['one answer from\nthe sag model', 'training the\nsag model\n(300 steps, '
-              '6 examples)', 'one answer from\nthe cup model',
-              'training the cup model\n(400 steps, 800 examples)']
-    vals = [sag_infer, sag_train, cup_infer, cup_train]
-    for lab, v in zip(labels, vals):
-        print(f'[cost] {lab.replace(chr(10), " "):56s} {v:,} multiplications and '
-              f'additions')
-    print(f'[cost] training the cup model does {cup_train // cup_infer:,} times the '
-          f'arithmetic of answering once')
-
-    fig, ax = plt.subplots(figsize=(11.4, 5.0), facecolor='white')
-    _plain(ax)
-    bars = ax.bar(range(4), vals, color=[SLIDE, GRIP, SLIDE, GRIP], alpha=0.85,
-                  edgecolor=INK, lw=0.6, width=0.6)
-    for i, v in enumerate(vals):
-        ax.text(i, v * 1.6, f'{v:,}', ha='center', fontsize=11, weight='bold',
-                color=INK)
-    ax.set_yscale('log')
-    ax.set_ylim(1, max(vals) * 30)
-    ax.set_xticks(range(4))
-    ax.set_xticklabels(labels, fontsize=9.3)
-    ax.set_ylabel('multiplications and additions (log scale)', fontsize=10.5)
-    ax.set_title(f'Training is done once and costs {cup_train // cup_infer:,} times an '
-                 f'answer; inference is done every time the robot looks',
-                 fontsize=11.6, weight='bold', color=INK)
-    _save(fig, WORDS_DOC, 'training-vs-inference-cost.svg')
+    _save(fig, MODEL_IS, 'parameters-walking.svg')
 
 
 def one_inference_by_hand() -> None:
@@ -1497,7 +1403,7 @@ def one_inference_by_hand() -> None:
             fontsize=10.5, color=INK, ha='center')
     ax.set_title('Inference on the sag model: the input moves, the two parameters do '
                  'not', fontsize=12.5, weight='bold', color=INK, pad=12)
-    _save(fig, WORDS_DOC, 'one-inference-by-hand.svg')
+    _save(fig, MODEL_IS, 'one-inference-by-hand.svg')
 
 
 # ==========================================================================
@@ -1543,7 +1449,7 @@ def dataset_split() -> None:
     ax.set_title(f'A dataset is the examples; generalisation is the score on the ones '
                  f'held back ({float(m["acc_test"]):.3f})',
                  fontsize=12.2, weight='bold', color=INK)
-    _save(fig, WORDS_DOC, 'dataset-split.svg')
+    _save(fig, MODEL_IS, 'dataset-split.svg')
 
 
 def _poly_curves() -> dict[str, object]:
@@ -1599,7 +1505,7 @@ def seen_vs_unseen() -> None:
     ax.set_title('More parameters always help on the examples and stop helping on '
                  'everything else', fontsize=11.6, weight='bold', color=INK)
     ax.legend(fontsize=9.8, frameon=False, loc='lower center')
-    _save(fig, WORDS_DOC, 'seen-vs-unseen.svg')
+    _save(fig, MODEL_IS, 'seen-vs-unseen.svg')
 
 
 def flexible_curve_wanders() -> None:
@@ -1629,7 +1535,7 @@ def flexible_curve_wanders() -> None:
     ax.set_title(f'The {degs[-1] + 1}-parameter curve passes closer to the points and '
                  f'wanders between them', fontsize=11.6, weight='bold', color=INK)
     ax.legend(fontsize=9.6, frameon=False, loc='upper left')
-    _save(fig, WORDS_DOC, 'flexible-curve-wanders.svg')
+    _save(fig, MODEL_IS, 'flexible-curve-wanders.svg')
 
 
 def generalisation_vs_size() -> None:
@@ -1672,7 +1578,7 @@ def generalisation_vs_size() -> None:
     ax.set_ylabel('typical miss on unseen inputs (log scale)', fontsize=10.5)
     ax.set_title(f'The same flexible curve generalises badly on {sizes[0]} examples '
                  f'and well on {sizes[-1]}', fontsize=11.8, weight='bold', color=INK)
-    _save(fig, WORDS_DOC, 'generalisation-vs-size.svg')
+    _save(fig, MODEL_IS, 'generalisation-vs-size.svg')
 
 
 # ==========================================================================
@@ -2214,12 +2120,9 @@ def main() -> None:
 
     # page 2
     two_numbers_inside()
-    parameter_count()
     weights_are_dials()
-    model_file_size()
     training_curve()
     parameters_walking()
-    training_vs_inference_cost()
     one_inference_by_hand()
     dataset_split()
     seen_vs_unseen()

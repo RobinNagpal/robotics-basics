@@ -21,7 +21,7 @@ time slowly goes wrong, even though each single step it predicts is good. Finall
 you will know what an action chunk is, why it helps, and how long it should be.
 
 The page is written for a reader who has read [what the words
-mean](../01_what-learning-means/02_the-words-everyone-uses.md), so that supervised
+mean](../01_what-learning-means/06_the-words-everyone-uses.md), so that supervised
 learning, a label and a training set are familiar, and who has read [pictures,
 sound and robot
 states](../05_turning-the-world-into-numbers/02_pictures-sound-and-robot-states.md),
@@ -139,7 +139,7 @@ readings and what the person did next, many times a second. One **demonstration*
 also called an episode, is one recorded attempt at the task from start to finish.
 
 The training is then supervised learning, as described in [what the words
-mean](../01_what-learning-means/02_the-words-everyone-uses.md). The input of one
+mean](../01_what-learning-means/06_the-words-everyone-uses.md). The input of one
 example is what the robot could see and the state it was in. The label is the
 action the person made at that moment. The model is trained to make its answer
 close to the label by squared error, which is the loss from [the score of being

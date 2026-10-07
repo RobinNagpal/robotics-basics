@@ -26,7 +26,7 @@ them to be written down, and none of them is tuned.
 
 **One constant of its own**, which is the gain. It is chosen by [the
 convergence
-argument](02_how-it-works.md#3-why-the-push-is-a-fraction-of-the-shortfall-rather-than-all-of-it)
+argument](03_how-it-works.md#3-why-the-push-is-a-fraction-of-the-shortfall-rather-than-all-of-it)
 and then frozen, and it is the entire configuration of the method.
 
 **One library, and it is NumPy.** The arithmetic over a handful of positions

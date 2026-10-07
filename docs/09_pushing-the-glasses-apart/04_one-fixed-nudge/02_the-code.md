@@ -1,7 +1,9 @@
 # The code
 
 This page shows the code at the heart of this solution, and says what the
-solution hands back to the rest of the cell. The second explains the first,
+solution hands back to the rest of the cell. It follows [what it
+is](01_what-it-is.md), and [how it works](03_how-it-works.md) explains, part by
+part, what the code below is doing. The second explains the first,
 which is why they are on one page.
 
 ## Contents
@@ -182,4 +184,4 @@ Written as the loop it is:
 The loop ends when no glass is short of room, when the budget of pushes is
 spent, or when every glass that is left has been refused.
 
-← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →
+← [What it is](01_what-it-is.md) · [How it works](03_how-it-works.md) →

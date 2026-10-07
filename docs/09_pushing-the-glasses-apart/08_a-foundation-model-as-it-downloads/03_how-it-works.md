@@ -135,7 +135,7 @@ anywhere of what a standard deviation is worth in millimetres.
 So the scale had to be **chosen** rather than converted. There is no conversion
 to do, because there is nothing to convert from.
 [`joining.py`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/joining.py)
-makes that choice and writes down the reasoning, and [the code](03_the-code.md)
+makes that choice and writes down the reasoning, and [the code](02_the-code.md)
 shows the four lines that spend it.
 
 This matters for the comparison in a specific way. A bad reading would make the
@@ -381,4 +381,4 @@ this model held 1.02 GiB while it ran, on this laptop. π0.5 appears in this boo
 only as a further way inside solution 6, reached by low-rank adaptation, to ask
 whether a markedly larger model is worth it.
 
-← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →
+← [The code](02_the-code.md) · [A worked example](04_a-worked-example.md) →

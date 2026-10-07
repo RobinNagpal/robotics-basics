@@ -168,4 +168,4 @@ here runs: plan, feel, look again. This solution replaces the planning step and
 nothing else. That the loop stays is what makes copying survivable at all, for
 a reason the section on compounding error gives.
 
-← [Geometry generates, a model ranks — how it compares](../05_geometry-generates-a-model-ranks/06_how-it-compares.md) · [How it works](02_how-it-works.md) →
+← [Geometry generates, a model ranks — how it compares](../05_geometry-generates-a-model-ranks/06_how-it-compares.md) · [How it works](03_how-it-works.md) →

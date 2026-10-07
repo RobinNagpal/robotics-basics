@@ -178,4 +178,4 @@ opposite trade, and the next sections are the two halves of it.
 
 ![The enumerator writes down every push, the filter keeps only the safe ones, and the model reorders what is left, so nothing it can emit is unsafe; a model that chooses the push instead has every push in its output space and needs a geometric check bolted on after it.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/06-generate-veto-then-rank.png)
 
-← [One fixed nudge — how it compares](../04_one-fixed-nudge/06_how-it-compares.md) · [How it works](02_how-it-works.md) →
+← [One fixed nudge — how it compares](../04_one-fixed-nudge/06_how-it-compares.md) · [How it works](03_how-it-works.md) →

@@ -64,7 +64,7 @@ else still — the same tables in the same order, the same instruction, the same
 joint readings, the same shared checks, the same output of jaw waypoints and
 the same scorecard — and the two solutions use the same library, the same model
 and the same downloaded file. One thing differs, which is the training.
-[Whether anything else does](02_how-it-works.md#4-whether-anything-but-the-training-differs)
+[Whether anything else does](03_how-it-works.md#4-whether-anything-but-the-training-differs)
 is a question a matched pair invites, and the answer worked out there is that
 nothing else does. So the gap between solution 5 and this one is a measurement
 of what this training bought on a robot foundation model, and of nothing else.
@@ -189,4 +189,4 @@ go in at every ask. It still predicts a chunk of fifty waypoints and commits to
 the whole of it before looking again. And it still has no field in it for a
 rule, so it still cannot be the thing that refuses a glass.
 
-← [A foundation model as it downloads — how it compares](../08_a-foundation-model-as-it-downloads/06_how-it-compares.md) · [How it works](02_how-it-works.md) →
+← [A foundation model as it downloads — how it compares](../08_a-foundation-model-as-it-downloads/06_how-it-compares.md) · [How it works](03_how-it-works.md) →

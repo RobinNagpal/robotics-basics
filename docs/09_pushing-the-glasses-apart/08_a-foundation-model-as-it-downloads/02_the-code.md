@@ -1,7 +1,9 @@
 # The code
 
 This page shows the code at the heart of this solution, and says what the
-solution hands back to the rest of the cell.
+solution hands back to the rest of the cell. It follows [what it
+is](01_what-it-is.md), and [how it works](03_how-it-works.md) explains, part by
+part, what the code below is doing.
 
 ## Contents
 
@@ -13,7 +15,7 @@ solution hands back to the rest of the cell.
 
 Nothing here is fitted, so the only code this project wrote is the join between
 what the borrowed model emits and what this cell's jaw is. [How it
-works](02_how-it-works.md#4-the-actions-arrive-with-no-units-in-them) explains
+works](03_how-it-works.md#4-the-actions-arrive-with-no-units-in-them) explains
 why that join turned out to be the whole solution: the released checkpoint
 saves its normalisation statistics under keys the normaliser never looks up, so
 the actions arrive as z-scores with no units in them at all, and a scale had to
@@ -162,4 +164,4 @@ every lever that would normally be pulled to fix the problems above. Pulling
 exactly one of those levers is [solution
 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md).
 
-← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →
+← [What it is](01_what-it-is.md) · [How it works](03_how-it-works.md) →

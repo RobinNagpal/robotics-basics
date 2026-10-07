@@ -159,4 +159,4 @@ trained policy would have to be trained again.
 
 ![The model's question has one shape: a table as the camera measured it and one push go in, and a table afterwards comes out — a displacement for every glass, plus whether anything toppled and whether the jaw was blocked coming down.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/10-what-a-forward-model-predicts.png)
 
-← [Imitation from demonstrations — how it compares](../06_imitation-from-demonstrations/06_how-it-compares.md) · [How it works](02_how-it-works.md) →
+← [Imitation from demonstrations — how it compares](../06_imitation-from-demonstrations/06_how-it-compares.md) · [How it works](03_how-it-works.md) →

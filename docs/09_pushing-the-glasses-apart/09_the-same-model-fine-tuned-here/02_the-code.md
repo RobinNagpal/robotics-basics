@@ -1,7 +1,9 @@
 # The code
 
 This page shows the code at the heart of this solution, and says what the
-solution hands back to the rest of the cell. The second explains the first,
+solution hands back to the rest of the cell. It follows [what it
+is](01_what-it-is.md), and [how it works](03_how-it-works.md) explains, part by
+part, what the code below is doing. The second explains the first,
 which is why they are on one page.
 
 ## Contents
@@ -47,7 +49,7 @@ def with_correction(policy, rank: int = RANK, scaling: int = SCALING):
 `TABLES` names the four projections of every attention layer and nothing else,
 so the correction can change what the model attends to and cannot change the
 feed-forward tables at all. That is the trade [low-rank
-adaptation](02_how-it-works.md#2-low-rank-adaptation--a-small-correction-instead-of-a-large-change)
+adaptation](03_how-it-works.md#2-low-rank-adaptation--a-small-correction-instead-of-a-large-change)
 sets out, written down as four strings.
 
 What the correction is fitted towards is built in
@@ -136,7 +138,7 @@ because the targets it was trained towards were this cell's own pushes. What it
 does not buy is anything the model has no input for, anything the teacher never
 did, and anything the shared machinery owns. [What fine-tuning closes, and what
 it cannot
-touch](02_how-it-works.md#5-what-fine-tuning-closes-and-what-it-cannot-touch)
+touch](03_how-it-works.md#5-what-fine-tuning-closes-and-what-it-cannot-touch)
 is those gains and those limits taken one at a time.
 
-← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →
+← [What it is](01_what-it-is.md) · [How it works](03_how-it-works.md) →

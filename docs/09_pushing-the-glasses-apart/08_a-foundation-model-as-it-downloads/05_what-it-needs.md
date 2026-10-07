@@ -30,7 +30,7 @@ cache.
 
 **Hardware.** A laptop, and nothing else. There is nothing to train, so there
 is no accelerator to rent for this solution at all. [How it
-works](02_how-it-works.md#9-the-price-of-the-model-and-why-this-model) argues
+works](03_how-it-works.md#9-the-price-of-the-model-and-why-this-model) argues
 that solution 6 would be the half of the pair that paid for one, and that
 turned out to be wrong too: solution 6's low-rank fine-tune of this same model
 held **1.02 GiB** while it ran, on this machine's own Metal. The 22 GB and 70

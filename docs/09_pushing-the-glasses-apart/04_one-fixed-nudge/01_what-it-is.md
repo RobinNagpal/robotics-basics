@@ -78,7 +78,7 @@ should be read.
 
 **Part of this solution is built and part of it is a design**, and the two are
 separated plainly in [what is built and what is a
-design](02_how-it-works.md#5-what-is-built-and-what-is-a-design). The examiner, the room test, the
+design](03_how-it-works.md#5-what-is-built-and-what-is-a-design). The examiner, the room test, the
 tipping rule and the loop all exist in this repository and have been run. The
 particular rule for choosing a direction and a distance that this document
 describes is a design that would sit inside them.
@@ -147,7 +147,7 @@ From that, the method makes four decisions and no others, and each one is a
 single line of arithmetic on numbers the arm already has.
 
 **Which glass to push.** It takes the glass that is short of the most room.
-[The shortfall](02_how-it-works.md#2-the-shortfall-and-why-it-is-measured-to-the-neighbours-edge)
+[The shortfall](03_how-it-works.md#2-the-shortfall-and-why-it-is-measured-to-the-neighbours-edge)
 defines that quantity exactly.
 
 **Which way to push it.** Straight away from the neighbour whose edge reaches
@@ -177,4 +177,4 @@ serve both ends of that range. What is fixed is the **fraction**: one constant,
 the same for every glass on every table, chosen once by argument and never
 changed. That single constant is the only free number in the entire method.
 
-← [The same model, fine-tuned here](../03_the-six-solutions/07_the-same-model-fine-tuned-here.md) · [How it works](02_how-it-works.md) →
+← [The same model, fine-tuned here](../03_the-six-solutions/07_the-same-model-fine-tuned-here.md) · [How it works](03_how-it-works.md) →

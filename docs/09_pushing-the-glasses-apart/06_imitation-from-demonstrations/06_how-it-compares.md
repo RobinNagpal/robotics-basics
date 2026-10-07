@@ -165,7 +165,7 @@ general and it catches people out. Fitting a model to produce one output while
 minimising its average error over examples that disagree makes the model produce
 something between those examples. Where the examples are two sensible choices,
 the something between them is frequently a third thing that is not sensible at
-all, and [how it works](02_how-it-works.md#5-a-second-way--diffusion-policy)
+all, and [how it works](03_how-it-works.md#5-a-second-way--diffusion-policy)
 draws one such third thing.
 
 It is worth knowing because the symptom is misleading. The model's training

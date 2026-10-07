@@ -1,8 +1,7 @@
 # How it works
 
-This page explains what happens inside this solution, part by part. It
-follows [what it is](01_what-it-is.md), which states the question the
-solution answers and the single idea it rests on.
+This page explains what happens inside this solution, part by part. It follows
+[the code](02_the-code.md), and explains what each part of that code is doing.
 
 ## Contents
 
@@ -200,7 +199,7 @@ model of pushing was wrong fails on a claim this one does not make.
 
 The price is arm time, and it should be read as a real price rather than as a
 rhetorical one. One push is a whole sequence of arm movements, set out in [the
-pushes are what this contributes](03_the-code.md#2-the-pushes-are-what-this-contributes), and
+pushes are what this contributes](02_the-code.md#2-the-pushes-are-what-this-contributes), and
 every one of them is followed by a fresh look. **Every push is seconds of arm
 time, and the scorecard counts pushes against a fixed budget**, so the
 currency this method pays in is finite. A method that converges in four pushes
@@ -313,4 +312,4 @@ somewhere else, either by a person teleoperating the arm or by writing a second
 method for the purpose, and both of those are real costs that the comparison
 would then have to carry.
 
-← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →
+← [The code](02_the-code.md) · [A worked example](04_a-worked-example.md) →

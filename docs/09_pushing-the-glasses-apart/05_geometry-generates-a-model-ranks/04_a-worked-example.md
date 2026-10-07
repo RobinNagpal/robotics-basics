@@ -109,4 +109,4 @@ quantities a ranker is not being asked about, and exactly the quantities
 [solution 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md) fits a model
 of.
 
-← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →
+← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

@@ -136,4 +136,4 @@ glass than behind one. The refusal, the topple limit, the destinations and the
 loop are exactly where they were, because they were never the model's to begin
 with.
 
-← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →
+← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

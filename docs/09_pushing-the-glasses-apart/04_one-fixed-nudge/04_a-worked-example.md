@@ -174,4 +174,4 @@ friction range is below the jaw's top edge, so D tips before it slides at any
 friction the cell might have. No method in the set can push D, and the only
 correct answer for it is a refusal with the reason.
 
-← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →
+← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

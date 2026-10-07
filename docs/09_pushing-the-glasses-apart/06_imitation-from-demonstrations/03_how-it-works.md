@@ -1,8 +1,7 @@
 # How it works
 
-This page explains what happens inside this solution, part by part. It
-follows [what it is](01_what-it-is.md), which states the question the
-solution answers and the single idea it rests on.
+This page explains what happens inside this solution, part by part. It follows
+[the code](02_the-code.md), and explains what each part of that code is doing.
 
 ## Contents
 
@@ -372,4 +371,4 @@ cloning has a cheap repair available in this particular arrangement, and that
 is a consequence of the teacher being code rather than a property of imitation
 learning in general.
 
-← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →
+← [The code](02_the-code.md) · [A worked example](04_a-worked-example.md) →

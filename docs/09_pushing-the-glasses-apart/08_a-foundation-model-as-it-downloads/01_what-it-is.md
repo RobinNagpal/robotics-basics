@@ -118,7 +118,7 @@ together, push them apart*. The pose goes in the slot the model keeps for an
 arm's joint readings. What this cell puts there is where the jaw is standing,
 because the model was fitted on a different arm and this cell's joint angles
 would mean nothing to it. That substitution looks small here and turns out to
-matter a great deal, which [how it works](02_how-it-works.md#5-two-of-the-three-inputs-say-the-same-thing-every-time) explains.
+matter a great deal, which [how it works](03_how-it-works.md#5-two-of-the-three-inputs-say-the-same-thing-every-time) explains.
 
 **Third, carry out what comes back.** The model returns 50 actions. Read as
 waypoints for the jaw, those actions are already the shared output the contract
@@ -131,4 +131,4 @@ search. It contains a download, an instruction and a loop. **That is the point
 to hold on to while reading the rest**, because almost every strength and every
 weakness below follows from it directly.
 
-← [A world model, then plan with it — how it compares](../07_a-world-model-then-plan-with-it/06_how-it-compares.md) · [How it works](02_how-it-works.md) →
+← [A world model, then plan with it — how it compares](../07_a-world-model-then-plan-with-it/06_how-it-compares.md) · [How it works](03_how-it-works.md) →

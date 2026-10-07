@@ -40,7 +40,7 @@ card, through Metal. Measured while it ran: **1.02 GiB held**, with the
 borrowed weights, the correction, the correction's gradients and the
 optimiser's running averages all in memory at once. Low-rank adaptation is why,
 for the reason [the section on
-it](02_how-it-works.md#2-low-rank-adaptation--a-small-correction-instead-of-a-large-change)
+it](03_how-it-works.md#2-low-rank-adaptation--a-small-correction-instead-of-a-large-change)
 gives. What the writing got wrong was how little "a little" is at 450 million
 parameters. Memory was never close to being the obstacle, and the trained model
 runs here perfectly well too, since SmolVLA uses a few gigabytes at inference.

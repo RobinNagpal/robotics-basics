@@ -137,4 +137,4 @@ and against the displacement floor from [the target
 layout](../01_the-problem/02_the-target-layout.md), which says how little movement
 the task needed in the first place.
 
-← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →
+← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

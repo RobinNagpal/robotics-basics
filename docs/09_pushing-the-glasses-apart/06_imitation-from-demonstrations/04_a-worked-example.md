@@ -143,4 +143,4 @@ is touched. Nothing in the example about leaning the slide or slowing near the
 end was reached, because the motion never got that far. The code folder's
 `README.md` has the counts.
 
-← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →
+← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

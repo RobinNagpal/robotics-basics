@@ -108,7 +108,7 @@ candidate that fails one of four geometric tests, and takes the shortest
 survivor that leaves a glass with room. Everything round that step — the
 examiner, the room test, the shortfall, the tipping rule, the loop and the
 refusals — is built and has been run. [What is built and what is a
-design](../04_one-fixed-nudge/02_how-it-works.md#5-what-is-built-and-what-is-a-design)
+design](../04_one-fixed-nudge/03_how-it-works.md#5-what-is-built-and-what-is-a-design)
 separates the two line by line.
 
 ![One pass of the loop drawn once, with the choosing step shown as the one box that the searching planner and the designed rule fill differently.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-the-rule-and-the-planner.png)

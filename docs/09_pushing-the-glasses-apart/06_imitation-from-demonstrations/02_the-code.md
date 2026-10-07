@@ -220,4 +220,4 @@ teacher, and nothing in behaviour cloning evaluates an outcome. So the student
 has no mechanism by which to discover a better choice of glass, or a better
 destination, than the one it was shown.
 
-← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →
+← [What it is](01_what-it-is.md) · [How it works](03_how-it-works.md) →

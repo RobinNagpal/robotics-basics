@@ -108,7 +108,7 @@ which nothing downstream would notice. That is not what happened, and the
 difference is worth holding on to, because a failure that the scorecard counts
 directly — a push that touched nothing — is a far easier thing to diagnose than
 a push that looks right and is not. The reasoning about the domain gap in [how
-it works](02_how-it-works.md#7-the-domain-gap-which-is-the-heart-of-this-document)
+it works](03_how-it-works.md#7-the-domain-gap-which-is-the-heart-of-this-document)
 stands. The guess about which way the gap would show did not.
 
-← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →
+← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

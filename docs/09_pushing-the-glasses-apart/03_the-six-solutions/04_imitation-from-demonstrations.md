@@ -138,15 +138,26 @@ several times and the figure shown is the middle one.
 spending nearly three times the pushes to do it. It also toppled a glass, which
 the geometry never does.
 
-The reason was measured rather than guessed, and it is specific. **It places the
-start of a push roughly right and gets the heading about thirty degrees out**,
-and the jaw then meets a neighbour on the way down instead of reaching the glass
-it was aiming at. Fitting it on four times the demonstrations removed the
-memorising but not the averaging, which says the shortfall is **the policy
-averaging over pushes that disagree**, not a shortage of examples. When several
-good pushes point in different directions from a similar-looking table, a
-function fitted to copy them all returns something between them, and something
-between two good pushes is not a good push.
+The reason was measured rather than guessed, and it is specific. The policy
+places the start of a push roughly right — within a centimetre or two of where
+the teacher put the fingertips — and gets the heading about thirty degrees out.
+The jaw then meets a neighbour on the way down instead of reaching the glass it
+was aiming at, and the push is reported blocked with nothing moved.
+
+![The teacher's heading and a heading thirty degrees off it, with the jaw's own 270 mm body drawn on both: the teacher's clears the neighbour and the policy's comes down on it.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-a-heading-thirty-degrees-out.png)
+
+Thirty degrees sounds survivable and is not, because what has to be clear of a
+neighbour is not the short path the glass travels but the whole jaw standing
+behind it. A neighbour close enough to crowd a glass is close enough to leave
+only a narrow window of legal headings, and a thirty-degree error is wider than
+the window.
+
+The error is the averaging rather than a shortage of examples. Fitting the
+policy on four times the demonstrations removed the memorising and left the
+error exactly where it was. When several good pushes point in different
+directions from a similar-looking table, a function fitted to copy them all
+returns something between them, and something between two good pushes is not a
+good push.
 
 That is useful to know, because it tells you what to change. More data is the
 wrong lever. A model that can represent several different answers to the same
@@ -156,33 +167,33 @@ is in [the results](../10_the-results.md).
 
 ## 5. Where it is strong and where it breaks
 
-**Nothing has to be written about pushing**: no friction model, no candidate
-generator, no features chosen by hand, no geometry. **The output is native**, so
-nothing is squeezed or expanded on the way out. **Labels are free and
-plentiful**, because the teacher is code and the tables are simulated, so the
-usual reason not to attempt imitation learning does not apply. **It is cheap to
-train and cheap to run.** And **it is a measurement** — student against teacher,
-on the same tables with the same scorecard — which would have earned its place
-even if the solution were not carried forward.
+Nothing has to be written about pushing: no friction model, no candidate
+generator, no features chosen by hand, no geometry. The output is native, so
+nothing is squeezed or expanded on the way out. Labels are free and plentiful,
+because the teacher is code and the tables are simulated, so the usual reason
+not to attempt imitation learning does not apply. It is cheap to train and
+cheap to run. And it is a measurement — student against teacher, on the same
+tables with the same scorecard — which would have earned its place even if the
+solution were not carried forward.
 
 Against that, five weaknesses, of which the first three cannot be engineered
 away.
 
-**The ceiling is the teacher's quality**, for the reason given above: no
-mechanism in this solution compares one outcome against another.
+Its ceiling is the teacher's quality, for the reason given above: no mechanism
+in this solution compares one outcome against another. Filtering the
+demonstrations then biases it towards what the teacher does well, because the
+recordings thin exactly where the teacher struggled.
 
-**Filtering the demonstrations biases it towards what the teacher does well.**
+It is open-loop inside a chunk, and it cannot refuse. During a chunk nothing is
+read, and the policy's only output is waypoints, so a refusal has to come from
+the shared gate in front of it rather than from the policy itself.
 
-**It is open-loop inside a chunk, and it cannot refuse.** During a chunk nothing
-is read, and the policy's only output is waypoints, so a refusal has to come
-from the shared gate in front of it rather than from the policy itself.
-
-**It needed examiner work the first two solutions did not**, and two smaller costs
+It needed examiner work the first two solutions did not, and two smaller costs
 are paid on every push: a glass and an aim have to be read back off the
-waypoints, and every chunk has to be pulled inside the jaw's limits before it is
-followed.
+waypoints, and every chunk has to be pulled inside the jaw's limits before it
+is followed.
 
-**And it cannot explain itself, or say when it is lost.** It has no confidence
+And it cannot explain itself, or say when it is lost. It has no confidence
 output, and the situation in which it is least reliable — a table unlike
 anything in its data — is indistinguishable in its output from the situation in
 which it is most reliable.

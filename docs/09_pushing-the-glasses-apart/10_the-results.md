@@ -38,15 +38,23 @@ back.
 |---|---|---|---|---|---|---|
 | [1 one fixed nudge](../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge) | **33** | **0** | 195 | **0** | 213 | fast |
 | [2 geometry ranked](../../code/src/09_pushing-the-glasses-apart/02-geometry-ranked) | 31 | **0** | 185 | **0** | 229 | fast |
-| [3 imitation, ACT](../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations) | 3 | 1 | 68 | 1 | 643 | fast |
+| [3 imitation, ACT](../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations) | 3 (3–6) | 1 (0–5) | 68 (67–82) | 1 (0–5) | 643 (589–668) | fast |
 | [4 a world model](../../code/src/09_pushing-the-glasses-apart/04-a-world-model) | 31 | 1 | **202** | 1 | **114** | middling |
-| [5 SmolVLA as it downloads](../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads) | 0 | 5 | 56 | 6 | 754 | slow |
-| [6 SmolVLA fine-tuned](../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned) | 4 | 38 | 77 | 46 | 400 | slow |
+| [5 SmolVLA as it downloads](../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads) | 0 (0–0) | 5 (5–6) | 56 (52–57) | 6 (5–8) | 754 (740–766) | slow |
+| [6 SmolVLA fine-tuned](../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned) | 4 (3–4) | 38 (37–39) | 77 (74–85) | 46 (38–49) | 400 (386–461) | slow |
 
 A table is **done** when every glass on it was picked up, and **wrong** when
 the run ended in a state the cell should never reach. Solutions 3, 5 and 6 are
-run several times and the figure shown is the middle one; [each solution's own
-document](03_the-six-solutions/01_how-the-six-compare.md) gives the spread between runs.
+run three times each, because they sample while they answer and a single run of
+one of them is a single draw. For those three the figure shown is the middle run
+and the brackets beside it are the least and the most, so a reader can see which
+differences between rows are larger than the wobble within one. Solutions 1, 2
+and 4 are the same every time and carry no brackets.
+
+Read the brackets before reading the ranking. Solution 6 racks between 74 and 85
+glasses and solution 3 between 67 and 82, so those two are not separated by this
+test. What is not in doubt is the toppling: solution 6 knocks over between 38
+and 49 glasses on every run, and solutions 1 and 2 never knock over any.
 
 The thinking column is deliberately coarse. Every time on this page was
 measured while the machine was busy with other work, and the same solution
@@ -118,9 +126,5 @@ The same line works for each of the other five, run from
 `code/src/09_pushing-the-glasses-apart/`. The ones that fit something need
 their training step first, and each solution folder's own README says which
 step that is and what it costs.
-
-← [The same foundation model, fine-tuned here — how it compares](09_the-same-model-fine-tuned-here/06_how-it-compares.md)
-
-← [The same foundation model, fine-tuned here — how it compares](09_the-same-model-fine-tuned-here/06_how-it-compares.md)
 
 ← [The same foundation model, fine-tuned here — how it compares](09_the-same-model-fine-tuned-here/06_how-it-compares.md)

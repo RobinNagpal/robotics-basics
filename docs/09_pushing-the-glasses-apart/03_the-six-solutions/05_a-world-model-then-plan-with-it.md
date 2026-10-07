@@ -95,33 +95,34 @@ trained on single pushes.
 
 ## 3. What it needs
 
-**A physics engine and thousands of pushes in it.** This is the real cost, and
-no other solution pays it in the same currency. The first way records thirty-eight
-thousand pushes, collected in two rounds: a first round of random pushes, and a
-second round of pushes chosen by the planner using the first round's model,
-which fills the holes the search would otherwise exploit. **Nobody labels any of
-it**, because the answer to every example is simply what the second look found.
-That is the single biggest practical advantage this family has over anything
-trained on demonstrations.
+It needs **a physics engine and tens of thousands of pushes made in it**, and
+this is the real cost, which no other solution pays in the same currency. The
+first way records 38,012 pushes, collected in two rounds: a first round of
+random pushes, and a second round chosen by the planner using the first round's
+model, which fills the holes the search would otherwise exploit. Nobody labels
+any of it, because the answer to every example is simply what the second look
+found. That is the single biggest practical advantage this family has over
+anything trained on demonstrations.
 
-**A training run before it can answer anything.** Five small networks, about
-half an hour on a laptop processor, with **no accelerator needed at all**. That
-is unusual among the learned solutions here, and it follows from the model being
-small and its input being a few dozen numbers rather than a picture.
+It needs **a training run before it can answer anything**, which is five small
+networks and about half an hour on a laptop processor, with no accelerator at
+all. That is unusual among the learned solutions here, and it follows from the
+model being small and its input being a few dozen numbers rather than a
+picture.
 
-**Rented hardware for the second way.** TD-MPC2 is reinforcement learning, it trains
-on far more interaction than a one-step fit needs, and it wants an accelerator:
-of order a hundred dollars for a weekend, or five hundred for a month if several
-training seeds are to be run.
+The second way would need **rented hardware**. TD-MPC2 is reinforcement
+learning, it trains on far more interaction than a one-step fit needs, and it
+wants an accelerator: of order a hundred dollars for a weekend, or five hundred
+for a month if several training seeds are to be run.
 
-**Run-time compute, and this is where the solution is expensive.** Fifteen
-hundred candidates, each evaluated by five networks, for every crowded glass,
-before every push. That is cheap in absolute terms and still hundreds of times
-the arithmetic a fixed nudge costs, which is why the scorecard carries a compute
-column.
+It needs **run-time compute**, and this is where the solution is expensive.
+About fifteen hundred candidates, each put to five networks, for every crowded
+glass, before every push. That is cheap in absolute terms and still hundreds of
+times the arithmetic a fixed nudge costs, which is why the scorecard carries a
+compute column.
 
-**A file of weights kept in step with the cell**, and **no borrowed model**, so
-there is no model licence to meet in either way.
+It needs **a file of weights kept in step with the cell**, and it borrows no
+model, so there is no model licence to meet in either way.
 
 ## 4. What it scored
 
@@ -157,34 +158,35 @@ The full table for all six solutions is in [the results](../10_the-results.md).
 
 ## 5. Where it is strong and where it breaks
 
-**It could plan a sequence, and nothing else here could.** **Its model needs no
-written physics and so no guessed friction**, which means it also absorbs the
-things nobody thought to write down. **It knows where it is ignorant, cheaply**,
-from the disagreement between the five copies. **Its training data costs no
-human time.** And **the same model serves a different goal**: change the
-arithmetic that scores a predicted table and the solution aims somewhere else,
-with no retraining at all, where a learned policy would have to be trained
-again.
+It could plan a sequence, and nothing else here could. Its model needs no
+written physics and therefore no guessed friction, which means it also absorbs
+the things nobody thought to write down. It knows where it is ignorant, and
+knows it cheaply, from the disagreement between the five copies. Its training
+data costs no human time. And the same model serves a different goal: change
+the arithmetic that scores a predicted table and the solution aims somewhere
+else, with no retraining at all, where a learned policy would have to be
+trained again.
 
-Against that:
+Against that, four weaknesses.
 
-**It can be confidently wrong, and that is its worst failure.** Where the
-training data is thin in a way the copies did not notice, five copies agree and
-are wrong together. The topples recorded while it was being tuned were exactly
-this: the model had rated every one of them safe, and a stricter limit does not
-catch that.
+It can be confidently wrong, and that is its worst failure. Where the training
+data is thin in a way the copies did not notice, all five agree and are wrong
+together. The topples recorded while it was being tuned were exactly this: the
+model had rated every one of them safe, and a stricter limit does not catch
+that.
 
-**Its model is only as wide as its encoding.** Five neighbours, four
+Its model is only as wide as its encoding, which is five neighbours, four
 measurements each, and no representation of the jaw's body. Anything those
 numbers cannot express cannot be learned however much data is collected, and
 most of the recorded failure causes are of that kind.
 
-**It is slow at run time**, because hundreds of model calls per push is the
-price of searching rather than answering. **It compounds error over depth**,
-which caps how far a sequence can usefully be planned. **It cannot be inspected
-the way written geometry can.** And **it is the most machinery of the six**: a
-data collector, a trainer, an ensemble, a search and a loop, against a page of
-arithmetic.
+It is slow at run time, because hundreds of model calls per push is the price
+of searching rather than answering, and it compounds error over depth, which
+caps how far a sequence could usefully be planned.
+
+And it cannot be inspected the way written geometry can. It is the most
+machinery of the six — a data collector, a trainer, an ensemble, a search and a
+loop — against a page of arithmetic.
 
 ## 6. When to choose it
 

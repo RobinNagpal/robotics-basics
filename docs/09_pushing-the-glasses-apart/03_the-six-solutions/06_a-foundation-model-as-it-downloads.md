@@ -86,28 +86,30 @@ cluttered rooms, and it is being shown flat pale shapes on an empty rectangle.
 
 Less than anything else in this book, which is the whole point.
 
-**Software.** LeRobot, licensed Apache-2.0, and PyTorch underneath it, licensed
-the three-clause Berkeley Software Distribution licence. Both are permissive, so
-neither obliges this project to publish
-its own source. **The weights carry their own terms**, which a reader taking
-this forward should check before anything is shipped, because a licence on
-weights is not the same thing as a licence on the library that loads them.
-Nothing in this project records what those terms are.
+For software it needs **LeRobot**, licensed Apache-2.0, and PyTorch underneath
+it, licensed under the three-clause Berkeley Software Distribution licence.
+Both are permissive, so neither obliges this project to publish its own source.
+**The weights carry their own terms**, which are a separate question from the
+licence on the library that loads them, and nothing in this project records
+what they are. A reader taking this forward would have to read them before
+shipping anything.
 
-**The weights**, downloaded and used unchanged, about 450 million parameters.
+Beyond that it needs **the weights themselves**, downloaded and used unchanged,
+about 450 million parameters.
 
-**Hardware: a laptop.** There is nothing to train, so there is no accelerator to
-rent for this solution at all. The one case where renting would be sensible is
-evaluation throughput rather than capability, because the scorecard asks for
-several runs and many forward passes on a laptop take a while.
+For hardware it needs **a laptop**. There is nothing to train, so there is no
+accelerator to rent for this solution at all. The one case where renting would
+be sensible is evaluation throughput rather than capability, because the
+scorecard asks for several runs and many forward passes on a laptop take a
+while.
 
-**Data: none.** No demonstrations, no labels, no held-out set, and nothing to
-keep in step with the cell when the cell changes.
+It needs **no data at all**: no demonstrations, no labels, no held-out set, and
+nothing to keep in step with the cell when the cell changes.
 
-**What the examiner had to grow**: a rendered view of the table from the top, and a
-path that accepts a run of waypoints without the push macro. Both are shared
-with two other solutions, so the cost was paid once for three rather than for
-this one.
+The examiner had to grow **two parts** for it: a rendered view of the table from
+the top, and a path that accepts a run of waypoints without the push macro.
+Both are shared with two other solutions, so the cost was paid once for three
+rather than for this one.
 
 ## 4. What it scored
 
@@ -120,16 +122,22 @@ shown is the middle one.
 | 0 | 5 | 56 | 6 | 754 | slow |
 
 **It finished no table at all**, racked about a fifth of the glasses, toppled
-six of them, and spent more pushes than any solution except one. It is also the
-slowest of the six per push, because every decision is a forward pass through a
-large network rather than arithmetic.
+six of them, and spent more pushes than any other solution in the book. It is
+also the slowest of the six per push, because every decision is a forward pass
+through a large network rather than arithmetic.
 
-The reason is specific and was measured rather than guessed. **About nine of its
-pushes in ten touch nothing at all**, because the trajectories it returns hold
-the jaw well above the glasses. It is not failing to choose a good push; it is
-mostly not reaching the table. That is the domain gap arriving exactly as
-predicted: the model produces confident, plausible actions, and nothing
-downstream looks suspicious until the glasses have not moved.
+The reason is specific and was measured rather than guessed. About nine of its
+pushes in ten touch nothing at all, because the trajectories it returns hold the
+jaw well above the glasses. Over the 2,260 chunks it was asked for across the
+three runs, the lowest point of a chunk is a median of 209 mm above the table,
+where a push happens at 50 mm.
+
+![The heights at which the jaw can travel, where it has to ride to move a glass, how tall the glasses are, and the 209 mm the downloaded model's chunks stop at.](../../images/pushing-the-glasses-apart/a-foundation-model-as-it-downloads/smolvla-the-jaw-hovers.png)
+
+So it is not failing to choose a good push; it is mostly not reaching the
+table. That is the domain gap arriving exactly as predicted: the model produces
+confident, plausible actions, and nothing downstream looks suspicious until the
+glasses have not moved.
 
 **A poor score here is the measurement working**, which is worth stating plainly
 because it reads like an excuse and is not. The pair this solution belongs to

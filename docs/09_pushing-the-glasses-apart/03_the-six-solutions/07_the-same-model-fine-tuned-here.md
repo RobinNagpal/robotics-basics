@@ -122,17 +122,22 @@ one.
 **The training worked and the score got worse.** Both halves of that sentence
 are true, and reading only one of them misreads the pair.
 
-The training worked in the sense that matters: the fine-tuned model's chunks are
-much closer to the teacher's than the borrowed model's were, and it brings the
-jaw down to the table, where the borrowed model simply hovered above it. It
-finishes four tables where its partner finishes none, and it racks half again as
-many glasses in half the pushes.
+The training worked in the sense that matters, and the measurement is exact.
+The borrowed model's chunks stop a median of 209 mm above the table; the
+fine-tuned model's come down to a median of 50 mm, which is precisely the
+height the jaw has to ride at to move anything. It finishes four tables where
+its partner finishes none, and it racks 77 glasses against 56 in a little over
+half the pushes.
 
-The score got worse because **it learned the height a push happens at without
-learning where to put the jaw down.** Two thirds of its pushes are blocked
-coming down, and it topples 46 glasses a run where the geometry topples none. Its
-partner stays out of the "wrong" column by never reaching a glass at all: it
-hovers, achieves little, and is marked correct but incomplete.
+The score got worse because it learned the height a push happens at without
+learning where to put the jaw down.
+
+![The same pushes sorted into the ones that never touched anything, the ones blocked coming down and the ones that reached a glass, for the borrowed model and for the fine-tuned one.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/smolvla-finetuned-where-the-pushes-went.png)
+
+In the middle run, 247 of its 400 pushes are blocked on the way down, where its
+partner has none blocked at all, and it topples 46 glasses where the geometry
+topples none. Its partner stays out of the "wrong" column by never reaching a
+glass: it hovers, achieves little, and is marked correct but incomplete.
 
 So the gap between the two is not a measurement of training buying nothing. It
 is a measurement of **training buying enough competence to act and not enough to
@@ -150,35 +155,38 @@ for all six is in [the results](../10_the-results.md).
 
 ## 5. Where it is strong and where it breaks
 
-**It is fitted on the inputs it will be shown**, which is the single strongest
-thing about it and the thing its partner cannot claim. **Its demonstrations cost
-nothing**, because the teacher is a program. **It needs no reward function**,
-which is a larger advantage than it sounds: a reward is a score, and written as
-a fine, "never topple a glass" becomes a price, and a price is a trade the
-policy may make. Learning from examples of correct pushes leaves "never topple"
-as a constraint rather than a price. **Its training is affordable and its
-run-time cost is its partner's**, because the correction folds into the weights.
+It is fitted on the inputs it will be shown, which is the single strongest
+thing about it and the thing its partner cannot claim. Its demonstrations cost
+nothing, because the teacher is a program. Its training is affordable and its
+run-time cost is its partner's, because the correction folds into the weights.
+
+It also needs no reward function, which is a larger advantage than it sounds. A
+reward is a score, and a score written as a fine turns "never topple a glass"
+into a price, and a price is a trade the policy may decide to make. Learning
+from examples of correct pushes leaves "never topple" as a constraint rather
+than a price.
 
 Against that, four kinds of weakness.
 
-**What it inherits from being a borrowed model.** A large fraction of its
-parameters serve a language channel this task does not use. It commits to a
+The first is what it inherits from being a borrowed model. A large fraction of
+its parameters serve a language channel this task does not use. It commits to a
 chunk, so a surprise inside a push is carried out anyway. It cannot explain
-anything it did. And the correction is low-rank, so it adapts less deeply than a
-full fine-tune would, which means the gap it shows is a lower bound on what
+anything it did. And the correction is low-rank, so it adapts less deeply than
+a full fine-tune would, which means the gap it shows is a lower bound on what
 fine-tuning could buy.
 
-**What it inherits from its teacher.** Its ceiling is the ranked geometry,
-because nothing ever showed it a better push. Its training set was filtered to
-successes, so it was fitted on the easy half of its teacher's experience. And it
-has seen no refusals at all, so it proposes pushes on glasses that must not be
-pushed.
+The second is what it inherits from its teacher. Its ceiling is the ranked
+geometry, because nothing ever showed it a better push. Its training set was
+filtered to successes, so it was fitted on the easy half of its teacher's
+experience. And it has seen no refusals at all, so it proposes pushes on
+glasses that must not be pushed.
 
-**What it owes to being trained on one examiner's tables.** Part of what it gains over its
-partner is this examiner's own friction absorbed into its weights, which is a
-memorised constant rather than an ability, and would not survive a real table.
+The third is what it owes to being trained on one examiner's tables. Part of
+what it gains over its partner is this examiner's own friction absorbed into
+its weights, which is a memorised constant rather than an ability, and would
+not survive a real table.
 
-**What it does not do at all**, which is the list in section 2.
+The fourth is the list of things it does not do at all, in section 2.
 
 ## 6. When to choose it
 

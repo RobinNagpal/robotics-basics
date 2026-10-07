@@ -130,12 +130,19 @@ over the same held-out tables with the same budget and the same candidate set,
 and the only difference was who picks.
 
 It is not an unlucky fit, because three rankers fitted on resamples of the same
-rows racked 180, 181 and 184. **The reason is the label.** The model is fitted on
-*room gained* and the run is marked on *glasses that end up grippable*, and a
-push that spreads a little room over three glasses scores higher than one that
-finishes a single glass outright. By its own label the ranker is the better
-chooser — it gives up 4.4 mm of room against the best available candidate where
-the rule gives up 18.7 mm — and it still clears fewer tables.
+rows racked 180, 181 and 184 glasses. The reason is the label. The model is
+fitted on *room gained over the table* and the run is marked on *glasses that
+end up grippable*, and those are not the same quantity: a push that spreads a
+little room over three glasses scores higher by the first and lower by the
+second than one that finishes a single glass outright.
+
+![One table, two legal pushes on it, and the two numbers each push earns: the push that frees two glasses gains 30 mm of room over the table, and the push that frees none gains 60 mm.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-the-label-is-not-the-score.png)
+
+Both figures in that picture are arithmetic over the examiner's own room test
+and the planner's own shortfall, and the script that drew it prints them. The
+run shows the same thing. By its own label the ranker is the better chooser: it
+gives up 4.4 mm of room against the best available candidate, where the printed
+rule gives up 18.7 mm. It still clears fewer tables.
 
 There is a second reason the ordering could not help much, and it was also
 measured. Within one glass's job-finishing candidates the room gained ranges
@@ -149,40 +156,40 @@ solutions is in [the results](../10_the-results.md).
 
 ## 5. Where it is strong and where it breaks
 
-**The learned part cannot cause the failure that cannot be undone.** Toppling,
+The learned part cannot cause the failure that cannot be undone. Toppling,
 leaving the glass zone, leaving the arm's reach and striking the rack are all
 settled before the model is consulted, and the zero in the toppled column is
 what that looks like when it holds.
 
-**It degrades to something that works.** Delete the model and the printed rule
-runs the table, so there is no state in which this solution is broken rather
-than merely unimproved.
+It degrades to something that works. Delete the model and the printed rule runs
+the table, so there is no state in which this solution is broken rather than
+merely unimproved.
 
-**It is checkable.** Every candidate can be printed with its score, every
-refusal remains the geometry's and prints with a reason, and the model reports
-which of its inputs mattered.
-
-**It is cheap in every currency**, and **it is the teacher**, which is the
-contribution that survives even though its own score is unremarkable.
+It is checkable. Every candidate can be printed with its score, every refusal
+remains the geometry's and prints with a reason, and the model reports which of
+its inputs mattered. It is also cheap in every currency, and it is the teacher
+for two of the other five, which is the contribution that survives even though
+its own score is unremarkable.
 
 Against that, three kinds of weakness.
 
-**What the design cannot do.** It cannot invent a candidate, so its quality is
-the enumerator's quality rather than the model's. It cannot express a push that
-is not a straight drag along one heading. And it says nothing at all about the
-commonest refusal in the record, which is a glass with nowhere clear to go.
+The first is what the design cannot do. It cannot invent a candidate, so its
+quality is the enumerator's quality rather than the model's. It cannot express
+a push that is not a straight drag along one heading. And it says nothing at
+all about the commonest refusal in the record, which is a glass with nowhere
+clear to go.
 
-**What it cannot survive.** A log collected while the model is driving holds
-outcomes only for the candidates the model already prefers, so retraining on it
-without occasionally taking the second-ranked candidate locks in an early
-mistake. And every label in the training set was decided by the examiner's private
-friction, which was never measured against anything real.
+The second is what it cannot survive. A log collected while the model is
+driving holds outcomes only for the candidates the model already prefers, so
+retraining on it without occasionally taking the second-ranked candidate locks
+in an early mistake. And every label in the training set was decided by the
+examiner's private friction, which was never measured against anything real.
 
-**How it fails is quietly.** A badly fitted ranker orders the candidates roughly
-at random. Nothing errors, nothing topples, and the run simply spends more
-pushes and leaves more glasses behind than it needed to. That is exactly how it
-failed here, and the only reason it was caught is that somebody ran the test
-with the model deleted and everything else held the same.
+The third is that it fails quietly. A badly fitted ranker orders the candidates
+roughly at random. Nothing errors, nothing topples, and the run simply spends
+more pushes and leaves more glasses behind than it needed to. That is exactly
+how it failed here, and the only reason it was caught is that somebody ran the
+test with the model deleted and everything else held the same.
 
 ## 6. When to choose it
 

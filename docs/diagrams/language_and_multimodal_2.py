@@ -780,11 +780,21 @@ class OrderRun:
     def _loss(self, y: Arr, t: Arr) -> float:
         return float(0.5 * np.mean(np.sum((y - t) ** 2, axis=0)))
 
-    def run(self, freeze_first: bool, lr: float = 0.03
-            ) -> tuple[Arr, Arr]:
+    def run(self, freeze_first: bool, lr: float = 0.03, replay: float = 0.5
+            ) -> tuple[Arr, Arr, Arr]:
+        """Train the projector and the body in one of the two orders.
+
+        `replay` is how much of the old text task is mixed back into each
+        update once the body is unfrozen. 0.5 means the old data is still
+        there; 0.0 means it is gone, which is the real case.
+
+        The third array returned is the size of the update that the picture
+        task sends into the body's first matrix on each step, measured as the
+        square root of the sum of the squares of that matrix of numbers.
+        """
         body = tuple(m.copy() for m in self.body0)
         proj = self.proj0.copy()
-        pic_loss, text_loss = [], []
+        pic_loss, text_loss, body_grad = [], [], []
         for step in range(self.STEPS):
             w1, b1, w2, b2 = body
             z = proj @ self.pics
@@ -798,11 +808,12 @@ class OrderRun:
             da = (w2.T @ d) * (a > 0)
             g_w1 = da @ z.T
             g_b1 = da.sum(axis=1, keepdims=True)
+            body_grad.append(float(np.linalg.norm(g_w1)))
             g_proj = (w1.T @ da) @ self.pics.T
             proj -= lr * g_proj
             unfrozen = (not freeze_first) or step >= self.SWITCH
             if unfrozen:
-                mix = 0.5
+                mix = replay
                 dt = (yt - self.t_text) / self.text.shape[1]
                 _, at, ht = self._forward(self.text, body)
                 t_w2 = dt @ ht.T
@@ -813,7 +824,7 @@ class OrderRun:
                 b2 -= lr * (g_b2 + keep * t_b2)
                 w1 -= lr * (g_w1 + keep * (dat @ self.text.T))
                 b1 -= lr * (g_b1 + keep * dat.sum(axis=1, keepdims=True))
-        return np.array(pic_loss), np.array(text_loss)
+        return np.array(pic_loss), np.array(text_loss), np.array(body_grad)
 
 
 ORDER: OrderRun | None = None
@@ -829,8 +840,8 @@ def _order() -> OrderRun:
 def vlm_order_curves() -> None:
     """The real curves from the small run: the wrong order damages the reading half."""
     run = _order()
-    p_good, t_good = run.run(freeze_first=True)
-    p_bad, t_bad = run.run(freeze_first=False)
+    p_good, t_good, _ = run.run(freeze_first=True)
+    p_bad, t_bad, _ = run.run(freeze_first=False)
     steps = np.arange(run.STEPS)
     fig: Figure = plt.figure(figsize=(10.6, 4.3))
     ax1: Axes = fig.add_axes((0.08, 0.18, 0.38, 0.62))
@@ -868,6 +879,64 @@ def vlm_order_curves() -> None:
           f'{t_bad.max() / t_good[0]:.0f} times its starting value, and ends at '
           f'{t_bad[-1]:.4f}. picture loss starts at {p_good[0]:.1f} and ends at '
           f'{p_good[-1]:.4f} and {p_bad[-1]:.4f}')
+
+
+def vlm_gradient_reach() -> None:
+    """How big an update a random projector sends into the language model body."""
+    run = _order()
+    _, _, grad = run.run(freeze_first=True)
+    first = float(grad[0])
+    at_switch = float(grad[run.SWITCH])
+    fig: Figure = plt.figure(figsize=(8.6, 4.2))
+    ax: Axes = fig.add_axes((0.12, 0.20, 0.82, 0.58))
+    _plain(ax)
+    names = ['projector still random\n(training step 1)',
+             f'projector already trained\n(training step {run.SWITCH})']
+    vals = [first, at_switch]
+    bars = ax.bar(names, vals, color=[GRIP, TEAL], width=0.46)
+    for b, v in zip(bars, vals):
+        ax.text(b.get_x() + b.get_width() / 2, v * 1.04, f'{v:.3f}', ha='center',
+                fontsize=11, weight='bold')
+    ax.set_ylabel('size of the update arriving at the body', fontsize=10)
+    ax.set_ylim(0, first * 1.25)
+    ax.set_title('A random projector pushes the body '
+                 f'{first / at_switch:.0f} times as hard as a trained one',
+                 fontsize=12, weight='bold')
+    ax.tick_params(axis='x', labelsize=9.5)
+    fig.text(0.5, 0.005, 'measured in the same small NumPy run, seed 21',
+             ha='center', fontsize=9, color=MUTED, style='italic')
+    _save(fig, VLM_DOC, 'gradient-reach.svg')
+    print(f'[4d] update arriving at the body: {first:.3f} with a random projector '
+          f'and {at_switch:.3f} once the projector is trained, a factor of '
+          f'{first / at_switch:.0f}')
+
+
+def vlm_forgetting_without_replay() -> None:
+    """The damage is only repaired because the old text data is still there."""
+    run = _order()
+    _, t_with, _ = run.run(freeze_first=False, replay=0.5)
+    _, t_without, _ = run.run(freeze_first=False, replay=0.0)
+    steps = np.arange(run.STEPS)
+    fig: Figure = plt.figure(figsize=(9.6, 4.3))
+    ax: Axes = fig.add_axes((0.10, 0.18, 0.86, 0.60))
+    _plain(ax)
+    ax.plot(steps, t_with, color=TEAL, lw=1.9,
+            label=f'the old text data is still there: ends at {t_with[-1]:.3f}')
+    ax.plot(steps, t_without, color=GRIP, lw=1.9, ls='--',
+            label=f'the old text data is gone: ends at {t_without[-1]:.2f}')
+    ax.set_yscale('log')
+    ax.set_xlabel('training step', fontsize=10)
+    ax.set_ylabel('loss on the old text task', fontsize=10)
+    ax.set_ylim(0.035, t_without.max() * 2.2)
+    ax.set_title('Without the old data the damage stays',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='lower center')
+    fig.text(0.5, 0.005, 'the same NumPy run, trained in the wrong order twice, '
+             'seed 21', ha='center', fontsize=9, color=MUTED, style='italic')
+    _save(fig, VLM_DOC, 'forgetting-without-the-old-data.svg')
+    print(f'[4e] trained all at once, the text loss ends at {t_with[-1]:.4f} with '
+          f'the old data still there and at {t_without[-1]:.2f} without it, which '
+          f'is {t_without[-1] / t_with[-1]:.0f} times as bad')
 
 
 # -- section 5: resolution and tiling --------------------------------------
@@ -1020,6 +1089,46 @@ def vlm_tiling_layout() -> None:
           f'{TOK_HI // PIC_TOKENS} times one squeezed crop')
 
 
+BOTTLE: tuple[int, int, int, int] = (266, 150, 406, 470)   # left, top, right, bottom
+
+
+def vlm_crop_splits() -> None:
+    """Cutting the picture into crops splits an object between several of them."""
+    full = _scene()
+    left, top, right, bottom = BOTTLE
+    cols = sorted({left // SIDE, (right - 1) // SIDE})
+    rows = sorted({top // SIDE, (bottom - 1) // SIDE})
+    n_cols = (right - 1) // SIDE - left // SIDE + 1
+    n_rows = (bottom - 1) // SIDE - top // SIDE + 1
+    pieces = n_cols * n_rows
+    fig: Figure = plt.figure(figsize=(7.4, 6.0))
+    ax: Axes = fig.add_axes((0.04, 0.10, 0.92, 0.78))
+    _blank(ax)
+    ax.imshow(full, cmap='gray', vmin=0, vmax=1, interpolation='nearest')
+    n = HI // SIDE
+    for i in range(n):
+        for j in range(n):
+            ax.add_patch(Rectangle((j * SIDE, i * SIDE), SIDE, SIDE,
+                                   facecolor='none', edgecolor=JOINT, lw=1.8))
+    ax.add_patch(Rectangle((left, top), right - left, bottom - top,
+                           facecolor='none', edgecolor=GRIP, lw=2.2))
+    for i in range(n_rows):
+        r = top // SIDE + i
+        ax.text(left - 12, r * SIDE + SIDE / 2, f'piece {i + 1}', ha='right',
+                va='center', fontsize=11, color=GRIP, weight='bold')
+    ax.set_xlim(0, HI)
+    ax.set_ylim(HI, 0)
+    ax.set_title(f'The bottle is cut into {pieces} pieces, and no crop holds all '
+                 'of it', fontsize=12.5, weight='bold')
+    fig.text(0.5, 0.035, 'simulated picture, seed 7; the bottle runs from pixel '
+             f'{top} to pixel {bottom} down the picture, and the crop lines are at '
+             f'{SIDE} and {2 * SIDE}', ha='center', fontsize=9, color=MUTED,
+             style='italic')
+    _save(fig, VLM_DOC, 'crop-splits.svg')
+    print(f'[5e] the bottle spans crop column {cols[0]} and crop rows {rows[0]} to '
+          f'{rows[-1]}, so it is cut into {pieces} pieces')
+
+
 def vlm_token_bill() -> None:
     """Tokens spent against detail kept, for the three ways of sending a picture."""
     names = [f'squeeze {HI} to {SIDE}', f'tile {HI} into {TILES_HI} + 1',
@@ -1094,11 +1203,10 @@ def vlm_detail_curve() -> None:
 def vlm_position_grain() -> None:
     """The finest position the token stream can name, drawn as the patch grid."""
     full = _scene()
-    fig: Figure = plt.figure(figsize=(11.0, 4.7))
-    ax1: Axes = fig.add_axes((0.02, 0.11, 0.28, 0.72))
-    ax2: Axes = fig.add_axes((0.33, 0.11, 0.28, 0.72))
-    ax3: Axes = fig.add_axes((0.66, 0.10, 0.33, 0.74))
-    for ax in (ax1, ax2, ax3):
+    fig: Figure = plt.figure(figsize=(8.4, 4.9))
+    ax1: Axes = fig.add_axes((0.04, 0.13, 0.43, 0.72))
+    ax2: Axes = fig.add_axes((0.53, 0.13, 0.43, 0.72))
+    for ax in (ax1, ax2):
         _blank(ax)
     for ax, step, name in ((ax1, PX_PER_PATCH_SQ, 'squeezed'),
                            (ax2, PX_PER_PATCH_TILE * 2, 'tiled')):
@@ -1114,25 +1222,11 @@ def vlm_position_grain() -> None:
     ax2.set_title(f'tiled: one patch is {PX_PER_PATCH_TILE} pixels, '
                   f'{PX_PER_PATCH_TILE * MM_PER_PIXEL:.0f} mm', fontsize=10.2,
                   weight='bold')
-    fig.text(0.47, 0.045, 'on the right only every second patch line is drawn, so '
+    fig.text(0.5, 0.925, 'The grid is as fine as the model\'s evidence about '
+             'position gets', ha='center', fontsize=12.5, weight='bold')
+    fig.text(0.5, 0.04, 'on the right only every second patch line is drawn, so '
              'that the grid stays visible', ha='center', fontsize=9, color=MUTED,
              style='italic')
-    ax3.set_xlim(0, 10)
-    ax3.set_ylim(0, 10)
-    ax3.set_title('Out comes words, not pixels', fontsize=11.5, weight='bold')
-    ax3.text(0.2, 8.9, 'asked "where is the bottle?" the model\nwrites one of these:',
-             fontsize=10.3, va='top', color=INK)
-    for i, s in enumerate(['"in the middle of the bench"',
-                           '"just left of centre, standing up"',
-                           '"about a third of the way across"']):
-        ax3.text(0.6, 7.1 - i * 0.85, s, fontsize=10, color=PURPLE)
-    ax3.text(0.2, 4.0, f'a detector writes this instead:', fontsize=10.3, color=INK)
-    ax3.text(0.6, 3.1, 'box = (266, 150, 406, 470)\nin pixels, to the pixel',
-             fontsize=10, color=TEAL, family='DejaVu Sans Mono')
-    ax3.text(0.2, 1.5, f'the words can be turned into a number no\n'
-             f'finer than one patch, which is '
-             f'{PX_PER_PATCH_SQ * MM_PER_PIXEL:.0f} mm when\nthe picture is squeezed',
-             fontsize=9.8, color=GRIP, va='top')
     _save(fig, VLM_DOC, 'position-grain.svg')
     print(f'[6a] finest position a patch-level answer can name: '
           f'{PX_PER_PATCH_SQ} pixels / {PX_PER_PATCH_SQ * MM_PER_PIXEL:.0f} mm '
@@ -1148,11 +1242,9 @@ def vlm_object_size() -> None:
     ti = (px / PX_PER_PATCH_TILE) ** 2
     marks = [('screw head, 6 mm', 6.0), ('bolt, 16 mm', 16.0),
              ('mug, 90 mm', 90.0)]
-    fig: Figure = plt.figure(figsize=(10.6, 4.3))
-    ax1: Axes = fig.add_axes((0.08, 0.18, 0.37, 0.62))
-    ax2: Axes = fig.add_axes((0.58, 0.18, 0.37, 0.62))
+    fig: Figure = plt.figure(figsize=(9.4, 4.4))
+    ax1: Axes = fig.add_axes((0.10, 0.18, 0.84, 0.62))
     _plain(ax1)
-    _plain(ax2)
     ax1.plot(mm, sq, color=TEAL, lw=1.9, label='squeezed picture')
     ax1.plot(mm, ti, color=GRIP, lw=1.9, label='tiled picture')
     ax1.axhline(1.0, color=MUTED, lw=1.0, ls=':')
@@ -1161,7 +1253,7 @@ def vlm_object_size() -> None:
     ax1.set_xlabel('size of the object on the table, in millimetres', fontsize=10)
     ax1.set_ylabel('patches it covers (log scale)', fontsize=10)
     ax1.set_title('An object smaller than one patch gets no token of its own',
-                  fontsize=11, weight='bold')
+                  fontsize=12, weight='bold')
     ax1.legend(fontsize=9, frameon=False, loc='lower right')
     for (name, v), ytext in zip(marks, (0.013, 2.2, 0.013)):
         ax1.axvline(v, color=INK, lw=0.6, ls='--', alpha=0.5)
@@ -1169,32 +1261,39 @@ def vlm_object_size() -> None:
                  va='bottom',
                  bbox=dict(facecolor='white', edgecolor='none', pad=0.6))
     ax1.set_ylim(0.01, 500)
+    _save(fig, VLM_DOC, 'object-size.svg')
+    print(f'[6b] patches covered: screw head '
+          f'{(6 / MM_PER_PIXEL / PX_PER_PATCH_SQ) ** 2:.3f} '
+          f'squeezed and {(6 / MM_PER_PIXEL / PX_PER_PATCH_TILE) ** 2:.2f} tiled')
 
+
+def vlm_readable_print() -> None:
+    """How tall a printed character has to be to survive each scheme."""
     # a stroke has to survive the shrink: it needs at least 3 pixels after it
     strokes_needed = 3
-    min_stroke_sq = strokes_needed * SQUEEZE
-    min_stroke_ti = strokes_needed
-    min_char_sq = 5 * min_stroke_sq * MM_PER_PIXEL
-    min_char_ti = 5 * min_stroke_ti * MM_PER_PIXEL
+    min_char_sq = 5 * strokes_needed * SQUEEZE * MM_PER_PIXEL
+    min_char_ti = 5 * strokes_needed * MM_PER_PIXEL
     actual = CHAR_H * MM_PER_PIXEL
-    names = ['squeezed\npicture', 'tiled\npicture']
+    fig: Figure = plt.figure(figsize=(8.0, 4.3))
+    ax: Axes = fig.add_axes((0.14, 0.17, 0.80, 0.62))
+    _plain(ax)
+    names = ['squeezed picture', 'tiled picture']
     vals = [min_char_sq, min_char_ti]
-    bars = ax2.bar(names, vals, color=[TEAL, GRIP], width=0.45)
-    ax2.axhline(actual, color=JOINT, lw=1.6)
-    ax2.text(-0.42, actual - 1.0, f'the label on the bottle is only {actual:.1f} mm',
-             fontsize=9.5, color=JOINT, ha='left', va='top')
+    bars = ax.bar(names, vals, color=[TEAL, GRIP], width=0.42)
+    ax.axhline(actual, color=JOINT, lw=1.6)
+    ax.set_xlim(-0.5, 2.15)
+    ax.text(1.32, actual, f'the label on the\nbottle: {actual:.1f} mm',
+            fontsize=9.5, color=JOINT, ha='left', va='center')
     for b, v in zip(bars, vals):
-        ax2.text(b.get_x() + b.get_width() / 2, v + 0.6, f'{v:.1f} mm', ha='center',
-                 fontsize=10)
-    ax2.set_ylabel('smallest character the picture can carry, in mm', fontsize=10)
-    ax2.set_ylim(0, max(vals) * 1.3)
-    ax2.set_title('Printed text has to be this tall to survive', fontsize=11,
-                  weight='bold')
-    _save(fig, VLM_DOC, 'object-size.svg')
-    print(f'[6b] patches covered: screw head {(6 / MM_PER_PIXEL / PX_PER_PATCH_SQ) ** 2:.3f} '
-          f'squeezed and {(6 / MM_PER_PIXEL / PX_PER_PATCH_TILE) ** 2:.2f} tiled; '
-          f'smallest character {min_char_sq:.1f} mm squeezed and {min_char_ti:.1f} mm '
-          f'tiled, against the {actual:.1f} mm label')
+        ax.text(b.get_x() + b.get_width() / 2, v + 0.6, f'{v:.1f} mm', ha='center',
+                fontsize=11, weight='bold')
+    ax.set_ylabel('smallest character the picture can carry, in mm', fontsize=10)
+    ax.set_ylim(0, max(vals) * 1.25)
+    ax.set_title('Printed text has to be this tall to survive', fontsize=12,
+                 weight='bold')
+    _save(fig, VLM_DOC, 'readable-print.svg')
+    print(f'[6b2] smallest readable character {min_char_sq:.1f} mm squeezed and '
+          f'{min_char_ti:.1f} mm tiled, against the {actual:.1f} mm label')
 
 
 def vlm_counting_grid() -> None:
@@ -1221,23 +1320,21 @@ def vlm_counting_grid() -> None:
 
     cells_sq, multi_sq, crowd_sq = shared(PX_PER_PATCH_SQ)
     cells_ti, multi_ti, crowd_ti = shared(PX_PER_PATCH_TILE)
-    fig: Figure = plt.figure(figsize=(10.8, 4.5))
-    ax1: Axes = fig.add_axes((0.04, 0.08, 0.30, 0.78))
-    ax2: Axes = fig.add_axes((0.37, 0.08, 0.30, 0.78))
-    ax3: Axes = fig.add_axes((0.72, 0.14, 0.26, 0.66))
+    fig: Figure = plt.figure(figsize=(8.8, 4.8))
+    ax1: Axes = fig.add_axes((0.04, 0.08, 0.43, 0.72))
+    ax2: Axes = fig.add_axes((0.53, 0.08, 0.43, 0.72))
     for ax in (ax1, ax2):
         _blank(ax)
         ax.set_xlim(56, 244)
         ax.set_ylim(592, 458)
         ax.scatter(xs, ys, s=38, color=GRIP, zorder=3)
-    _plain(ax3)
     for ax, step, crowd, title in (
             (ax1, PX_PER_PATCH_SQ, crowd_sq,
-             f'squeezed: {PX_PER_PATCH_SQ}-pixel patches,\n{cells_sq} patches hold the '
-             f'{n} screws'),
+             f'squeezed: {PX_PER_PATCH_SQ}-pixel patches\n{cells_sq} patches hold the '
+             f'{n} screws, {multi_sq} of them\nholding more than one (shaded pink)'),
             (ax2, PX_PER_PATCH_TILE, crowd_ti,
-             f'tiled: {PX_PER_PATCH_TILE}-pixel patches,\n{cells_ti} patches hold the '
-             f'{n} screws')):
+             f'tiled: {PX_PER_PATCH_TILE}-pixel patches\n{cells_ti} patches hold the '
+             f'{n} screws, {multi_ti} of them\nholding more than one')):
         for cx, cy in crowd:
             ax.add_patch(Rectangle((cx * step, cy * step), step, step,
                                    facecolor='#f6cdcd', edgecolor='none', zorder=1))
@@ -1245,16 +1342,8 @@ def vlm_counting_grid() -> None:
             ax.axvline(k, color=LINK, lw=0.5, zorder=2)
             ax.axhline(k, color=LINK, lw=0.5, zorder=2)
         ax.set_title(title, fontsize=10.3, weight='bold')
-    bars = ax3.bar(['squeezed', 'tiled'], [multi_sq, multi_ti], color=[TEAL, GRIP],
-                   width=0.45)
-    ax3.set_yticks(range(0, max(multi_sq, multi_ti) + 2))
-    for b, v in zip(bars, (multi_sq, multi_ti)):
-        ax3.text(b.get_x() + b.get_width() / 2, v + 0.08, str(v), ha='center',
-                 fontsize=11, weight='bold')
-    ax3.set_ylabel('patches holding more than one screw\n(shaded pink on the left)',
-                   fontsize=9.2)
-    ax3.set_ylim(0, max(multi_sq, multi_ti) + 1.2)
-    ax3.set_title(f'Counting {n} screws', fontsize=11, weight='bold')
+    fig.text(0.5, 0.925, f'Two screws in one patch leave the stream one piece of '
+             'evidence, not two', ha='center', fontsize=12.3, weight='bold')
     fig.text(0.5, 0.005, 'simulated screw positions, seed 13', ha='center',
              fontsize=9, color=MUTED, style='italic')
     _save(fig, VLM_DOC, 'counting-grid.svg')
@@ -1263,53 +1352,70 @@ def vlm_counting_grid() -> None:
           f'patches with {multi_ti} holding more than one')
 
 
-def vlm_box_grain() -> None:
-    """The detector's box against the coarsest box the patch grid can express."""
-    full = _scene()
-    box = (266, 150, 406, 470)          # the bottle, to the pixel
+def _box_numbers() -> tuple[tuple[int, ...], tuple[int, ...], list[int], list[str]]:
+    """The detector's box, the patch-aligned box around it, and the four errors."""
+    box = BOTTLE                        # the bottle, to the pixel
     step = PX_PER_PATCH_SQ
     coarse = (box[0] // step * step, box[1] // step * step,
               -(-box[2] // step) * step, -(-box[3] // step) * step)
     errs = [box[0] - coarse[0], box[1] - coarse[1],
             coarse[2] - box[2], coarse[3] - box[3]]
-    sides = ['left', 'top', 'right', 'bottom']
-    fig: Figure = plt.figure(figsize=(11.0, 4.5))
-    ax1: Axes = fig.add_axes((0.02, 0.10, 0.28, 0.72))
-    ax2: Axes = fig.add_axes((0.32, 0.10, 0.28, 0.72))
-    ax3: Axes = fig.add_axes((0.68, 0.17, 0.30, 0.62))
+    return box, coarse, errs, ['left', 'top', 'right', 'bottom']
+
+
+def vlm_box_grain() -> None:
+    """The detector's box against the coarsest box the patch grid can express."""
+    full = _scene()
+    box, coarse, errs, sides = _box_numbers()
+    step = PX_PER_PATCH_SQ
+    fig: Figure = plt.figure(figsize=(8.0, 4.8))
+    ax1: Axes = fig.add_axes((0.04, 0.09, 0.43, 0.72))
+    ax2: Axes = fig.add_axes((0.53, 0.09, 0.43, 0.72))
     for ax in (ax1, ax2):
         _blank(ax)
         ax.imshow(full, cmap='gray', vmin=0, vmax=1, interpolation='nearest')
         ax.set_xlim(180, 500)
         ax.set_ylim(560, 80)
-    _plain(ax3)
     ax1.add_patch(Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1],
                             facecolor='none', edgecolor=TEAL, lw=2.2))
     ax1.set_title('the detector returns\n'
                   f'({box[0]}, {box[1]}, {box[2]}, {box[3]}) in pixels',
                   fontsize=10.2, weight='bold')
     for k in range(0, HI + 1, step):
-        ax2.axvline(k, color=LINK, lw=0.5)
-        ax2.axhline(k, color=LINK, lw=0.5)
+        ax2.axvline(k, color=LINK, lw=0.5, zorder=1)
+        ax2.axhline(k, color=LINK, lw=0.5, zorder=1)
     ax2.add_patch(Rectangle((coarse[0], coarse[1]), coarse[2] - coarse[0],
                             coarse[3] - coarse[1], facecolor='none', edgecolor=GRIP,
-                            lw=2.2))
+                            lw=2.6, zorder=5))
     ax2.set_title('the finest box the patch grid can hold\n'
                   f'({coarse[0]}, {coarse[1]}, {coarse[2]}, {coarse[3]})',
                   fontsize=10.2, weight='bold')
-    bars = ax3.bar(sides, [e * MM_PER_PIXEL for e in errs], color=GRIP, width=0.55)
-    for b, e in zip(bars, errs):
-        ax3.text(b.get_x() + b.get_width() / 2, e * MM_PER_PIXEL + 0.4,
-                 f'{e} px\n{e * MM_PER_PIXEL:.0f} mm', ha='center', fontsize=9.3)
-    ax3.axhline(5.0, color=SLIDE, lw=1.5)
-    ax3.text(-0.45, 5.5, 'a 5 mm gripper tolerance', fontsize=9, color=SLIDE,
-             ha='left')
-    ax3.set_ylabel('how far the coarse box is out, in mm', fontsize=9.5)
-    ax3.set_ylim(0, max(errs) * MM_PER_PIXEL * 1.45)
-    ax3.set_title('Every side is outside what the gripper allows',
-                  fontsize=11, weight='bold')
+    fig.text(0.5, 0.93, 'The same bottle, measured to the pixel and to the patch',
+             ha='center', fontsize=12.3, weight='bold')
     _save(fig, VLM_DOC, 'box-grain.svg')
-    print(f'[6d] detector box {box}; patch-aligned box {coarse}; errors in mm: '
+    print(f'[6d] detector box {box}; patch-aligned box {coarse}')
+
+
+def vlm_box_error() -> None:
+    """How far out each side of the patch-aligned box is, against the gripper."""
+    _, _, errs, sides = _box_numbers()
+    fig: Figure = plt.figure(figsize=(8.2, 4.3))
+    ax: Axes = fig.add_axes((0.12, 0.17, 0.82, 0.60))
+    _plain(ax)
+    bars = ax.bar(sides, [e * MM_PER_PIXEL for e in errs], color=GRIP, width=0.5)
+    for b, e in zip(bars, errs):
+        ax.text(b.get_x() + b.get_width() / 2, e * MM_PER_PIXEL + 0.5,
+                f'{e} px\n{e * MM_PER_PIXEL:.0f} mm', ha='center', fontsize=9.6)
+    ax.axhline(5.0, color=SLIDE, lw=1.6)
+    ax.set_xlim(-0.6, 4.6)
+    ax.text(3.62, 5.0, 'a 5 mm gripper\ntolerance', fontsize=9.5, color=SLIDE,
+            ha='left', va='center')
+    ax.set_ylabel('how far the patch-aligned box is out, in mm', fontsize=10)
+    ax.set_ylim(0, max(errs) * MM_PER_PIXEL * 1.5)
+    ax.set_title('Every side of the patch-aligned box is outside what the gripper '
+                 'allows', fontsize=12, weight='bold')
+    _save(fig, VLM_DOC, 'box-error.svg')
+    print('[6d2] errors in mm: '
           + ', '.join(f'{s} {e * MM_PER_PIXEL:.0f}' for s, e in zip(sides, errs)))
 
 
@@ -1773,9 +1879,11 @@ class Vote:
     N_WRONG: int = 6
     EASY_SHARE: float = 0.35
 
-    def __init__(self, p_right: float, tokens_each: int) -> None:
+    def __init__(self, p_right: float, tokens_each: int,
+                 easy_share: float | None = None) -> None:
         self.p_right = p_right
         self.tokens_each = tokens_each
+        self.easy_share = self.EASY_SHARE if easy_share is None else easy_share
         self.rng = np.random.default_rng(17)
         self.counts = np.arange(1, 16, 2)
         self.acc = np.array([self._vote(n) for n in self.counts])
@@ -1785,7 +1893,7 @@ class Vote:
     def _draw(self, size: tuple[int, int]) -> NDArray[np.int64]:
         rng = self.rng
         right = rng.random(size) < self.p_right
-        easy = rng.random(size) < self.EASY_SHARE
+        easy = rng.random(size) < self.easy_share
         other = rng.integers(1, self.N_WRONG, size=size)
         ans = np.where(right, 0, np.where(easy, 1, other + 1))
         return ans.astype(np.int64)
@@ -1867,6 +1975,69 @@ def rtu_vote_cost() -> None:
     print(f'[3b] simulated vote cost: 1 attempt {int(v.tokens[0])} tokens, '
           f'15 attempts {int(v.tokens[7])} tokens, for '
           f'{100 * (v.acc[7] - v.p_right):.0f} more tasks right in every hundred')
+
+
+def rtu_vote_spread() -> None:
+    """Why the vote works: the right answer is the single commonest one."""
+    v = _vote_run()
+    draw = v._draw((20000, 1)).ravel()
+    ids = np.arange(0, v.N_WRONG + 1)
+    share = np.array([float(np.mean(draw == i)) for i in ids])
+    names = ['the right\nanswer', 'the easy\nmistake'] + [
+        f'wrong\nanswer {i}' for i in range(2, v.N_WRONG + 1)]
+    colours = [TEAL] + [GRIP] * v.N_WRONG
+    fig: Figure = plt.figure(figsize=(9.6, 4.2))
+    ax: Axes = fig.add_axes((0.09, 0.20, 0.87, 0.58))
+    _plain(ax)
+    bars = ax.bar(names, 100 * share, color=colours, width=0.6)
+    for b, s in zip(bars, share):
+        ax.text(b.get_x() + b.get_width() / 2, 100 * s + 1.0, f'{100 * s:.0f}%',
+                ha='center', fontsize=10)
+    ax.set_ylabel('share of attempts landing here, %', fontsize=10)
+    ax.set_ylim(0, 100 * share.max() * 1.3)
+    ax.tick_params(axis='x', labelsize=8.6)
+    ax.set_title('No single wrong answer is as likely as the right one, which is '
+                 'why counting works', fontsize=12, weight='bold')
+    fig.text(0.5, 0.005, 'illustrative: 20,000 simulated attempts, seed 17',
+             ha='center', fontsize=9, color=MUTED, style='italic')
+    _save(fig, RTU_DOC, 'vote-spread.svg')
+    print('[3b2] where one attempt lands: '
+          + ', '.join(f'{n.replace(chr(10), " ")} {100 * s:.0f}%'
+                      for n, s in zip(names, share)))
+
+
+def rtu_vote_fails() -> None:
+    """The condition hidden in voting: the right answer has to be the commonest."""
+    good = _vote_run()
+    bad = Vote(0.25, good.tokens_each, easy_share=0.60)
+    p_easy = (1 - bad.p_right) * bad.easy_share
+    p_easy_good = (1 - good.p_right) * good.easy_share
+    fig: Figure = plt.figure(figsize=(9.6, 4.2))
+    ax: Axes = fig.add_axes((0.10, 0.19, 0.86, 0.59))
+    _plain(ax)
+    ax.plot(good.counts, 100 * good.acc, 'o-', color=TEAL, lw=2.0,
+            label=f'right {100 * good.p_right:.0f} times in 100, the easy mistake '
+                  f'{100 * p_easy_good:.0f}')
+    ax.plot(bad.counts, 100 * bad.acc, 's--', color=GRIP, lw=2.0,
+            label=f'right {100 * bad.p_right:.0f} times in 100, the easy mistake '
+                  f'{100 * p_easy:.0f}')
+    ax.set_xlabel('attempts at the same question', fontsize=10)
+    ax.set_ylabel('share of tasks got right after the vote, %', fontsize=10)
+    ax.set_xticks(good.counts)
+    ax.set_ylim(0, 100)
+    ax.legend(fontsize=9.2, frameon=False, loc='center right')
+    ax.set_title('More attempts make it worse when a wrong answer is the '
+                 'commonest one', fontsize=12, weight='bold')
+    ax.annotate(f'{100 * bad.acc[-1]:.0f}%', xy=(bad.counts[-1], 100 * bad.acc[-1]),
+                xytext=(bad.counts[-1] - 1.4, 100 * bad.acc[-1] - 9), fontsize=9.5,
+                color=GRIP)
+    fig.text(0.5, 0.005, 'illustrative: 6,000 simulated episodes at each setting, '
+             'seed 17', ha='center', fontsize=9, color=MUTED, style='italic')
+    _save(fig, RTU_DOC, 'vote-fails.svg')
+    print(f'[3b3] with the right answer at {100 * bad.p_right:.0f}% and the easy '
+          f'mistake at {100 * p_easy:.0f}%, the vote goes from '
+          f'{100 * bad.acc[0]:.0f}% at one attempt to {100 * bad.acc[-1]:.0f}% at '
+          f'{bad.counts[-1]} attempts')
 
 
 class Beam:
@@ -2046,54 +2217,39 @@ TOOL_ANSWER: str = ('There are 17 good cups on the tray and they weigh %d grams,
 
 def rtu_tool_loop() -> None:
     """The loop drawn with the worked example on it."""
-    fig: Figure = plt.figure(figsize=(11.2, 5.5))
+    fig: Figure = plt.figure(figsize=(7.4, 5.3))
     ax: Axes = fig.add_axes((0, 0, 1, 1))
     _blank(ax)
-    ax.set_xlim(0, 11.2)
-    ax.set_ylim(0, 5.5)
-    ax.text(5.6, 5.22, 'One turn of the tool loop, and the three turns the question '
-            'actually took', ha='center', fontsize=12.3, weight='bold')
+    ax.set_xlim(0, 7.4)
+    ax.set_ylim(0, 5.3)
+    ax.text(3.7, 4.98, 'One turn of the tool loop has four stations',
+            ha='center', fontsize=12.5, weight='bold')
     stations = [
-        (0.35, 3.15, '#e6dcf7', PURPLE, '1. the model writes a call',
+        (0.70, 2.70, '#e6dcf7', PURPLE, '1. the model writes a call',
          'it writes tokens that happen\nto spell a call, and stops'),
-        (0.35, 1.55, '#fdf0d5', JOINT, '2. the program checks it',
+        (0.70, 1.00, '#fdf0d5', JOINT, '2. the program checks it',
          'is the tool real, are the\narguments allowed'),
-        (2.95, 1.55, '#d9ecec', TEAL, '3. the program runs it',
+        (3.95, 1.00, '#d9ecec', TEAL, '3. the program runs it',
          'the detector counts, or the\ncalculator multiplies'),
-        (2.95, 3.15, '#eef7f7', TEAL, '4. the result goes back in',
+        (3.95, 2.70, '#eef7f7', TEAL, '4. the result goes back in',
          'as plain tokens, appended\nto the same stream'),
     ]
     for x, y, face, edge, title, body in stations:
-        _box(ax, x, y, 2.35, 1.15, '', face=face, edge=edge)
-        ax.text(x + 1.175, y + 0.92, title, ha='center', fontsize=10.2,
+        _box(ax, x, y, 2.75, 1.20, '', face=face, edge=edge)
+        ax.text(x + 1.375, y + 0.96, title, ha='center', fontsize=10.2,
                 weight='bold', color=edge)
-        ax.text(x + 1.175, y + 0.42, body, ha='center', va='center', fontsize=9.1,
+        ax.text(x + 1.375, y + 0.44, body, ha='center', va='center', fontsize=9.1,
                 color=INK)
-    _arrow(ax, 1.525, 3.13, 1.525, 2.74, colour=MUTED)
-    _arrow(ax, 2.72, 2.12, 2.93, 2.12, colour=MUTED)
-    _arrow(ax, 4.125, 2.72, 4.125, 3.13, colour=MUTED)
-    ax.annotate('', xy=(1.525, 4.36), xytext=(4.125, 4.36),
+    _arrow(ax, 2.075, 2.68, 2.075, 2.24, colour=MUTED)
+    _arrow(ax, 3.48, 1.60, 3.92, 1.60, colour=MUTED)
+    _arrow(ax, 5.325, 2.24, 5.325, 2.68, colour=MUTED)
+    ax.annotate('', xy=(2.075, 3.94), xytext=(5.325, 3.94),
                 arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.5,
-                                connectionstyle='arc3,rad=0.45'))
-    ax.text(2.82, 5.00, 'then round again', ha='center', fontsize=9.6, color=GRIP)
-    x0 = 6.0
-    ax.text(x0, 4.84, 'the three turns, written out', fontsize=11, weight='bold')
-    y = 4.52
-    ax.text(x0, y, f'asked: {TOOL_QUESTION}', fontsize=8.8, color=PURPLE,
-            va='top', wrap=True)
-    y -= 0.52
-    for i, (call, result) in enumerate(CALLS, start=1):
-        shown = call if len(call) < 86 else call[:84] + ' ...'
-        ax.text(x0, y, f'turn {i} out:  {shown}', fontsize=7.5, color=INK,
-                family='DejaVu Sans Mono', va='top')
-        ax.text(x0, y - 0.26, f'turn {i} back: {result}', fontsize=7.5, color=TEAL,
-                family='DejaVu Sans Mono', va='top')
-        y -= 0.70
-    ax.text(x0, y, f'answer: {TOOL_ANSWER}', fontsize=8.8, color=JOINT, va='top',
-            weight='bold')
-    ax.text(x0, 0.75, 'the model never did the multiplying itself, and it never '
-            'counted\nthe cups itself, so neither of those could come out wrong',
-            fontsize=9.4, color=MUTED, va='top')
+                                connectionstyle='arc3,rad=0.30'))
+    ax.text(3.70, 4.52, 'then round again', ha='center', fontsize=9.8, color=GRIP)
+    ax.text(3.70, 0.55, 'the model is asked to carry on, and from where it sits the '
+            'result\nwas simply the next thing in the conversation', ha='center',
+            fontsize=9.6, color=MUTED, va='top')
     _save(fig, RTU_DOC, 'tool-loop.svg')
     print(f'[4a] worked example: {len(CALLS)} calls, the last of which returns '
           f'{(21 - 4) * 180}')
@@ -2548,6 +2704,52 @@ def rtu_latency_stack() -> None:
           f'{bottom.sum():.2f} s, with the longest turn at {bottom.max():.2f} s')
 
 
+def rtu_tokens_read_again() -> None:
+    """The stream is read again from the beginning on every turn, so reading adds up.
+
+    The first three turns are the measured ones from the worked example in
+    section 4. The turns after that are drawn with the average of those three,
+    which is a stated assumption and is said so in the figure.
+    """
+    base = _toks(TOOL_PROMPT) + _toks(TOOL_QUESTION)
+    added = [_toks(c) + _toks(r) for c, r in CALLS]
+    later = int(round(sum(added) / len(added)))
+    turns = np.arange(1, 9)
+    stream, read = [], []
+    length, total = base, 0
+    for t in turns:
+        stream.append(length)
+        total += length
+        read.append(total)
+        length += added[t - 1] if t <= len(added) else later
+    fig: Figure = plt.figure(figsize=(9.8, 4.3))
+    ax: Axes = fig.add_axes((0.10, 0.18, 0.86, 0.60))
+    _plain(ax)
+    ax.plot(turns, stream, 'o-', color=TEAL, lw=2.0,
+            label='tokens in the stream at the start of the turn')
+    ax.plot(turns, read, 's-', color=GRIP, lw=2.0,
+            label='tokens read since the loop started')
+    ax.set_xlabel('turn of the loop', fontsize=10)
+    ax.set_ylabel('tokens', fontsize=10)
+    ax.set_xticks(turns)
+    ax.set_ylim(0, max(read) * 1.22)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.annotate(f'{read[-1]:,} read', xy=(turns[-1], read[-1]),
+                xytext=(turns[-1] - 1.5, read[-1] + max(read) * 0.05),
+                fontsize=9.5, color=GRIP)
+    ax.annotate(f'{stream[-1]:,} in the stream', xy=(turns[-1], stream[-1]),
+                xytext=(turns[-1] - 2.4, stream[-1] + max(read) * 0.05),
+                fontsize=9.5, color=TEAL)
+    ax.set_title(f'By the eighth turn the stream holds {stream[-1]:,} tokens, but '
+                 f'{read[-1]:,} have been read', fontsize=12, weight='bold')
+    fig.text(0.5, 0.005, 'turns 1 to 3 are the measured ones from the worked '
+             f'example; turns 4 to 8 add {later} tokens each, the average of those '
+             'three', ha='center', fontsize=9, color=MUTED, style='italic')
+    _save(fig, RTU_DOC, 'tokens-read-again.svg')
+    print(f'[6d] tokens in the stream at the start of each turn: {stream}; tokens '
+          f'read in all after 8 turns: {read[-1]:,}')
+
+
 def rtu_time_spread() -> None:
     """How unpredictable the loop is: the spread of episode times and turns."""
     e = _episodes()
@@ -2661,8 +2863,8 @@ def rtu_rate_ladder() -> None:
     for i, r in enumerate(rows):
         label = f'{r[1]:,.0f} ms' if r[1] >= 10 else f'{r[1]:.0f} ms'
         ax.text(r[1] * 1.3, i, f'{label}   {r[3]}', va='center', fontsize=9)
-    ax.set_title('Four orders of magnitude separate the control loop from the '
-                 'agent loop', fontsize=12, weight='bold')
+    ax.set_title(f'The agent loop takes about {rows[-1][1] / rows[0][1]:,.0f} times '
+                 'as long as one control cycle', fontsize=12, weight='bold')
     _save(fig, RTU_DOC, 'rate-ladder.svg')
     print('[7b] rate ladder, milliseconds per run: '
           + '; '.join(f'{r[0]} {r[1]:,.1f}' for r in rows))
@@ -2780,19 +2982,23 @@ VLM_FIGURES = [
     vlm_projector_arithmetic, vlm_projector_shapes, vlm_projector_kinds,
     vlm_projector_pulls_in,
     vlm_token_stream, vlm_context_share, vlm_pictures_that_fit, vlm_attention_cost,
-    vlm_freeze_stages, vlm_stage_memory, vlm_order_curves,
-    vlm_squeezed_picture, vlm_tiling_layout, vlm_token_bill, vlm_detail_curve,
-    vlm_position_grain, vlm_object_size, vlm_counting_grid, vlm_box_grain,
+    vlm_freeze_stages, vlm_stage_memory, vlm_order_curves, vlm_gradient_reach,
+    vlm_forgetting_without_replay,
+    vlm_squeezed_picture, vlm_tiling_layout, vlm_crop_splits, vlm_token_bill,
+    vlm_detail_curve,
+    vlm_position_grain, vlm_object_size, vlm_readable_print, vlm_counting_grid,
+    vlm_box_grain, vlm_box_error,
     vlm_class_list, vlm_questions, vlm_handover,
 ]
 
 RTU_FIGURES = [
     rtu_working_out_stream, rtu_one_token_at_a_time, rtu_written_vs_silent,
     rtu_accuracy_vs_tokens, rtu_time_vs_tokens, rtu_accuracy_per_second,
-    rtu_vote_curve, rtu_vote_cost, rtu_search_tree, rtu_search_curve,
+    rtu_vote_curve, rtu_vote_spread, rtu_vote_cost, rtu_vote_fails,
+    rtu_search_tree, rtu_search_curve,
     rtu_tool_loop, rtu_tool_transcript, rtu_tool_vs_no_tool, rtu_tool_cost,
     rtu_argument_check, rtu_turn_cap, rtu_wall_clock, rtu_three_guards,
-    rtu_agent_loop, rtu_latency_stack, rtu_time_spread,
+    rtu_agent_loop, rtu_latency_stack, rtu_tokens_read_again, rtu_time_spread,
     rtu_two_rates, rtu_rate_ladder, rtu_cycle_budget, rtu_boundary,
 ]
 

@@ -6,11 +6,11 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-10-03T03:56:20.733889</dc:date>
+    <dc:date>2026-10-07T09:39:32.189072</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
-      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+      <dc:title>Matplotlib v3.11.1, https://matplotlib.org/</dc:title>
      </cc:Agent>
     </dc:creator>
    </cc:Work>
@@ -50,7 +50,7 @@ Q 45.936 89.136 45.936 91.296
 L 45.936 182.304 
 Q 45.936 184.464 48.096 184.464 
 z
-" clip-path="url(#p035d83ac25)" style="fill: #d9ecec; stroke: #0f8b8d; stroke-width: 1.1; stroke-linejoin: miter"/>
+" clip-path="url(#pf112763250)" style="fill: #d9ecec; stroke: #0f8b8d; stroke-width: 1.1; stroke-linejoin: miter"/>
    </g>
    <g id="patch_4">
     <path d="M 303.696 184.464 
@@ -63,7 +63,7 @@ Q 301.536 89.136 301.536 91.296
 L 301.536 182.304 
 Q 301.536 184.464 303.696 184.464 
 z
-" clip-path="url(#p035d83ac25)" style="fill: #fdf0d5; stroke: #f0a500; stroke-width: 1.1; stroke-linejoin: miter"/>
+" clip-path="url(#pf112763250)" style="fill: #fdf0d5; stroke: #f0a500; stroke-width: 1.1; stroke-linejoin: miter"/>
    </g>
    <g id="patch_5">
     <path d="M 573.696 184.464 
@@ -76,7 +76,7 @@ Q 571.536 89.136 571.536 91.296
 L 571.536 182.304 
 Q 571.536 184.464 573.696 184.464 
 z
-" clip-path="url(#p035d83ac25)" style="fill: #e6dcf7; stroke: #6a4fb3; stroke-width: 1.1; stroke-linejoin: miter"/>
+" clip-path="url(#pf112763250)" style="fill: #e6dcf7; stroke: #6a4fb3; stroke-width: 1.1; stroke-linejoin: miter"/>
    </g>
    <g id="text_1">
     <!-- The same multiply, at the real sizes -->
@@ -1644,7 +1644,7 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="p035d83ac25">
+  <clipPath id="pf112763250">
    <rect x="21.6" y="21.6" width="763.2" height="252"/>
   </clipPath>
  </defs>

@@ -44,7 +44,7 @@ word at a time.
 1. [What the model actually predicts](#1-what-the-model-actually-predicts)
 2. [What a very large amount of text teaches it](#2-what-a-very-large-amount-of-text-teaches-it)
 3. [How a conversation becomes one stream of tokens](#3-how-a-conversation-becomes-one-stream-of-tokens)
-4. [Why a wrong answer arrives in the same tone as a fact](#4-why-a-wrong-answer-arrives-in-the-same-tone-as-a-fact)
+4. [Why a wrong answer is written as confidently as a right one](#4-why-a-wrong-answer-is-written-as-confidently-as-a-right-one)
 5. [Retrieval: keeping the knowledge outside the weights](#5-retrieval-keeping-the-knowledge-outside-the-weights)
 6. [The real shape of the cost of an answer](#6-the-real-shape-of-the-cost-of-an-answer)
 7. [What these models cannot do](#7-what-these-models-cannot-do)
@@ -279,7 +279,7 @@ about the part it can.
 
 ---
 
-## 4. Why a wrong answer arrives in the same tone as a fact
+## 4. Why a wrong answer is written as confidently as a right one
 
 That confidence about what it cannot see is the everyday failure of these models. A
 **hallucination** is an answer that is false but written exactly like a true one,

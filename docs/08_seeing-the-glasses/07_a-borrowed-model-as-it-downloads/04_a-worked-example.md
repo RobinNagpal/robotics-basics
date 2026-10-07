@@ -1,9 +1,9 @@
 # A worked example
 
-This page follows this solution through one arrangement of glasses with real
-numbers, and then through the case this book keeps returning to, a glass that is completely hidden,
-because a worked example that shows only the easy case teaches the wrong
-lesson.
+This page follows this solution through real arrangements with the numbers the
+run produced, and then through the case this book keeps returning to, a glass
+that is completely hidden, because a worked example that shows only the easy case
+teaches the wrong lesson.
 
 ## Contents
 
@@ -26,45 +26,45 @@ solution's own.
 **This solution has the least to add**, because it fits nothing and has no
 check of its own to fire. The borrowed model returns one outline per object it
 believes it found, the hidden glass is not an object in the picture, and so no
-candidate is produced and no entry appears. The confidence number is about the
-objects that were found, and they really are glasses.
+candidate is produced and no entry appears.
 
 ## 2. A worked example
 
-Following one crowded arrangement through makes the failures above easier to
-recognise, because they appear together rather than one at a time.
+The ordinary outcome is the one worth following first, because in this solution
+the ordinary outcome is nothing at all.
 
-Four glasses of the stemmed kind stand in the glass zone, which is the fewest an
-arrangement holds. Three of them are where the interest is: one near the middle,
-standing at the tall end of the range its kind allows, one a little way out from
-it at the short end of that range, and one off near the edge of the frame. The
-fourth stands clear of the other three and is outlined without any trouble. The
-camera takes the survey picture from the top.
+**Three arrangements of stemmed glasses, nine pictures.** Take three held-out
+arrangements where the kind on the table is the stemmed glass, and take all three
+survey stations for each, which is nine pictures. The model is shown each one
+and returns 20 named objects across the nine: twelve sports balls, four
+frisbees, two birds, a cake and a donut. Not one of those names is in the
+accepted list, so the filter keeps nothing, and `Finder.find` returns an empty
+list of glasses with the doubt "the model named nothing in this picture a
+drinking vessel" against every picture. The examiner marks four to six glasses
+missed in every arrangement, and the scorecard records no merge, no split and
+nothing false, because nothing was reported.
 
-Suppose the borrowed model returns six outlines. The tall glass comes back
-twice, once under each of two neighbouring drinking-vessel categories, with
-nearly the same pixels both times, its bowl outlined well and its stem thickened
-into a stub. The glass near the edge comes back once and is outlined reasonably,
-because the bowl is the easy part and the stem is the hard part wherever the
-glass stands. The glass standing clear comes back once as well, outlined
-cleanly. The short glass comes back once too, but the tall glass's outline leans
-outwards from the point directly below the camera and overlaps it, so the short
-glass's outline holds only the part of it the tall one did not cover. The table
-itself is named and dropped by the filter, which accounts for the sixth outline.
+That is not an unlucky sample. Across a whole block of 20 spaced arrangements —
+60 pictures — the same doubt comes back from 49 of them, and the solution
+reports 10 glasses out of the 100 on the tables. Over five such blocks the
+average is 6.4 found per 100.
 
-What the arithmetic would make of that is the instructive part. The two outlines
-of the tall glass cover substantially the same pixels, so merging them before
-handing anything over turns them into one record and the double naming costs
-nothing. The glass standing clear is reported accurately, and the glass near the
-edge is reported with a place that is good and a width pulled in a little by the
-lost stem. The short glass is reported at a place pulled towards the part of it
-that stayed visible, and with a width read from a slice of its silhouette rather
-than from the whole of it, so it is reported narrower than it is.
+**The exception is worth following too**, because it shows what happens on the
+rare occasion the filter does keep something. In the same block the model named
+three short stemmed glasses something the filter accepts, and their masks
+covered 66.8 per cent of the glass at the median. The bowl is the easy part and
+the stem is the hard part, so the mask is a bowl with the stem thickened or
+dropped, and the shared arithmetic reads a width from the edge of that bowl. The
+report comes back with a place that is roughly right and a width pulled in by
+the missing stem. Nothing in the run marks it as doubtful, because the
+confidence number is about the category rather than about the outline.
 
-That last report is the honest summary of this solution. Four glasses were put
-out and four reports came back, so the counts look right. One of the four is
-quietly wrong, and nothing in the run marks it as doubtful. It is the failure a
-borrowed model used as the decider would produce most often, and it is the
-reason the comparison against the same model fitted here matters.
+**The failure to take away from this is silence, not error.** Every glass this
+solution reported in the whole run was a real glass: no merges, no splits and no
+false reports in any block. What it did instead was say nothing about 93 glasses
+in every 100. A method that reports a wrong glass announces itself. A method that
+reports no glass looks, from downstream, exactly like an empty table, and the
+only thing that distinguishes the two is the count of doubts the examiner
+collects.
 
 ← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →

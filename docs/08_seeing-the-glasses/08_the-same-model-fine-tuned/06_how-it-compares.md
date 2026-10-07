@@ -12,6 +12,23 @@ beside the other five.
 
 ## 1. Where it is strong and where it breaks
 
+Marked by [the examiner](../03_the-examiner/01_the-examiner.md) over five blocks
+of 20 held-out arrangements, it reports 99.4 glasses per 100 on the layouts the
+cell's own rule spaces, with the five blocks between 99.0 and 100.0, and 72.0
+per 100 when the glasses are crowded closer than that rule allows, with the
+blocks between 70.8 and 72.9. Its places are 6.6 mm from the truth at the median
+on the spaced layouts and 0.6 mm on the crowded ones. [The
+results](../11_the-results.md) sets those two rows beside the other five.
+
+Read the crowded row against the examiner's own floor before calling it a
+disappointment. The floor is the same arithmetic given the renderer's exact
+masks, and on the crowded arrangements it reports 86.4 glasses per 100, because
+the rest are covered so completely that no method reading pictures can find
+them. So this solution is 14.4 per 100 short of what was there to be found,
+not 28.
+
+![Found per 100 for the borrowed model and for the same model fine-tuned, on spaced and on crowded arrangements, with each of the five blocks of 20 held-out arrangements drawn as its own mark: the block-to-block spread of either solution is small beside the distance between them.](../../images/seeing-the-glasses/the-same-model-fine-tuned/07-the-pair-block-by-block.png)
+
 **It answers the question actually asked.** This book asks which pixels belong
 to which glass, and this model's output is one outline per object. Nothing has
 to be converted, and no step has to find a seam in a joined region.
@@ -35,14 +52,15 @@ strength of the design rather than of the model.
 Against that, three kinds of weakness.
 
 **What it inherits from the model.** The outline is built coarsely and enlarged,
-so the width carries an error that does not average away. That error is not
-worse on the stemmed glass than on the others at the median, as the marking
-above says, although the one glass the masks covered least well in the whole run
-was a stemmed one. The masks are modal, so a partly hidden glass is
-reported as a smaller glass in the wrong place. A completely hidden glass is
-invisible to it, and no training can change that. The confidence number is about
-the class and not about the mask, so a badly cut outline can still be scored
-highly.
+so the width carries an error that does not average away, and 4.6 per cent of
+the mask is not the glass at the median where a rule written by hand leaks
+nothing. That error is not worse on the stemmed glass than on the others at the
+median, as the marking above says, although the glass the masks covered least
+well in the whole run was a stemmed one, at 46.1 per cent. The masks are modal,
+so a partly hidden glass is reported as a smaller glass in the wrong place. A
+completely hidden glass is invisible to it, and no training can change that. The
+confidence number is about the class and not about the mask, so a badly cut
+outline can still be scored highly.
 
 **What it owes to being trained.** A fine-tuned model becomes good at this cell
 and worse elsewhere, so its weights are a narrow asset that has to be kept in
@@ -167,18 +185,26 @@ fitted in this cell, and this one stands near the top of it.
 
 Against [solution 3](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md), there is nothing to compare except
 training, and that is the point. Same library, same model, same starting
-weights, same input, same output, same marking. The single class that replaces
-the borrowed category list comes with the training rather than beside it, so it
-is part of what is being measured and not a second variable. Whatever separates
-the two scores is what fine-tuning bought, and nothing else can be blamed for
-it. If this document is read for one reason, it should be that one.
+weights, same input, same output, same marking, and the bar on the confidence
+number held at solution 3's hand-set 0.25 so that it cannot be a second
+variable. The single class that replaces the borrowed category list comes with
+the training rather than beside it, so it too is part of what is being measured.
+**6.4 glasses per 100 against 99.4 is what fine-tuning bought**, and nothing
+else can be blamed for it. If this document is read for one reason, it should be
+that one.
 
 Against [solution 1](../05_rules-on-the-table/01_what-it-is.md), the comparison is model against
-rules. Solution 1 is a page of arithmetic that explains its own failures and
-needs no training set, no weights file and no licence. This solution needs all
-three and answers the merge by the shape of its output rather than by a rule
-somebody had to get right. On any day the depth readings are good, the rules are
-better in almost every way that is not accuracy.
+rules, and it does not go the way the ladder suggests. Solution 1 is a page of
+arithmetic that explains its own failures and needs no training set, no weights
+file and no licence, and on the spaced layouts it finds 100.0 glasses per 100
+against this solution's 99.4. On the crowded layouts the two are also close,
+73.0 against 72.0 — but the rule merges 10.7 reports per 100 to get there, where
+this solution merges 0.8, so the rule is reaching its count by calling two
+glasses one. The rule also leaks nothing into its masks and loses the stem,
+while this one covers the stem and leaks a thin margin. **The honest reading is
+that the written rule is better in almost every way except separating glasses
+that touch**, which is the one thing it cannot be taught and the one thing this
+solution answers by the shape of its output.
 
 Against [solution 2](../06_a-network-trained-from-scratch/01_what-it-is.md), the comparison is borrowing
 against building. Solution 2 fits a small network here from random numbers, so

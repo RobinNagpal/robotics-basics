@@ -12,28 +12,49 @@ beside the other five.
 
 ## 1. Where it is strong and where it breaks
 
+Marked by [the examiner](../03_the-examiner/01_the-examiner.md) over five blocks
+of 20 held-out arrangements, it reports 6.4 glasses per 100 on the layouts the
+cell's own rule spaces, and 2.1 per 100 when the glasses are crowded closer than
+that rule allows. Both are the worst in the book by a wide margin, and both are
+the least settled numbers in it: the five blocks run from 2.0 to 11.9 per 100 on
+the spaced layouts, and from 0.0 to 4.2 on the crowded ones, where one whole
+block of 20 arrangements produced **no glass at all**. The spread does not change
+what a reader should conclude, because the best block is still far below the
+worst block of any other solution. [The results](../11_the-results.md) sets
+those two rows beside the other five.
+
+![Found per 100 for the borrowed model and for the same model fine-tuned, on spaced and on crowded arrangements, with each of the five blocks of 20 held-out arrangements drawn as its own mark: the block-to-block spread of either solution is small beside the distance between them.](../../images/seeing-the-glasses/a-borrowed-model-as-it-downloads/07-the-pair-block-by-block.png)
+
 The strengths all come from the same source, which is that nothing is fitted.
 
-There would be nothing to collect, nothing to train and nothing to keep in step
-with the cell, so this solution could be tried in an afternoon and would give
-this chapter a reading on what a borrowed model is worth before anybody invests
-in labels. It attacks the merge directly, because a model that finds objects
-returns one outline per object rather than one per connected shape. It needs no
-graphics card of its own. And it is a genuine upper bound on convenience: no
-other solution here can be cheaper, so if this one were good enough, several of
-the others would not need to exist.
+There is nothing to collect, nothing to train and nothing to keep in step with
+the cell, so this solution was tried in an afternoon and gave this chapter a
+reading on what a borrowed model is worth before anybody invested in labels. It
+attacks the merge directly, because a model that finds objects returns one
+outline per object rather than one per connected shape. It needs no graphics card
+of its own. And it is a genuine upper bound on convenience: no other solution
+here can be cheaper, so if this one had been good enough, several of the others
+would not need to exist.
+
+Two measurements are worth keeping even though the headline is a failure.
+**Nothing was merged, split or false, in any block.** Every glass this solution
+reported was a real glass, so it fails by silence rather than by inventing
+anything. And on the glasses it did find, the masks were good: on the two kinds
+with no stem the block medians cover 99.8 to 100.0 per cent of the glass. The
+model's trouble is not that it outlines badly. It is that it almost never offers
+an outline to be kept.
 
 The weaknesses divide into what the borrowing costs and what it cannot be asked
 to do.
 
-What the borrowing costs is accuracy at the edge and honesty in its numbers. The
-outline is built coarsely and then enlarged, so a width carries an error that
-does not average away, and a thin stem is where it is worst. The confidence
-number is uncalibrated on these pictures, so any bar on it is a hand-set knob.
-The names are somebody else's categories, so they filter usefully and mean
-nothing beyond that. And the domain gap is large enough that the whole thing may
-simply not work, since the light and the transparency that identify a glass in a
-photograph are mostly missing here.
+**What the borrowing costs is the naming, and the naming is what decided this.**
+The names are somebody else's categories, and shown a grey picture shaded from
+depth the model reaches for a sports ball or a frisbee rather than a cup. Over
+the 36 pictures of the naming measurement in [how it works](02_how-it-works.md),
+five of 87 named objects carried a name the filter accepts. Beside that, the
+other two costs are small: the outline is built coarsely and then enlarged, so a
+width carries an error that does not average away, and the confidence number is
+uncalibrated on these pictures, so any bar on it is a hand-set knob.
 
 What it cannot be asked to do is anything that needs fitting. The outlines mark
 only pixels where the camera actually saw the object, so a glass standing partly
@@ -44,9 +65,9 @@ it, and no model can find what left no pixels. Neither limit has a fix inside
 this solution, and the project's usual answer applies to both: report the doubt
 rather than the guess, and send the arm to look again.
 
-The honest position is therefore that this is the first thing to run and
-unlikely to be the one carried into a finished product. Its value is the
-comparison it makes possible rather than the accuracy it would deliver.
+The honest position is therefore that this is the first thing to run and not the
+thing carried into a finished product. Its value is the comparison it makes
+possible rather than the accuracy it delivers.
 
 ## 2. The general ideas behind this
 
@@ -57,9 +78,12 @@ right, including where it is normally the wrong tool.
 
 A model is used **zero-shot** when it is applied to a task with no examples of
 that task at all, relying entirely on what it learned elsewhere. It works when
-the new task is genuinely a special case of the old one, which is close to true
-here, because finding drinking vessels standing on a table is something the
-borrowed model's training set contained.
+the new task is genuinely a special case of the old one. That sounded true here,
+because finding drinking vessels standing on a table is something the borrowed
+model's training set contained, and it was not true, because the pictures are
+not photographs and a glass in them is not a photographed glass. The lesson is
+that "the same objects" is not enough; the inputs have to be the same kind of
+input as well.
 
 It is normally the right first move whenever a general model exists and labels
 are expensive, because it costs an afternoon and tells you how hard your problem
@@ -73,7 +97,9 @@ also the case here.
 A model of this kind can only ever return names from a list fixed when it was
 fitted. That is called a **closed vocabulary**, and it is the structural reason
 the names here can be a filter and nothing more: the list cannot contain this
-cell's four kinds, because it was written without this cell in view.
+cell's four kinds, because it was written without this cell in view. It is also
+why the failure took the form it did. The model had no way to say "a round thing
+I have not met", so it said sports ball.
 
 A closed vocabulary is right when your categories really are on the list, and
 then it is efficient, predictable and easy to reason about. It is wrong when
@@ -93,9 +119,9 @@ Doing both at once is faster and simpler, and it is the right choice when the
 categories you want are the ones the model names. Separating the two is the
 right choice when they are not, because the proposing half survives a domain gap
 much better than the naming half does: a shape is a shape everywhere, while what
-counts as a cup is a judgement that was fitted to somebody else's data. That is
-the trade this solution and solution 5 sit on either side of, and it is the
-cleanest reason to run both.
+counts as a cup is a judgement that was fitted to somebody else's data. This
+cell is the clearest possible demonstration of that split. The finding half of
+this model works; the naming half is what failed.
 
 ### Calibration under changed input
 
@@ -104,7 +130,7 @@ model was trained and checked on, so moving the model to different data breaks
 the calibration while often leaving the ranking usable. Knowing which of those
 two properties you depend on is the practical point.
 
-Trusting the ranking is usually safe, and it is what this solution would do.
+Trusting the ranking is usually safe, and it is what this solution does.
 Trusting the numbers requires a repair, which is a small correction fitted on
 data where the answer is known, and that repair is cheap and almost always worth
 doing before a bar on a confidence number is allowed to decide anything that
@@ -139,10 +165,10 @@ training, and it is honest to name it: solution 4 replaces the borrowed list of
 category names with the single class "glass", because a model cannot be trained
 towards this cell's own labels while still being asked which everyday object it
 is looking at. That change comes with the training rather than beside it, so
-nothing varies between the pair that the training did not bring, and the gap
-between their scores would be a measurement of what the training bought and of
-nothing else. No other pair in this chapter is that clean, and that is the main
-reason this solution is worth building even though it is unlikely to be the one
-carried forward.
+nothing varies between the pair that the training did not bring. The gap between
+their scores is 6.4 per 100 against 99.4, and it is a measurement of what the
+training bought and of nothing else. No other pair in this chapter is that clean,
+and that is the reason this solution was worth building even though its own score
+is the worst in the book.
 
 ← [What it needs](05_what-it-needs.md) · [The same model, fine-tuned here — what it is](../08_the-same-model-fine-tuned/01_what-it-is.md) →

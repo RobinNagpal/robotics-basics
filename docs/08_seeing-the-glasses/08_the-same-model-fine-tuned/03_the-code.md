@@ -84,13 +84,11 @@ contributes says what it is for.
 One point about the output has to be clear, because it decides what the
 comparison with solution 3 is a comparison of.
 
-**Turning a mask into a place on the table and a rough width is the examiner's job,
-not this solution's.** The examiner takes each mask pixel with its depth reading,
-turns it into a point in the room, takes the axis from the points at the top of
-the glass and the width from how far the points reach out from that axis. Every
-solution in this chapter is given that same step, so **a difference in the score
-belongs to the mask.** This solution contributes only the masks, and so does
-solution 3, which is exactly why the gap between the two is readable.
+**Turning a mask into a place on the table and a rough width is the examiner's
+job, not this solution's.** Every solution in this chapter is given that same
+step, so **a difference in the score belongs to the mask.** This solution
+contributes only the masks, and so does solution 3, which is exactly why the gap
+between the two is readable.
 
 **One check stands between the model and the examiner, and solution 3 deliberately
 has none.** The kind of glass is known, so the narrowest and the widest
@@ -124,19 +122,16 @@ again.
 The pieces now join into one pipeline, and it is short, because almost
 everything in it was borrowed and only one thing was changed.
 
-A grey picture shaded from depth is rendered by the examiner and handed over with
-its depth readings and the camera's pose. Before any of that, and once, the
-model was fitted: weights that arrived from a large collection of everyday
-photographs had their training continued on the training half of these same
-arrangements, with labels taken from the examiner's id image and with the general
-list of categories replaced by the single class "glass". At run time the fitted
-model is shown the picture and returns candidates, each with a box, a confidence
-number and an outline built as a weighted sum of coarse patterns. Candidates
+Once, before any run, the model was fitted: weights that arrived from a large
+collection of everyday photographs had their training continued on the training
+half of these arrangements, with labels taken from the examiner's id image and
+the general list of categories replaced by the single class "glass". At run time
+the fitted model is shown a grey picture shaded from depth and returns
+candidates, each with a box, a confidence number and an outline. Candidates
 overlapping a better one too heavily are discarded, so one object leaves one
-answer. The outlines above the bar are the masks. The examiner's shared arithmetic
-turns each mask into a place and a width, and the examiner marks the result.
+answer, and the outlines above the bar are the masks.
 
-Three things are worth holding on to from all of that.
+Three things are worth holding on to from that.
 
 **The finding was borrowed and the fitting was local**, which is the whole
 design. The expensive, general part of the model — turning a picture into useful
@@ -145,10 +140,10 @@ part — what an instance is in this cell, and where its edge lies — was learn
 here from labels that cost nothing.
 
 **The domain gap closed and the coarse outline did not.** Those are the two
-halves of solution 3's trouble, and training addresses exactly one of them. So
-this solution should be expected to find glasses far more reliably than its
-partner while measuring their edges in much the same way, and the examiner's two
-mask numbers are where that expectation can be checked.
+halves of solution 3's trouble, and training addresses exactly one of them. The
+marking shows both halves at once: this solution finds 99.4 glasses per 100
+against its partner's 6.4, and its masks still carry 4.6 per cent of pixels that
+are not the glass, where a rule written by hand carries none.
 
 **The comparison is the product.** Even if this solution were not the one
 carried forward, the pair would have earned its place, because a measured answer

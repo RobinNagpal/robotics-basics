@@ -41,23 +41,25 @@
 ## 1. Introduction
 
 This document describes how [what this book asks
-for](../02_the-problem/01_what-is-asked-for.md) could be answered by downloading
-a model and running it, without collecting a single label and without training
-anything at all. The solution is built, and what it scored is recorded beside
-the code, in
+for](../02_the-problem/01_what-is-asked-for.md) is answered by downloading a
+model and running it, without collecting a single label and without training
+anything at all. The solution is built and it has been marked. What it scored is
+recorded beside the code, in
 [`03-yolo-zero-shot/README.md`](../../../code/src/08_seeing-the-glasses/03-yolo-zero-shot/README.md)
-and in that folder's `results.json`. The reasoning below was written before the
-run and is kept in the voice it was written in, so where it says what the method
-would do, read that as what the design expected rather than as a measurement.
+and in that folder's per-block `results` files.
+
+**It found 6.4 glasses in every 100 put out, and it is the worst score in the
+book by a wide margin.** That number is not a disappointment. It is the
+measurement this solution was built to take, and the pages below are mostly an
+explanation of why it came out that way and of what the failure is worth.
 
 The design is worth writing down because of what it does not contain. Every
 other solution that uses a model pays something before it can answer: a set of
 labelled pictures, a training run, and a weights file that has to be refitted
-whenever the cell changes. This one would pay none of that, because the model it
+whenever the cell changes. This one pays none of that, because the model it
 borrows was already fitted on photographs of everyday scenes, and the list of
-things that model can name already contains drinking vessels. So the model would
-be asked for glasses and would answer on the first picture, having never seen
-this cell.
+things that model can name already contains drinking vessels. So the model is
+asked for glasses and answers on the first picture, having never seen this cell.
 
 That makes it the cheapest of the six to try, and it also makes it the baseline
 for the sharpest comparison in the set. By the end you will understand what an
@@ -94,10 +96,10 @@ the borrowed model was fitted to perform.
 What makes this version of the hope worth testing first is its price. The other
 model-based solutions need pictures of this cell with every glass outlined, and
 then a training run that has to be repeated whenever the cell changes. Here
-there would be nothing to collect and nothing to repeat. If the borrowed model
-worked even moderately well, it would be the fastest route from no perception at
-all to a working report, and that is worth knowing in an afternoon rather than
-after a week spent building a training set.
+there is nothing to collect and nothing to repeat. If the borrowed model worked
+even moderately well, it would be the fastest route from no perception at all to
+a working report, and that is worth knowing in an afternoon rather than after a
+week spent building a training set.
 
 ## 3. The main idea
 
@@ -114,8 +116,9 @@ or to a neighbouring object.
 **Second, keep the outlines whose name is a drinking vessel.** The fixed list of
 categories the model was fitted on is a general one, covering the ordinary
 contents of ordinary photographs, and several of its entries are things a person
-drinks from. Those are the ones this design would keep, and everything else the
-model named would be dropped.
+drinks from. Those are the ones this design keeps, and everything else the model
+names is dropped. This second step is where the solution fails, and [how it
+works](02_how-it-works.md) is where the measurement of that failure sits.
 
 **Third, hand the kept outlines to the shared arithmetic.** An outline is a set
 of pixels, and turning a set of pixels into a place on the table and a width is
@@ -124,7 +127,7 @@ Nothing about that step changes here.
 
 So the whole of this solution is the first two steps, and the second step is a
 filter on a list of names rather than anything fitted. That is the point to
-remember: **this solution would contain no numbers fitted in this cell at all**,
-not one.
+remember: **this solution contains no numbers fitted in this cell at all**, not
+one.
 
 ← [A network trained here from scratch — how it compares](../06_a-network-trained-from-scratch/06_how-it-compares.md) · [How it works](02_how-it-works.md) →

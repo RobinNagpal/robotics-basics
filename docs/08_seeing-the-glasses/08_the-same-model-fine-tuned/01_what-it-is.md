@@ -49,13 +49,13 @@ model is put to work on a particular job. Nothing here is unusual, and that is
 deliberate: this is the standard move, written out in full so that what it buys
 could be measured rather than assumed.
 
-**This solution is built, and most of this document was written before it ran.**
-What it scored is recorded beside the code, in
+**This solution is built and it has been marked.** What it scored is recorded
+beside the code, in
 [`04-yolo-fine-tuned/README.md`](../../../code/src/08_seeing-the-glasses/04-yolo-fine-tuned/README.md)
-and in that folder's `results.json`. The reasoning below is kept in the voice it
-was written in, so where it says what the method would do, read that as what the
-design expected. The few places where the marking has since answered a question
-say so.
+and in that folder's per-block `results` files. It reports 99.4 glasses per 100
+on the layouts the cell's own rule spaces and 72.0 per 100 when they are crowded
+closer than that rule allows, against 6.4 and 2.1 for the same model untrained.
+That difference is what this document is about.
 
 **The whole reason this solution exists is that it is one half of a matched
 pair.** [Solution 3](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md) is this model with no training in
@@ -116,12 +116,19 @@ Three things are still wrong in solution 3, and all three have the same cause.
 The model was fitted on photographs, and this cell renders a grey picture shaded
 from depth, in which opaque glasses stand as plain shapes with no transparency,
 no highlight on the rim and no texture anywhere. First, the model is working
-with a fraction of the evidence it learned to use, so it may find the glasses
-poorly or not at all. Second, its list of categories belongs to somebody else,
-so a glass may be named under one of two neighbouring everyday categories and
-reported twice, or named under a category the filter does not accept and
-reported not at all. Third, the number it offers as its confidence was fitted on
-photographs, so a bar set on that number means nothing here.
+with a fraction of the evidence it learned to use. Second, its list of
+categories belongs to somebody else, so a glass may be named under a category
+the filter does not accept and reported not at all, or named under two
+neighbouring categories and reported twice. Third, the number it offers as its
+confidence was fitted on photographs, so a bar set on that number means nothing
+here.
+
+The marking says which of those actually bit. The second one did, and it did
+almost all the damage: shown these pictures the borrowed model calls a glass a
+sports ball or a frisbee, and the filter on names throws nearly everything away.
+The duplicate half of that second failure never appeared at all, because the
+scorecard records no split in any block. So the repair this solution makes is
+aimed at a target the measurement has already identified.
 
 Training on this cell's own pictures is the standard repair for all three at
 once, and that is what this solution does.
@@ -156,7 +163,9 @@ everyday object it is looking at. It only has to find instances, and every
 instance it finds is a glass or is nothing.
 
 Everything else about the model is unchanged, including the thing that limits
-it. Its outline is still built coarsely, for reasons described below, and
-training cannot make a coarse outline fine.
+it. Its outline is still built coarsely, for reasons described below. Training
+does not make the edge of that outline fine, and the marking shows the cost: its
+masks cover the whole glass and carry 4.6 per cent of pixels that are not the
+glass with them, where a rule written by hand carries none.
 
 ← [A borrowed model, as it downloads — how it compares](../07_a-borrowed-model-as-it-downloads/06_how-it-compares.md) · [How it works](02_how-it-works.md) →

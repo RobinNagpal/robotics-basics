@@ -22,19 +22,30 @@ model this size be trained at all on this machine.
 
 It needs a **training set**, which the examiner renders and labels for nothing from
 the training half of the arrangements, including the crowded arrangements the
-cell's own placement rule would never produce. It needs **time on the machine**
-for the training run, far less than a random start would need but not nothing.
-It needs a **held-out half** for setting the bar on the confidence number and
-for checking that the model learned the glasses rather than the arrangements,
-and the examiner provides exactly that.
+cell's own placement rule would never produce. The run behind the scores here
+drew 100 arrangements from below the dividing line, half of them crowded, three
+pictures each: 225 pictures holding 1034 outlines went into the fit and 75 were
+kept back for the run to check itself on.
+
+It needs **time on the machine** for the training run, far less than a random
+start would need but not nothing. That run took **39 minutes** on this machine's
+integrated graphics, at 60 passes over the pictures. A short run is not enough
+and that was measured rather than assumed: the default of 16 arrangements and 10
+passes finishes in 52 seconds and produces a model that never scores a candidate
+above 0.02, so the scoring run then finds nothing at all. The head is rebuilt for
+one class, so it starts from nothing and needs real training before its
+confidence number can clear the bar.
+
+It needs a **held-out half** for checking that the model learned the glasses
+rather than the arrangements, and the examiner provides exactly that.
 
 And once fitted, it needs **a weights file kept in step with the cell**. Change
 the camera, the way depth is shaded into grey, or the range of proportions a
 kind is drawn from, and the file is quietly out of date in a way no test of the
 code would notice. Against all of that, what it needs at run time is modest: one
-pass over one picture, which is a small fraction of the seconds an arm movement
-costs. The cost of this solution sits almost entirely in building it rather than
-in running it.
+pass over one picture, measured at 0.089 seconds with the model already loaded,
+which is a small fraction of the seconds an arm movement costs. The cost of this
+solution sits almost entirely in building it rather than in running it.
 
 ## 2. The licence
 

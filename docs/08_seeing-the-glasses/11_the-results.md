@@ -137,16 +137,16 @@ layouts, for the written rule and for the fine-tuned model.
 
 | kind | rules on the table | the same model, fine-tuned |
 |---|---|---|
-| straight | 99.5% | 99.7% |
-| tapered | 100.0% | 99.8% |
-| short stemmed | 88.7% | 99.7% |
-| stemmed | 86.6% | 99.8% |
+| tapered | 99.9% | 99.7% |
+| straight | 99.5% | 99.6% |
+| short stemmed | 89.1% | 99.7% |
+| stemmed | 82.1% | 99.6% |
 
 The written rule covers the two kinds with no stem almost completely and loses
-an eighth of the two kinds with one, because what a bowl-only outline really
+a sixth of the two kinds with one, because what a bowl-only outline really
 misses is the foot and the sliver of stem beside it. The fitted model has no
 such gap. Neither of those facts is visible in the single figure of 98.9 per
-cent against 99.8, which is why each solution's README breaks the measurement
+cent against 99.7, which is why each solution's README breaks the measurement
 down by kind.
 
 ## 4. What the comparison says

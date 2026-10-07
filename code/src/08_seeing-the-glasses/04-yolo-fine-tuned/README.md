@@ -210,9 +210,11 @@ The cost of this solution sits almost entirely in building it.
 - **The outline is still coarse.** The model does not draw an outline pixel by
   pixel; it computes a short list of coarse patterns once for the picture and
   returns a weighted sum of them per object, cut at a threshold and enlarged.
-  Training closes the domain gap. It does not make the mask's edge fine, it
-  does not give a thin stem back, and the width the shared arithmetic reads off
-  that edge carries an error that does not average away.
+  Training closes the domain gap. It does not make the mask's edge fine, and the
+  width the shared arithmetic reads off that edge carries an error that does not
+  average away. It does give the stem back, which is worth saying because it was
+  not expected: over five blocks this model covers all four kinds between 99.6
+  and 99.7 per cent, and the two kinds with a stem are not the worst of them.
 - **The masks are still modal.** They mark only pixels where the camera saw the
   object, so a glass standing partly behind another is reported as a smaller
   glass in the wrong place. The labels have the same limit the output does, so

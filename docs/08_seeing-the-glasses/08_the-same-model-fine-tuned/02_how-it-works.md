@@ -26,21 +26,14 @@ means the weights begin as noise, so the nudges have to build every part of the
 model out of nothing. **Fine-tuning** means the weights begin at values somebody
 else's training already settled, so the nudges have much less to do.
 
-The reason that is so much cheaper is worth stating in terms of what the data
-has to pay for. Every weight in a model is a number the training data has to
-determine. If the data does not contain enough information to pin a weight down,
-that weight ends up fitted to accidents of the particular examples it was shown
-rather than to anything real. So the amount of data needed grows with the number
-of weights that have to be determined from nothing, and fine-tuning changes that
-sum almost entirely: the great majority of the weights already sit at values
-that work, and the data only has to adjust them.
-
-A comparison from mathematics makes the shape of this clear. Fitting from a
-random start is like solving for every coefficient of a long polynomial with no
-idea of any of them. Fine-tuning is like being handed a polynomial that already
-fits a similar curve and being asked to adjust its coefficients a little. The
-second problem needs far fewer points to be well determined, because most of the
-answer is already there.
+The reason that is so much cheaper is that every weight in a model is a number
+the training data has to determine, and fine-tuning hands most of those numbers
+over already determined. A comparison from mathematics makes the shape of it
+clear. Fitting from a random start is like solving for every coefficient of a
+long polynomial with no idea of any of them. Fine-tuning is like being handed a
+polynomial that already fits a similar curve and being asked to adjust its
+coefficients a little. The second problem needs far fewer points to be well
+determined, because most of the answer is already there.
 
 ![Fine-tuning reaches a usable outline from a fraction of the labelled arrangements a random start needs, because most of its weights already sit at values that work; the figures are drawn to show the shape of that claim and nothing in them has been trained.](../../images/seeing-the-glasses/the-same-model-fine-tuned/09-fine-tune-against-scratch.png)
 
@@ -55,12 +48,12 @@ random start spends much of its training discovering those detectors again.
 Fine-tuning does not, so only the later judgement — what counts as an object,
 and where its edge lies — has to change.
 
-That gives an honest expectation rather than a result, and it should be read as
-one. What carries over best is the cheap general machinery at the bottom of the
-model. What carries over worst is the judgement at the top, which was fitted to
-decide between everyday categories using colour and texture this cell does not
-render. So fine-tuning here has more work to do than the usual advice about
-borrowed models implies, and still far less work than a random start.
+What carries over best is therefore the cheap general machinery at the bottom of
+the model, and what carries over worst is the judgement at the top, which was
+fitted to decide between everyday categories using colour and texture this cell
+does not render. Solution 3's score is the measurement of how badly that top
+layer transfers. So fine-tuning here has more work to do than the usual advice
+about borrowed models implies, and still far less work than a random start.
 
 ![The early layers of the borrowed model answer to edges and simple texture, which a grey picture shaded from depth holds as much of as a photograph, so they transfer almost untouched; the later layers carry the judgement fitted to colour and texture this cell does not render, and those are the ones training has to re-fit.](../../images/seeing-the-glasses/the-same-model-fine-tuned/09-what-a-backbone-brings.png)
 
@@ -82,27 +75,31 @@ returns is either a glass or a mistake.
 Two of solution 3's failures disappear with the list, and it is worth naming
 them one at a time.
 
+**A glass can no longer be lost to a name the filter does not accept.** This is
+the one that mattered. A rendered glass seen from the top is a plain shaded
+shape, and a model fitted on photographs calls such a shape a sports ball or a
+frisbee far more readily than it calls it a cup. In solution 3 such an outline is
+dropped and the glass missed. [The
+examiner](../03_the-examiner/01_the-examiner.md) says that **missed** is the
+count to watch hardest, because a missed glass leaves no trace at all, and
+solution 3 misses 93.6 glasses per 100 almost entirely this way. With one class,
+a found object cannot be named out of the answer.
+
 **A glass can no longer be reported twice under two names.** In solution 3 a
 single glass may be named under two neighbouring everyday categories, arriving
 as two outlines of nearly the same pixels, and that duplicate then has to be
 noticed and collapsed somewhere after the model. With one class there is only
 one name available, so the two candidates covering one glass are two candidates
 of the same class, and the model's own step for reducing overlapping candidates
-to one answer deals with them inside the model. The duplicate never leaves it.
-
-**A glass can no longer be lost to a name the filter does not accept.** A
-rendered glass seen from the top is a plain shaded shape, and a model fitted on
-photographs can reasonably call such a shape a bowl, a vase or a bottle. In
-solution 3 such an outline would be dropped and the glass missed. [The
-examiner](../03_the-examiner/01_the-examiner.md) says that **missed** is the count to watch hardest,
-because a missed glass leaves no trace at all. With one class, a found object
-cannot be named out of the answer.
+to one answer deals with them inside the model. This removal is real and it was
+not needed: the scorecard records no split for solution 3 in any block, so the
+failure the removal prevents never occurred in the marked runs.
 
 One thing the single class does not give is the kind of glass. The four kinds
 are the straight glass, the tapered glass, the stemmed glass and the short
-stemmed glass, and this solution would distinguish none of them, because it
-would be trained to answer "is this an instance" and nothing else. That is not a
-loss. Every glass in one arrangement is the same kind and the kind is known, so
+stemmed glass, and this solution distinguishes none of them, because it is
+trained to answer "is this an instance" and nothing else. That is not a loss.
+Every glass in one arrangement is the same kind and the kind is known, so
 nothing this book asks for needs it.
 
 ## 3. Where the training set comes from
@@ -124,15 +121,10 @@ round those pixels, under a class that is always "glass". There is no person
 drawing outlines, no budget for that person, and none of the mistakes that
 person would make.
 
-**It is worth saying plainly that this is a privilege of working in a
-simulator.** On real photographs this is the expensive part of the whole
-exercise, and usually the part that decides whether a method is affordable at
-all: somebody has to outline every object in every picture by hand, the work is
-slow, and the outlines disagree with each other. A simulator that already knows
-which glass owns each pixel removes that cost completely. Any judgement made
-here about whether fine-tuning is worth its price should carry that
-qualification with it, because on real pictures the price would be quite
-different.
+**This is a privilege of working in a simulator**, and it is the one
+qualification every judgement on this page has to carry. On real photographs
+labelling is the expensive part of the whole exercise, and usually the part that
+decides whether a method is affordable at all.
 
 Free labels are not the same as a good training set, and one choice still has to
 be made well. The cell's own placement rule keeps glasses a comfortable distance
@@ -158,14 +150,17 @@ the model is fitted on are the pictures it will be asked about. The shaded grey,
 the absent transparency, the missing highlight on a rim, the teardrop silhouette
 leaning away from the point below the camera: all of those are simply what a
 glass looks like, as far as the fine-tuned model is concerned, because that is
-what every glass in its training set looked like.
+what every glass in its training set looked like. The marking puts a number on
+it: 6.4 glasses found per 100 before training and 99.4 after, on the same
+arrangements, marked the same way.
 
 **The naming failures close**, for the reason the previous section gives. There
 is one class, so a glass cannot be duplicated across two names or dropped
 because of one.
 
-**The confidence number becomes meaningful enough to set a bar on.** More on
-that in the next section.
+**The confidence number gains a claim to mean something.** More on that in the
+next section, including why the bar on it was nevertheless left exactly where
+solution 3 set it by hand.
 
 **The coarse outline does not close.** This is the limit worth understanding,
 because it is the one that survives everything this solution does. A model of
@@ -184,11 +179,15 @@ One of them did not survive the test, and the other did.
 **A thin part of a glass was expected to be the first thing lost.** A stem is
 narrow compared with the bowl above it, so it looks like exactly the sort of
 detail a coarse pattern cannot hold, and a solution built from rules written by
-hand does lose it. This one does not. After training, it covers the stemmed
-glass as completely as it covers the two kinds with no stem, so the stem is not
-where a fitted model loses pixels. Teaching the model that the stem is part of
-the glass turns out to be enough on its own, and the coarseness of the outline
-machinery does not stand in the way of it.
+hand does lose it: over five blocks of spaced arrangements the written rule's
+masks cover 82.1 per cent of a stemmed glass and 89.1 per cent of a short
+stemmed one, against 99.5 and 99.9 for the two kinds with no stem. This one does
+not lose it. After training it covers all four kinds at 99.6 to 99.7 per cent,
+and the two with a stem are not the worst of the four. Teaching the model that
+the stem is part of the glass turns out to be enough on its own, and the
+coarseness of the outline machinery does not stand in the way of it.
+
+![How much of a glass the masks covered, kind by kind, for a rule written by hand and for this fine-tuned model, over five blocks of spaced arrangements: the rule's coverage collapses on the two kinds with a stem and the model's does not move.](../../images/seeing-the-glasses/the-same-model-fine-tuned/08-training-holds-the-stem.png)
 
 **The edge of the outline stays approximate, and the width is read from the
 edge.** The examiner reads a glass's width from how far its mask's points reach out
@@ -200,9 +199,11 @@ not remove the mechanism that produces it.
 
 The marking shows this one from the other side. The model's masks almost always
 cover the whole glass, and they almost always carry a thin margin of pixels that
-are not the glass with them. That margin is the approximate edge, measured
-rather than argued about, and it is the one thing the written rule does better:
-the rule claims less of the glass and nothing that is not the glass.
+are not the glass with them: 4.6 per cent of the mask at the median, against 0.0
+for the written rule. That margin is the approximate edge, measured rather than
+argued about, and it is the one thing the written rule does better. The rule
+claims less of the glass and nothing that is not the glass; the model claims all
+of the glass and a little of the table around it.
 
 **A partly hidden glass stays a problem.** The outline this model returns is
 **modal**, which means it marks only the pixels where the camera actually saw
@@ -234,12 +235,18 @@ cautious. So a bar set on solution 3's number is a knob set by hand and nothing
 more.
 
 Here the number comes from weights fitted on this cell's own pictures, so it has
-a much better claim to mean something. That claim still has to be checked rather
-than assumed, and the examiner makes the check easy: the bar should be chosen on
-the training half of the arrangements and measured on the test half, which is
-the split the examiner already enforces. Where the bar sits is a trade, and it is
-the same trade in both solutions. Set it low and bare table is reported as
-glass; set it high and faint glasses are dropped.
+a much better claim to mean something. The bar could therefore be chosen
+properly, on the training half of the arrangements and measured on the test half,
+which is the split the examiner already enforces. **It was not.** The code holds
+the bar at 0.25, which is solution 3's hand-set value, and holds the overlap
+allowed between two candidates at solution 3's 0.7 as well. The reason is the
+pair: a bar moved here would be a second difference between the two solutions,
+and the gain from moving it could then be mistaken for the gain from training.
+Where the bar sits is a trade, and it is the same trade in both solutions. Set it
+low and bare table is reported as glass; set it high and faint glasses are
+dropped. Choosing it on the training half is work this solution has left
+undone on purpose, and it is the obvious thing to do first if the pair were ever
+retired.
 
 One warning applies to this solution unchanged, because training does not
 affect it. The number is produced by the same weights that produced the outline,

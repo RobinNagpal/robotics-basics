@@ -717,22 +717,65 @@ def work_per_number() -> None:
     _save(fig, DOC3, 'work-per-number.svg')
 
 
+BLOCK_SIZES: tuple[int, ...] = (1, 2, 4, 8, 16)
+INNER_LENGTH: int = 512
+
+
+def _block_rows() -> list[tuple[int, int, int, float]]:
+    """Numbers loaded and multiply-adds done for one square block of the answer."""
+    rows = []
+    for t in BLOCK_SIZES:
+        loads = 2 * t * INNER_LENGTH
+        products = t * t * INNER_LENGTH
+        rows.append((t, loads, products, products / loads))
+    return rows
+
+
+def squares_are_independent() -> None:
+    """Every square of the answer can be worked out at the same moment as the rest."""
+    side = 8
+    print(f'[independent] an {side} by {side} answer has {side * side} squares, and '
+          f'each one needs only its own row and its own column')
+
+    fig, ax = plt.subplots(figsize=(11.6, 5.4), facecolor='white')
+    _blank(ax, (-10.8, 19.2), (-3.2, 10.0))
+    cell = 1.0
+    units = np.arange(side * side).reshape(side, side)
+    faces = [[to_hex(plt.get_cmap('Blues')(0.10 + 0.32 * ((r + c) % 2)))
+              for c in range(side)] for r in range(side)]
+    _grid_at(ax, units.astype(float), 0.0, 8.6, cell=cell, fmt='{:.0f}', faces=faces,
+             size=7.5)
+    ax.text(side * cell / 2, 8.8, f'the answer: {side * side} squares', fontsize=11,
+            ha='center', va='bottom', color=INK, weight='bold')
+    ax.text(side * cell / 2, -0.4, 'the number in each square is the multiply-add unit '
+            'that takes it,\nso all 64 squares are worked out at the same moment',
+            fontsize=10.5, ha='center', va='top', color=INK)
+
+    # one square on the right edge and one on the left edge, each labelled outwards
+    _frame(ax, 7 * cell, 8.6 - 1 * cell, cell, cell, colour=GRIP, lw=2.6)
+    _arrow(ax, (8.1, 8.1), (9.4, 8.1), colour=GRIP, lw=1.4)
+    ax.text(9.7, 8.1, 'square 15 reads row 1 of the left grid\n'
+            'and column 7 of the right grid', fontsize=10, ha='left', va='center',
+            color=GRIP)
+    _frame(ax, 0.0, 8.6 - 6 * cell, cell, cell, colour=PURPLE, lw=2.6)
+    _arrow(ax, (-0.1, 2.1), (-1.4, 2.1), colour=PURPLE, lw=1.4)
+    ax.text(-1.7, 2.1, 'square 48 reads row 6 of the left grid\n'
+            'and column 0 of the right grid', fontsize=10, ha='right', va='center',
+            color=PURPLE)
+    _title(fig, 'Why thousands of units can share the work: no square of the answer '
+                'reads another square')
+    _save(fig, DOC3, 'squares-are-independent.svg')
+
+
 def tiles_reuse() -> None:
     """One block of the answer reuses the rows and columns it loads."""
-    k = 512
-    rows = []
-    for t in (1, 2, 4, 8, 16):
-        loads = 2 * t * k
-        products = t * t * k
-        rows.append((t, loads, products, products / loads))
-        print(f'[tile] a {t} by {t} block with inner length {k}: loads '
+    for t, loads, products, ratio in _block_rows():
+        print(f'[tile] a {t} by {t} block with inner length {INNER_LENGTH}: loads '
               f'{_commas(loads)} numbers, does {_commas(products)} multiply-adds, '
-              f'{products / loads:.1f} per number loaded')
+              f'{ratio:.1f} per number loaded')
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.4, 5.0), facecolor='white',
-                             gridspec_kw={'width_ratios': [1.45, 1.0]})
-    ax = axes[0]
-    _blank(ax, (-0.6, 19.0), (-3.4, 7.2))
+    fig, ax = plt.subplots(figsize=(11.8, 5.0), facecolor='white')
+    _blank(ax, (-0.6, 19.0), (-2.4, 7.2))
     cell = 0.62
     _grid_at(ax, np.zeros((8, 8)), 0.0, 6.4, cell=cell,
              faces=[['#eef4fa'] * 8 for _ in range(8)], show_text=False)
@@ -752,21 +795,27 @@ def tiles_reuse() -> None:
     ax.text(14.6 + 1.24, 6.6, '4 columns of the right grid', fontsize=9.5, ha='center',
             va='bottom', color=GRIP)
 
-    ax.text(9.2, -1.4, 'Those 4 rows and 4 columns are fetched once and make all 16\n'
-            'answers in the block, so each number fetched is used four times.',
-            fontsize=10, ha='center', va='center', color=MUTED)
+    ax.text(9.2, -1.5, 'fetched once, used for all 16 answers in the block',
+            fontsize=11, ha='center', va='center', color=INK)
+    _title(fig, 'A block of the answer shares the rows and columns it loads')
+    _save(fig, DOC3, 'tiles-reuse.svg')
 
-    ax2 = axes[1]
-    _table(ax2, ('block', 'numbers\nloaded', 'multiply-\nadds', 'work per\nnumber loaded'),
+
+def block_size_table() -> None:
+    """How much arithmetic each loaded number earns, against the size of the block."""
+    rows = _block_rows()
+    fig, ax = plt.subplots(figsize=(8.8, 3.6), facecolor='white')
+    _table(ax, ('block of the answer', 'numbers loaded', 'multiply-adds',
+                'work per number loaded'),
            [(f'{t} by {t}', _commas(loads), _commas(products), f'{ratio:.1f}')
             for t, loads, products, ratio in rows],
-           (1.5, 2.1, 2.1, 2.4), highlight=2, size=9.0, head_size=8.5)
-    ax2.text(0.5, -0.08, 'inner length 512 in every row', fontsize=9, ha='center',
-             va='top', color=MUTED, transform=ax2.transAxes)
-    _title(fig, 'Every square of the answer is worked out on its own, and a block of '
-                'them shares the numbers it loads')
-    fig.tight_layout(rect=(0, 0.02, 1, 0.92))
-    _save(fig, DOC3, 'tiles-reuse.svg')
+           (2.3, 2.2, 2.2, 2.6), highlight=4, size=10.0, head_size=9.5)
+    ax.text(0.5, -0.08, f'inner length {INNER_LENGTH} in every row', fontsize=9.5,
+            ha='center', va='top', color=MUTED, transform=ax.transAxes)
+    _title(fig, 'The bigger the block, the more arithmetic each loaded number earns',
+           size=12.0)
+    fig.tight_layout(rect=(0, 0.04, 1, 0.88))
+    _save(fig, DOC3, 'block-size-table.svg')
 
 
 def almost_all_matmul() -> None:
@@ -784,9 +833,7 @@ def almost_all_matmul() -> None:
     print(f'[share] the two matrix multiplies are {100 * share:.2f} per cent of all '
           f'the arithmetic ({_commas(total)} pieces in all)')
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.8), facecolor='white',
-                             gridspec_kw={'width_ratios': [1.35, 1.0]})
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.2, 5.0), facecolor='white')
     _plain(ax)
     labels = ['first matrix\nmultiply\n768 x 3072', 'second matrix\nmultiply\n3072 x 768',
               'bias adds', 'ReLU\ncomparisons']
@@ -797,41 +844,48 @@ def almost_all_matmul() -> None:
     ax.set_yscale('log')
     ax.set_ylim(1, 1e8)
     for p, v in zip(pos, vals):
-        ax.text(p, v * 1.4, _commas(v), fontsize=9, ha='center', color=INK)
+        ax.text(p, v * 1.4, _commas(v), fontsize=9.5, ha='center', color=INK)
     ax.set_xticks(pos)
-    ax.set_xticklabels(labels, fontsize=9)
-    ax.set_ylabel('pieces of arithmetic for one example (log scale)', fontsize=9.5)
-    ax.set_title('What a two-layer block really does', fontsize=11.5, weight='bold')
+    ax.set_xticklabels(labels, fontsize=9.5)
+    ax.set_ylabel('pieces of arithmetic for one example (log scale)', fontsize=10)
+    ax.set_title(f'In a 768 to 3072 to 768 block, the two multiplies are\n'
+                 f'{100 * share:.2f} per cent of all the arithmetic', fontsize=12.5,
+                 weight='bold')
+    _save(fig, DOC3, 'almost-all-matmul.svg')
 
-    ax2 = axes[1]
-    _plain(ax2)
-    widths_d = [64, 128, 256, 512, 768, 1536, 3072]
+
+BLOCK_WIDTHS: list[int] = [64, 128, 256, 512, 768, 1536, 3072]
+
+
+def matmul_share_vs_width() -> None:
+    """The wider the block, the larger the matrix multiply's share of the arithmetic."""
     shares = []
-    for d in widths_d:
+    for d in BLOCK_WIDTHS:
         macs = 2 * 4 * d * d
         other = 4 * d + d + 4 * d
         shares.append(100 * macs / (macs + other))
         print(f'[share] a {d} -> {4 * d} -> {d} block: matrix multiplies are '
               f'{100 * macs / (macs + other):.3f} per cent of the arithmetic')
-    ax2.plot(widths_d, shares, marker='o', color=LINK, lw=2.0)
-    for d, s in zip(widths_d, shares):
-        if d in (64, 768, 3072):
-            ax2.annotate(f'{s:.2f}%', (d, s), textcoords='offset points',
-                         xytext=(0, -16), fontsize=9.5, color=LINK, ha='center')
-    ax2.set_xscale('log')
-    ax2.set_xticks(widths_d)
-    ax2.set_xticklabels([str(d) for d in widths_d], fontsize=8.5)
-    ax2.minorticks_off()
-    ax2.set_ylim(97.5, 100.1)
-    ax2.set_xlabel('width of the block', fontsize=9.5)
-    ax2.set_ylabel('share of the arithmetic that is\nthe matrix multiply, per cent',
-                   fontsize=9.5)
-    ax2.set_title('And the wider the block, the larger that share',
-                  fontsize=11.5, weight='bold')
-    _title(fig, 'Almost all of a network\'s arithmetic is one operation, which is why '
-                'the hardware is built for it')
-    fig.tight_layout(rect=(0, 0, 1, 0.92))
-    _save(fig, DOC3, 'almost-all-matmul.svg')
+
+    fig, ax = plt.subplots(figsize=(10.2, 5.0), facecolor='white')
+    _plain(ax)
+    ax.plot(BLOCK_WIDTHS, shares, marker='o', color=LINK, lw=2.2)
+    for d, s in zip(BLOCK_WIDTHS, shares):
+        if d in (64, 256, 768, 3072):
+            ax.annotate(f'{s:.2f}%', (d, s), textcoords='offset points',
+                        xytext=(0, -18), fontsize=10, color=LINK, ha='center')
+    ax.set_xscale('log')
+    ax.set_xticks(BLOCK_WIDTHS)
+    ax.set_xticklabels([str(d) for d in BLOCK_WIDTHS], fontsize=9.5)
+    ax.minorticks_off()
+    ax.set_ylim(97.5, 100.1)
+    ax.set_xlabel('width of the block, with the middle layer four times as wide '
+                  '(log scale)', fontsize=10)
+    ax.set_ylabel('share of the arithmetic that is\nthe matrix multiply, per cent',
+                  fontsize=10)
+    ax.set_title('Making the block wider makes the matrix multiply\'s share larger',
+                 fontsize=12, weight='bold')
+    _save(fig, DOC3, 'matmul-share-vs-width.svg')
 
 
 # --------------------------------------------------------------------------
@@ -909,45 +963,88 @@ def per_example_traffic() -> None:
           f'numbers; all together they move {_commas(all_together)}, which is '
           f'{one_at_a_time / all_together:.0f} times fewer')
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.6, 4.8), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.6, 5.0), facecolor='white')
     _plain(ax)
-    ax.plot(BATCHES, per_example, marker='o', color=LINK, lw=2.0)
+    ax.plot(BATCHES, per_example, marker='o', color=LINK, lw=2.2)
     for b, v in zip(BATCHES, per_example):
         if b in (1, 8, 64, 256):
             ax.annotate(f'{v:,.0f}', (b, v), textcoords='offset points',
-                        xytext=(6, 6), fontsize=9, color=LINK)
+                        xytext=(6, 6), fontsize=9.5, color=LINK)
     ax.axhline(d_in + d_out, color=SLIDE, ls='--', lw=1.4)
     ax.text(1.1, d_in + d_out * 1.6, f'the floor: {d_in + d_out:,} numbers,\n'
-            'the example going in and the answer coming out', fontsize=9,
+            'the example going in and the answer coming out', fontsize=9.5,
             color=SLIDE, va='bottom')
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.set_xticks(BATCHES)
-    ax.set_xticklabels([str(b) for b in BATCHES], fontsize=8.5)
+    ax.set_xticklabels([str(b) for b in BATCHES], fontsize=9)
     ax.minorticks_off()
-    ax.set_xlabel('how many examples go through together', fontsize=10)
+    ax.set_xlabel('how many examples go through together (log scale)', fontsize=10)
     ax.set_ylabel('numbers moved for each example (log scale)', fontsize=10)
-    ax.set_title('The weights are read once for the whole group', fontsize=11.5,
-                 weight='bold')
-
-    ax2 = axes[1]
-    _plain(ax2)
-    ax2.bar([0, 1], [one_at_a_time, all_together], color=[GRIP, SLIDE], width=0.55,
-            edgecolor=INK, lw=0.6)
-    ax2.set_yscale('log')
-    ax2.set_ylim(1e5, 1e11)
-    for p, v in zip((0, 1), (one_at_a_time, all_together)):
-        ax2.text(p, v * 1.6, _commas(v), fontsize=10, ha='center', color=INK)
-    ax2.set_xticks([0, 1])
-    ax2.set_xticklabels(['1,024 examples,\none at a time', '1,024 examples,\nall at once'],
-                        fontsize=9.5)
-    ax2.set_ylabel('numbers moved in all (log scale)', fontsize=10)
-    ax2.set_title(f'{one_at_a_time / all_together:.0f} times less traffic for the '
-                  'same arithmetic', fontsize=11.5, weight='bold')
-    _title(fig, 'Why examples travel in groups: a layer of 768 inputs and 3,072 neurons')
-    fig.tight_layout(rect=(0, 0, 1, 0.9))
+    ax.set_title('A layer of 768 inputs and 3,072 neurons: the weights are read once '
+                 'for the whole group', fontsize=12, weight='bold')
     _save(fig, DOC3, 'per-example-traffic.svg')
+
+
+def traffic_one_at_a_time() -> None:
+    """The same 1,024 examples, sent singly and sent together."""
+    d_in, d_out = 768, 3072
+    weights = d_in * d_out
+    one_at_a_time = 1024 * (d_in + weights + d_out)
+    all_together = 1024 * d_in + weights + 1024 * d_out
+    print(f'[traffic] 1,024 examples one at a time move {_commas(one_at_a_time)} '
+          f'numbers; all together they move {_commas(all_together)}, which is '
+          f'{one_at_a_time / all_together:.0f} times fewer')
+
+    fig, ax = plt.subplots(figsize=(8.8, 5.0), facecolor='white')
+    _plain(ax)
+    ax.bar([0, 1], [one_at_a_time, all_together], color=[GRIP, SLIDE], width=0.5,
+           edgecolor=INK, lw=0.6)
+    ax.set_yscale('log')
+    ax.set_ylim(1e5, 1e11)
+    ax.set_xlim(-0.7, 1.7)
+    for p, v in zip((0, 1), (one_at_a_time, all_together)):
+        ax.text(p, v * 1.6, _commas(v), fontsize=11, ha='center', color=INK,
+                weight='bold')
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(['1,024 examples,\none at a time', '1,024 examples,\nall at once'],
+                       fontsize=10.5)
+    ax.set_ylabel('numbers moved in all (log scale)', fontsize=10)
+    ax.set_title(f'The same arithmetic either way, and '
+                 f'{one_at_a_time / all_together:.0f} times less traffic one way',
+                 fontsize=12, weight='bold')
+    _save(fig, DOC3, 'traffic-one-at-a-time.svg')
+
+
+def weights_share_of_traffic() -> None:
+    """How much of the traffic is weights rather than examples, at two batch sizes."""
+    d_in, d_out = 768, 3072
+    weights = d_in * d_out
+    fig, ax = plt.subplots(figsize=(9.0, 5.0), facecolor='white')
+    _plain(ax)
+    for i, b in enumerate((1, 256)):
+        carried = b * (d_in + d_out)
+        moved = carried + weights
+        print(f'[dominate] batch {b}: {_commas(weights)} of the {_commas(moved)} '
+              f'numbers moved are weights, which is {100 * weights / moved:.1f} '
+              f'per cent')
+        ax.bar(i, weights, color=PURPLE, edgecolor=INK, lw=0.6, width=0.5)
+        ax.bar(i, carried, bottom=weights, color=TEAL, edgecolor=INK, lw=0.6,
+               width=0.5)
+        ax.text(i, weights / 2, f'the weights\n{_commas(weights)}\n'
+                f'{100 * weights / moved:.1f}%', fontsize=10, ha='center',
+                va='center', color='white', weight='bold')
+        ax.text(i, weights + carried / 2 + 60000,
+                f'the examples and\ntheir answers\n{_commas(carried)}', fontsize=9.5,
+                ha='center', va='center', color=INK)
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(['batch 1: one example', 'batch 256: 256 examples'],
+                       fontsize=10.5)
+    ax.set_xlim(-0.7, 1.7)
+    ax.set_ylabel('numbers moved for one pass through the layer', fontsize=10)
+    ax.set_title('At batch 1 the machine is almost entirely fetching weights',
+                 fontsize=12, weight='bold')
+    _save(fig, DOC3, 'weights-share-of-traffic.svg')
 
 
 VISION_STAGES: list[tuple[str, tuple[int, int, int]]] = [
@@ -972,52 +1069,88 @@ def batch_memory() -> None:
         print(f'[memory] batch {b:>3}: {per_example * b * 4 / 1e6:,.0f} MB of numbers '
               f'passing through, against {weights * 4 / 1e6:.2f} MB of weights')
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.6, 4.8), facecolor='white',
-                             gridspec_kw={'width_ratios': [1.0, 1.15]})
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.6, 5.0), facecolor='white')
+    _plain(ax)
+    bs = np.array(BATCHES, dtype=float)
+    act_mb = per_example * bs * 4 / 1e6
+    ax.plot(bs, act_mb, marker='o', color=TEAL, lw=2.2,
+            label='the numbers passing through')
+    ax.axhline(weights * 4 / 1e6, color=PURPLE, ls='--', lw=1.8,
+               label=f'the weights: {weights * 4 / 1e6:.2f} MB, whatever the batch')
+    for b, v in zip(BATCHES, act_mb):
+        if b in (1, 16, 256):
+            off, align = ((10, -6), 'left') if b == 1 else ((-6, 9), 'right')
+            ax.annotate(f'{v:,.1f} MB' if v < 10 else f'{v:,.0f} MB', (b, v),
+                        textcoords='offset points', xytext=off, fontsize=9.5,
+                        color=TEAL, ha=align)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xticks(BATCHES)
+    ax.set_xticklabels([str(b) for b in BATCHES], fontsize=9)
+    ax.minorticks_off()
+    ax.set_xlabel('how many photos go through together (log scale)', fontsize=10)
+    ax.set_ylabel('memory at float32, MB (log scale)', fontsize=10)
+    ax.set_title('A bigger batch costs memory, and the model does not grow at all',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    _save(fig, DOC3, 'batch-memory.svg')
+
+
+def numbers_through_the_stack() -> None:
+    """How many numbers one photo and the four stage answers come to."""
+    per_example = sum(int(np.prod(s)) for _, s in VISION_STAGES)
+    fig, ax = plt.subplots(figsize=(10.2, 4.6), facecolor='white')
     _plain(ax)
     names = [n for n, _ in VISION_STAGES]
     counts = [int(np.prod(s)) for _, s in VISION_STAGES]
     ax.barh(np.arange(len(names)), counts, color=TEAL, edgecolor=INK, lw=0.6,
             height=0.6)
     for i, (c, (_, s)) in enumerate(zip(counts, VISION_STAGES)):
-        ax.text(c + 9000, i, f'{s[0]} x {s[1]} x {s[2]} = {c:,}', fontsize=9,
+        ax.text(c + 9000, i, f'{s[0]} x {s[1]} x {s[2]} = {c:,}', fontsize=9.5,
                 va='center', color=INK)
     ax.set_yticks(np.arange(len(names)))
-    ax.set_yticklabels(names, fontsize=9.5)
-    ax.set_xlim(0, 620000)
+    ax.set_yticklabels(names, fontsize=10)
+    ax.set_xlim(0, 640000)
     ax.invert_yaxis()
     ax.set_xlabel('numbers held for one photo', fontsize=10)
-    ax.set_title(f'One photo through the stack holds {per_example:,} numbers',
-                 fontsize=11, weight='bold')
+    ax.set_title(f'One photo and the four stage answers come to {per_example:,} '
+                 f'numbers', fontsize=12, weight='bold')
+    _save(fig, DOC3, 'numbers-through-the-stack.svg')
 
-    ax2 = axes[1]
-    _plain(ax2)
-    bs = np.array(BATCHES, dtype=float)
-    act_mb = per_example * bs * 4 / 1e6
-    ax2.plot(bs, act_mb, marker='o', color=TEAL, lw=2.0,
-             label='numbers passing through')
-    ax2.axhline(weights * 4 / 1e6, color=PURPLE, ls='--', lw=1.8,
-                label=f'the weights: {weights * 4 / 1e6:.2f} MB, whatever the batch')
-    for b, v in zip(BATCHES, act_mb):
-        if b in (1, 16, 256):
-            off, align = ((10, -6), 'left') if b == 1 else ((-4, 8), 'right')
-            ax2.annotate(f'{v:,.0f} MB', (b, v), textcoords='offset points',
-                         xytext=off, fontsize=9, color=TEAL, ha=align)
-    ax2.set_xscale('log')
-    ax2.set_yscale('log')
-    ax2.set_xticks(BATCHES)
-    ax2.set_xticklabels([str(b) for b in BATCHES], fontsize=8.5)
-    ax2.minorticks_off()
-    ax2.set_xlabel('how many photos go through together', fontsize=10)
-    ax2.set_ylabel('memory at float32, MB (log scale)', fontsize=10)
-    ax2.set_title('The batch, not the model, fills the card', fontsize=11,
-                  weight='bold')
-    ax2.legend(fontsize=9, frameon=False, loc='upper left')
-    _title(fig, 'What a bigger batch costs: the weights stay put, the numbers passing '
-                'through do not')
-    fig.tight_layout(rect=(0, 0, 1, 0.9))
-    _save(fig, DOC3, 'batch-memory.svg')
+
+def weights_are_not_the_bill() -> None:
+    """At a useful batch the numbers passing through dwarf the weights."""
+    per_example = sum(int(np.prod(s)) for _, s in VISION_STAGES)
+    weights = sum(c_in * c_out * 9 + c_out for c_in, c_out in VISION_CONVS)
+    batch = 32
+    w_mb = weights * 4 / 1e6
+    a_mb = per_example * batch * 4 / 1e6
+    print(f'[bill] the small picture network at batch {batch}: {w_mb:.2f} MB of '
+          f'weights and {a_mb:.1f} MB of numbers passing through, so the weights '
+          f'are {100 * w_mb / (w_mb + a_mb):.1f} per cent of the bill')
+
+    fig, ax = plt.subplots(figsize=(9.0, 5.2), facecolor='white')
+    _plain(ax)
+    ax.bar(0, w_mb, color=PURPLE, edgecolor=INK, lw=0.6, width=0.5)
+    ax.bar(0, a_mb, bottom=w_mb, color=TEAL, edgecolor=INK, lw=0.6, width=0.5)
+    ax.annotate(f'the weights: {w_mb:.2f} MB, which is\nonly '
+                f'{100 * w_mb / (w_mb + a_mb):.1f} per cent of the bill',
+                (0.27, w_mb / 2), xytext=(1.0, 22), fontsize=11, color=PURPLE,
+                ha='left', va='center',
+                arrowprops={'arrowstyle': '-|>', 'color': PURPLE, 'lw': 1.4})
+    ax.annotate(f'the numbers passing through:\n{a_mb:.1f} MB',
+                (0.27, w_mb + a_mb / 2), xytext=(1.0, w_mb + a_mb / 2), fontsize=11,
+                color=TEAL, ha='left', va='center',
+                arrowprops={'arrowstyle': '-|>', 'color': TEAL, 'lw': 1.4})
+    ax.set_xticks([0])
+    ax.set_xticklabels([f'the small picture network,\n{batch} photos at once'],
+                       fontsize=10.5)
+    ax.set_xlim(-0.6, 2.6)
+    ax.set_ylim(0, 130)
+    ax.set_ylabel('memory at float32, MB', fontsize=10)
+    ax.set_title('The weights are the floor of the bill, not the bill', fontsize=12.5,
+                 weight='bold')
+    _save(fig, DOC3, 'weights-are-not-the-bill.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1261,6 +1394,41 @@ def running_total() -> None:
     _save(fig, DOC3, 'running-total.svg')
 
 
+def mixed_precision() -> None:
+    """Small numbers going in, a large running total inside, small numbers coming out."""
+    print('[mixed] the stored weights and inputs are 2 bytes each, the running total '
+          'inside the multiplier is 4 bytes, and the answer is written back as '
+          '2 bytes')
+
+    fig, ax = plt.subplots(figsize=(12.0, 4.0), facecolor='white')
+    _blank(ax, (-0.8, 28.0), (-1.6, 6.4))
+
+    _box(ax, 0.0, 1.4, 5.6, 2.2, face='#e9e4f5', edge=PURPLE, lw=1.6,
+         text='the weights and\nthe inputs\n2 bytes each', size=10, colour=INK)
+    ax.text(2.8, 1.1, 'bfloat16: wide range,\nfew digits', fontsize=9.5, ha='center',
+            va='top', color=PURPLE)
+
+    _arrow(ax, (5.9, 2.5), (8.3, 2.5), colour=MUTED, lw=1.8)
+
+    _box(ax, 8.6, 0.6, 9.4, 3.8, face='#e3f1f1', edge=TEAL, lw=1.8,
+         text='multiply, then add into\na running total kept in\nfloat32: 4 bytes',
+         size=10.5, colour=INK)
+    ax.text(13.3, 0.3, 'the total can grow large without overflowing,\n'
+            'and small products still change it', fontsize=9.5, ha='center',
+            va='top', color=TEAL)
+
+    _arrow(ax, (18.3, 2.5), (20.7, 2.5), colour=MUTED, lw=1.8)
+
+    _box(ax, 21.0, 1.4, 5.6, 2.2, face='#e9e4f5', edge=PURPLE, lw=1.6,
+         text='the answer, rounded\nback to 2 bytes', size=10, colour=INK)
+    ax.text(23.8, 1.1, 'so the next layer\nreads 2 bytes too', fontsize=9.5,
+            ha='center', va='top', color=PURPLE)
+
+    ax.text(13.3, 5.2, 'stored small, added up large', fontsize=13, ha='center',
+            va='bottom', color=INK, weight='bold')
+    _save(fig, DOC3, 'mixed-precision.svg')
+
+
 MODEL_SIZES: list[tuple[str, int]] = [
     ('a small robot model\n25 million parameters', 25_000_000),
     ('a middling model\n350 million parameters', 350_000_000),
@@ -1430,58 +1598,171 @@ def straight_line_fails() -> None:
     _save(fig, DOC4, 'straight-line-fails.svg')
 
 
+def two_multiplies_collapse() -> None:
+    """Two matrix multiplies in a row do the same thing as one, so depth alone is free."""
+    a = np.array([[0.5, -0.2, 0.8], [-0.3, 0.6, 0.2]])
+    b = np.array([[1.0, -0.5], [0.4, 0.2], [-0.6, 0.9]])
+    x = np.array([2.0, 1.0])
+    first = x @ a                 # shape (3,)
+    second = first @ b            # shape (2,)
+    joined = a @ b                # shape (2, 2)
+    direct = x @ joined
+    print(f'[collapse] first multiply: {x.tolist()} times a (2, 3) grid = '
+          f'{np.round(first, 2).tolist()}')
+    print(f'[collapse] second multiply: that times a (3, 2) grid = '
+          f'{np.round(second, 2).tolist()}')
+    print(f'[collapse] the two grids multiplied together =\n{np.round(joined, 2)}')
+    print(f'[collapse] one multiply by that single grid gives '
+          f'{np.round(direct, 2).tolist()}, the same answer')
+
+    fig, ax = plt.subplots(figsize=(12.4, 5.2), facecolor='white')
+    _blank(ax, (-1.2, 25.2), (-6.7, 3.6))
+    cell = 1.15
+
+    def label(cx: float, cy: float, text: str, colour: str = INK,
+              size: float = 9.5, weight: str = 'normal') -> None:
+        ax.text(cx, cy, text, fontsize=size, ha='center', va='top', color=colour,
+                weight=weight)
+
+    # top row: two multiplies, one after the other
+    _grid_at(ax, x.reshape(1, 2), 0.0, 2.6, cell=cell, fmt='{:.0f}',
+             faces=_faces(x.reshape(1, 2), vmin=-2, vmax=2), size=9.5)
+    label(cell, 1.25, 'the input\n(1, 2)', MUTED)
+    ax.text(2.9, 2.0, 'x', fontsize=12, ha='center', va='center', color=MUTED)
+    _grid_at(ax, a, 3.6, 2.6, cell=cell, fmt='{:+.1f}',
+             faces=_faces(a, cmap='RdBu', vmin=-1, vmax=1), size=9.0)
+    label(3.6 + 1.5 * cell, 2.6 - 2 * cell - 0.15, 'first grid\n(2, 3)', MUTED)
+    ax.text(8.0, 2.0, '=', fontsize=12, ha='center', va='center', color=MUTED)
+    _grid_at(ax, first.reshape(1, 3), 8.7, 2.6, cell=cell, fmt='{:+.2f}',
+             faces=_faces(first.reshape(1, 3), cmap='RdBu', vmin=-2, vmax=2), size=8.5)
+    label(8.7 + 1.5 * cell, 1.25, 'in between\n(1, 3)', MUTED)
+    ax.text(12.9, 2.0, 'x', fontsize=12, ha='center', va='center', color=MUTED)
+    _grid_at(ax, b, 13.6, 2.6, cell=cell, fmt='{:+.1f}',
+             faces=_faces(b, cmap='RdBu', vmin=-1, vmax=1), size=9.0)
+    label(13.6 + cell, 2.6 - 3 * cell - 0.15, 'second grid\n(3, 2)', MUTED)
+    ax.text(17.2, 2.0, '=', fontsize=12, ha='center', va='center', color=MUTED)
+    _grid_at(ax, second.reshape(1, 2), 17.9, 2.6, cell=cell, fmt='{:+.2f}',
+             faces=_faces(second.reshape(1, 2), cmap='RdBu', vmin=-2, vmax=2),
+             size=8.5)
+    _frame(ax, 17.9, 2.6, 2 * cell, cell, colour=SLIDE, lw=2.4)
+    label(17.9 + cell, 1.25, 'the answer\n(1, 2)', SLIDE, weight='bold')
+
+    ax.text(-0.9, 2.0, 'two\nmultiplies', fontsize=10.5, ha='right', va='center',
+            color=INK, weight='bold')
+
+    # bottom row: the two grids multiplied together first
+    y = -2.6
+    _grid_at(ax, x.reshape(1, 2), 0.0, y, cell=cell, fmt='{:.0f}',
+             faces=_faces(x.reshape(1, 2), vmin=-2, vmax=2), size=9.5)
+    label(cell, y - cell - 0.15, 'the same input', MUTED)
+    ax.text(2.9, y - cell / 2, 'x', fontsize=12, ha='center', va='center', color=MUTED)
+    _grid_at(ax, joined, 3.6, y, cell=cell, fmt='{:+.2f}',
+             faces=_faces(joined, cmap='RdBu', vmin=-1, vmax=1), size=8.5)
+    _frame(ax, 3.6, y, 2 * cell, 2 * cell, colour=PURPLE, lw=2.4)
+    label(3.6 + cell, y - 2 * cell - 0.15, 'the two grids multiplied\ntogether, '
+          'worked out once\n(2, 2)', PURPLE, weight='bold')
+    ax.text(6.9, y - cell / 2, '=', fontsize=12, ha='center', va='center', color=MUTED)
+    _grid_at(ax, direct.reshape(1, 2), 7.6, y, cell=cell, fmt='{:+.2f}',
+             faces=_faces(direct.reshape(1, 2), cmap='RdBu', vmin=-2, vmax=2),
+             size=8.5)
+    _frame(ax, 7.6, y, 2 * cell, cell, colour=SLIDE, lw=2.4)
+    label(7.6 + cell, y - cell - 0.15, 'the same answer', SLIDE, weight='bold')
+
+    ax.text(-0.9, y - cell / 2, 'one\nmultiply', fontsize=10.5, ha='right',
+            va='center', color=INK, weight='bold')
+    ax.text(13.0, y - cell, 'So a second layer with nothing between it and the\n'
+            'first adds no new shapes, only arithmetic.', fontsize=10.5,
+            ha='left', va='center', color=INK)
+    _title(fig, 'Two matrix multiplies with nothing between them are one matrix '
+                'multiply')
+    _save(fig, DOC4, 'two-multiplies-collapse.svg')
+
+
 def one_hinge() -> None:
     """What one rectified-linear neuron gives: a flat part and then a slope."""
     x = X_FINE
     plain = np.maximum(0.0, x - 1.5)
+    print(f'[hinge] max(0, x - 1.5) is 0 up to x = 1.5 and rises with slope 1 after it; '
+          f'at x = 4 it is {plain[-1]:.2f}')
+
+    fig, ax = plt.subplots(figsize=(9.6, 5.0), facecolor='white')
+    _plain(ax)
+    ax.set_xlim(X_LO, X_HI)
+    ax.axhline(0, color=GRID, lw=1.0)
+    ax.plot(x, plain, color=LINK, lw=3.0)
+    ax.axvline(1.5, color=MUTED, ls=':', lw=1.3)
+    ax.annotate('flat: the total inside the\nneuron is below 0, so the\nReLU gives 0',
+                (0.7, 0.35), fontsize=10, color=MUTED, ha='center', va='bottom')
+    ax.annotate('rising with slope 1: the ReLU\npasses the total through',
+                (3.1, 0.35), fontsize=10, color=LINK, ha='center', va='bottom')
+    ax.annotate('the bend, at x = 1.5', (1.5, 2.72), textcoords='offset points',
+                xytext=(8, 0), fontsize=10.5, color=INK, ha='left', va='center',
+                weight='bold')
+    ax.set_ylim(-0.4, 3.0)
+    ax.set_xlabel('the number going in', fontsize=10)
+    ax.set_ylabel('what comes out', fontsize=10)
+    ax.set_title('One rectified-linear neuron: flat, then one bend, then a straight '
+                 'rise', fontsize=12, weight='bold')
+    _save(fig, DOC4, 'one-hinge.svg')
+
+
+def hinge_weight() -> None:
+    """The same hinge, scaled by three different weights in the layer after it."""
+    x = X_FINE
+    plain = np.maximum(0.0, x - 1.5)
+    for w in (1.0, 2.5, -1.8):
+        print(f'[hinge] weight {w:+.1f} on the same hinge: slope {w:+.1f} after the '
+              f'bend, reaching {w * plain[-1]:+.2f} at x = 4')
+
+    fig, ax = plt.subplots(figsize=(9.6, 5.0), facecolor='white')
+    _plain(ax)
+    ax.set_xlim(X_LO, X_HI)
+    ax.axhline(0, color=GRID, lw=1.0)
+    ax.axvline(1.5, color=MUTED, ls=':', lw=1.3)
+    for w, colour, style in ((1.0, GRID, '-'), (2.5, LINK, '-'), (-1.8, GRIP, '-')):
+        ax.plot(x, w * plain, color=colour, lw=2.8, ls=style,
+                label=f'weight {w:+.1f}: slope {w:+.1f}')
+    ax.text(1.56, 5.6, 'the bend never moves', fontsize=10, color=MUTED, ha='left')
+    ax.set_ylim(-5.2, 6.8)
+    ax.set_xlabel('the number going in', fontsize=10)
+    ax.set_ylabel('what the next layer receives', fontsize=10)
+    ax.set_title('The weight after the neuron sets the slope, and its sign sets the '
+                 'direction', fontsize=12, weight='bold')
+    ax.legend(fontsize=10, frameon=False, loc='lower left')
+    _save(fig, DOC4, 'hinge-weight.svg')
+
+
+def three_piece_line() -> None:
+    """A straight line plus two rectified-linear neurons: a line in three pieces."""
+    x = X_FINE
     steep = 2.5 * np.maximum(0.0, x - 1.5)
     down = -1.8 * np.maximum(0.0, x - 2.6)
     line = 0.4 + 0.5 * x
     joined = line + steep + down
-    print(f'[hinge] max(0, x - 1.5) is 0 up to x = 1.5 and rises with slope 1 after it; '
-          f'at x = 4 it is {plain[-1]:.2f}')
-    print(f'[hinge] 2.5 times that hinge reaches {steep[-1]:.2f} at x = 4')
     print(f'[hinge] the line 0.4 + 0.5x plus 2.5 hinge(x - 1.5) minus 1.8 '
           f'hinge(x - 2.6) has slopes 0.50, then 3.00, then 1.20')
 
-    fig, axes = plt.subplots(1, 3, figsize=(13.2, 4.4), facecolor='white')
-    for ax in axes:
-        _plain(ax)
-        ax.set_xlim(X_LO, X_HI)
-        ax.axhline(0, color=GRID, lw=1.0)
-    axes[0].plot(x, plain, color=LINK, lw=2.6)
-    axes[0].axvline(1.5, color=MUTED, ls=':', lw=1.2)
-    axes[0].text(0.08, 2.9, 'the bend sits at x = 1.5,\nwhere the total inside\n'
-                 'the neuron passes 0', fontsize=9, color=MUTED, va='top', ha='left')
-    axes[0].set_title('one neuron: max(0, x - 1.5)', fontsize=11, weight='bold')
-    axes[0].set_ylim(-0.4, 3.0)
-
-    axes[1].plot(x, plain, color=GRID, lw=2.0, label='weight 1')
-    axes[1].plot(x, steep, color=LINK, lw=2.6, label='weight 2.5')
-    axes[1].plot(x, down, color=GRIP, lw=2.6, label='weight -1.8, bend at 2.6')
-    axes[1].set_title('the weight after it sets the new slope', fontsize=11,
-                      weight='bold')
-    axes[1].legend(fontsize=9, frameon=False, loc='upper left')
-    axes[1].set_ylim(-3.0, 6.5)
-
-    axes[2].plot(x, line, color=GRID, lw=2.0, ls='--', label='the line 0.4 + 0.5 x')
-    axes[2].plot(x, joined, color=PURPLE, lw=2.8, label='line + both neurons')
-    for k, slope in ((0.7, '0.50'), (1.95, '3.00'), (3.35, '1.20')):
+    fig, ax = plt.subplots(figsize=(9.6, 5.0), facecolor='white')
+    _plain(ax)
+    ax.set_xlim(X_LO, X_HI)
+    ax.axhline(0, color=GRID, lw=1.0)
+    ax.plot(x, line, color=GRID, lw=2.2, ls='--', label='the line 0.4 + 0.5 x alone')
+    ax.plot(x, joined, color=PURPLE, lw=3.0, label='the line plus both neurons')
+    for k, slope in ((0.7, '0.50'), (2.0, '3.00'), (3.35, '1.20')):
         i = int(np.argmin(np.abs(x - k)))
-        axes[2].annotate(f'slope {slope}', (k, joined[i]), textcoords='offset points',
-                         xytext=(-18, 14), fontsize=9, color=PURPLE, ha='center')
+        ax.annotate(f'slope {slope}', (k, joined[i]), textcoords='offset points',
+                    xytext=(-22, 16), fontsize=10.5, color=PURPLE, ha='center')
     for k in (1.5, 2.6):
-        axes[2].axvline(k, color=MUTED, ls=':', lw=1.2)
-    axes[2].set_title('two neurons make a three-piece line', fontsize=11, weight='bold')
-    axes[2].legend(fontsize=9, frameon=False, loc='upper left')
-    axes[2].set_ylim(-0.5, 9.0)
-    for ax in axes:
-        ax.set_xlabel('the number going in', fontsize=9.5)
-    axes[0].set_ylabel('what comes out', fontsize=9.5)
-    _title(fig, 'One rectified-linear neuron adds exactly one bend, and its weight '
-                'says how sharp')
-    fig.tight_layout(rect=(0, 0, 1, 0.9))
-    _save(fig, DOC4, 'one-hinge.svg')
+        ax.axvline(k, color=MUTED, ls=':', lw=1.3)
+        ax.annotate(f'bend at {k}', (k, -0.35), textcoords='offset points',
+                    xytext=(4, 0), fontsize=9.5, color=MUTED, ha='left')
+    ax.set_ylim(-0.8, 9.2)
+    ax.set_xlabel('the number going in', fontsize=10)
+    ax.set_ylabel('what comes out', fontsize=10)
+    ax.set_title('Two neurons added to a straight line make a line in three pieces',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    _save(fig, DOC4, 'three-piece-line.svg')
 
 
 def building_with_hinges() -> None:
@@ -1640,42 +1921,44 @@ def parameter_count() -> None:
                   f'{_commas(p)} parameters')
         rows.append(tuple(cells))
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 4.4), facecolor='white',
-                             gridspec_kw={'width_ratios': [1.0, 1.1]})
-    _table(axes[0], ('width of each\nhidden layer', *[f'{d} hidden\nlayer'
-                                                      f'{"" if d == 1 else "s"}'
-                                                      for d in depths]),
-           rows, (2.4, 2.1, 2.1, 2.1), size=10.0, head_size=9.5)
-    axes[0].set_title('A network with 7 inputs and 2 outputs', fontsize=11.5,
-                      weight='bold', pad=12)
+    fig, ax = plt.subplots(figsize=(9.6, 3.6), facecolor='white')
+    _table(ax, ('width of each\nhidden layer', *[f'{d} hidden\nlayer'
+                                                 f'{"" if d == 1 else "s"}'
+                                                 for d in depths]),
+           rows, (2.4, 2.1, 2.1, 2.1), size=10.5, head_size=10.0)
+    _title(fig, 'Parameters of a network with 7 inputs and 2 outputs, counted exactly',
+           size=12.0)
+    fig.tight_layout(rect=(0, 0.02, 1, 0.88))
+    _save(fig, DOC4, 'parameter-count.svg')
 
-    ax = axes[1]
+
+def params_and_bends() -> None:
+    """Cost and capacity of a one-input network, side by side on one scale."""
+    fig, ax = plt.subplots(figsize=(9.8, 5.0), facecolor='white')
     _plain(ax)
     small_widths = [2, 4, 8, 16, 32, 64]
     params = [_dense_params(1, w, 1, 1) for w in small_widths]
-    ax.plot(small_widths, params, marker='o', color=LINK, lw=2.2,
-            label='parameters')
-    ax.plot(small_widths, small_widths, marker='s', color=GRIP, lw=2.2,
-            label='bends the network can make')
+    ax.plot(small_widths, params, marker='o', color=LINK, lw=2.4,
+            label='parameters it holds')
+    ax.plot(small_widths, small_widths, marker='s', color=GRIP, lw=2.4,
+            label='bends it can make')
     for w, p in zip(small_widths, params):
-        ax.annotate(_commas(p), (w, p), textcoords='offset points', xytext=(6, 6),
-                    fontsize=9, color=LINK)
+        ax.annotate(_commas(p), (w, p), textcoords='offset points', xytext=(7, 6),
+                    fontsize=9.5, color=LINK)
         print(f'[params] one input, one hidden layer of {w}, one output: '
               f'{p} parameters and {w} bends')
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.set_xticks(small_widths)
-    ax.set_xticklabels([str(w) for w in small_widths], fontsize=9)
+    ax.set_xticklabels([str(w) for w in small_widths], fontsize=9.5)
     ax.minorticks_off()
-    ax.set_xlim(1.7, 90)
-    ax.set_xlabel('neurons in the hidden layer (log scale)', fontsize=9.5)
-    ax.set_ylabel('count (log scale)', fontsize=9.5)
-    ax.set_title('Capacity and cost rise together', fontsize=11.5, weight='bold')
-    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
-    _title(fig, 'Parameter count is not a guess: it follows from the widths and the '
-                'number of layers')
-    fig.tight_layout(rect=(0, 0, 1, 0.88))
-    _save(fig, DOC4, 'parameter-count.svg')
+    ax.set_xlim(1.7, 110)
+    ax.set_xlabel('neurons in the hidden layer (log scale)', fontsize=10)
+    ax.set_ylabel('count (log scale)', fontsize=10)
+    ax.set_title('For one input, the parameters are about three times the bends, '
+                 'at every width', fontsize=12, weight='bold')
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    _save(fig, DOC4, 'params-and-bends.svg')
 
 
 def _noisy_points() -> tuple[Arr, Arr]:
@@ -1982,9 +2265,9 @@ def filter_over_grid() -> None:
     _frame(ax, x0 + 1 * cell, 5.4 - 1 * cell, cell, cell, colour=GRIP, lw=2.4)
     ax.text(x0 + 1.95, -0.4, f'that window gives {out[1, 1]:+.0f}', fontsize=9.5,
             ha='center', va='top', color=GRIP)
-    ax.text(19.6, 3.0, f'-18 wherever the dark table\nmeets the bright block on the\n'
-            f'left, +18 where it meets it on\nthe right, 0 everywhere else',
-            fontsize=10, ha='left', va='center', color=INK)
+    ax.text(19.6, 3.0, 'negative down the block\'s\nleft edge, positive down its\n'
+            'right edge, 0 between them',
+            fontsize=10.5, ha='left', va='center', color=INK)
     _title(fig, 'A 3 by 3 filter slid over a 7 by 7 picture gives a 5 by 5 answer')
     _save(fig, DOC4, 'filter-over-grid.svg')
 
@@ -2057,10 +2340,8 @@ def two_filters() -> None:
         _grid_at(ax, out, 11.0, y, cell=0.62, fmt='{:+.0f}',
                  faces=_faces(out, cmap='RdBu', vmin=-27, vmax=27), size=7.5)
         ax.text(14.4, y - 0.95, name, fontsize=10, ha='left', va='center', color=INK)
-    ax.text(0.0, -2.2, 'Both filters have nine weights and both look at the same nine '
-            'pixels at a time. What differs is only the\nnine numbers in the filter, '
-            'and a real network finds those numbers for itself during training.',
-            fontsize=10.5, ha='left', va='top', color=MUTED)
+    ax.text(0.0, -2.2, 'Nine weights each, nine pixels each: only the nine numbers '
+            'differ.', fontsize=11, ha='left', va='top', color=INK)
     _title(fig, 'Two filters, one picture: a filter is a detector for one small pattern')
     _save(fig, DOC4, 'two-filters.svg')
 
@@ -2088,7 +2369,7 @@ def output_size() -> None:
              (padded, 'add a ring of table first',
               '9 - 3 + 1 = 7, so the answer is 7 by 7\nand nothing has shrunk'),
              (strided, 'step two, not one',
-              'the answer is 3 by 3, a quarter of the\nsquares, and four times cheaper'))):
+              'the answer is 3 by 3, so 9 squares\nare worked out instead of 25'))):
         x0 = i * 8.8
         _grid_at(ax, out, x0, 4.6, cell=cell, fmt='{:+.0f}',
                  faces=_faces(out, cmap='RdBu', vmin=-27, vmax=27), size=7.0)
@@ -2122,10 +2403,8 @@ def receptive_field() -> None:
         print(f'[field] with every second layer stepping 2: after layer {i + 1} '
               f'(step {stride}) the window is {rf} by {rf} pixels')
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white',
-                            gridspec_kw={'width_ratios': [1.0, 1.15]})
-    ax = axes[0]
-    _blank(ax, (-1.0, 14.0), (-2.2, 14.0))
+    fig, ax = plt.subplots(figsize=(8.2, 6.4), facecolor='white')
+    _blank(ax, (-1.0, 18.6), (-2.6, 14.4))
     side = 13
     _grid_at(ax, np.zeros((side, side)), 0.0, 13.0, cell=1.0,
              faces=[['#f4f7fb'] * side for _ in range(side)], show_text=False,
@@ -2135,42 +2414,56 @@ def receptive_field() -> None:
         w = 2 * layers + 1
         off = (side - w) / 2
         _frame(ax, off, 13.0 - off, w, w, colour=colours[layers - 1], lw=2.0)
-        ax.text(off + w / 2, 13.0 - off + 0.15, f'{w} by {w}', fontsize=9,
-                ha='center', va='bottom', color=colours[layers - 1])
-    ax.text(6.5, -0.6, 'one number after 5 layers of 3 by 3 filters\nsees 11 by 11 '
-            'pixels of the picture', fontsize=10, ha='center', va='top', color=INK)
-    ax.set_title('Stacking small filters widens the window', fontsize=11.5,
-                 weight='bold')
+        ax.text(13.4, 13.0 - off, f'after {layers} layer'
+                f'{"" if layers == 1 else "s"}: {w} by {w}', fontsize=10,
+                ha='left', va='center', color=colours[layers - 1], weight='bold')
+    ax.text(6.5, -0.6, 'each 3 by 3 filter adds one pixel on every side,\n'
+            'so the window grows by 2 for every layer', fontsize=10.5, ha='center',
+            va='top', color=INK)
+    _title(fig, 'What one number five layers deep has seen of the picture', size=12.0)
+    _save(fig, DOC4, 'receptive-field.svg')
 
-    ax2 = axes[1]
-    _plain(ax2)
+
+def reach_vs_layers() -> None:
+    """How many layers it takes for one number to see the whole picture."""
+    rf, jump, rows = 1, 1, []
+    for i in range(12):
+        stride = 1 if i % 2 == 0 else 2
+        rf += (3 - 1) * jump
+        jump *= stride
+        rows.append((i + 1, stride, rf, jump))
+
+    fig, ax = plt.subplots(figsize=(10.4, 5.2), facecolor='white')
+    _plain(ax)
     layers = [r[0] for r in rows]
     plain_rf = [2 * n + 1 for n in layers]
     step_rf = [r[2] for r in rows]
-    ax2.plot(layers, plain_rf, marker='o', color=LINK, lw=2.2,
-             label='every layer steps 1')
-    ax2.plot(layers, step_rf, marker='s', color=GRIP, lw=2.2,
-             label='every second layer steps 2')
+    ax.plot(layers, plain_rf, marker='o', color=LINK, lw=2.4,
+            label='every layer steps one place')
+    ax.plot(layers, step_rf, marker='s', color=GRIP, lw=2.4,
+            label='every second layer steps two places')
     for n, v in zip(layers, step_rf):
-        if n % 2 == 0 or n == 1:
-            ax2.annotate(f'{v}', (n, v), textcoords='offset points', xytext=(-4, 8),
-                         fontsize=9, color=GRIP, ha='right')
-    ax2.axhline(224, color=MUTED, ls='--', lw=1.3)
-    ax2.text(1.1, 240, 'the whole 224 pixel picture', fontsize=9.5, color=MUTED)
-    ax2.set_yscale('log')
-    ax2.set_xticks(layers)
-    ax2.set_xlabel('how many convolutional layers deep', fontsize=10)
-    ax2.set_ylabel('pixels of the picture one number sees (log scale)', fontsize=10)
+        if n in (4, 8, 12):
+            ax.annotate(f'{v} by {v}', (n, v), textcoords='offset points',
+                        xytext=(-6, 9), fontsize=9.5, color=GRIP, ha='right')
+    for n, v in zip(layers, plain_rf):
+        if n == 12:
+            ax.annotate(f'{v} by {v}', (n, v), textcoords='offset points',
+                        xytext=(-6, -14), fontsize=9.5, color=LINK, ha='right')
+    ax.axhline(224, color=MUTED, ls='--', lw=1.3)
+    ax.text(1.1, 248, 'the whole 224 pixel picture', fontsize=10, color=MUTED)
+    ax.set_yscale('log')
+    ax.set_ylim(2.5, 700)
+    ax.set_xticks(layers)
+    ax.set_xlabel('how many convolutional layers deep', fontsize=10)
+    ax.set_ylabel('pixels of the picture one number sees (log scale)', fontsize=10)
     reach = next(r[0] for r in rows if r[2] >= 224)
     print(f'[field] stepping two every other layer covers the whole 224 pixel '
           f'picture after {reach} layers')
-    ax2.set_title(f'Stepping two every other layer gets there in {reach}',
-                  fontsize=11.5, weight='bold')
-    ax2.legend(fontsize=9.5, frameon=False, loc='lower right')
-    _title(fig, 'How far one number late in a convolutional network can see back into '
-                'the picture')
-    fig.tight_layout(rect=(0, 0, 1, 0.9))
-    _save(fig, DOC4, 'receptive-field.svg')
+    ax.set_title(f'Stepping two every other layer reaches the whole picture in '
+                 f'{reach} layers', fontsize=12, weight='bold')
+    ax.legend(fontsize=10, frameon=False, loc='lower right')
+    _save(fig, DOC4, 'reach-vs-layers.svg')
 
 
 def cnn_stage_shapes() -> None:
@@ -2207,8 +2500,75 @@ def cnn_stage_shapes() -> None:
     _save(fig, DOC4, 'cnn-stage-shapes.svg')
 
 
-def conv_versus_dense_cost() -> None:
-    """The whole convolutional stack against one fully connected layer."""
+def stages_shrink_and_deepen() -> None:
+    """The grid gets smaller stage by stage while the number of grids grows."""
+    fig, ax = plt.subplots(figsize=(12.8, 5.2), facecolor='white')
+    _blank(ax, (-3.2, 27.2), (-5.4, 7.2))
+    shapes = [(3, 224), (32, 112), (64, 56), (128, 28), (256, 14)]
+    names = ['the photo', 'after stage 1', 'after stage 2', 'after stage 3',
+             'after stage 4']
+    scale = 4.4 / 224.0
+    pitch, shown, step, mid = 5.6, 6, 0.17, 2.4
+    for i, ((channels, side), name) in enumerate(zip(shapes, names)):
+        w = side * scale
+        cx = i * pitch
+        x0 = cx - (w + (shown - 1) * step) / 2
+        top = mid + (w + (shown - 1) * step) / 2
+        for k in range(shown - 1, -1, -1):
+            face = to_hex(plt.get_cmap('Blues')(0.10 + 0.06 * k))
+            ax.add_patch(Rectangle((x0 + k * step, top - k * step - w), w, w,
+                                   facecolor=face, edgecolor=LINK, lw=0.7,
+                                   zorder=10 - k))
+        ax.text(cx, 5.6, f'{channels} grids', fontsize=11, ha='center', va='bottom',
+                color=INK, weight='bold')
+        ax.text(cx, -1.4, f'{side} by {side}\neach', fontsize=10.5, ha='center',
+                va='top', color=INK)
+        ax.text(cx, -3.4, name, fontsize=10, ha='center', va='top', color=MUTED)
+        if i < len(shapes) - 1:
+            _arrow(ax, (cx + pitch / 2 - 0.5, mid), (cx + pitch / 2 + 0.5, mid),
+                   colour=MUTED, lw=1.6)
+    ax.text(11.2, -4.9, 'half the width and half the height each time, twice as many '
+            'grids', fontsize=11.5, ha='center', va='center', color=INK)
+    _title(fig, 'Stage by stage the grids get smaller and there are more of them',
+           size=12.5)
+    _save(fig, DOC4, 'stages-shrink-and-deepen.svg')
+
+
+def patches_are_a_convolution() -> None:
+    """Cutting a picture into patches is a convolution with a filter the patch's size."""
+    side, patch = 224, 16
+    per_side = side // patch
+    print(f'[patches] a {side} by {side} picture cut into {patch} by {patch} patches '
+          f'gives {per_side} by {per_side} = {per_side * per_side} patches, which is '
+          f'one convolution with a {patch} by {patch} filter stepping {patch}')
+
+    fig, ax = plt.subplots(figsize=(9.6, 5.6), facecolor='white')
+    _blank(ax, (-1.0, 23.0), (-2.8, 15.6))
+    cell = 1.0
+    shown = 14
+    rng = np.random.default_rng(31)
+    faces = [[to_hex(plt.get_cmap('Blues')(0.05 + 0.30 * float(v)))
+              for v in row] for row in rng.random((shown, shown))]
+    _grid_at(ax, np.zeros((shown, shown)), 0.0, 14.0, cell=cell, faces=faces,
+             show_text=False, edge=INK)
+    _frame(ax, 0.0, 14.0, cell, cell, colour=GRIP, lw=2.6)
+    _frame(ax, cell, 14.0, cell, cell, colour=JOINT, lw=2.6)
+    ax.text(15.0, 13.5, 'one patch: 16 by 16 pixels\nof the photo, with 3 colours,\n'
+            'so 768 numbers', fontsize=10, ha='left', va='center', color=GRIP)
+    ax.text(15.0, 10.0, 'the next patch starts 16\npixels along, so no patch\n'
+            'overlaps another', fontsize=10, ha='left', va='center', color=JOINT)
+    ax.text(7.0, -0.5, f'{per_side} by {per_side} = {per_side * per_side} patches '
+            f'from one 224 by 224 photo', fontsize=11, ha='center', va='top',
+            color=INK, weight='bold')
+    ax.text(7.0, -1.7, 'a filter 16 wide stepping 16 places at a time',
+            fontsize=10.5, ha='center', va='top', color=MUTED)
+    _title(fig, 'A vision transformer starts with a convolution: one 16 by 16 filter, '
+                'stepping 16', size=12.0)
+    _save(fig, DOC4, 'patches-are-a-convolution.svg')
+
+
+def _conv_versus_dense() -> tuple[int, int, int, int]:
+    """Parameters and multiply-adds of the stack and of one fully connected layer."""
     conv_params = sum(c_in * c_out * 9 + c_out for c_in, c_out in VISION_CONVS)
     conv_macs = 0
     shape = (3, 224, 224)
@@ -2218,6 +2578,18 @@ def conv_versus_dense_cost() -> None:
         shape = out_shape
     dense_params = 3 * 224 * 224 * 1000 + 1000
     dense_macs = 3 * 224 * 224 * 1000
+    return conv_params, conv_macs, dense_params, dense_macs
+
+
+CONV_LABELS: tuple[str, str] = (
+    'four convolutional stages\n3 -> 32 -> 64 -> 128 -> 256',
+    'one fully connected layer\n150,528 -> 1,000',
+)
+
+
+def conv_versus_dense_weights() -> None:
+    """How many weights each of the two choices of first picture layer holds."""
+    conv_params, conv_macs, dense_params, dense_macs = _conv_versus_dense()
     print(f'[compare] the four convolutional stages: {_commas(conv_params)} '
           f'parameters and {_commas(conv_macs)} multiply-adds for one photo')
     print(f'[compare] one fully connected layer of 1,000 neurons: '
@@ -2227,28 +2599,44 @@ def conv_versus_dense_cost() -> None:
           f'times the parameters and {dense_macs / conv_macs:.2f} times the '
           f'multiply-adds')
 
-    fig, ax = plt.subplots(figsize=(10.6, 5.0), facecolor='white')
+    fig, ax = plt.subplots(figsize=(9.2, 5.0), facecolor='white')
     _plain(ax)
-    pos = np.arange(2, dtype=float)
-    ax.bar(pos - 0.2, [conv_params, dense_params], width=0.4, color=SLIDE,
-           edgecolor=INK, lw=0.6, label='parameters')
-    ax.bar(pos + 0.2, [conv_macs, dense_macs], width=0.4, color=WRIST,
-           edgecolor=INK, lw=0.6, label='multiply-adds for one photo')
+    ax.bar([0, 1], [conv_params, dense_params], width=0.5, color=SLIDE,
+           edgecolor=INK, lw=0.6)
     ax.set_yscale('log')
     ax.set_ylim(1e4, 1e10)
-    for p, v in zip((pos[0] - 0.2, pos[1] - 0.2), (conv_params, dense_params)):
-        ax.text(p, v * 1.5, _commas(v), fontsize=9.5, ha='center', color=SLIDE)
-    for p, v in zip((pos[0] + 0.2, pos[1] + 0.2), (conv_macs, dense_macs)):
-        ax.text(p, v * 1.5, _commas(v), fontsize=9.5, ha='center', color=WRIST)
-    ax.set_xticks(pos)
-    ax.set_xticklabels(['four convolutional stages\n3 -> 32 -> 64 -> 128 -> 256',
-                        'one fully connected layer\n150,528 -> 1,000'], fontsize=10)
-    ax.set_ylabel('count (log scale)', fontsize=10)
-    ax.set_title(f'The convolutional stack keeps {dense_params / conv_params:,.0f} '
-                 'times fewer weights and does more with them', fontsize=11.5,
+    ax.set_xlim(-0.7, 1.7)
+    for p, v in zip((0, 1), (conv_params, dense_params)):
+        ax.text(p, v * 1.7, _commas(v), fontsize=11, ha='center', color=INK,
+                weight='bold')
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(list(CONV_LABELS), fontsize=10)
+    ax.set_ylabel('weights and biases it holds (log scale)', fontsize=10)
+    ax.set_title(f'The convolutional stack holds {dense_params / conv_params:,.0f} '
+                 f'times fewer weights', fontsize=12, weight='bold')
+    _save(fig, DOC4, 'conv-versus-dense-weights.svg')
+
+
+def conv_versus_dense_arithmetic() -> None:
+    """How much arithmetic each of the two choices of first picture layer does."""
+    _, conv_macs, _, dense_macs = _conv_versus_dense()
+
+    fig, ax = plt.subplots(figsize=(9.2, 5.0), facecolor='white')
+    _plain(ax)
+    ax.bar([0, 1], [conv_macs, dense_macs], width=0.5, color=WRIST,
+           edgecolor=INK, lw=0.6)
+    ax.set_ylim(0, 2.3e8)
+    ax.set_xlim(-0.7, 1.7)
+    for p, v in zip((0, 1), (conv_macs, dense_macs)):
+        ax.text(p, v + 7e6, _commas(v), fontsize=11, ha='center', color=INK,
+                weight='bold')
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(list(CONV_LABELS), fontsize=10)
+    ax.set_ylabel('multiply-adds for one photo', fontsize=10)
+    ax.set_title(f'The arithmetic barely changes: the stack does '
+                 f'{conv_macs / dense_macs:.2f} times as much', fontsize=12,
                  weight='bold')
-    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
-    _save(fig, DOC4, 'conv-versus-dense-cost.svg')
+    _save(fig, DOC4, 'conv-versus-dense-arithmetic.svg')
 
 
 def main() -> None:
@@ -2266,25 +2654,37 @@ def main() -> None:
     batch_matmul()
     layer_cost()
     work_per_number()
+    squares_are_independent()
     tiles_reuse()
+    block_size_table()
     almost_all_matmul()
+    matmul_share_vs_width()
     batch_of_four()
     per_example_traffic()
+    traffic_one_at_a_time()
+    weights_share_of_traffic()
+    numbers_through_the_stack()
     batch_memory()
     number_formats()
     spacing_of_numbers()
     rounding_error()
     running_total()
+    mixed_precision()
     memory_bill()
     three_sizes()
     does_it_fit()
+    weights_are_not_the_bill()
     straight_line_fails()
+    two_multiplies_collapse()
     one_hinge()
+    hinge_weight()
+    three_piece_line()
     building_with_hinges()
     bends_and_gap()
     wider_fits()
     gap_vs_width()
     parameter_count()
+    params_and_bends()
     too_little_too_much()
     points_versus_truth()
     flatten_a_photo()
@@ -2295,8 +2695,12 @@ def main() -> None:
     two_filters()
     output_size()
     receptive_field()
+    reach_vs_layers()
     cnn_stage_shapes()
-    conv_versus_dense_cost()
+    stages_shrink_and_deepen()
+    patches_are_a_convolution()
+    conv_versus_dense_weights()
+    conv_versus_dense_arithmetic()
     print(f'wrote the diagrams under {IMAGES}')
 
 

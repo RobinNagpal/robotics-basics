@@ -167,9 +167,10 @@ model when the measurement shows the rule failing, and expect to pay for the dat
 
 ## 4. Where to read next
 
-Why the industry moved asks why, given all of the above, so much robotics work has
-moved towards learned models in the last few years, and what actually changed to
-cause it. That page is being written.
+[Why the industry moved](05_why-the-industry-moved.md) asks why, given all of the
+above, so much robotics work has moved towards learned models in the last few
+years. It answers with published facts rather than with a feeling, and it includes
+the evidence that cuts the other way.
 
 [The words everyone uses](06_the-words-everyone-uses.md) collects the terms this
 chapter has introduced and the few it has not, each one tied to the same job.

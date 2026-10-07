@@ -2,14 +2,11 @@
 
 > **What it uses** — [LeRobot](https://github.com/huggingface/lerobot), which
 > holds reference implementations of this whole family of policies, with
-> PyTorch underneath. No rented accelerator: this one fitted on the machine the
-> project is written on, an Apple M4 with no NVIDIA card. The model is **ACT**,
-> an action chunking transformer: it predicts a short run of future actions in
-> one go rather than one action at a time. A second way uses **Diffusion
-> Policy**, also in LeRobot, which reaches the same kind of answer by starting
-> from noise and denoising towards an action chunk. Nothing is downloaded
-> except the library: both models are fitted here, from random numbers, on
-> demonstrations produced inside this project.
+> PyTorch underneath. The model is **ACT**, an action chunking transformer: it
+> predicts a short run of future actions in one go rather than one action at a
+> time. A second way uses **Diffusion Policy**, also in LeRobot. Nothing is
+> downloaded except the library: both models are fitted here, from random
+> numbers, on demonstrations produced inside this project.
 > **What it does** — the arm is shown what a good push looks like, many times
 > over, and a network is trained to copy it. The demonstrations come from
 > [geometry generates, a model ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md),
@@ -28,14 +25,11 @@
 > **What it costs** — the demonstrations are free in money and cheap in time,
 > because the teacher is a program and the tables are simulated, so the whole
 > dataset is arm time on the examiner's tables rather than human hours at a teleoperation
-> rig. Training runs in hours — on this machine's own graphics processor, as it
-> turned out, so the rental this document first budgeted for was not needed.
-> The licence position is as simple as it gets here: LeRobot is Apache-2.0,
-> which is the same permissive kind of licence as everything else this project
-> depends on, and because no borrowed weights are used, the weights file this
-> solution produces inherits no terms from anybody. The real price is paid
-> elsewhere, in two parts named plainly below: the policy cannot be much better
-> than its teacher, and the examiner has to grow two things it does not have.
+> rig. Training runs in hours, and it ran on the machine this project is
+> written on, an Apple M4 with no NVIDIA card, so the rental this document
+> first budgeted for was not needed. The real price is paid elsewhere, in two
+> parts named plainly below: the policy cannot be much better than its teacher,
+> and the examiner has to grow two things it does not have.
 
 > **The cell is described once, in [the cell](../../08_seeing-the-glasses/01_the-cell.md)** — the
 > layout, the two places the camera works from, from the top and from the
@@ -55,10 +49,7 @@ apart](../01_the-problem/01_what-is-asked-for.md) by showing the arm examples
 of good pushes and training a model to copy them. The method has a name,
 **behaviour cloning**, and it is the plainest kind of learning there is: no
 reward, no exploration, no physics, only a large table of situations and the
-action somebody took in each one. The model that does the copying is ACT, an
-action chunking transformer, taken from LeRobot, and a second way replaces it
-with Diffusion Policy, which arrives at the same kind of answer by a different
-route.
+action somebody took in each one.
 
 **This is built, and it is worth being exact about which parts.** [The test
 examiner](../02_the-examiner.md) is built, the programmed geometry that picks a
@@ -89,14 +80,10 @@ rather than to the idea. If the student falls a long way short, that is
 evidence about the policy class itself, and it is evidence gathered before any
 of the expensive solutions is attempted.
 
-By the end of this document you will understand what behaviour cloning is, why
-it is unusually attractive in this cell and where it is fragile; where the
-demonstrations come from and why they cost almost nothing; what an action chunk
-is and why committing to a short run of actions beats re-deciding at every
-instant; what a denoising policy adds when more than one push would have been
-good; what compounding error is, why it is the characteristic failure of
-copying, and what in this problem's own loop blunts it; and the three honest
-costs this solution carries, none of which can be engineered away.
+By the end of this document you will understand what question this solution
+answers that none of the other five can ask, why the difficulty it attacks is
+the same one the teacher attacks from the other end, and the one sentence the
+rest of the chapter unpacks.
 
 ![The teacher runs over the training half of the tables and every push it makes is recorded as a picture and the waypoints the jaw followed, the failures are dropped, and the fitted policy then maps a picture straight to a short run of waypoints that the examiner follows without expanding.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-flow-what-it-does.png)
 
@@ -110,14 +97,11 @@ that are left have been refused with a reason. So the thing to be produced is a
 function: from the arrangement of a crowded table, to a motion of the jaw.
 
 That function is hard to write down, and [pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md) says exactly why. The relation
-between a push and the slide it produces runs through the friction coefficient
-between the glass and the table, **nothing in this cell measures friction**,
-and the examiner never tells any solution what it is. On top of that, the contact
-between a flat jaw and a curved glass is a small patch rather than a point, and
-a pushed glass turns as well as travels. Planar pushing is a well studied
-problem and the honest summary is that predicting an outcome precisely needs
-numbers nobody here has.
+toppling](../01_the-problem/03_pushing-without-toppling.md) says exactly why.
+The relation between a push and the slide it produces runs through the friction
+between the glass and the table, nothing in this cell measures friction, and
+the examiner never tells any solution what it is. Predicting an outcome
+precisely needs numbers nobody here has.
 
 [Geometry generates, a model ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md)
 answers that difficulty by not predicting much. It enumerates pushes that are
@@ -146,16 +130,15 @@ a descent, a feel, a slide, a back-off and a lift. Every parameterised push is
 expanded the same way. A policy that emits waypoints is not limited to motions
 that macro can express. It can slow where a neighbour is close, lean the slide
 away from a glass it is passing, or stop short of the distance it set out to
-cover. Whether any of that helps is exactly the sort of thing this book exists
-to measure, but the freedom is real and only the trajectory solutions have it.
+cover. Whether any of that helps is a thing to measure, but the freedom is real
+and only the trajectory solutions have it.
 
 **The policy reads the picture.** The teacher works from the numeric readings
 `look()` returns. A policy of this family takes an image, and the examiner hands
 one over for that reason. An image holds things the readings do not: the shape
 of the gap between two glasses, how a third glass sits behind them, where the
-edge of the glass zone is relative to all of it. None of that is in a list of
-positions and widths, and none of it has to be named in advance for a network
-to use it.
+edge of the glass zone is relative to all of it. None of that has to be named
+in advance for a network to use it.
 
 ## 3. The main idea
 
@@ -168,11 +151,10 @@ Three things follow from that sentence, and the rest of this document is those
 three things.
 
 **The teacher is a program.** The demonstrations are not recorded from a person
-driving the arm. They are produced by another one of the six, which generates
-candidate pushes and ranks them, running on the same examiner, on tables drawn
-from numbers below the dividing line that separates training from testing. That
-single fact changes almost everything about the economics of this method, and
-the next section is about it.
+driving the arm. They are produced by another one of the six, running on the
+same examiner, on tables drawn from numbers below the dividing line that
+separates training from testing. That single fact changes almost everything
+about the economics of this method, and the next page is about it.
 
 **The answer is a chunk, not an action.** The policy does not return one target
 and wait to be asked again. It returns a short run of consecutive waypoints,
@@ -183,9 +165,7 @@ particular needs that.
 **The loop is unchanged.** [Pushing without
 toppling](../01_the-problem/03_pushing-without-toppling.md) describes the loop every solution
 here runs: plan, feel, look again. This solution replaces the planning step and
-nothing else. The arm still feels its way to contact rather than driving to a
-computed point, still looks again afterwards, and still refuses a glass it
-cannot push safely. That the loop stays is what makes copying survivable at
-all, for a reason the section on compounding error gives.
+nothing else. That the loop stays is what makes copying survivable at all, for
+a reason the section on compounding error gives.
 
 ← [Geometry generates, a model ranks — how it compares](../05_geometry-generates-a-model-ranks/06_how-it-compares.md) · [How it works](02_how-it-works.md) →

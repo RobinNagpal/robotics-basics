@@ -36,13 +36,12 @@ off the shelf, because every LeRobot policy expects pictures and a control-rate
 action space. [One fixed nudge](../04_one-fixed-nudge/01_what-it-is.md) and the teacher need
 neither, which is one more reason to build them first.
 
-It needs **demonstrations**, which cost arm time on the examiner's tables and nothing else,
-drawn only from table numbers below the dividing line. The prescription here
-is to over-represent the crowded corner cases deliberately, so that the edge
-of what the policy will face sits somewhere in the middle of what it was
-trained on. **That part is not done**: the demonstration set is drawn from
-consecutive table numbers, which is whatever mixture the examiner's own table
-generator produces, and the crowded corners are therefore as rare in the
+It needs **demonstrations**, which cost arm time on the examiner's tables and
+nothing else, drawn only from table numbers below the dividing line. The
+prescription here is to over-represent the crowded corner cases deliberately,
+so that the edge of what the policy will face sits somewhere in the middle of
+what it was trained on. **That part is not done**: the demonstration set is
+drawn from consecutive table numbers, so the crowded corners are as rare in the
 training set as they are on the examiner's tables.
 
 It needs **compute**, and this is the cheapest entry among the six. **Training
@@ -55,16 +54,17 @@ fine-tuned](../09_the-same-model-fine-tuned-here/01_what-it-is.md), and nothing 
 learned about vision in general, only about this one cell's pictures of this
 one task.
 
-**In the end nothing was rented.** This document first budgeted tens of
-dollars for a small accelerator, and that is still the right figure for
-anybody who wants one. But a network of a few tens of millions of parameters
-on a few thousand small pictures fits on the graphics processor an Apple M4
-already has, in about an hour per training seed, so the whole of this solution —
+**In the end nothing was rented.** This document first budgeted tens of dollars
+for a small accelerator, and that is still the right figure for anybody who
+wants one. But a network of a few tens of millions of parameters on a few
+thousand small pictures fits on the graphics processor an Apple M4 already has,
+in about an hour per training seed, so the whole of this solution —
 demonstrations, several training seeds and the held-out run — was made on the
-machine the project is written on. For comparison, renting an accelerator for
-a weekend is of order a hundred dollars, and a small one for a month of order
-five hundred, so even a generous schedule of retraining stays well inside a
-weekend's rental if a laptop is not available.
+machine the project is written on. Two choices made that possible, and both are
+recorded in the code folder's `README.md`: the policy reads the straight-down
+view at half the size the examiner renders it, because the vision backbone is
+most of the cost of a training step, and the demonstration set had to be four
+times the size of the first attempt before the fit stopped memorising it.
 
 At run time it needs very little: **one forward pass per chunk** for ACT, and
 several passes per chunk for the denoising way, against a push that takes the

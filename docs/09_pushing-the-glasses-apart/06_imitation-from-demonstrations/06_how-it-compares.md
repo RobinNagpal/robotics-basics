@@ -33,26 +33,30 @@ processor, and one forward pass per push.
 same scorecard, with every shared part held still. Even if this solution were
 not the one carried forward, that reading would have earned its place.
 
-Against that, five weaknesses, and the first three cannot be engineered away.
+Against that, five weaknesses. The first cannot be engineered away at all, and
+none of the rest goes away with more data.
 
 **The ceiling is the teacher's quality.** Every label came from the teacher,
 and nothing in behaviour cloning ever evaluates an outcome, so **this solution
-cannot beat its teacher by much on the pushes it imitates.** It is worth being
-precise about the two narrow ways it might exceed its teacher, because they are
-real but small: it can smooth away some of the teacher's inconsistency, since a
-fitted function averages over many examples and so is steadier than any one of
-them; and it can express motions the examiner's macro cannot, since its output is
-waypoints rather than push parameters. What it cannot do is discover that a
-different glass should have been moved, or a different destination chosen,
-because no mechanism in it compares one outcome against another. [A world
-model, then plan with it](../07_a-world-model-then-plan-with-it/01_what-it-is.md) has such a
+cannot beat its teacher by much on the pushes it imitates.** The two narrow
+ways it might exceed its teacher are real but small: it can smooth away some of
+the teacher's inconsistency, since a fitted function averages over many
+examples and so is steadier than any one of them; and it can express motions
+the examiner's macro cannot, since its output is waypoints rather than push
+parameters. What it cannot do is discover that a different glass should have
+been moved, or a different destination chosen, because no mechanism in it
+compares one outcome against another. [A world model, then plan with
+it](../07_a-world-model-then-plan-with-it/01_what-it-is.md) has such a
 mechanism, which is the sharpest difference between the two.
 
 **Filtering the demonstrations biases it towards what the teacher does well.**
 Keeping only the pushes that succeeded is necessary, because a cloned policy
 copies failures as readily as successes, and it thins the dataset exactly in
-the situations where the teacher struggled. So the student is fitted most
-densely where help was least needed.
+the situations where the teacher struggled. Measured, that bias is small here:
+almost everything the collection drops is the teacher's own 5 mm test push,
+which is not a push at the task, and only a few real pushes in a hundred are
+lost. The weakness is real in a method of this shape and it was not what held
+this solution back.
 
 **It needed examiner work the first two solutions did not.** A straight-down
 rendered view and a waypoint path, both missing when this solution was designed
@@ -74,9 +78,9 @@ wrong you can print the candidates and the scores and see which step went
 astray. When this policy is wrong you can look at the picture and guess. It has
 no confidence output, and the situation in which it is least reliable — a table
 unlike anything in its data — is indistinguishable in its output from the
-situation in which it is most reliable. Combined with it being stochastic and
-with training varying by seed, that is why the examiner insists that one run is
-not a measurement and that a result quoted without a spread is not a result.
+situation in which it is most reliable. Training also varies with its own seed,
+which is why the examiner insists that one run is not a measurement and that a
+result quoted without a spread is not a result.
 
 ## 2. The general ideas behind this
 
@@ -161,7 +165,8 @@ general and it catches people out. Fitting a model to produce one output while
 minimising its average error over examples that disagree makes the model produce
 something between those examples. Where the examples are two sensible choices,
 the something between them is frequently a third thing that is not sensible at
-all.
+all, and [how it works](02_how-it-works.md#5-a-second-way--diffusion-policy)
+draws one such third thing.
 
 It is worth knowing because the symptom is misleading. The model's training
 error looks reasonable and its behaviour looks timid, and the natural diagnosis
@@ -203,16 +208,12 @@ earned its place.
 Against [geometry generates, a model
 ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md), the comparison is student
 against teacher, and it is the most informative pairing this solution has.
-Every label this policy saw came from that solution, so it cannot discover a
-better choice of glass or destination than the one it was shown, and it should
-not be expected to beat its teacher by much on the pushes it imitates. What the
-gap measures is therefore not which method is better but whether the mapping
+What the gap measures is not which method is better but whether the mapping
 from a picture to a good push is learnable: a student that nearly matches its
 teacher says the policy class is adequate and the remaining error belongs to
 the teacher's geometry, and a student that falls well short says the opposite.
-The two places this solution can legitimately exceed its teacher are narrow and
-worth watching for in the numbers — a steadier push, from averaging over many
-examples, and a motion the examiner's macro could not have expressed.
+This student falls well short, and the code folder's `README.md` says by how
+much and reads the result.
 
 Against [a world model, then plan with
 it](../07_a-world-model-then-plan-with-it/01_what-it-is.md), the comparison is the sharpest

@@ -1,8 +1,9 @@
 # The code
 
-This page shows the code at the heart of this solution, and says what the
-solution hands back to the rest of the cell. The second explains the first,
-which is why they are on one page.
+This page shows the code at the heart of this solution, says what the solution
+hands back to the rest of the cell, and then puts the two together as the one
+pipeline they make. The second explains the first, which is why they are on one
+page.
 
 ## Contents
 
@@ -25,10 +26,14 @@ The conversion is in
 which holds no model and no geometry of pushing. `push_segment` keeps the part
 of a recorded path at push height, from where the jaw started travelling across
 the table to the furthest point it reached, and drops the descent, the back-off
-and the lift, because the examiner does all three itself. `to_action` then writes
-what is left as the five columns the policy is fitted on. The way back is the
-same file's `to_waypoints`, which turns the cosine-and-sine pair into an angle
-again and pulls every waypoint inside what the jaw can reach:
+and the lift, because the examiner does all three itself.
+
+![A recorded path drawn as height against distance: the jaw comes down from travel height, feels forward, pushes, backs off and lifts, and the demonstration is the two legs in the middle.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-what-a-demonstration-keeps.png)
+
+`to_action` then writes what is left as the five columns the policy is fitted
+on. The way back is the same file's `to_waypoints`, which turns the
+cosine-and-sine pair into an angle again and pulls every waypoint inside what
+the jaw can reach:
 
 ```python
 def push_segment(waypoints: tuple[Waypoint, ...]) -> tuple[Waypoint, ...]:
@@ -50,6 +55,15 @@ def to_action(waypoints: tuple[Waypoint, ...]) -> np.ndarray:
         dtype=np.float32,
     )
 ```
+
+Five columns rather than four, and the extra one is worth a sentence. The first
+three are where the jaw is. The last two are its heading, carried as the
+heading's cosine and its sine rather than as the angle itself, because an angle
+wraps: two pushes two degrees apart can have numbers at opposite ends of the
+range, and a model fitted on that number learns the wrap as a cliff that is not
+in the pushes. Two numbers that do not wrap cost one column and remove it.
+
+![The same two pushes, two degrees apart on the table, drawn as one angle in degrees, where they sit at opposite ends of the range, and as a cosine and sine pair, where they sit on top of each other.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-heading-as-cosine-and-sine.png)
 
 The borrowed model is reached in one place, in
 [`code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/policy.py`](../../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/policy.py):
@@ -126,24 +140,22 @@ whole answer.
 the chunk was the chunk it would have chosen, or whether the waypoints were
 smooth. It looks only at the table afterwards: which glasses have room, which
 are standing, where each one ended up, and how many pushes it took. That is
-what makes a three-number push and a chunk of a hundred-odd waypoints comparable at
-all, and it is the only reason this solution and its teacher can be set side by
-side.
+what makes a three-number push and a chunk of 120 waypoints comparable at all,
+and it is the only reason this solution and its teacher can be set side by side.
 
 **Everything else in the pipeline is shared, so a difference in the score
 belongs to the policy.** The tables are the examiner's. The measurements are the
 examiner's, carrying the measured error of [telling the glasses
 apart](../../08_seeing-the-glasses/11_the-results.md). The destinations come
 from [the target layout](../01_the-problem/02_the-target-layout.md), computed
-once per arrangement and so every solution that aims at a destination aims at
-the same places, rather than at an easier arrangement than another. The topple
-limit and the refusal rule come from [pushing without
+once per arrangement, so every solution that aims at a destination aims at the
+same places. The topple limit and the refusal rule come from [pushing without
 toppling](../01_the-problem/03_pushing-without-toppling.md). What this solution
 contributes is one mapping — from a picture of the table to a short run of
 waypoints — and nothing else.
 
-There is a pleasing detail in how the shared parts reach this solution, and it
-is worth noticing because it explains what the policy is really learning. The
+One detail of how the shared parts reach this solution is worth noticing,
+because it says what the policy is really learning. The
 target layout never appears inside the network. It reached the demonstrations,
 because the teacher aimed at it, and the demonstrations are all the policy ever
 saw. In the same way, the examiner's macro never appears inside the network, but
@@ -166,16 +178,16 @@ recorded: the view of the table from the top at that moment, the waypoints the
 examiner's macro produced, and the examiner's verdict on what happened to the table
 afterwards. Pushes that failed are dropped and the dropping is counted, so the
 thinning is visible. Refusals are kept as refusals. What remains is a dataset
-of pairs — a picture, and a chunk of waypoints — which is exactly the shape
-behaviour cloning needs. One detail of the shape is worth naming, because the
-document above does not settle it: a recorded path is a few hundred waypoints
-long and a chunk is a fixed, shorter run, so every demonstration is trimmed to
-the part at push height and resampled to the chunk's length. The trimming is
-free, because the examiner does the descent and the lift itself. The resampling is
-not free: waypoints are consumed at a fixed rate, so squeezing a long push into
-a fixed chunk runs it faster than it was demonstrated. The chunk's length is
-therefore set near the median length of the teacher's own pushes, and a push
-longer than that is replayed quicker than it was made.
+of pairs — a picture, and a chunk of waypoints.
+
+One detail of the shape is worth naming, because the pages above do not settle
+it: a recorded path is a few hundred waypoints long and a chunk is a fixed,
+shorter run, so every demonstration is trimmed to the part at push height and
+resampled to the chunk's length. The trimming is free. The resampling is not:
+waypoints are consumed at a fixed rate, so squeezing a long push into a fixed
+chunk runs it faster than it was demonstrated. The chunk's length is therefore
+set near the median length of the teacher's own pushes, and a push longer than
+that is replayed quicker than it was made.
 
 ACT is then fitted on the dataset from random numbers, for hours. The second
 way fits Diffusion Policy on the same dataset, changing the model and nothing
@@ -191,27 +203,21 @@ chunk is charged to one of the glasses the limit left in play, so a refused
 glass can never be pushed. The examiner carries the chunk out: the closed jaw is
 placed clear above the first waypoint, comes down to it, follows the waypoints
 one control period apart, and lifts clear, reporting what it felt in the same
-words a parameterised push reports. The arm looks again. The loop repeats
-until every glass has room, or the glasses that are left have all been
-refused, or the push budget is spent.
+words a parameterised push reports. The arm looks again, and the loop repeats
+until every glass has room, or the glasses that are left have all been refused,
+or the push budget is spent.
 
-Three things are worth holding on to from all of that.
+Two things are worth holding on to from all of that.
 
 **Nothing in the method represents pushing.** There is no friction coefficient,
-no slide prediction, no candidate list and no geometry inside the policy. The
-consequences of friction are in the data, and what the network holds is a
-mapping, not an understanding. This is the most economical of the six in terms
-of what somebody had to know in order to build it.
-
-**The loop is what makes copying survivable.** A cloned policy run open-loop
-over a whole run would compound its own error. Run one chunk at a time against
-a freshly measured table, it is re-anchored on every push. The method and the
-loop are a pair; neither would be sensible here without the other.
+no slide prediction, no candidate list and no geometry inside the policy. What
+the network holds is a mapping, not an understanding. This is the most
+economical of the six in terms of what somebody had to know in order to build
+it.
 
 **The ceiling is the teacher.** Every label this policy ever saw came from the
 teacher, and nothing in behaviour cloning evaluates an outcome. So the student
 has no mechanism by which to discover a better choice of glass, or a better
-destination, than the one it was shown. The next sections are about what that
-does and does not rule out.
+destination, than the one it was shown.
 
 ← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →

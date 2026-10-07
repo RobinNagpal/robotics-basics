@@ -40,6 +40,21 @@ returns a chunk, because returning a chunk is the only thing it does. The one
 case where the arm must not act is the case where the policy is least anchored
 and least able to warn.
 
+So the refusal is made in front of the policy, by the same arithmetic the two
+solutions before this one use, and the policy is never asked about a glass that
+fails it. Everything else that takes a glass out of play — the push budget, and
+a glass that has been pushed its allowance of times — sits in front of the
+policy too.
+
+![One pass of the run-time loop, with the two routes that take a glass out of play reaching the refusal without passing through the policy at all.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-where-a-refusal-comes-from.png)
+
+One difference from the teacher belongs here, because it is a cost of the same
+limitation. When the believed range of friction leaves the limit undecided,
+the teacher settles it with a 5 mm test push and a look before and after. This
+solution makes no test push: a chunk cannot ask a question, so the gate refuses
+only the glasses that tip rather than slide even at the lowest friction the
+project allows, and an undecided glass is handed to the policy as it is.
+
 **The early abort matters more here than anywhere else.** A chunking policy is
 open-loop while its chunk runs, so a monitor reading the jaw's force during a
 push would be the only thing observing at all during that window. It is a
@@ -50,7 +65,9 @@ strongest reason to want it.
 
 Follow one table through, because the places where this solution differs from
 its teacher are easier to recognise on a concrete arrangement than in the
-abstract.
+abstract. This example was written before the policy had been fitted, so it is
+what the design says the method would do. The last part of the section says
+which of it turned out to be true.
 
 **The table.** Five straight glasses stand in the glass zone, drawn at
 proportions from across that kind's range, so they are not all the same size.
@@ -97,20 +114,6 @@ This is the failure to watch for in this solution, and the DAgger repair is
 aimed precisely at it: ask the teacher what it would have done on this table,
 and the gap closes.
 
-**Where the averaging problem would show.** Change the table slightly so that
-the crowded pair sits symmetrically, with as much free table to the left of the
-left glass as to the right of the right glass. Pushing the left glass left and
-pushing the right glass right are equally good, and [the target
-layout](../01_the-problem/02_the-target-layout.md) says plainly that both are legal answers. The
-demonstration set will hold both kinds of example, taken from arrangements that
-look much alike. ACT must name one chunk, and the chunk that is least wrong on
-average over those examples is something between them: a short, hesitant motion
-that separates nothing. The examiner would score that as a push spent with the
-table unchanged, and a solution that repeats it would burn its push budget
-without failing in any way the counts call wrong. **This is the case the
-Diffusion Policy way exists to test**, because a model that draws its chunk
-can commit to one side.
-
 **And the refusal.** Take a different table, of stemmed glasses this time, one
 of them drawn with a foot narrow enough that half its width divided by any
 plausible friction falls below the jaw's top edge. The shared arithmetic
@@ -121,14 +124,21 @@ which is the right result. The important part of this example is the negative
 one: nothing the policy could have learned would have improved it, and nothing
 the policy might have produced was allowed to make it worse.
 
-**One correction to all of the above, now that it has been run.** Everything in
-this example is what the design says the method would do, and it was written
-before any of it existed. The refusal behaves exactly as described. The first
-push does not. What the fitted policy actually returns on a table it has not
-seen is a chunk that starts in roughly the right neighbourhood but points about
-thirty degrees away from where the teacher pointed, and the jaw is a quarter of
-a metre long behind its fingertips, so on a crowded table it meets a neighbour
-while it is still coming down. Almost every push ends there, before any glass
+**One correction to all of the above, now that it has been run.** The refusal
+behaves exactly as described. The first push does not. What the fitted policy
+actually returns on a table it has not seen is a chunk that starts in roughly
+the right neighbourhood — within a centimetre or two of where the teacher put
+the fingertips — but points about thirty degrees away from where the teacher
+pointed. That matters more than it sounds, because the jaw is 270 mm of finger,
+body and wrist behind its fingertips, and turning it thirty degrees about the
+fingertips swings the far end of the wrist 135 mm sideways. On a crowded table
+that puts the 90 mm body over a glass the teacher's own heading cleared
+comfortably.
+
+![The same fingertip at the teacher's heading and at thirty degrees off it, with a third glass twenty millimetres clear of the jaw's body in the first and underneath it in the second.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-thirty-degrees-of-heading.png)
+
+The examiner brings the jaw down to the chunk's first waypoint and stops if it
+touches anything on the way, so almost every push ends there, before any glass
 is touched. Nothing in the example about leaning the slide or slowing near the
 end was reached, because the motion never got that far. The code folder's
 `README.md` has the counts.

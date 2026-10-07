@@ -15,8 +15,8 @@ solution answers and the single idea it rests on.
 
 ## 1. Behaviour cloning — learning a policy by copying
 
-Because behaviour cloning is the whole of this solution, it is worth setting
-out carefully and in plain words before anything is built on it.
+Behaviour cloning is the whole of this solution, so it is worth setting out in
+plain words before anything is built on it.
 
 A **policy** is a function from what the arm can see to what the arm should do.
 **Behaviour cloning** is fitting that function from examples of somebody else
@@ -43,15 +43,13 @@ because a learner optimises what the number says rather than what the number was
 meant to say. A number that rewards moving glasses apart quickly rewards
 shoving. A number that punishes toppling heavily teaches the arm to stop
 touching anything. Behaviour cloning never needs one. The label is the action,
-and the only thing being measured during training is how far the network's
-action was from the demonstrator's.
+and the only thing measured during training is how far the network's action was
+from the demonstrator's.
 
 **There is no exploration.** A learner that discovers by trying has to try bad
-things, and in this problem one class of bad thing cannot be undone: **nothing
-in this project stands a toppled glass back up.** A method that learns by
-knocking glasses over until it stops is learning at a cost the arrangement
-cannot absorb. Behaviour cloning never tries anything during training. It only
-reads.
+things, and in this problem one class of bad thing cannot be undone: nothing in
+this project stands a toppled glass back up. Behaviour cloning never tries
+anything during training. It only reads.
 
 **There is no physics to model.** Friction does not appear anywhere in this
 method. Not as a constant, not as a guess, not as a quantity to be estimated.
@@ -106,9 +104,9 @@ pushes while Gazebo would run each one at the speed of real time.
 
 **The demonstrations are reproducible.** Every table comes from a single
 number, so the same number always gives the same table, and the dataset can be
-regenerated rather than archived. This is not a small thing. A demonstration
-set recorded from a person is a one-off artefact that can never be made again;
-this one is a function of a list of numbers.
+regenerated rather than archived. A demonstration set recorded from a person is
+a one-off artefact that can never be made again; this one is a function of a
+list of numbers.
 
 **Training and testing cannot be confused.** The examiner's table numbers are
 split, with numbers above a fixed dividing line reserved for testing.
@@ -121,11 +119,10 @@ that came up today. A program can, every time, for nothing. This is the single
 most useful property of a programmed teacher, and the section on compounding
 error is where it is spent.
 
-**And the teacher is itself one of the six.** So the comparison between the
-teacher and this solution is not two methods against each other but a student
-against the program it copied, measured on the same tables with the same
-scorecard. That is a rare and clean reading, and the six were arranged
-deliberately so that it could be taken.
+**And the teacher is itself one of the six.** So the comparison between the two
+is a student against the program it copied, measured on the same tables with
+the same scorecard, and the six were arranged deliberately so that it could be
+taken.
 
 One honest qualification belongs with all of that. **This is a privilege of
 working in a simulator with a programmed teacher.** On a real arm with a human
@@ -159,17 +156,18 @@ Most of the teacher's pushes on such tables fail, so most of them are dropped,
 so the training set holds few examples of that kind of table. The student is
 therefore fitted most densely on the situations where the teacher was already
 strong, and thinly or not at all on the situations where help was most needed.
-**The filtering removes the examples exactly where the examples would have been
-most valuable.**
+The filtering removes the examples exactly where the examples would have been
+most valuable.
 
-Said in the language of the previous section: conditioning the dataset on
-success biases the input distribution as well as the labels, and it biases it
-towards the teacher's own competence. So this solution's picture of pushing the
-glasses apart is the teacher's picture of it, with the teacher's blind spots
-deepened rather than merely copied.
+That is the mechanism, and it is worth saying straight away that on these
+tables it turned out to be small. Most of what the collection drops is not a
+failure at all: it is the teacher's own 5 mm test push, the one it makes to
+settle whether a glass slides before it commits to a real push, and that is not
+a push at the task. Of the real pushes, a few in a hundred were dropped. The
+counts, by reason and by kind of glass, are in the code folder's `README.md`.
 
-Three things can be done about it. Two are now code and the third is still a
-prescription.
+Three things can be done about the bias anyway, because it is small here rather
+than absent. Two are now code and the third is still a prescription.
 
 **Keep the teacher's refusals, as refusals.** A glass the teacher declined to
 push is not a failure and should not be dropped as one; [pushing without
@@ -182,8 +180,8 @@ the refusals and their reasons are counted beside the demonstrations.
 invisible unless it is counted. A table of kept and dropped pushes, grouped by
 the kind of table and by the way the dropped ones failed, says where the
 student's coverage is thin before the student is ever run. **Done**: the
-collection writes exactly that table, and the first thing it says is that on
-these tables the teacher is clean enough that the thinning is small — far
+collection writes exactly that table, and it is what the paragraph above
+reports. The teacher is clean enough on these tables that the thinning is far
 smaller than this section assumed when it was written.
 
 **Weight the hard tables up, and gather more of them.** Because tables are
@@ -255,31 +253,29 @@ waypoints are consumed at a fixed rate: how far apart they are is how fast the
 jaw goes. The examiner caps that at the fastest the cell ever moves the jaw, so a
 chunk whose waypoints are further apart than the arm can cover in one control
 period is taken slower rather than at a speed the arm does not have. A policy
-copying this teacher never meets the cap — the teacher's own waypoints are
-about a millimetre apart, and the cap is at ten — but a policy that learned to
-emit coarser chunks would be slowed by it.
+copying this teacher never meets the cap, because the teacher's own waypoints
+are about a millimetre apart and the cap is at ten, but a policy that learned
+to emit coarser chunks would be slowed by it.
 
-What makes the trade bearable is set by `Bench.follow`, and it is worth being
-exact, because it is less than the loop gives a parameterised push. Coming
-down to the chunk's first waypoint is the examiner's
-own move and it stops if the jaw touches anything on the way, so a chunk that
-starts over an obstacle comes back as blocked rather than being driven
-through. But **once the jaw is travelling across the table the examiner does not
-feel for the glass.** A chunk is carried out as it was given, which is the
-whole point of accepting one, and the only thing that stops it is the jam
-threshold. So the slow approach to contact is not the cell's behaviour here;
-it is part of the chunk, copied from the teacher's own feel. That is the one
-place where this solution leans on the demonstrations for safety rather than
-on the examiner.
+![One chunk drawn at the spacing its waypoints really have, dense while the jaw feels for the glass and twice as loose while it pushes, between the one look that produced it and the next look after it.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-the-waypoint-spacing-is-the-speed.png)
 
-Finally, chunking is the reason [the examiner](../02_the-examiner.md) accepts
-waypoints at all, and that argument is worth repeating here because it is about
-this solution specifically. The examiner could have required every solution to
-emit the same three or four push parameters, which sounds like the fairest
-possible rule. It would be the unfair one, because squeezing a chunking policy
-down to a handful of parameters removes the mechanism that makes it work, and
-what you would then measure is a damaged version of the method rather than the
-method that exists.
+What makes the trade bearable is set by `Bench.follow`, and it is less than the
+loop gives a parameterised push. Coming down to the chunk's first waypoint is
+the examiner's own move and it stops if the jaw touches anything on the way, so
+a chunk that starts over an obstacle comes back as blocked rather than being
+driven through. But **once the jaw is travelling across the table the examiner
+does not feel for the glass.** A chunk is carried out as it was given, which is
+the whole point of accepting one, and the only thing that stops it is the jam
+threshold. So the slow approach to contact is not the cell's behaviour here; it
+is part of the chunk, copied from the teacher's own feel. That is the one place
+where this solution leans on the demonstrations for safety rather than on the
+examiner.
+
+Chunking is also the reason [the examiner](../02_the-examiner.md) accepts
+waypoints at all. Requiring every solution to emit the same three or four push
+parameters sounds like the fairest possible rule, and it would be the unfair
+one, because squeezing a chunking policy down to a handful of parameters
+removes the mechanism that makes it work.
 
 ## 5. A second way — Diffusion Policy
 
@@ -292,18 +288,25 @@ answers.
 
 That is the whole argument for it. A model trained to predict one answer
 averages the answers it was shown, and this problem has several good answers
-nearly everywhere: pushing the left glass left and pushing the right glass
-right are both correct for the same crowded pair, and the average of those two
-is barely moving at all. ACT's measured failure is exactly that shape — a
-heading about thirty degrees off, which is close to what averaging the
-teacher's alternatives would give.
+nearly everywhere. The picture below works one of them out. Two glasses stand
+too close to grip, each needs more clear room than it has, and the teacher's
+two answers are mirror images: move one glass aside, or move the other. Both
+are right. The chunk halfway between them threads the jaw down the gap between
+the two glasses, touches neither, and spends a push for nothing.
+
+![Two mirror-image demonstrations, each of which frees a crowded pair, and the chunk halfway between the two, which comes down the gap between the glasses and touches neither of them.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-the-average-of-two-good-pushes.png)
+
+ACT's measured failure has that shape: a heading about thirty degrees away from
+the teacher's, which is close to what averaging the teacher's alternatives
+would give.
 
 **It is written and it runs, and it has not been fitted here.** It sits in
-`policy.py` beside ACT on the same demonstrations, so only the model differs.
-What stopped it was the compute: it is half again as large, a training step
-costs about twice as much, one chunk at run time is sixteen denoising passes
-rather than one, and a result from a single seed is not a result. So there is
-no scorecard for it, and the gap this section argues for has not been measured.
+`policy.py` beside ACT on the same demonstrations, so only the model differs,
+and the two are about the same size. What stopped it was the compute: a
+training step costs about twice as much, one chunk at run time is sixteen
+denoising passes rather than one, and a result from a single seed is not a
+result. So there is no scorecard for it, and the gap this section argues for
+has not been measured.
 
 ## 6. Compounding error
 
@@ -361,13 +364,12 @@ visits, ask the teacher what it would have done there, and add that answer to
 the training set as a label. Retrain, and repeat. The set then covers the
 policy's own drift, which is exactly the region plain cloning leaves empty.
 
-The reason this is affordable here is the property named two sections ago.
-**The teacher is a program, so it can be asked about any state, at any time,
-for nothing.** A human demonstrator cannot answer "what would you have done on
-this table that my policy produced last Tuesday"; the teacher can answer it
-every time it is asked. So the one serious weakness of behaviour cloning has,
-in this particular arrangement, a cheap and well understood repair available —
-and it is worth recording that this is a consequence of the teacher being code,
-not a property of imitation learning in general.
+It is affordable here for the reason named two sections ago. The teacher is a
+program, so it can be asked about any state, at any time, for nothing, and a
+human demonstrator cannot answer "what would you have done on this table that
+my policy produced last Tuesday". So the one serious weakness of behaviour
+cloning has a cheap repair available in this particular arrangement, and that
+is a consequence of the teacher being code rather than a property of imitation
+learning in general.
 
 ← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

@@ -42,6 +42,14 @@ produces a mask, and this part is cheap, running once per prompt.
 The word doing the work above is *promptable*, and it does not mean the same
 thing as a network that takes a picture and returns an answer.
 
+The ordinary kind of network has a **fixed list of classes**, which is a list of
+names chosen before the weights were fitted. Such a model answers one question
+and only that one: for each name on the list, how strongly does this picture
+show it. Asking about anything the list does not hold means fitting the weights
+again.
+
+![A picture goes into fitted weights and one score comes out for each name on a list decided in advance: person, chair, dining table, cup, bowl, bottle, wine glass.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/08-a-fixed-list-of-classes.png)
+
 A **prompt** is a small extra input saying *which* thing in the picture you
 mean. For SAM 2 it is a point, meaning "the thing here", or a box, meaning "the
 thing inside this rectangle", or a rough mask. The picture and the prompt go in
@@ -327,6 +335,8 @@ That third label is a real answer rather than a spare category, because in this
 cell it is the ordinary way for a proposal to be wrong. So the keeper gives
 three answers.
 
+![Eight proposals go into the keeper and each comes out with exactly one of three answers: keep, more than one glass, or drop.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/08-keeper-three-answers.png)
+
 **Keep** means the proposal is one glass, so its pixels are that glass's mask
 and go into the report.
 
@@ -362,11 +372,19 @@ categories. That is the case **gradient-boosted decision trees** were made for
 of Statistics, 2001), and scikit-learn provides them through
 `HistGradientBoostingClassifier`.
 
-A tree asks threshold questions and lands in a leaf holding a prediction.
+A tree asks threshold questions and lands in a leaf holding a prediction. Each
+question is a threshold on one of the eight measurements, and each leaf holds a
+small push towards one of the three answers.
+
+![One shallow tree in the keeper: the fitted width and then a second question lead down to a leaf, and the leaf is a small push towards one answer.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/08-keeper-one-tree.png)
+
 Boosting fits one weak tree, then fits the next tree to whatever the first one
 got wrong, and adds them up. Here that is 60 rounds of trees three questions
-deep, one set of trees per answer, so 180 shallow trees in all. Trees suit this
-table because they do not care that a width measured as a length and a ratio
+deep, one set of trees per answer, so 180 shallow trees in all.
+
+![Three rows of trees, one row per answer, each row 60 trees added together into one score for that answer.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/08-keeper-boosting.png)
+
+Trees suit this table because they do not care that a width measured as a length and a ratio
 between zero and one are on different scales, because they find combinations of
 conditions by themselves, and because a table of this size fits in well under a
 second on an ordinary processor with no graphics card involved.
@@ -422,7 +440,7 @@ or less round than a whole one, or both. It is a wide band in practice: over the
 five blocks of spaced arrangements the solution handed over 634 proposals it
 could not tell about, against 85 glasses it missed altogether.
 
-![The keeper gathered into one picture: each proposal is read as eight measurements by a short set of boosted trees, which answers keep, more than one glass, or drop, and the band between the two thresholds on its calibrated probability means take another picture.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/08-the-keeper.png)
+![A line from certainly not one glass to certainly one glass, cut by two thresholds at 0.3 and 0.7, with the band between them labelled I cannot tell: take another picture.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/08-keeper-two-thresholds.png)
 
 ### The arithmetic still decides
 

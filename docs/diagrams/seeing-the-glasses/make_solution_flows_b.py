@@ -85,6 +85,11 @@ FOLDS = 3                           # FOLDS
 SURE_ONE_GLASS = 0.7                # SURE_ONE_GLASS
 SURE_NOT_ONE_GLASS = 0.3            # SURE_NOT_ONE_GLASS
 
+# What the two halves of a training run measured on this machine, from
+# 05-sam2-with-a-keeper/README.md. The strip below is drawn to this scale.
+PROPOSALS_SECONDS = 273.0           # the borrowed model over 36 training pictures
+FIT_SECONDS = 1.0                   # fitting the keeper: under a second
+
 # code/src/08_seeing-the-glasses/06-rf-detr-fine-tuned/rf_detr_seg.py
 DETR_SIZE = "RFDETRSegNano"         # SIZE
 FILLED = 0.5                        # FILLED
@@ -632,27 +637,34 @@ def keeper_fitting_the_keeper() -> None:
     _note(axis, 4.0, centres[cheap], "seconds",
           colour=GOOD, ha="center", weight="bold")
 
-    # The strip: which step the time goes into. Drawn by area rather than by a
-    # measured length, because this project has no timing of either step to
-    # quote, so the strip says so in its own caption.
-    strip_y, strip_h = foot - 15.0, 5.0
-    _note(axis, 52.0, foot - 6.0, "Where the time goes",
+    # The strip: which step the time goes into, drawn to the two measured times.
+    # The fit is so much smaller that its share is under half a percent of the
+    # strip, so it is drawn at a floor width and the caption gives both numbers.
+    strip_left, strip_width, strip_h = 11.0, 82.0, 5.0
+    strip_y = foot - 15.0
+    total = PROPOSALS_SECONDS + FIT_SECONDS
+    fit_share = FIT_SECONDS / total
+    fit_width = max(strip_width * fit_share, 1.2)   # a floor, or it would vanish
+    proposals_width = strip_width - fit_width
+    _note(axis, 52.0, foot - 6.0, "Where the time goes in one training run",
           colour=INK, size=LABEL_SIZE + 1.0, ha="center", weight="bold")
     axis.add_patch(
-        Rectangle((11.0, strip_y), 70.0, strip_h, facecolor=_tint(WARN, 0.80),
-                  edgecolor=WARN, lw=1.4, zorder=3)
+        Rectangle((strip_left, strip_y), proposals_width, strip_h,
+                  facecolor=_tint(WARN, 0.80), edgecolor=WARN, lw=1.4, zorder=3)
     )
     axis.add_patch(
-        Rectangle((81.0, strip_y), 12.0, strip_h, facecolor=_tint(GOOD, 0.74),
-                  edgecolor=GOOD, lw=1.4, zorder=3)
+        Rectangle((strip_left + proposals_width, strip_y), fit_width, strip_h,
+                  facecolor=_tint(GOOD, 0.74), edgecolor=GOOD, lw=1.4, zorder=3)
     )
-    _note(axis, 46.0, strip_y + strip_h / 2.0,
-          "running the borrowed model to collect the proposals",
+    _note(axis, strip_left + proposals_width / 2.0, strip_y + strip_h / 2.0,
+          f"running the borrowed model to collect the proposals: {PROPOSALS_SECONDS:.0f} s",
           colour=INK, ha="center", weight="bold")
-    _note(axis, 87.0, strip_y + strip_h + 1.4, "the fit",
-          colour=GOOD, ha="center", va="bottom", weight="bold")
+    _note(axis, strip_left + strip_width, strip_y + strip_h + 1.4,
+          f"the fit: under {FIT_SECONDS:.0f} s", colour=GOOD, ha="right", va="bottom",
+          weight="bold")
     _note(axis, 52.0, strip_y - 2.6,
-          "Drawn to show which step costs, not to scale: neither part has been timed here.",
+          f"Drawn to the two measured times. The fit is {100.0 * fit_share:.1f} per cent of the run, "
+          "too thin to see, so it is drawn wider than it is.",
           colour=MUTED, ha="center", va="top")
 
     axis.set_title(

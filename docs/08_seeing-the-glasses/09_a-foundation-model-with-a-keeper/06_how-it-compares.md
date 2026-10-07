@@ -277,7 +277,26 @@ sets, 96.4 and 81.9, and solution 2 is behind on the spaced set at 64.1 and
 level on the crowded one at 74.6. The honest half of that comparison is that
 they can be taught this cell's hard cases and this one cannot.
 
-![Beside the borrowed weights, which arrive already fitted and never move again, the numbers fitted in this cell are a rounding error, where solution 2 brings nothing in and fits every number it uses on this cell's own pictures.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/08-borrowed-against-trained.png)
+![Three bars on a scale where each step is ten times the last: SAM 2's 93,314,184 borrowed weights, the keeper's 2,700 fitted thresholds and leaf values, and solution 2's 482,211 weights fitted here from scratch.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/08-borrowed-against-trained.png)
+
+The bars say how much is fitted, and the table below says what that difference
+buys and what it costs. Read it one row at a time: the left column is the
+question, and the two columns after it are how each solution answers that same
+question.
+
+| the question | solution 5: borrow almost everything | solution 2: fit everything from scratch |
+| --- | --- | --- |
+| what it brings in, fitted somewhere else | 93,314,184 weights, used exactly as downloaded | nothing |
+| what is fitted here | 180 shallow trees: 2,700 thresholds and leaf values | 482,211 weights, every one of them |
+| what kind of thing is fitted | threshold questions and leaves, fitted on the processor in seconds | weights, fitted by following a gradient through a picture |
+| what the fitted part has to learn | which measurements of a proposal go with a glass | which pixels are glass, and where each centre is |
+| training scenes needed | a few, because so little is being fitted | many, because everything is being fitted |
+| what it was fitted on | everyday photographs, for the part that finds objects | this cell's own pictures, and nothing else |
+| where the risk sits | the borrowed part has never seen a picture like this one | the fitted part has seen nothing but pictures like it |
+
+The last row is the trade in one line. Borrowing buys the small training set,
+and it buys the risk with it, because a borrowed weight cannot be corrected
+here.
 
 Against **solution 1** the comparison is the least flattering, and it should be
 stated plainly. Solution 1 is a page of arithmetic: no training set, no weights,

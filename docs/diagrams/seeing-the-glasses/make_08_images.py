@@ -1,15 +1,22 @@
 """Diagrams for solution 5 — SAM 2 with a keeper.
 
-Seven pictures, each carrying one point of the document:
+Eleven pictures, each carrying one point of the document:
 
-    08-what-promptable-means.png     a fixed class list against a prompt, and
-                                     the same picture prompted at two points
+    08-a-fixed-list-of-classes.png   a model whose question was settled when
+                                     its weights were fitted
+    08-what-promptable-means.png     the same picture prompted at two points,
+                                     giving two masks from unchanged weights
     08-the-prompt-grid.png           a regular grid of prompt points over the
                                      top view, and what each point returns
     08-everything-is-proposed.png    the pile that comes back: glasses, table,
                                      a rim on its own, two glasses as one
-    08-the-keeper.png                the keeper as a funnel, as boosted trees,
-                                     and as three answers with a doubtful band
+    08-keeper-three-answers.png      the pile in, and one of three answers out
+                                     for each proposal
+    08-keeper-one-tree.png           one shallow tree: threshold questions down
+                                     to a leaf, and the leaf is a small push
+    08-keeper-boosting.png           the trees added up, one set per answer
+    08-keeper-two-thresholds.png     the doubtful band between the two
+                                     thresholds on the calibrated probability
     08-the-domain-gap.png            photographs against a grey picture shaded
                                      from depth, which is the honest risk
     08-borrowed-against-trained.png  what SAM 2 brings against what is fitted here,
@@ -480,15 +487,13 @@ BORROWED_PER_FITTED = BORROWED / FITTED_NUMBERS
 # 1. what promptable means
 # --------------------------------------------------------------------------- #
 
-def figure_what_promptable_means() -> None:
-    """A fixed class list answers a question chosen in advance; a prompt does not."""
-    figure, (left, middle, right) = new(15.4, 6.0, columns=3)
+def figure_a_fixed_list_of_classes() -> None:
+    """One idea: a model whose question was chosen when its weights were fitted."""
+    figure, left = new(8.4, 5.4)
 
-    # ---- a model with a fixed list of classes ----------------------------
     bare(left)
     left.set_xlim(0, 1)
     left.set_ylim(0, 1)
-    panel_title(left, "A model with a fixed list of classes", colour=WARN)
 
     box(left, 0.24, 0.80, 0.34, 0.13, "the picture", tint(GLASS, 0.14), edge=GLASS, size=LABEL_SIZE)
     box(left, 0.24, 0.58, 0.34, 0.13, "weights, as fitted", tint(MUTED, 0.18), edge=MUTED, size=LABEL_SIZE)
@@ -508,14 +513,25 @@ def figure_what_promptable_means() -> None:
     for index, name in enumerate(listed):
         note(left, 0.67, 0.685 - index * 0.062, name, colour=INK, size=NOTE_SIZE, va="center")
     note(
-        left, 0.02, 0.12,
-        "The question was chosen when the weights were fitted, so the answer is\n"
-        "a score for each of those names and nothing else. To ask about\n"
-        "something the list does not hold, the weights have to be changed.",
+        left, 0.02, 0.13,
+        "The question was chosen when the weights were fitted, so the answer is a score for\n"
+        "each of those names and nothing else. To ask about something the list does not\n"
+        "hold, the weights have to be changed.",
         colour=INK, va="top",
     )
 
-    # ---- the same picture, prompted twice --------------------------------
+    figure.suptitle(
+        "A fixed list of classes: the question is settled before the picture arrives.",
+        fontsize=TITLE_SIZE, color=INK, y=1.01,
+    )
+    figure.tight_layout()
+    save(figure, "08-a-fixed-list-of-classes.png")
+
+
+def figure_what_promptable_means() -> None:
+    """One idea: the same picture and the same weights, two prompts, two masks."""
+    figure, (middle, right) = new(11.4, 6.0, columns=2)
+
     for axis, target, ordinal in ((middle, "C", "first"), (right, "D", "second")):
         plan_axis(axis, EXTENT)
         draw_glasses(axis, SHAPES, SCENE, strong=(target,))
@@ -546,10 +562,8 @@ def figure_what_promptable_means() -> None:
     figure.text(
         0.5, -0.03,
         "The same picture and the same weights give two different masks, because the prompt changed and "
-        "nothing else did. That is the whole reason this\nsolution can use a model that was never shown a "
-        "drinking glass of this kind: it is not asked what the object is, only which pixels belong to "
-        "whatever\nthe point landed on. Deciding which of those masks is a glass is a separate job, and it "
-        "is the only job this solution fits any weights for.",
+        "nothing else did.\nThe model is not asked what the object is, only which pixels belong to whatever "
+        "the point landed on.",
         ha="center", va="top", fontsize=NOTE_SIZE, color=INK,
     )
     save(figure, "08-what-promptable-means.png")
@@ -723,203 +737,221 @@ def tree_glyph(axis, x, y, width, height, colour=GOOD, lw=0.9) -> None:
                  marker="s", zorder=5, linewidths=0)
 
 
-def figure_the_keeper() -> None:
-    """The one fitted part: boosted trees, three answers, and a doubtful band."""
-    figure, (left, right) = new(15.8, 9.2, columns=2)
+def figure_keeper_three_answers() -> None:
+    """One idea: many proposals go in, and each comes out as one of three answers."""
+    figure, axis = new(11.4, 6.0)
+    bare(axis)
+    axis.set_xlim(0, 1)
+    axis.set_ylim(0, 1)
 
-    # ===================================================== the funnel, left
-    bare(left)
-    left.set_xlim(0, 1)
-    left.set_ylim(0, 1)
-    panel_title(left, "Many proposals in, one of three answers out for each")
-
-    note(left, 0.145, 0.995, f"{len(PROPOSALS)} proposals in", colour=INK, size=NOTE_SIZE,
+    note(axis, 0.145, 0.985, f"{len(PROPOSALS)} proposals in", colour=INK, size=NOTE_SIZE,
          ha="center", va="center", weight="bold")
-    top, step = 0.945, 0.066
+    top, step = 0.905, 0.108
     for index, (label, _, _) in enumerate(PROPOSALS):
         y = top - index * step
-        box(left, 0.145, y, 0.25, 0.053, label.replace("\n", " "), tint(GLASS, 0.10), edge=GLASS,
-            size=NOTE_SIZE - 1.8)
-        arrow(left, (0.272, y), (0.305, 0.735 + (y - 0.714) * 0.72), colour=MUTED, lw=0.7)
+        box(axis, 0.145, y, 0.25, 0.088, label.replace("\n", " "), tint(GLASS, 0.10), edge=GLASS,
+            size=NOTE_SIZE - 1.0)
+        arrow(axis, (0.272, y), (0.305, 0.520 + (y - 0.527) * 0.70), colour=MUTED, lw=0.7)
 
-    left.add_patch(
+    axis.add_patch(
         Polygon(
-            [(0.31, 0.975), (0.50, 0.805), (0.56, 0.805), (0.56, 0.665), (0.50, 0.665), (0.31, 0.495)],
+            [(0.31, 0.955), (0.50, 0.610), (0.56, 0.610), (0.56, 0.430), (0.50, 0.430), (0.31, 0.085)],
             closed=True, facecolor=tint(GOOD, 0.10), edgecolor=GOOD, lw=1.2, zorder=2,
         )
     )
-    note(left, 0.40, 0.820, "the keeper", colour=GOOD, size=LABEL_SIZE, ha="center", va="center",
+    note(axis, 0.40, 0.600, "the keeper", colour=GOOD, size=LABEL_SIZE, ha="center", va="center",
          weight="bold")
-    note(left, 0.40, 0.775, "boosted\ndecision trees", colour=INK, size=NOTE_SIZE - 1.0,
+    note(axis, 0.40, 0.545, "boosted\ndecision trees", colour=INK, size=NOTE_SIZE - 0.4,
          ha="center", va="top")
 
     outcomes = (
         (
             "keep",
-            f"{len(ANSWERED['keep'])} of the {len(PROPOSALS)}: one glass. Its fitted\n"
-            "centre and width go into the report,\nand its pixels are that glass's mask.",
+            f"{len(ANSWERED['keep'])} of the {len(PROPOSALS)}: one glass.\n"
+            "Its pixels are that glass's mask.",
             GOOD,
         ),
         (
             "more than one glass",
-            f"{len(ANSWERED['more than one glass'])}: prompt SAM 2 again with a grid\n"
-            "inside this proposal alone. If that still\ndoes not separate them, report the pair.",
+            f"{len(ANSWERED['more than one glass'])}: prompt the borrowed model\nagain, inside this proposal alone.",
             WARN,
         ),
         (
             "drop",
-            f"{len(ANSWERED['drop'])}: not a glass at all — table, or a\npart of a glass sitting inside a\n"
-            "proposal whose own width is legal.",
+            f"{len(ANSWERED['drop'])}: not a glass — the table,\na rim, or a part of a glass.",
             MUTED,
         ),
     )
     for index, (heading, body, colour) in enumerate(outcomes):
-        y = 0.895 - index * 0.165
-        box(left, 0.795, y, 0.38, 0.135, "", tint(colour, 0.09), edge=colour)
-        note(left, 0.795, y + 0.045, heading, colour=colour, size=NOTE_SIZE + 0.4, ha="center",
+        y = 0.835 - index * 0.300
+        box(axis, 0.800, y, 0.38, 0.195, "", tint(colour, 0.09), edge=colour)
+        note(axis, 0.800, y + 0.055, heading, colour=colour, size=NOTE_SIZE + 1.0, ha="center",
              va="center", weight="bold")
-        note(left, 0.795, y + 0.018, body, colour=INK, size=NOTE_SIZE - 1.4, ha="center", va="top")
-        arrow(left, (0.568, 0.735), (0.600, y), colour=colour, lw=1.0)
+        note(axis, 0.800, y + 0.020, body, colour=INK, size=NOTE_SIZE - 0.6, ha="center", va="top")
+        arrow(axis, (0.568, 0.520), (0.600, y), colour=colour, lw=1.0)
 
-    # ------------------------------------------- two thresholds, not one
-    note(left, 0.02, 0.395, "Two thresholds, not one", colour=INK, size=LABEL_SIZE, va="center",
+    figure.suptitle(
+        "The keeper sorts the pile: every proposal gets exactly one of three answers.",
+        fontsize=TITLE_SIZE, color=INK, y=1.005,
+    )
+    figure.tight_layout()
+    save(figure, "08-keeper-three-answers.png")
+
+
+def figure_keeper_one_tree() -> None:
+    """One idea: what a single shallow tree in the keeper does."""
+    figure, axis = new(11.8, 5.2)
+    bare(axis)
+    axis.set_xlim(-0.03, 1.03)
+    axis.set_ylim(0, 1)
+
+    root = (0.50, 0.875)
+    nodes = ((0.235, 0.610), (0.765, 0.610))
+    leaves = (
+        (0.115, 0.300, "towards\nmore than one glass", WARN),
+        (0.378, 0.300, "towards\nnot a glass", MUTED),
+        (0.622, 0.300, "towards not a glass:\nit is a part", MUTED),
+        (0.885, 0.300, "towards\none glass", GOOD),
+    )
+    box(axis, root[0], root[1], 0.40, 0.125,
+        "is the fitted width inside the\nrange this kind allows?",
+        tint(GLASS, 0.12), edge=GLASS, size=NOTE_SIZE)
+    box(axis, nodes[0][0], nodes[0][1], 0.33, 0.125,
+        "is it wider than the widest\nthe kind allows?", tint(GLASS, 0.12), edge=GLASS,
+        size=NOTE_SIZE)
+    box(axis, nodes[1][0], nodes[1][1], 0.33, 0.125,
+        "does another proposal\ncontain it?", tint(GLASS, 0.12), edge=GLASS, size=NOTE_SIZE)
+    for (node_x, node_y), answer in zip(nodes, ("no", "yes"), strict=False):
+        axis.plot([root[0], node_x], [root[1] - 0.070, node_y + 0.070], color=INK, lw=1.0, zorder=3)
+        note(axis, (root[0] + node_x) / 2.0, (root[1] + node_y) / 2.0, answer, colour=INK,
+             size=NOTE_SIZE, ha="center", va="center", halo=True)
+    for index, (leaf_x, leaf_y, text, colour) in enumerate(leaves):
+        parent_x, parent_y = nodes[index // 2]
+        axis.plot([parent_x, leaf_x], [parent_y - 0.070, leaf_y + 0.078], color=INK, lw=1.0,
+                  zorder=3)
+        note(axis, (parent_x + leaf_x) / 2.0, (parent_y + leaf_y) / 2.0,
+             "yes" if index % 2 == 0 else "no", colour=INK, size=NOTE_SIZE, ha="center",
+             va="center", halo=True)
+        box(axis, leaf_x, leaf_y, 0.195, 0.150, text, tint(colour, 0.13), edge=colour,
+            size=NOTE_SIZE - 0.8)
+
+    note(axis, 0.50, 0.135,
+         f"Every question is a threshold on one of the {len(FEATURES)} measurements, and every leaf holds "
+         "a small push towards one answer.",
+         colour=INK, size=NOTE_SIZE, ha="center", va="center")
+    note(axis, 0.50, 0.060,
+         f"The keeper's trees ask {TREE_DEPTH} questions on the way down; two are drawn here so the leaves "
+         "stay readable. A tree this shallow is weak on its own, and is meant to be.",
+         colour=MUTED, size=NOTE_SIZE, ha="center", va="center")
+
+    figure.suptitle(
+        "One tree in the keeper: threshold questions down to a leaf, and the leaf is a small push.",
+        fontsize=TITLE_SIZE, color=INK, y=1.005,
+    )
+    figure.tight_layout()
+    save(figure, "08-keeper-one-tree.png")
+
+
+def figure_keeper_boosting() -> None:
+    """One idea: the trees are added up, one set of them per answer."""
+    figure, axis = new(11.8, 5.6)
+    bare(axis)
+    axis.set_xlim(-0.01, 1.01)
+    axis.set_ylim(0, 1)
+
+    shown = 4                 # tree glyphs drawn before the ellipsis
+    colours = (GOOD, WARN, MUTED)
+    row_y = (0.795, 0.545, 0.295)
+    spots = (0.215, 0.330, 0.445, 0.620)
+
+    note(axis, 0.395, 0.930, f"{ROUNDS} rounds: each tree is fitted to what the ones before it got wrong",
+         colour=INK, size=NOTE_SIZE, ha="center", va="center", weight="bold")
+    note(axis, 0.855, 0.930, "added up", colour=INK, size=NOTE_SIZE, ha="center", va="center",
          weight="bold")
-    line_y, height = 0.300, 0.052
+
+    for answer, colour, y in zip(ANSWERS, colours, row_y, strict=True):
+        note(axis, 0.092, y, answer.replace("more than ", "more than\n"), colour=colour,
+             size=NOTE_SIZE, ha="center", va="center", weight="bold")
+        for index, x in enumerate(spots):
+            tree_glyph(axis, x, y, 0.085, 0.105, colour=colour)
+            note(axis, x, y - 0.082, f"{index + 1}" if index < shown - 1 else f"{ROUNDS}",
+                 colour=MUTED, size=NOTE_SIZE - 1.0, ha="center", va="top")
+        for x in (0.272, 0.387):
+            note(axis, x, y, "+", colour=colour, size=LABEL_SIZE + 2, ha="center", va="center")
+        note(axis, 0.532, y, "+  ...  +", colour=colour, size=LABEL_SIZE, ha="center", va="center")
+        note(axis, 0.705, y, "=", colour=colour, size=LABEL_SIZE + 2, ha="center", va="center")
+        box(axis, 0.855, y, 0.265, 0.150, f"one score for\n“{answer}”",
+            tint(colour, 0.13), edge=colour, size=NOTE_SIZE)
+
+    note(axis, 0.50, 0.130,
+         f"{ROUNDS} rounds times {len(ANSWERS)} answers is {ROUNDS * len(ANSWERS)} shallow trees in all, "
+         "and the three scores together are the keeper's answer.",
+         colour=INK, size=NOTE_SIZE, ha="center", va="center")
+    note(axis, 0.50, 0.055,
+         "No picture is read and no graphics card is used: a table this size fits in seconds on the processor alone.",
+         colour=MUTED, size=NOTE_SIZE, ha="center", va="center")
+
+    figure.suptitle(
+        "Boosting: many weak trees added up, with one set of them fitted for each answer.",
+        fontsize=TITLE_SIZE, color=INK, y=1.005,
+    )
+    figure.tight_layout()
+    save(figure, "08-keeper-boosting.png")
+
+
+def figure_keeper_two_thresholds() -> None:
+    """One idea: two thresholds on the calibrated probability leave a doubtful band."""
+    figure, axis = new(11.8, 4.0)
+    bare(axis)
+    axis.set_xlim(0, 1)
+    axis.set_ylim(0, 1)
+
+    # The band is drawn to scale, so that a probability p sits at spot(p) and
+    # the two thresholds land where they really are on a line from 0 to 1.
+    low, high = 0.3, 0.7              # sam_keeper: the keeper's two thresholds
+    def spot(p: float) -> float:
+        return 0.02 + p * 0.96
+
+    line_y, height = 0.660, 0.180
     bands = (
-        (0.02, 0.33, "drop", WARN),
-        (0.33, 0.63, "I cannot tell:\ntake another picture", MUTED),
-        (0.63, 0.98, "keep", GOOD),
+        (spot(0.0), spot(low), "drop", WARN),
+        (spot(low), spot(high), "I cannot tell:\ntake another picture", MUTED),
+        (spot(high), spot(1.0), "keep", GOOD),
     )
     for x0, x1, label, colour in bands:
-        left.add_patch(
+        axis.add_patch(
             Polygon([(x0, line_y - height / 2.0), (x1, line_y - height / 2.0),
                      (x1, line_y + height / 2.0), (x0, line_y + height / 2.0)],
                     closed=True, facecolor=tint(colour, 0.16), edgecolor=colour, lw=1.0, zorder=3)
         )
-        note(left, (x0 + x1) / 2.0, line_y, label, colour=INK, size=NOTE_SIZE - 0.8, ha="center",
+        note(axis, (x0 + x1) / 2.0, line_y, label, colour=INK, size=NOTE_SIZE + 0.6, ha="center",
              va="center")
-    for x, label in ((0.33, "the lower threshold"), (0.63, "the higher threshold")):
-        left.plot([x, x], [line_y - height, line_y + height], color=INK, lw=1.2, zorder=6)
-        note(left, x, line_y + height + 0.012, label, colour=INK, size=NOTE_SIZE - 1.0,
-             ha="center", va="bottom")
-    note(left, 0.02, line_y - height / 2.0 - 0.012, "certainly not one glass", colour=MUTED,
-         size=NOTE_SIZE - 1.2, va="top")
-    note(left, 0.98, line_y - height / 2.0 - 0.012, "certainly one glass", colour=MUTED,
-         size=NOTE_SIZE - 1.2, ha="right", va="top")
-    note(left, 0.02, 0.185,
-         "The line is how sure the keeper is that a proposal is one glass. A proposal that lands in the\n"
-         "middle band is not quietly kept and not quietly dropped: it is a reason to take another picture,\n"
-         "which is cheap next to being wrong. Before any threshold is put on that number it has to be\n"
-         "calibrated, so that its claims come true about as often as it says they will.",
-         colour=INK, va="top")
-    note(left, 0.02, 0.055,
-         "The third answer is a category of its own rather than a point on this line, because more than\n"
-         "one glass is not a doubtful glass: it is a different thing to do next.",
-         colour=WARN, va="top")
-
-    # ================================================= what a tree is, right
-    bare(right)
-    right.set_xlim(0, 1)
-    right.set_ylim(0, 1)
-    panel_title(right, "What the keeper is: shallow trees, each fitted to the last one's mistakes")
-
-    note(right, 0.02, 0.975, "1. What one tree does", colour=INK, size=LABEL_SIZE, va="center",
-         weight="bold")
-
-    root = (0.50, 0.890)
-    nodes = ((0.235, 0.762), (0.765, 0.762))
-    leaves = (
-        (0.105, 0.628, "towards\nmore than one glass", WARN),
-        (0.375, 0.628, "towards\nnot a glass", MUTED),
-        (0.625, 0.628, "towards not a glass:\nit is a part", MUTED),
-        (0.895, 0.628, "towards\none glass", GOOD),
-    )
-    box(right, root[0], root[1], 0.36, 0.070,
-        "is the fitted width inside the range this kind allows?",
-        tint(GLASS, 0.12), edge=GLASS, size=NOTE_SIZE - 1.2)
-    box(right, nodes[0][0], nodes[0][1], 0.30, 0.070,
-        "is it wider than the widest\nthe kind allows?", tint(GLASS, 0.12), edge=GLASS,
-        size=NOTE_SIZE - 1.2)
-    box(right, nodes[1][0], nodes[1][1], 0.30, 0.070,
-        "does another proposal\ncontain it?", tint(GLASS, 0.12), edge=GLASS, size=NOTE_SIZE - 1.2)
-    for (node_x, node_y), answer in zip(nodes, ("no", "yes"), strict=False):
-        right.plot([root[0], node_x], [root[1] - 0.039, node_y + 0.039], color=INK, lw=1.0, zorder=3)
-        note(right, (root[0] + node_x) / 2.0, (root[1] + node_y) / 2.0, answer, colour=INK,
-             size=NOTE_SIZE - 1.4, ha="center", va="center", halo=True)
-    for index, (leaf_x, leaf_y, text, colour) in enumerate(leaves):
-        parent_x, parent_y = nodes[index // 2]
-        right.plot([parent_x, leaf_x], [parent_y - 0.039, leaf_y + 0.042], color=INK, lw=1.0,
-                   zorder=3)
-        note(right, (parent_x + leaf_x) / 2.0, (parent_y + leaf_y) / 2.0,
-             "yes" if index % 2 == 0 else "no", colour=INK, size=NOTE_SIZE - 1.4, ha="center",
-             va="center", halo=True)
-        box(right, leaf_x, leaf_y, 0.20, 0.080, text, tint(colour, 0.13), edge=colour,
-            size=NOTE_SIZE - 1.4)
-    note(right, 0.02, 0.560,
-         f"Every question is a threshold on one of the {len(FEATURES)} features below, and every leaf holds a "
-         f"small push\ntowards one of the three answers. A tree {TREE_DEPTH} questions deep is weak on its "
-         "own, and is meant to be.",
-         colour=INK, va="top")
-
-    # ------------------------------------------------------ boosting
-    note(right, 0.02, 0.470, "2. Boosting: the next tree is fitted to what the ones before it got wrong",
-         colour=INK, size=LABEL_SIZE, va="center", weight="bold")
-    glyph_y = 0.390
-    spots = (0.085, 0.275, 0.465, 0.700)
-    captions = (
-        "the 1st,\nfitted to the labels",
-        "the 2nd, fitted to\nwhat the 1st got wrong",
-        "the 3rd, fitted to what\nthe first two still missed",
-        f"the {TREES}th, the\nlast of the set",
-    )
-    for index, x in enumerate(spots):
-        tree_glyph(right, x, glyph_y, 0.105, 0.075)
-        note(right, x, glyph_y - 0.058, captions[index], colour=INK, size=NOTE_SIZE - 1.8,
-             ha="center", va="top")
-    for x in (0.180, 0.370):
-        note(right, x, glyph_y, "+", colour=GOOD, size=LABEL_SIZE + 2, ha="center", va="center")
-    note(right, 0.583, glyph_y, "+  ...  +", colour=GOOD, size=LABEL_SIZE, ha="center", va="center")
-    note(right, 0.790, glyph_y, "=", colour=GOOD, size=LABEL_SIZE + 2, ha="center", va="center")
-    box(right, 0.898, glyph_y, 0.185, 0.110, "one score for\neach of the\nthree answers",
-        tint(GOOD, 0.14), edge=GOOD, size=NOTE_SIZE - 1.2)
-    note(right, 0.02, 0.288,
-         f"{ROUNDS} rounds, one set of trees per answer, so {TREES} shallow trees in all. Added up, they are "
-         f"the keeper.\nThere is no gradient to follow through a picture and no graphics card in it anywhere: "
-         "a table this\nsize fits in seconds on the processor alone, and the labels are free, because the "
-         "simulator already\nknows which pixels belong to which glass.",
-         colour=INK, va="top")
-
-    # ------------------------------------------------------ the features
-    right.add_patch(
-        FancyBboxPatch(
-            (0.015, 0.012), 0.97, 0.175,
-            boxstyle="round,pad=0.006,rounding_size=0.010",
-            facecolor=tint(MUTED, 0.08), edgecolor=MUTED, lw=1.0, zorder=1,
-        )
-    )
-    note(right, 0.035, 0.166, "3. The eight numbers every question is asked about", colour=INK,
-         size=NOTE_SIZE, va="center", weight="bold")
-    for index, feature in enumerate(FEATURES):
-        column, row = index // 4, index % 4
-        note(right, 0.035 + column * 0.485, 0.130 - row * 0.030, "- " + feature, colour=INK,
-             size=NOTE_SIZE - 2.0, va="center")
+    for value, label in ((low, "the lower threshold"), (high, "the higher threshold")):
+        x = spot(value)
+        axis.plot([x, x], [line_y - height * 0.80, line_y + height * 0.80], color=INK, lw=1.3,
+                  zorder=6)
+        note(axis, x, line_y + height * 0.80 + 0.035, f"{label} ({value})", colour=INK,
+             size=NOTE_SIZE, ha="center", va="bottom")
+    note(axis, spot(0.0), line_y - height / 2.0 - 0.040, "certainly not one glass", colour=MUTED,
+         size=NOTE_SIZE, va="top")
+    note(axis, spot(1.0), line_y - height / 2.0 - 0.040, "certainly one glass", colour=MUTED,
+         size=NOTE_SIZE, ha="right", va="top")
+    note(axis, 0.50, 0.345, "how sure the keeper is that this proposal is one glass",
+         colour=INK, size=NOTE_SIZE + 0.6, ha="center", va="center", weight="bold")
+    note(axis, 0.50, 0.195,
+         "A proposal in the middle band is not quietly kept and not quietly dropped: it is a reason to take "
+         "another picture,\nwhich is cheap next to being wrong.",
+         colour=INK, size=NOTE_SIZE, ha="center", va="center")
+    note(axis, 0.50, 0.050,
+         "The third answer, more than one glass, is not a point on this line at all: it is a different thing to do next.",
+         colour=WARN, size=NOTE_SIZE, ha="center", va="center")
 
     figure.suptitle(
-        "The keeper: the only thing fitted here, and it is a short set of trees rather than a network.",
+        "Two thresholds and not one, so that a doubtful proposal has somewhere to go.",
         fontsize=TITLE_SIZE, color=INK, y=1.01,
     )
     figure.tight_layout()
-    figure.text(
-        0.5, -0.015,
-       "Every feature is a measurement of one proposal, so the keeper never sees the picture and never has "
-       "to learn what a glass looks like. It only has to learn which\nmeasurements go with a glass, and a "
-       "short table of widths, errors, heights, ratios and counts is the case boosted trees were made for: "
-        f"a tree asks a threshold\nquestion and lands in a leaf, and the sum of {TREES} weak ones is the "
-        "answer. What it cannot do is invent a proposal. If a glass never came back from SAM 2, the\nkeeper is never shown it, "
-        "and none of its three answers is about it.",
-        ha="center", va="top", fontsize=NOTE_SIZE, color=INK,
-    )
-    save(figure, "08-the-keeper.png")
+    save(figure, "08-keeper-two-thresholds.png")
 
 
 # --------------------------------------------------------------------------- #
@@ -1041,7 +1073,7 @@ def figure_the_domain_gap() -> None:
 
 def figure_borrowed_against_trained() -> None:
     """What SAM 2 brings, against what is fitted here, against solution 2."""
-    figure, (left, right) = new(15.4, 7.2, columns=2)
+    figure, left = new(9.6, 5.6)
 
     bars = (
         (
@@ -1066,7 +1098,7 @@ def figure_borrowed_against_trained() -> None:
     high = 10.0 ** np.ceil(np.log10(max(value for _, _, value, _ in bars)))
     left.set_xscale("log")
     left.set_xlim(low, high * 4.0)
-    left.set_ylim(-2.35, len(bars) - 0.05)
+    left.set_ylim(-2.05, len(bars) - 0.05)
     bare(left)
     left.tick_params(which="both", bottom=False, top=False, left=False, right=False,
                      labelbottom=False, labelleft=False)
@@ -1101,63 +1133,6 @@ def figure_borrowed_against_trained() -> None:
         colour=INK, va="top",
     )
 
-    # ---- the two solutions side by side ---------------------------------
-    bare(right)
-    right.set_xlim(0, 1)
-    right.set_ylim(0, 1)
-    panel_title(right, "The same question asked two ways")
-
-    box(right, 0.37, 0.940, 0.36, 0.072, "solution 5\nborrow almost everything",
-        tint(GOOD, 0.14), edge=GOOD, size=NOTE_SIZE, weight="bold")
-    box(right, 0.79, 0.940, 0.36, 0.072, "solution 2\nfit everything from scratch",
-        tint(GLASS, 0.14), edge=GLASS, size=NOTE_SIZE, weight="bold")
-
-    rows = (
-        (
-            "what it brings in,\nfitted somewhere else",
-            f"{BORROWED:,} weights, used\nexactly as downloaded",
-            "nothing",
-        ),
-        (
-            "what is fitted here",
-            f"{TREES} shallow trees:\n{FITTED_NUMBERS:,} thresholds and leaf values",
-            f"{SOLUTION_TWO:,} weights,\nevery one of them",
-        ),
-        (
-            "what kind of thing\nis fitted",
-            "threshold questions and leaves,\nfitted on the processor in seconds",
-            "weights, fitted by following\na gradient through a picture",
-        ),
-        (
-            "what the fitted part\nhas to learn",
-            "which measurements of a\nproposal go with a glass",
-            "which pixels are glass, and\nwhere each centre is",
-        ),
-        (
-            "training scenes needed",
-            "a few, because so little\nis being fitted",
-            "many, because everything\nis being fitted",
-        ),
-        (
-            "what it was fitted on",
-            "everyday photographs, for\nthe part that finds objects",
-            "this cell's own pictures,\nand nothing else",
-        ),
-        (
-            "where the risk sits",
-            "the borrowed part has never\nseen a picture like this one",
-            "the fitted part has seen\nnothing but pictures like it",
-        ),
-    )
-    top, step = 0.815, 0.121
-    for index, (question, borrowing, fitting) in enumerate(rows):
-        y = top - index * step
-        note(right, 0.175, y, question, colour=INK, size=NOTE_SIZE, ha="right", va="center")
-        box(right, 0.37, y, 0.36, 0.098, borrowing, tint(GOOD, 0.07), edge=GOOD,
-            size=NOTE_SIZE - 1.0)
-        box(right, 0.79, y, 0.36, 0.098, fitting, tint(GLASS, 0.07), edge=GLASS,
-            size=NOTE_SIZE - 1.0)
-
     figure.suptitle(
         "This solution is the least trained and the most borrowed of them all.",
         fontsize=TITLE_SIZE, color=INK, y=1.01,
@@ -1165,13 +1140,9 @@ def figure_borrowed_against_trained() -> None:
     figure.tight_layout()
     figure.text(
         0.5, -0.05,
-       "The borrowed count is arithmetic on the model's published widths and depths, so it is the right size "
-        " rather than a measurement of a file, and the keeper's count is\narithmetic on the shape of the set "
-        "of trees. What the picture is for is the gap between them, and the gap is not close: for every "
-        f"number fitted in this cell, about {BORROWED_PER_FITTED:,.0f} are brought in\nalready fitted from "
-       "somewhere else. That is what buys the small training set, and it is also what buys the risk, because "
-        " a borrowed weight cannot be corrected here.\nSolution 2 makes the opposite trade: nothing borrowed, "
-        "nothing unexamined, and every one of its numbers paid for with rendered scenes.",
+       "The two outer counts are arithmetic on the models' published widths and depths, and the "
+        "keeper's count is arithmetic on the shape of its set of trees.\nFor every number fitted in "
+        f"this cell, about {BORROWED_PER_FITTED:,.0f} are brought in already fitted somewhere else.",
         ha="center", va="top", fontsize=NOTE_SIZE, color=INK,
     )
     save(figure, "08-borrowed-against-trained.png")
@@ -1304,10 +1275,14 @@ def main() -> None:
         f"fitted here: {TREES} trees, {FITTED_THRESHOLDS:,} thresholds + {FITTED_LEAVES:,} leaves "
         f"= {FITTED_NUMBERS:,} numbers; solution 2 fits {SOLUTION_TWO:,} weights"
     )
+    figure_a_fixed_list_of_classes()
     figure_what_promptable_means()
     figure_the_prompt_grid()
     figure_everything_is_proposed()
-    figure_the_keeper()
+    figure_keeper_three_answers()
+    figure_keeper_one_tree()
+    figure_keeper_boosting()
+    figure_keeper_two_thresholds()
     figure_the_domain_gap()
     figure_borrowed_against_trained()
     figure_where_it_stops()

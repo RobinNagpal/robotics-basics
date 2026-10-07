@@ -1,8 +1,7 @@
 # How it works
 
-This page explains what happens inside this solution, part by part. It
-follows [what it is](01_what-it-is.md), which states the question the
-solution answers and the single idea it rests on.
+This page explains what happens inside this solution, part by part. It follows
+[the code](02_the-code.md), and explains what each part of that code is doing.
 
 ## Contents
 
@@ -91,7 +90,7 @@ pixel belongs to; it never adds a pixel this test threw away. So the mask stops
 a small distance above the table, where the glass's wall can no longer be told
 apart from the table it stands on, and it stops wherever the depth reading was
 missing. No later step can recover either, and [the masks are what this
-contributes](03_the-code.md#2-the-masks-are-what-this-contributes) is where that matters.
+contributes](02_the-code.md#2-the-masks-are-what-this-contributes) is where that matters.
 
 ## 3. Throwing the height away
 
@@ -361,4 +360,4 @@ luck. A part cut out of a filled patch by a straight line is not a disc, so a
 circle fitted to it does not reach into the corners the cut left, and the
 further the splitting goes the less disc-like the parts become.
 
-← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →
+← [The code](02_the-code.md) · [A worked example](04_a-worked-example.md) →

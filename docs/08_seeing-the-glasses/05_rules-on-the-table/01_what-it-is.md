@@ -137,4 +137,4 @@ never looks at the picture's contents, and [when the glasses are completely
 hidden](04_a-worked-example.md#1-when-the-glasses-are-completely-hidden) is
 where that arithmetic is set out.
 
-← [A transformer segmenter, fine-tuned](../04_the-six-solutions/07_a-transformer-segmenter-fine-tuned.md) · [How it works](02_how-it-works.md) →
+← [A transformer segmenter, fine-tuned](../04_the-six-solutions/07_a-transformer-segmenter-fine-tuned.md) · [How it works](03_how-it-works.md) →

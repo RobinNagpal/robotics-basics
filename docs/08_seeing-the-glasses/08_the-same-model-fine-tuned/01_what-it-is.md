@@ -168,4 +168,4 @@ does not make the edge of that outline fine, and the marking shows the cost: its
 masks cover the whole glass and carry 4.6 per cent of pixels that are not the
 glass with them, where a rule written by hand carries none.
 
-← [A borrowed model, as it downloads — how it compares](../07_a-borrowed-model-as-it-downloads/06_how-it-compares.md) · [How it works](02_how-it-works.md) →
+← [A borrowed model, as it downloads — how it compares](../07_a-borrowed-model-as-it-downloads/06_how-it-compares.md) · [How it works](03_how-it-works.md) →

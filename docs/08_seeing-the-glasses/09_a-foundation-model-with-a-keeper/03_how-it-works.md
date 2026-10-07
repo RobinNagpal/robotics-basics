@@ -1,8 +1,7 @@
 # How it works
 
-This page explains what happens inside this solution, part by part. It
-follows [what it is](01_what-it-is.md), which states the question the
-solution answers and the single idea it rests on.
+This page explains what happens inside this solution, part by part. It follows
+[the code](02_the-code.md), and explains what each part of that code is doing.
 
 ## Contents
 
@@ -506,4 +505,4 @@ scorecard and none has been invented for it. A permissive licence on one
 generation is not inherited by the next, which is worth knowing before a project
 plans around one.
 
-← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →
+← [The code](02_the-code.md) · [A worked example](04_a-worked-example.md) →

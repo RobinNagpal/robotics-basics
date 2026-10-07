@@ -115,7 +115,7 @@ The second is that a glass can be **partly covered** by the glass in front of
 it. Its mask then stops where the near glass begins, and what is left is not a
 smaller copy of the glass but a slice of it, lying all to one side. That failure
 is quiet rather than loud, and the whole of [the second
-way](02_how-it-works.md#6-a-second-way--training-against-the-whole-silhouette) is about it.
+way](03_how-it-works.md#6-a-second-way--training-against-the-whole-silhouette) is about it.
 
 There is a third difficulty neither of those reaches, which is a glass covered
 so completely that it contributes no pixels at all. [When the glasses are
@@ -143,4 +143,4 @@ cell's own pictures with the class list cut down to one entry. That is
 **fine-tuning**, and it is why a model this size is a sensible thing to put on
 one laptop.
 
-← [SAM 2 with a keeper — how it compares](../09_a-foundation-model-with-a-keeper/06_how-it-compares.md) · [How it works](02_how-it-works.md) →
+← [SAM 2 with a keeper — how it compares](../09_a-foundation-model-with-a-keeper/06_how-it-compares.md) · [How it works](03_how-it-works.md) →

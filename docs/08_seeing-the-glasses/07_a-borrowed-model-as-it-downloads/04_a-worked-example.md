@@ -67,4 +67,4 @@ reports no glass looks, from downstream, exactly like an empty table, and the
 only thing that distinguishes the two is the count of doubts the examiner
 collects.
 
-← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →
+← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

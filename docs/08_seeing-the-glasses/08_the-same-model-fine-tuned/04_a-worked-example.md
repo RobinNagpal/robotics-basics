@@ -59,7 +59,7 @@ glasses per 100, misses 3 in 499 and splits one, so five out of five is the
 ordinary result rather than a lucky one. No entry can be lost to a name, because
 there is one name. The bowls are outlined well and so are the stems: the masks
 cover 99.6 per cent of a stemmed glass at the median, which is the measurement
-behind the claim in [how it works](02_how-it-works.md) that training holds a stem
+behind the claim in [how it works](03_how-it-works.md) that training holds a stem
 the written rule loses.
 
 **Where the two still agree.** The nearer of the close pair covers part of the
@@ -97,4 +97,4 @@ it and not the second. The finding becomes reliable and the naming failures
 disappear; the coarse edge, the slice of a hidden silhouette and the glass with
 no pixels are all exactly where they were.
 
-← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →
+← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

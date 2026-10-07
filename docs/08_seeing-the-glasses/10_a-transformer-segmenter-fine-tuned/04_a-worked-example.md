@@ -138,4 +138,4 @@ five stand, every report correct, every width legal, every score confident, and
 no check fires, because every check here is a check on something that was found.
 That is the case handed to the geometry.
 
-← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →
+← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

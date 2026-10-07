@@ -150,7 +150,7 @@ and the mask that group hands back.
 Four of the five masks are as good as this method can make them, and the one
 thing missing from each is the thin band at the base that the depth test
 removed. That is the shortfall [the masks are what this
-contributes](03_the-code.md#2-the-masks-are-what-this-contributes) describes, and it is the same
+contributes](02_the-code.md#2-the-masks-are-what-this-contributes) describes, and it is the same
 band on all four.
 
 G2 needs its footnote, and the footnote is the interesting part. Part of G2 is
@@ -235,4 +235,4 @@ and it is the honest edge of this method.
 
 ![Two glasses are brought closer together in three steps: while the strip of bare table between them is wider than the grouping distance, distance alone separates them; once the strip is narrower than that, only the check on the width recovers them; and when they touch there is no strip left for either to work on.](../../images/seeing-the-glasses/rules-on-the-table/02-touching-is-the-limit.png)
 
-← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →
+← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

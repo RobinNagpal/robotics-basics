@@ -133,4 +133,4 @@ machine's integrated graphics one picture took about eight seconds, which is a
 survey of three stations in half a minute, and still far less than one movement
 of the arm.
 
-← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →
+← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

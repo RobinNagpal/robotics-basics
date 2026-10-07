@@ -6,8 +6,8 @@ sorts what is left by the model's own confidence score. This page takes those
 three in turn and says what each one is worth here, which in two cases out of
 three is very little.
 
-It follows [what it is](01_what-it-is.md), which states the question the solution
-answers and the single idea it rests on.
+It follows [the code](02_the-code.md), and explains what each part of that code
+is doing.
 
 One thing to settle first, because it explains why this chapter is shorter than
 the others. The borrowed model both outlines objects and names them. A model that
@@ -85,7 +85,7 @@ glass covered. On the kinds without one, from 99.8 to 100.0.
 
 Twelve glasses prove little, and the direction is at least consistent across all
 five blocks. Whether the coarse outline or the borrowed weights are to blame is
-settled in [the same model, fine-tuned](../08_the-same-model-fine-tuned/02_how-it-works.md),
+settled in [the same model, fine-tuned](../08_the-same-model-fine-tuned/03_how-it-works.md),
 where the same outline machinery is given hundreds of glasses to be measured on.
 The answer there is not the one expected here.
 
@@ -156,3 +156,5 @@ the interesting comparison. That solution takes this same model and continues it
 training on this cell's pictures, which is the standard repair for exactly this
 gap. The difference between the two is a clean measurement of what the gap costs,
 and it is the most useful thing this solution contributes to the chapter.
+
+← [The code](02_the-code.md) · [A worked example](04_a-worked-example.md) →

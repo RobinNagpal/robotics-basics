@@ -160,4 +160,4 @@ heads, the two places the training labels can come from, what the solution hands
 to the examiner, the failures no amount of training can fix, and where this sits
 among the other five.
 
-← [Rules on the table — how it compares](../05_rules-on-the-table/06_how-it-compares.md) · [How it works](02_how-it-works.md) →
+← [Rules on the table — how it compares](../05_rules-on-the-table/06_how-it-compares.md) · [How it works](03_how-it-works.md) →

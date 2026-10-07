@@ -50,7 +50,7 @@ to do.
 **What the borrowing costs is the naming, and the naming is what decided this.**
 The names are somebody else's categories, and shown a grey picture shaded from
 depth the model reaches for a sports ball or a frisbee rather than a cup. Over
-the 36 pictures of the naming measurement in [how it works](02_how-it-works.md),
+the 36 pictures of the naming measurement in [how it works](03_how-it-works.md),
 five of 87 named objects carried a name the filter accepts. Beside that, the
 other two costs are small: the outline is built coarsely and then enlarged, so a
 width carries an error that does not average away, and the confidence number is

@@ -94,4 +94,4 @@ Moving the arm to a new place and letting it settle costs seconds. So the
 balance of this solution is to compute freely and move rarely, and the whole of
 its cost sits in building it rather than in running it.
 
-← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →
+← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

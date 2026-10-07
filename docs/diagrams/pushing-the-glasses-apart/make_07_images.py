@@ -397,7 +397,9 @@ def picture_what_the_overhead_view_reports() -> None:
         [here - (target["widest"] / 2.0 + 34.0) * away],
     ])
     left, right = drawn[:, 0].min() - 10.0, drawn[:, 0].max() + 10.0
-    high = drawn[:, 1].max() + 10.0
+    # Room above the drawing for the label that names the neighbour. Without it
+    # the label was written past the right edge and the panel cut it in half.
+    high = drawn[:, 1].max() + 34.0
     # A band under the drawing for the three lines of readout, in the same units.
     band = (right - left) * 0.19
     low = drawn[:, 1].min() - band
@@ -431,8 +433,8 @@ def picture_what_the_overhead_view_reports() -> None:
                tuple(here + (push - target["widest"] / 2.0 - 3.0) * away))
     note(intended, *(here - (target["widest"] / 2.0 + 6.0) * np.array([0.0, 1.0])),
          "the pushed glass", MUTED, va="top")
-    intended.text(there[0] + neighbour["widest"] / 2.0 + 6.0, there[1], "its neighbour",
-                  fontsize=NOTE_SIZE, color=MUTED, ha="left", va="center")
+    intended.text(there[0], there[1] + neighbour["widest"] / 2.0 + 6.0, "its neighbour",
+                  fontsize=NOTE_SIZE, color=MUTED, ha="center", va="bottom")
     readout(intended,
             f"the middle moved {push:.0f} mm, which is what was asked\n"
             f"the blob is still {target['widest']:.0f} mm measured either way\n"

@@ -11,8 +11,10 @@ them so the documents can quote the same values.
 
 What is real arithmetic here: the parameter counts and the multiply-add counts of
 a vision transformer and of a 50-layer residual convolutional network, worked out
-from the layer shapes; the patch arithmetic at 224 by 224 pixels; the
-two-dimensional sine-and-cosine position vectors; the pinhole-camera arithmetic
+from the layer shapes; the patch arithmetic at 224 by 224 pixels; how far one
+cell of each pyramid level has looked, accumulated through that network's
+windows and strides; the two-dimensional sine-and-cosine position vectors; the
+pinhole-camera arithmetic
 for how many pixels wide a thing looks at a distance; the intersection over union
 of boxes; non-maximum suppression; the precision and recall curve; the one-to-one
 matching of query slots to true objects; and the mask arithmetic, including the
@@ -349,7 +351,7 @@ def backbone_and_heads() -> None:
     axp = fig.add_axes((0.02, 0.26, 0.21, 0.52))
     _show(axp, crop224(), 'the picture, 224 x 224')
     ax = fig.add_axes((0.27, 0.05, 0.71, 0.9))
-    _blank(ax, (0, 10), (1.9, 9.8))
+    _blank(ax, (0, 10), (1.9, 10.2))
     _box(ax, 0.1, 2.2, 2.6, 5.6, LINK, '', alpha=0.10)
     ax.text(1.4, 7.5, 'the backbone', ha='center', fontsize=11.5, weight='bold',
             color=LINK)
@@ -372,11 +374,10 @@ def backbone_and_heads() -> None:
         ax.text(6.45, y + 0.36, f"{h['p']:,.0f} parameters "
                                 f"({100 * h['p'] / v['p_back']:.1f}% of the backbone)",
                 fontsize=9, color=colour, va='center')
-    ax.text(0.0, 9.3, 'One backbone, three small heads: the shared part does almost '
+    ax.text(0.0, 9.7, 'One backbone, three small heads: the shared part does almost '
                       'all of the work',
             fontsize=13, weight='bold', color=INK)
-    ax.text(0.0, 8.8, 'parameter counts worked out from the layer shapes of a '
-                      'vision transformer with 12 blocks and 768 numbers per token',
+    ax.text(0.0, 9.15, 'a vision transformer with 12 blocks and 768 numbers per token',
             fontsize=9.5, color=MUTED)
     _save(fig, BACK_DOC, 'backbone-and-heads.svg')
 
@@ -433,14 +434,13 @@ def shared_vs_separate() -> None:
     print(f'[shared] trainable when the backbone is frozen: {head_sum:,.0f} '
           f'({100 * head_sum / shared:.2f}% of the model)')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.8), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(7.6, 5.0), facecolor='white')
     _plain(ax)
     names = ['three separate\nmodels', 'one shared backbone,\nthree heads']
     backs = np.array([3 * v['p_back'], v['p_back']]) / 1e6
     heads = np.array([head_sum, head_sum]) / 1e6
-    ax.bar(names, backs, color=LINK, alpha=0.85, label='backbone', width=0.55)
-    ax.bar(names, heads, bottom=backs, color=GRIP, alpha=0.9, label='heads', width=0.55)
+    ax.bar(names, backs, color=LINK, alpha=0.85, label='backbone', width=0.5)
+    ax.bar(names, heads, bottom=backs, color=GRIP, alpha=0.9, label='heads', width=0.5)
     for i, (b, h) in enumerate(zip(backs, heads)):
         ax.text(i, b + h + 4, f'{b + h:.1f} M', ha='center', fontsize=11,
                 weight='bold', color=INK)
@@ -449,13 +449,23 @@ def shared_vs_separate() -> None:
     ax.set_ylim(0, (backs + heads).max() * 1.18)
     ax.set_ylabel('millions of parameters', fontsize=10)
     ax.legend(fontsize=9.5, frameon=False, loc='upper right')
-    ax.set_title('Doing three jobs: the cost of not sharing', fontsize=12,
-                 weight='bold', color=INK)
+    ax.set_title(f'Sharing one backbone between three jobs saves '
+                 f'{100 * (separate - shared) / separate:.0f}% of the parameters',
+                 fontsize=11.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, BACK_DOC, 'shared-vs-separate.svg')
 
-    ax = axes[1]
+
+def frozen_backbone() -> None:
+    """How many numbers change in training when the backbone is left alone."""
+    v = vit_counts()
+    head_sum = sum(h['p'] for h in HEADS.values())
+    shared = v['p_back'] + head_sum
+
+    fig, ax = plt.subplots(figsize=(7.6, 5.0), facecolor='white')
     _plain(ax)
-    ax.bar(['fine-tune\neverything', 'freeze the backbone,\ntrain the heads'],
-           [shared / 1e6, head_sum / 1e6], color=[WRIST, SLIDE], alpha=0.85, width=0.55)
+    ax.bar(['train everything', 'freeze the backbone,\ntrain the heads'],
+           [shared / 1e6, head_sum / 1e6], color=[WRIST, SLIDE], alpha=0.85, width=0.5)
     ax.set_yscale('log')
     for i, val in enumerate([shared, head_sum]):
         ax.text(i, val / 1e6 * 1.25, f'{val / 1e6:.2f} M', ha='center', fontsize=11,
@@ -464,9 +474,9 @@ def shared_vs_separate() -> None:
     ax.set_ylabel('millions of parameters that change (log scale)', fontsize=10)
     ax.set_title(f'Training the heads alone changes '
                  f'{100 * head_sum / shared:.1f}% of the numbers',
-                 fontsize=12, weight='bold', color=INK)
+                 fontsize=11.5, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, BACK_DOC, 'shared-vs-separate.svg')
+    _save(fig, BACK_DOC, 'frozen-backbone.svg')
 
 
 def work_per_second() -> None:
@@ -630,12 +640,9 @@ def patch_to_vector() -> None:
     _save(fig, BACK_DOC, 'patch-to-vector.svg')
 
 
-def position_and_shuffle() -> None:
+def patch_shuffle() -> None:
+    """The same bag of patches in two orders, which attention cannot tell apart."""
     img = crop224()
-    pos = _pos_vectors()
-    n = SIDE * 6 + 3
-    unit = pos / np.linalg.norm(pos, axis=1, keepdims=True)
-    sim = (unit @ unit[n]).reshape(SIDE, SIDE)
     rng = np.random.default_rng(7)
     order = rng.permutation(SIDE * SIDE)
     shuffled = np.zeros_like(img)
@@ -644,31 +651,48 @@ def position_and_shuffle() -> None:
         r1, c1 = divmod(old, SIDE)
         shuffled[r0 * PATCH:(r0 + 1) * PATCH, c0 * PATCH:(c0 + 1) * PATCH] = \
             img[r1 * PATCH:(r1 + 1) * PATCH, c1 * PATCH:(c1 + 1) * PATCH]
+    print('[pos] the shuffled picture holds exactly the same 196 patches')
+
+    fig, axes = plt.subplots(1, 2, figsize=(9.6, 5.2), facecolor='white')
+    _show(axes[0], img, 'the picture')
+    _show(axes[1], shuffled, 'the same 196 patches, in another order')
+    axes[0].set_xlabel('196 patches of 768 numbers', fontsize=9.5, color=INK)
+    axes[1].set_xlabel('the same 196 patches of 768 numbers', fontsize=9.5,
+                       color=INK)
+    fig.suptitle('Attention is given a bag of patches, so these two pictures reach '
+                 'it as the same thing', fontsize=12, weight='bold', color=INK)
+    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    _save(fig, BACK_DOC, 'patch-shuffle.svg')
+
+
+def position_likeness() -> None:
+    """How alike the position vectors of the 196 places are to one chosen place."""
+    pos = _pos_vectors()
+    n = SIDE * 6 + 3
+    unit = pos / np.linalg.norm(pos, axis=1, keepdims=True)
+    sim = (unit @ unit[n]).reshape(SIDE, SIDE)
     print(f'[pos] likeness of patch {n} to its right-hand neighbour '
           f'{sim[6, 4]:.3f}, to the patch two rows down {sim[8, 3]:.3f}, '
           f'to the far corner {sim[13, 13]:.3f}')
-    print(f'[pos] the shuffled picture holds exactly the same 196 patches')
 
-    fig, axes = plt.subplots(1, 3, figsize=(13.4, 4.9), facecolor='white')
-    _show(axes[0], img, 'the picture')
-    _show(axes[1], shuffled, 'the same 196 patches, shuffled')
-    axes[1].set_xlabel('with no position information, the same bag of patches',
-                       fontsize=9.5, color=INK)
-    ax = axes[2]
+    fig, ax = plt.subplots(figsize=(6.8, 5.6), facecolor='white')
     im = ax.imshow(sim, cmap='viridis', interpolation='nearest')
     ax.set_xticks(range(0, SIDE, 2))
     ax.set_yticks(range(0, SIDE, 2))
     ax.tick_params(labelsize=8)
     ax.add_patch(Rectangle((3 - 0.5, 6 - 0.5), 1, 1, fill=False, edgecolor=GRIP, lw=2))
-    ax.set_title(f'likeness of every position vector\nto the one of patch {n}',
-                 fontsize=10.5, weight='bold', color=INK)
-    ax.set_xlabel('patch column', fontsize=9)
-    ax.set_ylabel('patch row', fontsize=9)
-    fig.colorbar(im, ax=ax, fraction=0.046)
-    fig.suptitle('Position has to be added, because the patches arrive as a bag',
-                 fontsize=12.5, weight='bold', color=INK)
+    for (r, c), text, ha in (((6, 4), f'{sim[6, 4]:.2f}', 'center'),
+                             ((8, 3), f'{sim[8, 3]:.2f}', 'center'),
+                             ((13, 13), f'{sim[13, 13]:.2f}', 'right')):
+        ax.text(c + (0.45 if ha == 'right' else 0.0), r, text, ha=ha, va='center',
+                fontsize=9, color='white', weight='bold')
+    ax.set_xlabel('patch column', fontsize=10)
+    ax.set_ylabel('patch row', fontsize=10)
+    fig.colorbar(im, ax=ax, fraction=0.046, label='likeness to patch 87')
+    ax.set_title(f'How alike each position vector is to the one of patch {n},\n'
+                 f'which is ringed in red', fontsize=11.5, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, BACK_DOC, 'position-and-shuffle.svg')
+    _save(fig, BACK_DOC, 'position-likeness.svg')
 
 
 def class_token() -> None:
@@ -689,43 +713,34 @@ def class_token() -> None:
           f'and the patch tokens differ by {diff[1:].mean():.3f} on average '
           f'(largest {diff[1:].max():.3f})')
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.6), facecolor='white',
-                             width_ratios=[1.0, 1.25])
-    ax = axes[0]
-    _blank(ax, (0, 10), (0, 10))
-    ax.text(0.0, 9.2, 'The sequence that goes into the blocks', fontsize=12,
+    fig, ax = plt.subplots(figsize=(9.4, 3.4), facecolor='white')
+    _blank(ax, (0, 10), (3.0, 9.6))
+    ax.text(0.0, 9.2, 'The 197 tokens that go into block 1', fontsize=12.5,
             weight='bold', color=INK)
-    _box(ax, 0.2, 7.3, 1.5, 1.3, GRIP, 'class\ntoken', fs=9.5, alpha=0.3)
+    _box(ax, 0.2, 6.3, 1.6, 1.8, GRIP, 'class\ntoken', fs=10, alpha=0.3)
     for i in range(5):
-        _box(ax, 2.0 + i * 1.55, 7.3, 1.45, 1.3, LINK,
-             f'patch\n{i}' if i < 4 else '...', fs=9, alpha=0.25)
-    ax.text(0.95, 6.85, 'token 0', ha='center', va='top', fontsize=9, color=GRIP)
-    ax.text(5.5, 6.85, 'tokens 1 to 196', ha='center', va='top', fontsize=9, color=LINK)
-    ax.text(0.0, 5.9, '197 tokens of 768 numbers go in, and 197 tokens of 768 numbers\n'
-                      'come out of the last block', fontsize=10, color=INK, va='top')
-    _box(ax, 0.2, 3.1, 1.5, 1.2, GRIP, 'token 0\nout', fs=9, alpha=0.3)
-    _arrow(ax, (1.8, 3.7), (3.3, 3.7), MUTED)
-    _box(ax, 3.4, 3.1, 2.6, 1.2, SLIDE, 'classify head', fs=9.5, alpha=0.3)
-    _arrow(ax, (6.1, 3.7), (7.0, 3.7), MUTED)
-    ax.text(7.1, 3.7, '1,000 scores', fontsize=9.5, va='center', color=INK)
-    ax.text(0.0, 2.1, f'The classify head reads token 0 alone, which is\n'
-                      f'768 / (197 x 768) = {100 / 197:.2f}% of what the backbone '
-                      f'gives back.', fontsize=9.5, color=MUTED, va='top')
+        _box(ax, 2.1 + i * 1.6, 6.3, 1.5, 1.8, LINK,
+             f'patch\n{i}' if i < 4 else '...', fs=9.5, alpha=0.25)
+    ax.text(1.0, 5.8, 'token 0', ha='center', va='top', fontsize=9.5, color=GRIP)
+    ax.text(5.8, 5.8, 'tokens 1 to 196', ha='center', va='top', fontsize=9.5,
+            color=LINK)
+    ax.text(0.0, 4.5, 'token 0 is learned, and is the same for every picture',
+            fontsize=10.5, color=INK, va='top')
+    _save(fig, BACK_DOC, 'token-sequence.svg')
 
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(8.8, 4.6), facecolor='white')
     _plain(ax)
     ax.bar(np.arange(197), diff, color=LINK, width=1.0)
     ax.plot([0], [0], marker='v', color=GRIP, markersize=11)
     ax.set_ylim(-0.012, diff[1:].max() * 1.42)
-    ax.annotate(f'token 0 is the same learned vector for every\n'
-                f'picture, so the difference here is exactly {diff[0]:.1f}',
-                xy=(1, 0.004), xytext=(16, diff[1:].max() * 1.30), fontsize=9.5,
+    ax.annotate(f'token 0 changes by exactly {diff[0]:.1f}',
+                xy=(1, 0.004), xytext=(16, diff[1:].max() * 1.30), fontsize=10,
                 color=GRIP, va='top',
                 arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.2))
     ax.set_xlabel('token number', fontsize=10)
     ax.set_ylabel('average size of the difference\nbetween two pictures', fontsize=10)
-    ax.set_title('The class token is not read from the picture', fontsize=12,
-                 weight='bold', color=INK)
+    ax.set_title('Between two different pictures every patch token changes, '
+                 'and token 0 does not', fontsize=11.5, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, BACK_DOC, 'class-token.svg')
 
@@ -1147,24 +1162,7 @@ def data_size_curve() -> None:
         print(f'[data] {n:5d} training pictures: convolutional {c:.3f}, '
               f'fully connected {f:.3f} (the average of three runs)')
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.8), facecolor='white',
-                             width_ratios=[1.0, 1.3])
-    ax = axes[0]
-    rng = np.random.default_rng(4)
-    xs, ys = shape_pictures(12, d['classes'], rng)
-    tile = np.ones((2 * 26 + 2, 6 * 26 + 2))
-    for i in range(12):
-        r, c = divmod(i, 6)
-        tile[r * 26 + 2:r * 26 + 26, c * 26 + 2:c * 26 + 26] = xs[i]
-    ax.imshow(tile, cmap='gray', vmin=0, vmax=1, interpolation='nearest')
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_title('the simulated training pictures, 24 by 24 pixels',
-                 fontsize=10.5, weight='bold', color=INK)
-    ax.set_xlabel('four shapes, drawn at random places, sizes and brightnesses',
-                  fontsize=9)
-
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(8.4, 5.0), facecolor='white')
     _plain(ax)
     ax.plot(d['sizes'], d['conv'], marker='o', color=LINK, lw=2,
             label=f"convolutional network ({d['n_conv']:,} parameters)")
@@ -1180,10 +1178,34 @@ def data_size_curve() -> None:
     ax.set_ylabel('share right on 800 held-out pictures', fontsize=10)
     ax.legend(fontsize=9, frameon=True, framealpha=0.95, edgecolor='white',
               loc='lower right')
-    ax.set_title('With few pictures the sliding window wins, because it is given '
-                 'what the other must learn', fontsize=11.5, weight='bold', color=INK)
+    ax.set_title('The sliding window needs fewer pictures, because it is given\n'
+                 'what the other network has to learn', fontsize=12, weight='bold',
+                 color=INK)
     fig.tight_layout()
     _save(fig, BACK_DOC, 'data-size-curve.svg')
+
+
+def shape_examples() -> None:
+    """The simulated pictures the two small networks are trained on."""
+    rng = np.random.default_rng(4)
+    xs, _ = shape_pictures(12, SHAPES[:4], rng)
+    tile = np.ones((2 * 26 + 2, 6 * 26 + 2))
+    for i in range(12):
+        r, c = divmod(i, 6)
+        tile[r * 26 + 2:r * 26 + 26, c * 26 + 2:c * 26 + 26] = xs[i]
+
+    fig, ax = plt.subplots(figsize=(8.0, 3.4), facecolor='white')
+    ax.imshow(tile, cmap='gray', vmin=0, vmax=1, interpolation='nearest')
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for sp in ax.spines.values():
+        sp.set_visible(False)
+    ax.set_title('Twelve of the training pictures, 24 by 24 pixels each',
+                 fontsize=12, weight='bold', color=INK)
+    ax.set_xlabel('four shapes, each drawn at a random place, size and brightness, '
+                  'with noise added', fontsize=9.5)
+    fig.tight_layout()
+    _save(fig, BACK_DOC, 'shape-examples.svg')
 
 
 def conv_block_shapes() -> None:
@@ -1205,29 +1227,51 @@ def conv_block_shapes() -> None:
     print(f'[block] modern block {pn:,} parameters and {mn / 1e6:.0f} million '
           f'multiply-adds, which is {100 * mn / mo:.0f}% of the older one')
 
-    fig, ax = plt.subplots(figsize=(11.8, 5.4), facecolor='white')
-    _blank(ax, (0, 10), (0, 10))
-    for x0, rows, colour, title, tot in ((0.2, old, MUTED, 'an older convolution block',
-                                          (po, mo)),
-                                         (5.2, new, LINK,
-                                          'a modern convolution block, built the way '
-                                          'a transformer block is', (pn, mn))):
-        ax.text(x0, 9.2, title, fontsize=11.5, weight='bold', color=colour)
-        y = 8.3
-        for name, pr, mc in rows:
-            _box(ax, x0, y - 0.72, 4.4, 0.72, colour, name, fs=9.5, alpha=0.16)
-            ax.text(x0 + 4.5, y - 0.36, f'{pr:,}', fontsize=8.5, color=INK,
-                    va='center')
-            y -= 0.92
-        ax.text(x0, 3.5, f'{tot[0]:,} parameters', fontsize=11, weight='bold',
-                color=colour)
-        ax.text(x0, 2.8, f'{tot[1] / 1e6:.0f} million multiply-adds on a '
-                         f'{side} by {side} grid', fontsize=10, color=INK)
-    ax.text(0.2, 1.5, 'The modern block keeps one normalisation and one activation, '
-                      'widens the middle layer four times,', fontsize=10, color=INK)
-    ax.text(0.2, 0.9, 'and spreads out the window, which are all habits taken from '
-                      'the transformer block.', fontsize=10, color=INK)
-    _save(fig, BACK_DOC, 'conv-block-shapes.svg')
+    fig, ax = plt.subplots(figsize=(8.8, 5.0), facecolor='white')
+    _blank(ax, (0, 10), (0.85, 10))
+    ax.text(0.2, 9.4, 'One modern convolution block, layer by layer',
+            fontsize=12.5, weight='bold', color=INK)
+    ax.text(0.2, 8.8, f'on a {side} by {side} grid of {c} channels', fontsize=10,
+            color=MUTED)
+    y = 7.9
+    for name, pr, mc in new:
+        _box(ax, 0.2, y - 0.82, 5.6, 0.82, LINK, name, fs=9.5, alpha=0.16)
+        ax.text(6.0, y - 0.41, f'{pr:,} parameters' if pr else 'no parameters',
+                fontsize=9, color=INK, va='center')
+        if y > 4.0:
+            _arrow(ax, (3.0, y - 0.86), (3.0, y - 1.12), MUTED)
+        y -= 1.3
+    ax.text(0.2, 1.15, f'{pn:,} parameters and {mn / 1e6:.0f} million multiply-adds '
+                       f'in all', fontsize=11, weight='bold', color=LINK)
+    _save(fig, BACK_DOC, 'modern-conv-block.svg')
+
+
+def block_cost() -> None:
+    """What the modern convolution block costs against the older one."""
+    c, mlp, side = 96, 384, 56
+    cells = side * side
+    po = 2 * (9 * c * c + c) + 2 * (2 * c)
+    mo = 2 * 9 * c * c * cells
+    pn = (49 * c + c) + 2 * c + (c * mlp + mlp) + (mlp * c + c)
+    mn = 49 * c * cells + c * mlp * cells + mlp * c * cells
+
+    fig, ax = plt.subplots(figsize=(8.4, 4.8), facecolor='white')
+    _plain(ax)
+    names = ['an older block:\ntwo 3 x 3 convolutions', 'a modern block:\none 7 x 7 '
+             'window per channel,\nthen a wide middle layer']
+    ax.bar(names, [mo / 1e6, mn / 1e6], color=[MUTED, LINK], alpha=0.85, width=0.5)
+    for i, (m, p) in enumerate(((mo, po), (mn, pn))):
+        ax.text(i, m / 1e6 + 14, f'{m / 1e6:.0f} million multiply-adds',
+                ha='center', fontsize=10.5, weight='bold', color=INK)
+        ax.text(i, m / 1e6 / 2, f'{p:,}\nparameters', ha='center', va='center',
+                fontsize=10, color='white', weight='bold')
+    ax.set_ylim(0, mo / 1e6 * 1.25)
+    ax.set_ylabel(f'million multiply-adds on a {side} by {side} grid', fontsize=10)
+    ax.tick_params(axis='x', labelsize=9.5)
+    ax.set_title(f'The modern block does {100 * mn / mo:.0f}% of the arithmetic of '
+                 f'the older one', fontsize=12, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, BACK_DOC, 'block-cost.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1300,8 +1344,7 @@ def cost_vs_resolution() -> None:
         print(f'[res] {s:5d} px: transformer {a / 1e9:7.1f} G, of which the scores '
               f'are {100 * q / a:4.1f}%; convolutional {b / 1e9:6.1f} G')
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.9), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.6, 5.0), facecolor='white')
     _plain(ax)
     ax.plot(sizes, np.array(vit) / 1e9, marker='o', color=GRIP, lw=2,
             label='vision transformer, patch 16')
@@ -1309,33 +1352,46 @@ def cost_vs_resolution() -> None:
             label='50-layer convolutional network')
     for s, a, b in zip(sizes, vit, res):
         if s in (224, 1024):
-            dx, ha = (10, 'left') if s == 224 else (-8, 'right')
-            ax.annotate(f'{a / 1e9:.0f} G', (s, a / 1e9), textcoords='offset points',
-                        xytext=(dx, 9), fontsize=9.5, color=GRIP, ha=ha)
-            ax.annotate(f'{b / 1e9:.0f} G', (s, b / 1e9), textcoords='offset points',
-                        xytext=(dx, -15), fontsize=9.5, color=SLIDE, ha=ha)
+            dx, ha = (4, 'left') if s == 224 else (-6, 'right')
+            ax.annotate(f'{a / 1e9:.1f}', (s, a / 1e9), textcoords='offset points',
+                        xytext=(dx, -17 if s == 224 else 11), fontsize=10,
+                        color=GRIP, ha=ha, weight='bold')
+            ax.annotate(f'{b / 1e9:.1f}', (s, b / 1e9), textcoords='offset points',
+                        xytext=(dx, -17), fontsize=10, color=SLIDE, ha=ha,
+                        weight='bold')
     ax.set_yscale('log')
+    ax.set_ylim(2.6, 1400)
     ax.set_xlabel('picture side, in pixels', fontsize=10)
     ax.set_ylabel('thousand million multiply-adds (log scale)', fontsize=10)
     ax.legend(fontsize=9, frameon=False, loc='upper left')
-    ax.set_title('Work for one picture as the picture grows', fontsize=11.5,
+    ax.set_title('Work for one picture as the picture grows', fontsize=12,
                  weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, BACK_DOC, 'cost-vs-resolution.svg')
 
-    ax = axes[1]
+
+def quadratic_share() -> None:
+    """How much of the transformer's work is spent comparing patch with patch."""
+    sizes = [224, 320, 448, 640, 896, 1024]
+    share = []
+    for s in sizes:
+        v = vit_counts(img=s)
+        share.append(100 * v['m_quad'] / v['m_total'])
+
+    fig, ax = plt.subplots(figsize=(8.4, 4.8), facecolor='white')
     _plain(ax)
-    share = [100 * q / a for q, a in zip(quad, vit)]
     ax.bar([str(s) for s in sizes], share, color=GRIP, alpha=0.85, width=0.6)
     for i, sh in enumerate(share):
-        ax.text(i, sh + 0.8, f'{sh:.0f}%', ha='center', fontsize=10, color=INK,
+        ax.text(i, sh + 1.0, f'{sh:.1f}%', ha='center', fontsize=10, color=INK,
                 weight='bold')
     ax.set_ylim(0, max(share) * 1.25)
     ax.set_xlabel('picture side, in pixels', fontsize=10)
     ax.set_ylabel('share of the work spent comparing\nevery patch with every patch',
                   fontsize=10)
-    ax.set_title('The part that grows with the square of the patch count',
-                 fontsize=11.5, weight='bold', color=INK)
+    ax.set_title('The part that grows with the square of the number of patches',
+                 fontsize=12, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, BACK_DOC, 'cost-vs-resolution.svg')
+    _save(fig, BACK_DOC, 'quadratic-share.svg')
 
 
 def patch_size_and_tokens() -> None:
@@ -1347,30 +1403,75 @@ def patch_size_and_tokens() -> None:
         print(f"[patchsize] patch {p:2d}: {int(v['n_patch']):4d} patches, "
               f"{v['m_total'] / 1e9:6.2f} thousand million multiply-adds")
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.6), facecolor='white')
-    ax = axes[0]
-    _plain(ax)
     names = [f'{p} x {p}' for p, _, _ in rows]
-    ax.bar(names, [n for _, n, _ in rows], color=LINK, alpha=0.85, width=0.6)
+    fig, ax = plt.subplots(figsize=(7.8, 4.6), facecolor='white')
+    _plain(ax)
+    ax.bar(names, [n for _, n, _ in rows], color=LINK, alpha=0.85, width=0.55)
     for i, (_, n, _) in enumerate(rows):
-        ax.text(i, n + 15, f'{n}', ha='center', fontsize=10, weight='bold', color=INK)
+        ax.text(i, n + 18, f'{n}', ha='center', fontsize=10.5, weight='bold',
+                color=INK)
     ax.set_ylim(0, max(n for _, n, _ in rows) * 1.2)
     ax.set_xlabel('patch size, in pixels', fontsize=10)
     ax.set_ylabel('patches in a 224 by 224 picture', fontsize=10)
-    ax.set_title('Smaller patches, more of them', fontsize=11.5, weight='bold',
-                 color=INK)
-    ax = axes[1]
+    ax.set_title('Halving the patch size gives four times as many patches',
+                 fontsize=12, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, BACK_DOC, 'patch-size-and-tokens.svg')
+
+    fig, ax = plt.subplots(figsize=(7.8, 4.6), facecolor='white')
     _plain(ax)
-    ax.bar(names, [m / 1e9 for _, _, m in rows], color=GRIP, alpha=0.85, width=0.6)
+    ax.bar(names, [m / 1e9 for _, _, m in rows], color=GRIP, alpha=0.85, width=0.55)
     for i, (_, _, m) in enumerate(rows):
-        ax.text(i, m / 1e9 + 2, f'{m / 1e9:.1f} G', ha='center', fontsize=10,
+        ax.text(i, m / 1e9 + 2, f'{m / 1e9:.2f}', ha='center', fontsize=10.5,
                 weight='bold', color=INK)
     ax.set_ylim(0, max(m for _, _, m in rows) / 1e9 * 1.2)
     ax.set_xlabel('patch size, in pixels', fontsize=10)
     ax.set_ylabel('thousand million multiply-adds', fontsize=10)
-    ax.set_title('and much more arithmetic', fontsize=11.5, weight='bold', color=INK)
+    ax.set_title('Smaller patches cost much more arithmetic', fontsize=12,
+                 weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, BACK_DOC, 'patch-size-and-tokens.svg')
+    _save(fig, BACK_DOC, 'patch-size-cost.svg')
+
+
+def patch_size_and_small_things() -> None:
+    """The smallest thing a vision transformer can describe is about one patch."""
+    img = crop224()
+    rgb, objects = _scene()
+    bolt = next(o for o in objects if o['name'] == 'bolt')
+    side, y0, x0 = 360, 120, 120
+    idx = (np.arange(224) * side / 224.0).astype(int)
+    mask = bolt['mask'][y0:y0 + side, x0:x0 + side][np.ix_(idx, idx)]
+    ys, xs = np.nonzero(mask)
+    bx1, by1, bx2, by2 = xs.min(), ys.min(), xs.max(), ys.max()
+    bw, bh = bx2 - bx1 + 1, by2 - by1 + 1
+    win = (128, 32, 176, 80)                 # a 48 by 48 window around the object
+    view = img[win[1]:win[3], win[0]:win[2]]
+    print(f'[small-patch] in the 224 by 224 picture the small object is {bw} by '
+          f'{bh} pixels')
+
+    fig, axes = plt.subplots(1, 3, figsize=(11.4, 4.4), facecolor='white')
+    for ax, patch in zip(axes, (32, 16, 8)):
+        _show(ax, view, f'patches of {patch} by {patch} pixels')
+        lo, hi = -0.5, view.shape[0] - 0.5
+        for g in range(0, 224, patch):
+            gx, gy = g - win[0] - 0.5, g - win[1] - 0.5
+            if lo <= gx <= hi:
+                ax.plot([gx, gx], [lo, hi], color=GRIP, lw=0.8, alpha=0.85)
+            if lo <= gy <= hi:
+                ax.plot([lo, hi], [gy, gy], color=GRIP, lw=0.8, alpha=0.85)
+        ax.set_xlim(lo, hi)
+        ax.set_ylim(hi, lo)
+        _draw_box(ax, (bx1 - win[0] - 0.5, by1 - win[1] - 0.5, bx2 - win[0] + 0.5,
+                       by2 - win[1] + 0.5), SLIDE, None, lw=1.8)
+        ax.set_xlabel(f'the object fills {bw / patch:.2f} by {bh / patch:.2f} '
+                      f'of a patch', fontsize=10, color=INK)
+        print(f'[small-patch] with patches of {patch} pixels it fills '
+              f'{bw / patch:.2f} by {bh / patch:.2f} of one patch')
+    fig.suptitle(f'The same object of {bw} by {bh} pixels, cut up three ways: only '
+                 f'the smallest patch gives it a patch of its own',
+                 fontsize=12, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, BACK_DOC, 'patch-size-and-small-things.svg')
 
 
 def attention_memory() -> None:
@@ -1522,6 +1623,46 @@ def small_object_cells() -> None:
                  fontsize=11, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, BACK_DOC, 'small-object-cells.svg')
+
+
+def what_one_cell_has_seen() -> None:
+    """How much of the picture one cell of the finest and the coarsest level has seen."""
+    rgb, objects = _scene()
+    rf, jump = 1, 1
+    for k, s in ((7, 2), (3, 2)):            # the first convolution and the pooling
+        rf += (k - 1) * jump
+        jump *= s
+    fields = {jump: rf}
+    for blocks, first_stride in ((3, 1), (4, 2), (6, 2), (3, 2)):
+        for b in range(blocks):
+            for k, s in ((1, 1), (3, first_stride if b == 0 else 1), (1, 1)):
+                rf += (k - 1) * jump
+                jump *= s
+        fields[jump] = rf
+    for stride, field in fields.items():
+        print(f'[cellview] one cell of the stride-{stride} level has looked at a '
+              f'square {field} pixels across')
+
+    fig, ax = plt.subplots(figsize=(8.6, 6.4), facecolor='white')
+    _show(ax, rgb, None)
+    cx, cy = 320.0, 240.0
+    handles = []
+    for stride, colour in ((4, SLIDE), (32, GRIP)):
+        f = fields[stride]
+        ax.add_patch(Rectangle((cx - f / 2, cy - f / 2), f, f, fill=False,
+                               edgecolor=colour, lw=2.4))
+        handles.append(plt.Line2D([], [], color=colour, lw=2.4,
+                                  label=f'one stride-{stride} cell: {f} pixels across'))
+    ax.plot([cx], [cy], marker='o', color=INK, markersize=6)
+    ax.legend(handles=handles, fontsize=10, loc='lower left', framealpha=0.92)
+    ax.set_xlim(-0.5, W - 0.5)
+    ax.set_ylim(H - 0.5, -0.5)
+    ax.set_title('What one cell of the finest and of the coarsest level has looked '
+                 'at', fontsize=12.5, weight='bold', color=INK)
+    ax.set_xlabel('both squares are drawn around the same point in the picture',
+                  fontsize=10, color=INK)
+    fig.tight_layout()
+    _save(fig, BACK_DOC, 'what-one-cell-has-seen.svg')
 
 
 def top_down_pathway() -> None:
@@ -2591,6 +2732,46 @@ def threshold_tradeoff() -> None:
     _save(fig, SEG_DOC, 'threshold-tradeoff.svg')
 
 
+def honest_measurement() -> None:
+    """What throwing away the weak guesses does to precision, and to average precision."""
+    rows, truth = _kept_rows(0.5)
+    cuts = [0.0, 0.3, 0.5, 0.7]
+    prec, aps, counts = [], [], []
+    for cut in cuts:
+        sub = [r for r in rows if r['score'] >= cut]
+        hits = sum(1 for r in sub if r['hit'])
+        prec.append(hits / len(sub))
+        aps.append(pr_curve(sub, len(truth))[2])
+        counts.append(len(sub))
+        print(f'[honest] measuring on the {len(sub)} guesses that score {cut:.1f} or '
+              f'more: precision {prec[-1]:.3f}, average precision {aps[-1]:.3f}')
+
+    fig, ax = plt.subplots(figsize=(9.6, 4.9), facecolor='white')
+    _plain(ax)
+    x = np.arange(len(cuts))
+    ax.bar(x - 0.19, prec, width=0.36, color=GRIP, alpha=0.88,
+           label='precision, quoted on its own')
+    ax.bar(x + 0.19, aps, width=0.36, color=LINK, alpha=0.88,
+           label='average precision over the whole list')
+    for i in range(len(cuts)):
+        ax.text(i - 0.19, prec[i] + 0.02, f'{prec[i]:.2f}', ha='center', fontsize=10,
+                weight='bold', color=INK)
+        ax.text(i + 0.19, aps[i] + 0.02, f'{aps[i]:.2f}', ha='center', fontsize=10,
+                weight='bold', color=INK)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f'all {counts[0]} guesses'] +
+                       [f'only the {c} that score\n{t:.1f} or more'
+                        for t, c in zip(cuts[1:], counts[1:])], fontsize=9.5)
+    ax.set_ylim(0, 1.15)
+    ax.set_ylabel('share', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.set_title('Throwing away the weak guesses moves precision a long way and '
+                 'average precision hardly at all', fontsize=11.5, weight='bold',
+                 color=INK)
+    fig.tight_layout()
+    _save(fig, SEG_DOC, 'honest-measurement.svg')
+
+
 def ap_at_thresholds() -> None:
     ths = [0.5, 0.6, 0.7, 0.8, 0.9]
     aps = []
@@ -2801,13 +2982,14 @@ def before_and_after() -> None:
     ax.bar([r[0] for r in rows], [r[1] for r in rows],
            color=[r[2] for r in rows], alpha=0.88, width=0.55)
     ax.axhline(len(objects), color=INK, ls='--', lw=1.6)
-    ax.text(-0.42, len(objects) + 0.5, f'{len(objects)} objects are really there',
-            fontsize=9.5, ha='left', color=INK)
+    ax.text(1.5, len(objects) + 0.45, f'{len(objects)} objects are really there',
+            fontsize=9.5, ha='center', color=INK,
+            bbox=dict(facecolor='white', edgecolor='none', alpha=0.9, pad=1.5))
     for i, r in enumerate(rows):
         ax.text(i, r[1] + 0.6, str(r[1]), ha='center', fontsize=11, weight='bold',
                 color=INK)
     ax.set_ylim(0, max(r[1] for r in rows) * 1.2)
-    ax.set_ylabel('boxes the detector hands over', fontsize=10)
+    ax.set_ylabel('boxes the detector gives back', fontsize=10)
     ax.tick_params(axis='x', labelsize=9.5)
     ax.set_title('One design needs a clean-up step and the other does not',
                  fontsize=12, weight='bold', color=INK)
@@ -2860,10 +3042,8 @@ def duplicate_pressure() -> None:
                 if won else 'not matched, so it learns to answer\n"nothing"'),
              fs=9.5, alpha=0.18)
         y -= 2.4
-    ax.text(0.0, 2.4, 'Because the match is one to one, exactly one slot is ever '
-                      'asked to\nname a given object, and every other slot is '
-                      'pushed towards\n"nothing", so the model learns not to answer '
-                      'twice.', fontsize=10.5, color=INK, va='top')
+    ax.text(0.0, 2.4, 'One object, one slot, every time.', fontsize=10.5,
+            color=INK, va='top')
     fig.tight_layout()
     _save(fig, SEG_DOC, 'duplicate-pressure.svg')
 
@@ -2950,8 +3130,8 @@ def mask_head() -> None:
           f'and those are stretched to the box, which is {bw:.0f} by {bh:.0f} '
           f'pixels, or {int(bw * bh):,}')
 
-    fig, ax = plt.subplots(figsize=(12.4, 4.6), facecolor='white')
-    _blank(ax, (0, 10), (0.5, 9.5))
+    fig, ax = plt.subplots(figsize=(12.4, 3.6), facecolor='white')
+    _blank(ax, (0, 10), (3.5, 9.6))
     steps = [('the box from\nthe detector', f'{bw:.0f} x {bh:.0f} pixels', LINK, 0),
              ('the features inside it,\ncut to a fixed grid', '14 x 14 x 256', TEAL,
               1),
@@ -2971,14 +3151,44 @@ def mask_head() -> None:
             _arrow(ax, (x + 1.55, 6.1), (x + 1.65, 6.1), MUTED)
     ax.text(0.1, 8.8, 'A mask head: the same few layers, run once for each box',
             fontsize=12.5, weight='bold', color=INK)
-    ax.text(0.1, 8.1, f'{total:,} parameters in all, and they are run again for '
-                      f'every box the detector found, which is what makes masks '
-                      f'cost more than boxes.', fontsize=10, color=INK)
-    ax.text(0.1, 1.6, 'The head answers only inside the box, so it never has to say '
-                      'anything about the rest of the picture,\nand the 28 by 28 '
-                      'grid is stretched to whatever size that box happens to be.',
-            fontsize=10, color=MUTED, va='top')
+    ax.text(0.1, 8.2, f'{total:,} parameters in all', fontsize=10.5, color=INK)
     _save(fig, SEG_DOC, 'mask-head.svg')
+
+
+def mask_cost_per_object() -> None:
+    """The backbone runs once a picture; the mask head runs once a box."""
+    conv = 4 * (9 * 256 * 256 * 14 * 14)
+    up = 256 * 256 * 2 * 2 * 14 * 14
+    last = 256 * 28 * 28
+    per_box = conv + up + last
+    back = resnet_counts(img=224)['m_total']
+    print(f'[maskcost] one run of the mask head costs {per_box / 1e6:.0f} million '
+          f'multiply-adds, against {back / 1e9:.2f} thousand million for one run of '
+          f'the backbone')
+    counts = list(range(0, 13))
+    even = back / per_box
+    print(f'[maskcost] the mask head costs as much as the whole backbone once there '
+          f'are {even:.1f} boxes to mask')
+
+    fig, ax = plt.subplots(figsize=(8.8, 4.9), facecolor='white')
+    _plain(ax)
+    ax.plot(counts, [back / 1e9] * len(counts), color=LINK, lw=2.4,
+            label='the backbone, run once for the picture')
+    ax.plot(counts, [n * per_box / 1e9 for n in counts], marker='o', color=GRIP,
+            lw=2.4, label='the mask head, run once for every box')
+    ax.plot([even], [back / 1e9], marker='X', color=INK, markersize=12)
+    ax.annotate(f'at {even:.0f} boxes the masks cost\nas much as the backbone',
+                xy=(even, back / 1e9), xytext=(5.4, 0.7), fontsize=9.5,
+                color=INK, arrowprops=dict(arrowstyle='->', color=INK, lw=1.2))
+    ax.set_xlabel('objects the detector found in this picture', fontsize=10)
+    ax.set_ylabel('thousand million multiply-adds', fontsize=10)
+    ax.set_xticks(counts[::2])
+    ax.set_ylim(0, 6.6)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.set_title('Boxes cost the same whatever is on the table, and masks do not',
+                 fontsize=12, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, SEG_DOC, 'mask-cost-per-object.svg')
 
 
 def mask_resolution() -> None:
@@ -3116,12 +3326,11 @@ def mask_to_grasp() -> None:
           f'{mug["area"]:,}, so {int(spare):,} of them, or '
           f'{100 * spare / mug_box_area:.0f} in every hundred, are table')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.8, 5.0), facecolor='white')
+    fig, ax = plt.subplots(figsize=(6.4, 5.6), facecolor='white')
     view = (120, 180, 260, 360)
     sub = rgb[view[1]:view[3], view[0]:view[2]]
-    ax = axes[0]
     _show(ax, _overlay(sub, front['mask'][view[1]:view[3], view[0]:view[2]], TEAL,
-                       0.5), 'the mask, with the grasp line across it')
+                       0.5), None)
     ax.plot([cx - view[0]], [cy - view[1]], marker='X', color=GRIP, markersize=13,
             markeredgecolor='white')
     p1 = (cx - view[0] + minor[0] * width_px / 2, cy - view[1] + minor[1] * width_px / 2)
@@ -3129,8 +3338,14 @@ def mask_to_grasp() -> None:
     ax.plot([p1[0], p2[0]], [p1[1], p2[1]], color=GRIP, lw=2.4)
     ax.set_xlabel(f'the fingers close across {width_px:.0f} pixels, which is '
                   f'{width_px * mm_per_px:.0f} mm at {CAM_DIST:.2f} m',
-                  fontsize=9.5)
-    ax = axes[1]
+                  fontsize=10)
+    ax.set_title(f'A mask gives a width the gripper can be told: '
+                 f'{width_px * mm_per_px:.0f} mm', fontsize=12, weight='bold',
+                 color=INK)
+    fig.tight_layout()
+    _save(fig, SEG_DOC, 'mask-to-grasp.svg')
+
+    fig, ax = plt.subplots(figsize=(6.4, 5.6), facecolor='white')
     mview = (350, 230, 500, 370)
     msub = rgb[mview[1]:mview[3], mview[0]:mview[2]]
     out = _overlay(msub, (~mug['mask'])[mview[1]:mview[3], mview[0]:mview[2]] &
@@ -3141,11 +3356,11 @@ def mask_to_grasp() -> None:
                    mb[3] - mview[1]), JOINT, None, lw=2.2)
     ax.set_xlabel(f'{int(spare):,} of the box\'s {int(mug_box_area):,} pixels, or '
                   f'{100 * spare / mug_box_area:.0f} in every hundred, are table',
-                  fontsize=9.5)
-    fig.suptitle('From a mask to a grasp: the middle of the mask and the narrow way '
-                 'across it', fontsize=12.5, weight='bold', color=INK)
+                  fontsize=10)
+    ax.set_title('A box promises nothing about the pixels inside it',
+                 fontsize=12, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, SEG_DOC, 'mask-to-grasp.svg')
+    _save(fig, SEG_DOC, 'box-holds-table.svg')
 
 
 def main() -> None:
@@ -3158,23 +3373,30 @@ def main() -> None:
     backbone_and_heads()
     parameter_split()
     shared_vs_separate()
+    frozen_backbone()
     work_per_second()
     patch_grid()
     patch_to_vector()
-    position_and_shuffle()
+    patch_shuffle()
+    position_likeness()
     class_token()
     shapes_ladder()
     receptive_field()
     shift_test()
+    shape_examples()
     data_size_curve()
     conv_block_shapes()
+    block_cost()
     work_per_picture()
     cost_vs_resolution()
+    quadratic_share()
     patch_size_and_tokens()
+    patch_size_and_small_things()
     attention_memory()
     pyramid_grids()
     apparent_size()
     small_object_cells()
+    what_one_cell_has_seen()
     top_down_pathway()
     neighbours_picture()
     neighbour_agreement()
@@ -3196,6 +3418,7 @@ def main() -> None:
     ranked_detections()
     precision_recall()
     threshold_tradeoff()
+    honest_measurement()
     ap_at_thresholds()
     query_slots()
     matching_cost()
@@ -3203,6 +3426,7 @@ def main() -> None:
     duplicate_pressure()
     mask_as_numbers()
     mask_head()
+    mask_cost_per_object()
     mask_resolution()
     prompt_to_mask()
     mask_to_grasp()

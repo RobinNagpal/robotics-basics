@@ -41,7 +41,10 @@ ultralytics = ">=8.4"
 rfdetr = { version = ">=1.11", extras = ["train"] }
 
 [activation.env]
-# The project's own modules, and the bench every solution is scored on.
-PYTHONPATH = "$PIXI_PROJECT_ROOT/../src/work_cell:$PIXI_PROJECT_ROOT/bench"
+# The cell's own modules, and the examiner every solution is scored on.
+# The path was ../src/work_cell, which was right when this folder sat one
+# level higher; after the books were numbered it resolved to src/src and
+# nothing in the folder could import work_cell without setting it by hand.
+PYTHONPATH = "$PIXI_PROJECT_ROOT/work_cell:$PIXI_PROJECT_ROOT/bench"
 # Some operations have no MPS kernel and silently need the CPU instead.
 PYTORCH_ENABLE_MPS_FALLBACK = "1"

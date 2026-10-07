@@ -561,10 +561,10 @@ def fig_input_scale() -> None:
     print('  column spreads once standardised: '
           + ', '.join(f'{v:.3g}' for v in standardise(xmm, xmm.mean(0),
                                                       xmm.std(0) + 1e-12).std(0)))
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(9.6, 4.2),
-                                  gridspec_kw={'width_ratios': [1.25, 1]})
+
+    # picture 1: what the mixed scales do to the run
+    fig, ax = plt.subplots(figsize=(8.2, 4.4))
     _plain(ax)
-    _plain(ax2)
     for label, kw, colour in (('left as recorded', dict(raw=True), GRIP),
                               ('standardised first', {}, LINK)):
         net, curve, _ = train(xmm, SIM.ytr, width=32, lr=3e-3, steps=3000,
@@ -578,11 +578,15 @@ def fig_input_scale() -> None:
     ax.set_xlabel('training step', fontsize=10)
     ax.set_ylabel('loss on the batch', fontsize=10)
     ax.set_title('Four of the eight inputs written in millimetres',
-                 fontsize=11, fontweight='bold', color=INK)
+                 fontsize=11.5, fontweight='bold', color=INK)
     ax.grid(axis='y', color=GRID, lw=0.7)
     ax.set_axisbelow(True)
     ax.legend(fontsize=9, loc='upper right', framealpha=0.95)
+    _save(fig, 'input-scale.svg')
 
+    # picture 2: the spread of each input column, before and after standardising
+    fig, ax2 = plt.subplots(figsize=(7.2, 4.4))
+    _plain(ax2)
     names = ['object x', 'object y', 'grip x', 'grip y', 'phase',
              'distance', 'spiky', 'noise']
     pos = np.arange(8)
@@ -594,11 +598,11 @@ def fig_input_scale() -> None:
     ax2.set_xscale('log')
     ax2.set_xlabel('spread of the column', fontsize=10)
     ax2.set_title('The spreads differ by a factor of thousands',
-                  fontsize=11, fontweight='bold', color=INK)
+                  fontsize=11.5, fontweight='bold', color=INK)
     ax2.grid(axis='x', color=GRID, lw=0.7)
     ax2.set_axisbelow(True)
     ax2.legend(fontsize=9, loc='upper right', framealpha=0.95)
-    _save(fig, 'input-scale.svg')
+    _save(fig, 'spreads-of-the-columns.svg')
 
 
 # --------------------------------------------------------------------------
@@ -689,10 +693,9 @@ def fig_two_ways_round() -> None:
     print(f'  loss of one side on its own        {loss_above:.6f}, '
           f'{loss_mean / loss_above:.1f} times smaller')
 
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(9.8, 4.2),
-                                  gridspec_kw={'width_ratios': [1.3, 1]})
+    # picture 1: the demonstrations and the one answer least squares gives
+    fig, ax = plt.subplots(figsize=(7.6, 4.4))
     _plain(ax)
-    _plain(ax2)
     circle = plt.Circle((0, 0), radius, color=GRIP, alpha=0.3, zorder=1)
     ax.add_patch(circle)
     ax.add_patch(plt.Circle((0, 0), radius, color=GRIP, fill=False, lw=1.8, zorder=2))
@@ -707,12 +710,16 @@ def fig_two_ways_round() -> None:
     ax.set_xlabel('distance along the table (m)', fontsize=10)
     ax.set_ylabel('sideways offset (m)', fontsize=10)
     ax.set_title('Both ways round are right, and their average is not',
-                 fontsize=11, fontweight='bold', color=INK)
+                 fontsize=11.5, fontweight='bold', color=INK)
     ax.set_ylim(-0.23, 0.23)
     ax.legend(fontsize=8.5, loc='upper left', framealpha=0.95)
     ax.grid(color=GRID, lw=0.7)
     ax.set_axisbelow(True)
+    _save(fig, 'two-ways-round.svg')
 
+    # picture 2: the floor the best single answer cannot get under
+    fig, ax2 = plt.subplots(figsize=(6.4, 4.3))
+    _plain(ax2)
     bars = [loss_above, loss_mean]
     ax2.bar([0, 1], bars, color=[TEAL, INK], width=0.55)
     for i, v in enumerate(bars):
@@ -723,10 +730,10 @@ def fig_two_ways_round() -> None:
     ax2.set_ylabel('loss the best single answer can reach', fontsize=10)
     ax2.set_ylim(0, max(bars) * 1.25)
     ax2.set_title('The floor is in the data, not the model',
-                  fontsize=11, fontweight='bold', color=INK)
+                  fontsize=11.5, fontweight='bold', color=INK)
     ax2.grid(axis='y', color=GRID, lw=0.7)
     ax2.set_axisbelow(True)
-    _save(fig, 'two-ways-round.svg')
+    _save(fig, 'the-floor-is-in-the-data.svg')
 
 
 def fig_lr_too_high_to_settle() -> None:
@@ -769,11 +776,12 @@ def fig_lr_too_high_to_settle() -> None:
 def fig_train_and_held_out_part() -> None:
     print('-' * 72)
     print('section 3, picture 1: the two curves part company')
-    xs, ys, _, _ = demos(6, np.random.default_rng(31))
+    attempts = 4
+    xs, ys, _, _ = demos(attempts, np.random.default_rng(31))
     net, _, track = train(xs, ys, width=128, lr=3e-3, steps=20000, seed=0,
                           every=250, held=(SIM.xho, SIM.yho))
     k = int(np.argmin(track[:, 2]))
-    print(f'  6 attempts, {len(xs)} rows, a network of width 128')
+    print(f'  {attempts} attempts, {len(xs)} rows, a network of width 128')
     print(f'  best held-out loss {track[k, 2]:.5f} at step {int(track[k, 0])}')
     print(f'  at the end: training {track[-1, 1]:.6f}, held out {track[-1, 2]:.5f}')
     print(f'  held out is {track[-1, 2] / track[k, 2]:.2f} times its best value, '
@@ -784,17 +792,17 @@ def fig_train_and_held_out_part() -> None:
     ax.plot(track[:, 0], track[:, 2], color=WRIST, lw=2.0, label='held-out loss')
     ax.plot([track[k, 0]], [track[k, 2]], 'o', ms=11, mfc='none', mec=GRIP, mew=2.0)
     ax.annotate(f'best held out: {track[k, 2]:.4f}\nat step {int(track[k, 0])}',
-                xy=(track[k, 0], track[k, 2]), xytext=(-20, -58),
+                xy=(track[k, 0], track[k, 2]), xytext=(-30, -58),
                 textcoords='offset points', fontsize=9, color=GRIP, ha='center',
                 arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.1))
     ax.set_yscale('log')
     ax.set_xlabel('training step', fontsize=10)
     ax.set_ylabel('loss (squared metres a second)', fontsize=10)
-    ax.set_title('Six demonstrated attempts and a network of width 128',
+    ax.set_title(f'{attempts} demonstrated attempts and a network of width 128',
                  fontsize=11.5, fontweight='bold', color=INK)
     ax.grid(axis='y', color=GRID, lw=0.7)
     ax.set_axisbelow(True)
-    ax.legend(fontsize=9.5, loc='center right', framealpha=0.95)
+    ax.legend(fontsize=9.5, loc='upper right', framealpha=0.95)
     _save(fig, 'train-and-held-out-part.svg')
 
 
@@ -983,15 +991,22 @@ def fig_what_the_arm_does() -> None:
     print('-' * 72)
     print('section 4, picture 2: what the two policies do on the arm')
     a, b = POP.pair
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(10.0, 4.3),
-                                  gridspec_kw={'width_ratios': [1.35, 1]})
-    _plain(ax)
-    _plain(ax2)
     finals = {}
+    runs = {}
+    for i in (a, b):
+        d, ok = rollout(POP.nets[i], 300, 55)
+        runs[i] = (d, ok)
+        finals[i] = d[-1]
+        print(f'  loss {POP.loss[i]:.5f} success {ok.mean():.1%}  '
+              f'median final gap {1000 * np.median(d[-1]):.1f} mm  '
+              f'90th percentile {1000 * np.percentile(d[-1], 90):.1f} mm')
+
+    # picture 1: the gap still to close, step by step, for the two policies
+    fig, ax = plt.subplots(figsize=(8.2, 4.4))
+    _plain(ax)
     for i, colour, name in ((a, TEAL, 'the 300-trial winner'),
                             (b, GRIP, 'the other one')):
-        d, ok = rollout(POP.nets[i], 300, 55)
-        finals[i] = d[-1]
+        d, ok = runs[i]
         med = np.median(d, axis=1)
         lo = np.percentile(d, 10, axis=1)
         hi = np.percentile(d, 90, axis=1)
@@ -999,33 +1014,36 @@ def fig_what_the_arm_does() -> None:
                 label=f'{name}: {ok.mean():.0%} succeed')
         ax.fill_between(np.arange(1, T + 1), 1000 * lo, 1000 * hi, color=colour,
                         alpha=0.18)
-        print(f'  loss {POP.loss[i]:.5f} success {ok.mean():.1%}  '
-              f'median final gap {1000 * np.median(d[-1]):.1f} mm  '
-              f'90th percentile {1000 * np.percentile(d[-1], 90):.1f} mm')
     ax.axhline(1000 * TOL, color=INK, ls='--', lw=1.5)
     ax.text(T, 1000 * TOL * 1.12, f'{1000 * TOL:.0f} mm, the tolerance',
             ha='right', fontsize=9.5, color=INK)
     ax.set_yscale('log')
     ax.set_xlabel('step of the attempt', fontsize=10)
     ax.set_ylabel('gap still to close (mm)', fontsize=10)
-    ax.set_title('Two policies, almost the same held-out loss',
-                 fontsize=11, fontweight='bold', color=INK)
+    ax.set_title('Two policies of almost the same held-out loss, on the arm',
+                 fontsize=11.5, fontweight='bold', color=INK)
     ax.grid(axis='y', color=GRID, lw=0.7)
     ax.set_axisbelow(True)
     ax.legend(fontsize=9, loc='lower left', framealpha=0.95)
+    _save(fig, 'what-the-arm-does.svg')
 
+    # picture 2: where the attempts of each policy finish, against the tolerance
+    fig, ax2 = plt.subplots(figsize=(7.4, 4.3))
+    _plain(ax2)
     bins = np.linspace(0, 60, 31)
     for i, colour, name in ((a, TEAL, 'the better one'), (b, GRIP, 'the worse one')):
         ax2.hist(1000 * finals[i], bins=bins, color=colour, alpha=0.55, label=name)
     ax2.axvline(1000 * TOL, color=INK, ls='--', lw=1.5)
+    ax2.text(1000 * TOL + 1.0, ax2.get_ylim()[1] * 0.95,
+             f'{1000 * TOL:.0f} mm, the tolerance', fontsize=9.5, color=INK, va='top')
     ax2.set_xlabel('gap at the last step (mm)', fontsize=10)
     ax2.set_ylabel('attempts', fontsize=10)
     ax2.set_title('Success is a threshold on the last step',
-                  fontsize=11, fontweight='bold', color=INK)
+                  fontsize=11.5, fontweight='bold', color=INK)
     ax2.grid(axis='y', color=GRID, lw=0.7)
     ax2.set_axisbelow(True)
     ax2.legend(fontsize=9, loc='upper right', framealpha=0.95)
-    _save(fig, 'what-the-arm-does.svg')
+    _save(fig, 'success-is-a-threshold.svg')
 
 
 def fig_states_it_reaches_itself() -> None:
@@ -1290,10 +1308,10 @@ def fig_which_reading_did_it_use() -> None:
           f'new kinds {kept[1]:.1%}')
     print(f'  colour readings left out:    trained kinds {cut[0]:.1%}, '
           f'new kinds {cut[1]:.1%}')
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(10.0, 4.3),
-                                  gridspec_kw={'width_ratios': [1.15, 1]})
+
+    # picture 1: the cheap test, which scrambles one group of readings
+    fig, ax = plt.subplots(figsize=(7.2, 4.4))
     _plain(ax)
-    _plain(ax2)
     vals = [plain, no_colour, no_shape]
     ax.bar(range(3), [100 * v for v in vals], color=[LINK, JOINT, TEAL], width=0.55)
     for i, v in enumerate(vals):
@@ -1304,11 +1322,15 @@ def fig_which_reading_did_it_use() -> None:
                         'shape readings\nscrambled'], fontsize=9.5)
     ax.set_ylabel('openings within 4 mm (%)', fontsize=10)
     ax.set_ylim(0, 118)
-    ax.set_title('The cheap test: hide a group of readings',
-                 fontsize=11, fontweight='bold', color=INK)
+    ax.set_title('One model, with a group of its readings scrambled',
+                 fontsize=11.5, fontweight='bold', color=INK)
     ax.grid(axis='y', color=GRID, lw=0.7)
     ax.set_axisbelow(True)
+    _save(fig, 'which-reading-did-it-use.svg')
 
+    # picture 2: the repair, which is to train again with the colour left out
+    fig, ax2 = plt.subplots(figsize=(7.2, 4.4))
+    _plain(ax2)
     pos = np.arange(2)
     w = 0.33
     ax2.bar(pos - w / 2, [100 * v for v in kept], width=w, color=LINK,
@@ -1325,12 +1347,12 @@ def fig_which_reading_did_it_use() -> None:
                         fontsize=9.5)
     ax2.set_ylabel('openings within 4 mm (%)', fontsize=10)
     ax2.set_ylim(0, 130)
-    ax2.set_title('The fix: train again without them',
-                  fontsize=11, fontweight='bold', color=INK)
+    ax2.set_title('Two models, one trained without the colour readings',
+                  fontsize=11.5, fontweight='bold', color=INK)
     ax2.grid(axis='y', color=GRID, lw=0.7)
     ax2.set_axisbelow(True)
     ax2.legend(fontsize=9, loc='upper center', framealpha=0.95)
-    _save(fig, 'which-reading-did-it-use.svg')
+    _save(fig, 'training-without-the-colour.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1628,11 +1650,11 @@ def fig_two_changes_at_once() -> None:
     paired = sum(1 for p, q in zip(runs[key_a], runs[key_both]) if q < p)
     print(f'  with 200 attempts, the weight decay made it worse in {paired} '
           f'of the {len(seeds)} runs')
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(10.0, 4.3),
-                                  gridspec_kw={'width_ratios': [1, 1.5]})
-    _plain(ax)
-    _plain(ax2)
     jit = np.linspace(-0.12, 0.12, len(seeds))
+
+    # picture 1: what the person who changed both things at once sees
+    fig, ax = plt.subplots(figsize=(6.2, 4.3))
+    _plain(ax)
     ax.bar([0, 1], [100 * base_v, 100 * both_v], color=[MUTED, SLIDE], width=0.5)
     for i, key in enumerate([key_base, key_both]):
         top = max(100 * cells[key], 100 * max(runs[key]))
@@ -1644,11 +1666,15 @@ def fig_two_changes_at_once() -> None:
     ax.set_xticklabels(['where you\nstarted', 'both changes\nat once'], fontsize=9.5)
     ax.set_ylabel('attempts that succeeded (%)', fontsize=10)
     ax.set_ylim(0, 112)
-    ax.set_title('Two changes at once',
-                 fontsize=11, fontweight='bold', color=INK)
+    ax.set_title('Two changes made together, four runs each',
+                 fontsize=11.5, fontweight='bold', color=INK)
     ax.grid(axis='y', color=GRID, lw=0.7)
     ax.set_axisbelow(True)
+    _save(fig, 'two-changes-at-once.svg')
 
+    # picture 2: the same four conditions, measured one change at a time
+    fig, ax2 = plt.subplots(figsize=(7.8, 4.3))
+    _plain(ax2)
     labels = ['where you\nstarted', 'more\nattempts', 'weight\ndecay', 'both\nchanges']
     keys = [key_base, key_a, key_b, key_both]
     ax2.bar(range(4), [100 * cells[k] for k in keys],
@@ -1665,10 +1691,10 @@ def fig_two_changes_at_once() -> None:
     ax2.set_ylabel('attempts that succeeded (%)', fontsize=10)
     ax2.set_ylim(0, 112)
     ax2.set_title('One change at a time, four runs each, the runs drawn as dots',
-                  fontsize=11, fontweight='bold', color=INK)
+                  fontsize=11.5, fontweight='bold', color=INK)
     ax2.grid(axis='y', color=GRID, lw=0.7)
     ax2.set_axisbelow(True)
-    _save(fig, 'two-changes-at-once.svg')
+    _save(fig, 'one-change-at-a-time.svg')
 
 
 # --------------------------------------------------------------------------

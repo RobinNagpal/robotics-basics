@@ -302,57 +302,64 @@ def one_demonstration_on_disk() -> None:
     print(f'[files] raw frames {frames:,} bytes = {frames / 1e6:.2f} MB')
     print(f'[files] as video at {VIDEO_RATIO}:1 = {video / 1e6:.2f} MB')
     print(f'[files] numbers {numbers:,} bytes; sentence {sentence} bytes')
+    print(f'[files] one video file {video / 2e6:.2f} MB, one numbers file '
+          f'{STEPS} rows')
     print(f'[files] episode on disk {total / 1e6:.2f} MB, of which pictures are '
           f'{100 * video / total:.4f} per cent')
     for n in (50, 200, 1000):
         print(f'[files] {n} episodes = {n * frames / 1e9:.2f} GB raw, '
               f'{n * total / 1e9:.3f} GB stored')
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.4, 5.0), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.15, 1.0]})
-    _table_axes(axl)
-    axl.set_xlim(0, 1)
-    axl.set_ylim(0, 1)
-    rows = [
-        ('episode_000/', '', True),
-        ('cam_top.mp4', f'{video / 2e6:.2f} MB, {STEPS} frames of {CAM_ROWS}x{CAM_COLS}', False),
-        ('cam_wrist.mp4', f'{video / 2e6:.2f} MB, {STEPS} frames of {CAM_ROWS}x{CAM_COLS}', False),
-        ('state.parquet', f'{STEPS} rows x {JOINTS} joint readings', False),
-        ('action.parquet', f'{STEPS} rows x {JOINTS} commands', False),
-        ('stamps.parquet', f'{STEPS} rows x 1 time', False),
-        ('task.json', '"put the block in the tray"', False),
-    ]
-    for i, (name, note, head) in enumerate(rows):
-        y = 0.95 - i * 0.105
-        axl.text(0.02 if head else 0.08, y, name, fontsize=11.5 if head else 10.5,
-                 family='monospace', weight='bold' if head else 'normal',
-                 color=INK, va='center')
-        axl.text(0.42, y, note, fontsize=9.5, color=MUTED, va='center')
-    axl.plot([0.045, 0.045], [0.95 - 6 * 0.105, 0.90], color=GRID, lw=1.2)
-    axl.text(0.02, 0.15, 'one training example = one row of state, the two frames\n'
-                         f'beside it, and the {JOINTS} commands recorded after it',
-             fontsize=10, color=INK, va='center')
-    axl.text(0.02, 0.04, f'one episode holds {STEPS} such examples',
-             fontsize=10.5, color=LINK, weight='bold', va='center')
-    axl.set_title(f'One demonstration of {STEPS / HZ:.0f} seconds, as the files it becomes',
-                  fontsize=12, weight='bold')
+    # picture 1: one training example, cut out of one episode
+    fig, ax = plt.subplots(figsize=(11.2, 4.4), facecolor='white')
+    _table_axes(ax)
+    ax.set_xlim(-34, STEPS + 4)
+    ax.set_ylim(0.1, 5.05)
+    lanes = [('top camera', 3.6, LINK), ('wrist camera', 2.8, LINK),
+             (f'{JOINTS} joint readings', 2.0, SLIDE),
+             (f'{JOINTS} commands', 1.2, JOINT)]
+    for name, y, col in lanes:
+        ax.add_patch(Rectangle((0, y), STEPS, 0.5, color=col, alpha=0.20))
+        for s in range(0, STEPS + 1, 10):
+            ax.plot([s, s], [y, y + 0.5], color='white', lw=0.9)
+        ax.text(-3, y + 0.25, name, ha='right', va='center', fontsize=10.5, color=INK)
+    t0, chunk_len = 46, 8
+    ax.add_patch(Rectangle((t0, 1.95), 1.6, 2.20, color=GRIP, alpha=0.9, zorder=3))
+    ax.add_patch(Rectangle((t0, 1.15), chunk_len, 0.60, color=GRIP, alpha=0.9, zorder=3))
+    ax.plot([t0 + 0.8, t0 + 0.8], [4.15, 4.52], color=GRIP, lw=1.2)
+    ax.text(t0 + 2.5, 4.56, 'one training example', fontsize=11, color=GRIP,
+            weight='bold', va='bottom')
+    ax.text(t0 + chunk_len + 3, 1.45, 'the commands after it', fontsize=9.5,
+            color=GRIP, va='center')
+    ax.plot([0, STEPS], [0.98, 0.98], color=MUTED, lw=1.0)
+    for s in (0, 30, 60, 90, 120):
+        ax.plot([s, s], [0.90, 0.98], color=MUTED, lw=1.0)
+        ax.text(s, 0.82, str(s), ha='center', va='top', fontsize=9, color=MUTED)
+    ax.text(STEPS / 2, 0.52, f'step of the episode: {STEPS} steps, '
+                             f'{STEPS / HZ:.0f} seconds at {HZ} a second',
+            ha='center', va='top', fontsize=10, color=INK)
+    ax.set_title(f'One episode of {STEPS / HZ:.0f} seconds, and one example cut out of it',
+                 fontsize=12, weight='bold')
+    _save(fig, 'one-training-example.svg')
 
-    _plain(axr)
+    # picture 2: where the bytes of one episode go
+    fig, ax = plt.subplots(figsize=(7.6, 4.6), facecolor='white')
+    _plain(ax)
     names = ['raw frames', 'frames as\nvideo', 'joint and action\nnumbers', 'task\nsentence']
     vals = [frames, video, numbers, sentence]
     cols = [GRIP, LINK, SLIDE, JOINT]
-    axr.bar(names, vals, color=cols, width=0.62)
-    axr.set_yscale('log')
-    axr.set_ylim(1, frames * 12)
+    ax.bar(names, vals, color=cols, width=0.62)
+    ax.set_yscale('log')
+    ax.set_ylim(1, frames * 12)
     for i, v in enumerate(vals):
-        axr.text(i, v * 1.6, f'{v:,.0f} B' if v < 1e6 else f'{v / 1e6:,.1f} MB',
-                 ha='center', fontsize=10, color=INK)
-    axr.set_ylabel('bytes for one episode (log scale)', fontsize=10)
-    axr.grid(axis='y', color=GRID, lw=0.6)
-    axr.set_axisbelow(True)
-    axr.set_title(f'The pictures are {100 * video / total:.2f} per cent of what you store',
-                  fontsize=12, weight='bold')
-    _save(fig, 'one-demonstration-on-disk.svg')
+        ax.text(i, v * 1.6, f'{v:,.0f} B' if v < 1e6 else f'{v / 1e6:,.1f} MB',
+                ha='center', fontsize=10, color=INK)
+    ax.set_ylabel('bytes for one episode (log scale)', fontsize=10)
+    ax.grid(axis='y', color=GRID, lw=0.6)
+    ax.set_axisbelow(True)
+    ax.set_title(f'The pictures are {100 * video / total:.2f} per cent of what you store',
+                 fontsize=12, weight='bold')
+    _save(fig, 'where-the-bytes-go.svg')
 
 
 RESET_S, CHECK_S, SPOIL = 18.0, 6.0, 6      # seconds, and one take in six is thrown away
@@ -373,47 +380,51 @@ def hours_of_a_person() -> None:
         print(f'[hours] {n:5d} episodes = {n * per / 3600:6.2f} person-hours '
               f'({n * per / 3600 / 7:.2f} working days of 7 hours)')
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.4, 4.4), facecolor='white')
-    _plain(axl)
+    # picture 1: where the 33.6 seconds of one episode go
+    fig, ax = plt.subplots(figsize=(9.4, 3.6), facecolor='white')
+    _plain(ax)
     parts = [('moving the arm', move, LINK), ('putting the objects back', RESET_S, JOINT),
              ('checking and saving', CHECK_S, SLIDE),
              (f'the 1 take in {SPOIL} thrown away', per - raw, GRIP)]
     left = 0.0
     for name, w, c in parts:
-        axl.barh([0], [w], left=left, color=c, height=0.5, label=f'{name} ({w:.1f} s)')
+        ax.barh([0], [w], left=left, color=c, height=0.5, label=f'{name} ({w:.1f} s)')
         if w > 3:
-            axl.text(left + w / 2, 0, f'{w:.1f} s', ha='center', va='center',
-                     fontsize=10, color='white', weight='bold')
+            ax.text(left + w / 2, 0, f'{w:.1f} s', ha='center', va='center',
+                    fontsize=10, color='white', weight='bold')
         left += w
-    axl.set_yticks([])
-    axl.set_xlim(0, per * 1.02)
-    axl.set_xlabel('seconds of one person\'s time', fontsize=10)
-    axl.set_ylim(-0.45, 0.45)
-    axl.legend(fontsize=9.5, frameon=False, loc='upper center', ncol=2,
-               bbox_to_anchor=(0.5, -0.16))
-    axl.set_title(f'One usable episode costs {per:.1f} seconds of a person',
-                  fontsize=12, weight='bold')
+    ax.set_yticks([])
+    ax.set_xlim(0, per * 1.02)
+    ax.set_xlabel('seconds of one person\'s time', fontsize=10)
+    ax.set_ylim(-0.45, 0.45)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper center', ncol=2,
+              bbox_to_anchor=(0.5, -0.22))
+    ax.set_title(f'One usable episode costs {per:.1f} seconds of a person',
+                 fontsize=12, weight='bold')
+    _save(fig, 'what-one-episode-costs.svg')
 
-    _plain(axr)
+    # picture 2: what a pile of episodes costs in hours
+    fig, ax = plt.subplots(figsize=(7.8, 4.6), facecolor='white')
+    _plain(ax)
     ns = np.array([10, 20, 50, 100, 200, 500, 1000, 2000, 5000])
     hrs = ns * per / 3600.0
-    axr.plot(ns, hrs, marker='o', color=PURPLE, lw=2)
+    ax.plot(ns, hrs, marker='o', color=PURPLE, lw=2)
     for n in (50, 200, 1000, 5000):
         h = n * per / 3600.0
-        axr.annotate(f'{n}: {h:.1f} h', (n, h), textcoords='offset points',
-                     xytext=(-8, 7), fontsize=9.5, color=INK, ha='right')
-    axr.axhline(7.0, color=MUTED, ls='--', lw=1.1)
-    axr.text(11, 7.6, 'one working day', fontsize=9, color=MUTED)
-    axr.set_xscale('log')
-    axr.set_yscale('log')
-    axr.set_xticks(ns)
-    axr.set_xticklabels([str(n) for n in ns], fontsize=9)
-    axr.set_xlabel('usable episodes (log scale)', fontsize=10)
-    axr.set_ylabel('person-hours (log scale)', fontsize=10)
-    axr.grid(color=GRID, lw=0.6)
-    axr.set_axisbelow(True)
-    axr.set_ylim(0.06, 100)
-    axr.set_title('Demonstrations are bought in hours', fontsize=12, weight='bold')
+        ax.annotate(f'{n}: {h:.1f} h', (n, h), textcoords='offset points',
+                    xytext=(-8, 7), fontsize=9.5, color=INK, ha='right')
+    ax.axhline(7.0, color=MUTED, ls='--', lw=1.1)
+    ax.text(11, 7.6, 'one working day', fontsize=9, color=MUTED)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xticks(ns)
+    ax.set_xticklabels([str(n) for n in ns], fontsize=9)
+    ax.set_xlabel('usable episodes (log scale)', fontsize=10)
+    ax.set_ylabel('person-hours (log scale)', fontsize=10)
+    ax.grid(color=GRID, lw=0.6)
+    ax.set_axisbelow(True)
+    ax.set_ylim(0.06, 100)
+    ax.set_title('Demonstrations cost hours of a person', fontsize=12, weight='bold')
     _save(fig, 'hours-of-a-person.svg')
 
 
@@ -464,46 +475,51 @@ def success_against_demonstrations() -> None:
     print(f'[demos] each point is {REPS} fresh sets of demonstrations, each judged on '
           f'{EVAL} runs, success = within {TOL * 100:.1f} cm and no box hit')
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.6, 4.8), facecolor='white')
-    _plain(axl)
+    # picture 1: how success grows with the number of demonstrations
+    fig, ax = plt.subplots(figsize=(7.8, 4.8), facecolor='white')
+    _plain(ax)
     for (m, lo, hi), c, lab in ((fix, LINK, 'box always in the same place'),
                                 (var, GRIP, 'box moves as well as the goal')):
-        axl.fill_between(SIZES, lo, hi, color=c, alpha=0.16)
-        axl.plot(SIZES, m, marker='o', color=c, lw=2.2, label=lab)
-    axl.axhline(0.80, color=MUTED, ls='--', lw=1.1)
-    axl.text(60, 0.70, 'useful: 4 runs in 5', fontsize=9.5, color=MUTED)
-    axl.set_xscale('log')
-    axl.set_xticks(SIZES)
-    axl.set_xticklabels([str(s) for s in SIZES], fontsize=9.5)
-    axl.set_ylim(0, 1.0)
-    axl.set_xlabel('demonstrations recorded (log scale)', fontsize=10)
-    axl.set_ylabel('runs that reach the goal and miss the box', fontsize=10)
-    axl.legend(fontsize=9.5, frameon=False, loc='lower right')
-    axl.grid(color=GRID, lw=0.6)
-    axl.set_axisbelow(True)
-    axl.set_title('Success climbs steeply, then flattens', fontsize=12, weight='bold')
+        ax.fill_between(SIZES, lo, hi, color=c, alpha=0.16)
+        ax.plot(SIZES, m, marker='o', color=c, lw=2.2, label=lab)
+    ax.axhline(0.80, color=MUTED, ls='--', lw=1.1)
+    ax.text(60, 0.70, 'useful: 4 runs in 5', fontsize=9.5, color=MUTED)
+    ax.set_xscale('log')
+    ax.set_xticks(SIZES)
+    ax.set_xticklabels([str(s) for s in SIZES], fontsize=9.5)
+    ax.set_ylim(0, 1.0)
+    ax.set_xlabel('demonstrations recorded (log scale)', fontsize=10)
+    ax.set_ylabel('runs that reach the goal and miss the box', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    ax.grid(color=GRID, lw=0.6)
+    ax.set_axisbelow(True)
+    ax.set_title('Success climbs steeply, then flattens', fontsize=12, weight='bold')
+    _save(fig, 'success-against-demonstrations.svg')
 
-    _plain(axr)
+    # picture 2: what the first useful policy costs in minutes of a person
     per = (STEPS / HZ + RESET_S + CHECK_S) * SPOIL / (SPOIL - 1)
     want = 0.80
     first_fix = next((n for n, v in zip(SIZES, fix[0]) if v >= want), SIZES[-1])
     first_var = next((n for n, v in zip(SIZES, var[0]) if v >= want), SIZES[-1])
+    fig, ax = plt.subplots(figsize=(7.0, 4.6), facecolor='white')
+    _plain(ax)
     names = ['box always in\nthe same place', 'box moves as\nwell as the goal']
     vals = [first_fix * per / 60.0, first_var * per / 60.0]
-    bars = axr.bar(names, vals, color=[LINK, GRIP], width=0.5)
+    bars = ax.bar(names, vals, color=[LINK, GRIP], width=0.5)
     for b, n_, v in zip(bars, (first_fix, first_var), vals):
-        axr.text(b.get_x() + b.get_width() / 2, v + 1.2,
-                 f'{n_} demonstrations\n{v:.0f} minutes of a person',
-                 ha='center', fontsize=10.5, color=INK)
-    axr.set_ylim(0, max(vals) * 1.45)
-    axr.set_ylabel('minutes of one person at 33.6 s each', fontsize=10)
-    axr.grid(axis='y', color=GRID, lw=0.6)
-    axr.set_axisbelow(True)
-    axr.set_title('What the first useful policy costs to feed', fontsize=12, weight='bold')
+        ax.text(b.get_x() + b.get_width() / 2, v + 1.2,
+                f'{n_} demonstrations\n{v:.0f} minutes of a person',
+                ha='center', fontsize=10.5, color=INK)
+    ax.set_ylim(0, max(vals) * 1.45)
+    ax.set_ylabel(f'minutes of one person at {per:.1f} s each', fontsize=10)
+    ax.grid(axis='y', color=GRID, lw=0.6)
+    ax.set_axisbelow(True)
+    ax.set_title("What the first useful policy costs in a person's time",
+                 fontsize=12, weight='bold')
     print(f'[demos] reaching {want:.0%}: {first_fix} demonstrations with the box fixed '
           f'({first_fix * per / 60:.1f} min), {first_var} with the box moving '
           f'({first_var * per / 60:.1f} min)')
-    _save(fig, 'success-against-demonstrations.svg')
+    _save(fig, 'minutes-for-the-first-useful-policy.svg')
 
 
 def action_space_locked() -> None:
@@ -556,10 +572,10 @@ def action_space_locked() -> None:
           f'read as places {np.median(d_abs) * 100:.2f} cm, axes swapped '
           f'{np.median(d_swap) * 100:.2f} cm')
 
-    fig, axes = plt.subplots(1, 3, figsize=(14.4, 4.4), facecolor='white')
-    ax0, ax1, ax2 = axes
-    _plain(ax0)
+    # picture 1: one set of recordings, written down in the two conventions
+    fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(11.0, 4.3), facecolor='white')
     tt = np.arange(STEPS + 1) / HZ
+    _plain(ax0)
     for i in range(6):
         ax0.plot(tt, path[i, :, 0] * 100, color=LINK, lw=1.4, alpha=0.85)
     ax0.set_xlabel('seconds', fontsize=10)
@@ -568,7 +584,6 @@ def action_space_locked() -> None:
                   fontsize=11.5, weight='bold')
     ax0.grid(color=GRID, lw=0.6)
     ax0.set_axisbelow(True)
-
     _plain(ax1)
     for i in range(6):
         ax1.plot(tt[1:], step[i, :, 0] * 1000, color=SLIDE, lw=1.4, alpha=0.85)
@@ -578,7 +593,12 @@ def action_space_locked() -> None:
                   fontsize=11.5, weight='bold')
     ax1.grid(color=GRID, lw=0.6)
     ax1.set_axisbelow(True)
+    fig.suptitle('The same six recordings, written down two ways',
+                 fontsize=12.5, weight='bold')
+    _save(fig, 'places-or-changes.svg')
 
+    # picture 2: one policy, three readings of its numbers
+    fig, ax2 = plt.subplots(figsize=(6.6, 4.4), facecolor='white')
     _plain(ax2)
     labs = ['played as\nrecorded', 'read as places\nto go to', 'two axes\nswapped']
     vals = [float(np.median(d_right)) * 100, float(np.median(d_abs)) * 100,
@@ -591,7 +611,8 @@ def action_space_locked() -> None:
     ax2.set_ylabel('median miss at the end (cm)', fontsize=10)
     ax2.grid(axis='y', color=GRID, lw=0.6)
     ax2.set_axisbelow(True)
-    ax2.set_title('One policy, three readings of its numbers', fontsize=11.5, weight='bold')
+    ax2.set_title('One trained policy, three readings of its numbers',
+                  fontsize=11.5, weight='bold')
     _save(fig, 'action-space-locked.svg')
 
 
@@ -639,9 +660,8 @@ def two_demonstrators() -> None:
         cases.append((lab, float(np.mean(got))))
         print(f'[people] {lab.replace(chr(10), " ")}: success {np.mean(got):.3f}')
 
-    fig, axes = plt.subplots(1, 3, figsize=(15.2, 4.6), facecolor='white',
-                             gridspec_kw={'wspace': 0.30, 'width_ratios': [1.0, 1.0, 1.2]})
-    ax0, ax1, ax2 = axes
+    # picture 1: the two people's paths round the same box
+    fig, ax0 = plt.subplots(figsize=(7.2, 4.6), facecolor='white')
     _plain(ax0)
     cx, cy = FIXED_BOX
     ax0.add_patch(Rectangle((cx - HW, cy - HH), 2 * HW, 2 * HH, color='#bbbbbb'))
@@ -656,7 +676,10 @@ def two_demonstrators() -> None:
     ax0.set_ylabel('across the table (m)', fontsize=10)
     ax0.legend(fontsize=9.5, frameon=False, loc='lower right')
     ax0.set_title('Same goal, same box, two people', fontsize=11.5, weight='bold')
+    _save(fig, 'two-demonstrators.svg')
 
+    # picture 2: what the two people answered at the same moment
+    fig, ax1 = plt.subplots(figsize=(7.2, 4.4), facecolor='white')
     _plain(ax1)
     ax1.hist(np.linalg.norm(aa.reshape(60, CHUNK, 2), axis=2).sum(1) * 1000, bins=14,
              color=LINK, alpha=0.75, label='person A')
@@ -666,12 +689,15 @@ def two_demonstrators() -> None:
     ax1.set_ylabel('recordings', fontsize=10)
     ax1.legend(fontsize=9.5, frameon=False)
     ax1.set_title(f'The same moment, {gap:.1f} mm apart', fontsize=11.5, weight='bold')
+    _save(fig, 'the-same-moment-two-people.svg')
 
+    # picture 3: four ways of gathering eighty recordings
+    fig, ax2 = plt.subplots(figsize=(8.4, 4.2), facecolor='white')
     _plain(ax2)
     labs = [c[0] for c in cases]
     vals = [c[1] for c in cases]
     cols = [LINK, WRIST, PURPLE, GRIP]
-    bars = ax2.barh(range(len(labs)), vals, color=cols, height=0.40)
+    ax2.barh(range(len(labs)), vals, color=cols, height=0.40)
     ax2.set_yticks([])
     ax2.set_ylim(len(labs) - 0.5, -0.75)
     for i, v in enumerate(vals):
@@ -684,7 +710,7 @@ def two_demonstrators() -> None:
     ax2.set_axisbelow(True)
     ax2.set_title('Eighty recordings, four ways of getting them',
                   fontsize=11.5, weight='bold', loc='left')
-    _save(fig, 'two-demonstrators.svg')
+    _save(fig, 'eighty-recordings-four-ways.svg')
 
 
 # --------------------------------------------------------------------------
@@ -713,7 +739,8 @@ def one_chunk_example() -> None:
         print(f'[chunk] chunk of {h:2d}: {STEPS * h * 2:,} label numbers an episode, '
               f'{h - 1} padded examples')
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.6, 4.6), facecolor='white')
+    # picture 1: one label, and the padding at the end of an episode
+    fig, axl = plt.subplots(figsize=(8.0, 4.8), facecolor='white')
     _plain(axl)
     k = np.arange(BIG_CHUNK)
     axl.plot(k, mid[:, 0], marker='o', ms=3.5, color=LINK, lw=1.8,
@@ -725,17 +752,20 @@ def one_chunk_example() -> None:
     axl.plot(k, tail[:, 1], color=WRIST, lw=1.4, ls='--', alpha=0.8,
              label='across the table, from the last second')
     axl.axvspan(20, BIG_CHUNK - 1, color=GRIP, alpha=0.12)
-    axl.set_ylim(-7.5, 10.5)
+    axl.set_ylim(-7.5, 11.5)
     axl.text(25.5, 1.1, 'padding: the episode ran out',
              fontsize=9.5, color=GRIP, ha='center')
     axl.set_xlabel(f'step within the chunk (0 to {BIG_CHUNK - 1})', fontsize=10)
     axl.set_ylabel('movement commanded (mm)', fontsize=10)
-    axl.legend(fontsize=8.5, frameon=False, loc='lower left', ncol=1)
+    axl.legend(fontsize=8.5, frameon=False, loc='upper left', ncol=1)
     axl.grid(color=GRID, lw=0.6)
     axl.set_axisbelow(True)
     axl.set_title(f'One label: {BIG_CHUNK} future steps, {BIG_CHUNK * 2} numbers',
                   fontsize=12, weight='bold')
+    _save(fig, 'one-chunk-example.svg')
 
+    # picture 2: how many label numbers one episode carries
+    fig, axr = plt.subplots(figsize=(7.4, 4.4), facecolor='white')
     _plain(axr)
     hs = [1, 8, 16, 32, 64]
     nums = [STEPS * h * 2 for h in hs]
@@ -749,9 +779,9 @@ def one_chunk_example() -> None:
     axr.set_ylabel('label numbers per episode (log scale)', fontsize=10)
     axr.grid(axis='y', color=GRID, lw=0.6)
     axr.set_axisbelow(True)
-    axr.set_title('The pictures do not change, only what is asked of them',
+    axr.set_title(f'The same {STEPS} examples, a longer label each',
                   fontsize=12, weight='bold')
-    _save(fig, 'one-chunk-example.svg')
+    _save(fig, 'label-numbers-per-episode.svg')
 
 
 def chunk_length_trade() -> None:
@@ -778,14 +808,16 @@ def chunk_length_trade() -> None:
     print(f'[play] the two costs added are lowest at {best} steps a decision, which is '
           f'{1000 * best / HZ:.0f} ms of movement')
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.6, 4.6), facecolor='white')
+    # picture 1: what a long chunk costs when the goal moves part way through
+    fig, axl = plt.subplots(figsize=(7.8, 4.6), facecolor='white')
     _plain(axl)
     axl.plot(PLAYS, still, marker='o', color=LINK, lw=2, label='goal stays put')
     axl.plot(PLAYS, moved, marker='s', color=GRIP, lw=2,
              label='goal moves 8 cm part way through')
     axl.plot(PLAYS, total, marker='^', color=PURPLE, lw=1.6, ls='--', label='the two added')
     axl.axvline(best, color=MUTED, ls=':', lw=1.2)
-    axl.text(best * 1.1, max(total) * 0.92, f'lowest at {best}', fontsize=9.5, color=MUTED)
+    axl.text(9.0, max(total) * 0.80, f'the two added are\nlowest at {best} steps',
+             fontsize=9.5, color=MUTED, ha='left', va='top')
     axl.set_xscale('log', base=2)
     axl.set_xticks(PLAYS)
     axl.set_xticklabels([str(p) for p in PLAYS], fontsize=9.5)
@@ -794,9 +826,12 @@ def chunk_length_trade() -> None:
     axl.legend(fontsize=9.5, frameon=False, loc='upper left')
     axl.grid(color=GRID, lw=0.6)
     axl.set_axisbelow(True)
-    axl.set_title('A chunk is a promise made before the goal moved',
+    axl.set_title('A long chunk cannot react when the goal moves',
                   fontsize=12, weight='bold')
+    _save(fig, 'chunk-length-trade.svg')
 
+    # picture 2: what a long chunk buys when nothing moves
+    fig, axr = plt.subplots(figsize=(7.4, 4.4), facecolor='white')
     _plain(axr)
     axr.bar([str(p) for p in PLAYS], coll, color=SLIDE, width=0.6)
     for i, v in enumerate(coll):
@@ -807,7 +842,7 @@ def chunk_length_trade() -> None:
     axr.grid(axis='y', color=GRID, lw=0.6)
     axr.set_axisbelow(True)
     axr.set_title('One policy, six ways of playing its answer', fontsize=12, weight='bold')
-    _save(fig, 'chunk-length-trade.svg')
+    _save(fig, 'success-against-chunk-length.svg')
 
 
 def chunk_and_the_clock() -> None:
@@ -823,42 +858,24 @@ def chunk_and_the_clock() -> None:
     for p in PLAYS:
         print(f'[clock] playing {p:2d} steps buys {p * period:6.1f} ms of thinking time')
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.6, 4.6), facecolor='white')
+    fig, axl = plt.subplots(figsize=(8.2, 4.8), facecolor='white')
     _plain(axl)
     move_ms = [p * period for p in PLAYS]
     axl.bar([str(p) for p in PLAYS], move_ms, color=LINK_PALE, edgecolor=LINK, width=0.6,
-            label='time the chunk buys')
+            label='time the chunk covers')
     for name, ms in MODEL_MS:
         axl.axhline(ms, color={15.0: SLIDE, 60.0: JOINT, 240.0: GRIP}[ms], lw=1.6, ls='--')
         axl.text(5.45, ms * 1.08, name, fontsize=9.5, ha='right',
-                 color={15.0: SLIDE, 60.0: JOINT, 240.0: GRIP}[ms])
+                 color={15.0: SLIDE, 60.0: JOINT, 240.0: GRIP}[ms],
+                 bbox=dict(facecolor='white', edgecolor='none', pad=1.5))
     axl.set_yscale('log')
     axl.set_ylim(8, 2500)
     axl.set_xlabel('steps played before the model is asked again', fontsize=10)
     axl.set_ylabel('milliseconds (log scale)', fontsize=10)
     axl.grid(axis='y', color=GRID, lw=0.6)
     axl.set_axisbelow(True)
-    axl.set_title(f'At {HZ} commands a second, a chunk of {PLAYS[3]} buys '
+    axl.set_title(f'At {HZ} commands a second, a chunk of {PLAYS[3]} covers '
                   f'{PLAYS[3] * period:.0f} ms', fontsize=12, weight='bold')
-
-    _table_axes(axr)
-    axr.set_xlim(0, 1)
-    axr.set_ylim(0, 1)
-    axr.text(0.02, 0.90, 'model', fontsize=10.5, weight='bold', color=INK)
-    axr.text(0.42, 0.90, 'shortest chunk', fontsize=10.5, weight='bold', color=INK)
-    axr.text(0.80, 0.90, 'spare time', fontsize=10.5, weight='bold', color=INK)
-    axr.plot([0.02, 0.98], [0.86, 0.86], color=GRID, lw=1.2)
-    for i, (name, ms, need, slack) in enumerate(rows):
-        y = 0.74 - i * 0.16
-        axr.text(0.02, y, name, fontsize=10.5, color=INK)
-        axr.text(0.42, y, f'{need} step{"s" if need > 1 else ""}, {need * period:.1f} ms',
-                 fontsize=10.5, color=LINK)
-        axr.text(0.80, y, f'{slack:.1f} ms', fontsize=10.5, color=SLIDE)
-    axr.text(0.02, 0.18, 'A chunk shorter than this means the arm waits mid-movement,\n'
-                         'and a chunk much longer than this means the arm acts on a\n'
-                         'picture that is already old.', fontsize=10, color=MUTED)
-    axr.set_title('The clock decides the shortest chunk you may use',
-                  fontsize=12, weight='bold')
     _save(fig, 'chunk-and-the-clock.svg')
 
 
@@ -1006,9 +1023,8 @@ def two_answer_test() -> None:
               f'label anybody recorded is {near:.2f} mm away, and the spread inside one '
               f'group is {within:.2f} mm, a ratio of {near / within:.2f}')
 
-    fig, axes = plt.subplots(1, 3, figsize=(14.8, 4.5), facecolor='white',
-                             gridspec_kw={'wspace': 0.28})
-    ax0, ax1, ax2 = axes
+    # picture 1: the recordings themselves, and the average of them
+    fig, ax0 = plt.subplots(figsize=(7.4, 4.6), facecolor='white')
     path, goal, box, _ = s.two
     _plain(ax0)
     ax0.add_patch(Rectangle((box[0, 0] - HW, box[0, 1] - HH), 2 * HW, 2 * HH,
@@ -1023,8 +1039,13 @@ def two_answer_test() -> None:
     ax0.set_xlabel('along the table (m)', fontsize=10)
     ax0.set_ylabel('across the table (m)', fontsize=10)
     ax0.legend(fontsize=9.5, frameon=False, loc='upper left')
-    ax0.set_title('Both ways round are right', fontsize=11.5, weight='bold')
+    ax0.set_title('Both ways round are right, and the average is neither',
+                  fontsize=11.5, weight='bold')
+    _save(fig, 'both-ways-round-are-right.svg')
 
+    # picture 2: the same measurement on a two-answer task and a one-answer task
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.2, 4.4), facecolor='white',
+                                   gridspec_kw={'wspace': 0.26})
     for ax, name, col in ((ax1, 'two ways', TEAL), (ax2, 'one way', SLIDE)):
         _plain(ax)
         side, mean, near, within = out[name]
@@ -1036,8 +1057,10 @@ def two_answer_test() -> None:
         ax.set_ylim(0, ax.get_ylim()[1] * 1.18)
         ax.text(mean, ax.get_ylim()[1] * 0.97, f' mean {mean:+.1f} mm', fontsize=9.5,
                 color=GRIP, va='top')
-        ax.set_title(f'{"Both ways" if name == "two ways" else "One way"}: '
+        ax.set_title(f'{"Both ways recorded" if name == "two ways" else "One way recorded"}: '
                      f'{near:.1f} mm from any real label', fontsize=10.5, weight='bold')
+    fig.suptitle('The same measurement at one moment, on two tasks',
+                 fontsize=12.5, weight='bold')
     _save(fig, 'two-answer-test.svg')
 
 
@@ -1056,8 +1079,9 @@ def averaging_and_generating() -> None:
           f'works on {s_g.mean():.3f}, median miss {np.median(d_g) * 100:.2f} cm')
     print(f'[gen] the generated runs go above the box on {up_g.mean():.3f} of runs')
 
-    fig, axes = plt.subplots(1, 3, figsize=(14.8, 4.5), facecolor='white',
-                             gridspec_kw={'wspace': 0.26})
+    # picture 1: the same table and the same box, driven by the two policies
+    fig, axes = plt.subplots(1, 2, figsize=(11.4, 4.5), facecolor='white',
+                             gridspec_kw={'wspace': 0.24})
     for ax, paths, bad, name in ((axes[0], reg, c_r, 'One answer'),
                                  (axes[1], gen, c_g, 'Generated answer')):
         _plain(ax)
@@ -1072,8 +1096,12 @@ def averaging_and_generating() -> None:
         ax.set_ylim(-0.14, 0.14)
         ax.set_title(f'{name}: {bad.mean():.0%} hit the box',
                      fontsize=11.5, weight='bold')
+    fig.suptitle('The same 400 recordings, the same box, two policies driving',
+                 fontsize=12.5, weight='bold')
+    _save(fig, 'averaging-and-generating.svg')
 
-    ax2 = axes[2]
+    # picture 2: the two policies counted
+    fig, ax2 = plt.subplots(figsize=(7.0, 4.6), facecolor='white')
     _plain(ax2)
     labs = ['hits the box', 'reaches the goal\nand misses the box']
     reg_v = [float(c_r.mean()), float(s_r.mean())]
@@ -1092,8 +1120,9 @@ def averaging_and_generating() -> None:
     ax2.legend(fontsize=9.5, frameon=False, loc='upper center')
     ax2.grid(axis='y', color=GRID, lw=0.6)
     ax2.set_axisbelow(True)
-    ax2.set_title('The same 400 recordings, two policies', fontsize=11.5, weight='bold')
-    _save(fig, 'averaging-and-generating.svg')
+    ax2.set_title('The same 400 recordings, two policies counted',
+                  fontsize=11.5, weight='bold')
+    _save(fig, 'box-hits-and-successes.svg')
 
 
 def what_generating_costs() -> None:
@@ -1120,7 +1149,8 @@ def what_generating_costs() -> None:
         print(f'[cost] at {per_pass:.0f} ms a pass, {k:2d} passes take {k * per_pass:.0f} ms '
               f'and need a chunk of at least {need} step(s)')
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.6, 4.6), facecolor='white')
+    # picture 1: what the passes buy on a task with one right answer
+    fig, axl = plt.subplots(figsize=(7.8, 4.6), facecolor='white')
     _plain(axl)
     axl.plot(passes, succ, marker='o', color=LINK, lw=2, label='generated answer')
     axl.axhline(s_reg, color=GRIP, lw=1.8, ls='--', label='one answer, one pass')
@@ -1135,12 +1165,15 @@ def what_generating_costs() -> None:
     axl.set_axisbelow(True)
     axl.set_title('When there is one right answer, generating adds nothing',
                   fontsize=12, weight='bold')
+    _save(fig, 'what-generating-costs.svg')
 
+    # picture 2: what the passes cost in milliseconds
+    fig, axr = plt.subplots(figsize=(7.4, 4.4), facecolor='white')
     _plain(axr)
     ms = [k * per_pass for k in passes]
     axr.bar([str(k) for k in passes], ms, color=LINK_PALE, edgecolor=LINK, width=0.6)
     axr.axhline(PLAY * period, color=SLIDE, lw=1.8, ls='--')
-    axr.text(0.1, PLAY * period * 1.06, f'what a chunk of {PLAY} buys: '
+    axr.text(0.1, PLAY * period * 1.06, f'what a chunk of {PLAY} covers: '
                                         f'{PLAY * period:.0f} ms', fontsize=9.5, color=SLIDE)
     for i, v in enumerate(ms):
         axr.text(i, v + 2, f'{v:.0f}', ha='center', fontsize=10, color=INK)
@@ -1149,8 +1182,8 @@ def what_generating_costs() -> None:
     axr.set_ylabel(f'milliseconds, at {per_pass:.0f} ms a pass', fontsize=10)
     axr.grid(axis='y', color=GRID, lw=0.6)
     axr.set_axisbelow(True)
-    axr.set_title('Every pass is paid for out of the chunk', fontsize=12, weight='bold')
-    _save(fig, 'what-generating-costs.svg')
+    axr.set_title('Every pass takes time out of the chunk', fontsize=12, weight='bold')
+    _save(fig, 'passes-cost-milliseconds.svg')
 
 
 def too_few_passes() -> None:
@@ -1170,9 +1203,10 @@ def too_few_passes() -> None:
         print(f'[passes] two right answers, {k:2d} passes: hits the box {coll[-1]:.3f}, '
               f'works {done[-1]:.3f}, median miss {np.median(d) * 100:.2f} cm')
 
-    fig, axes = plt.subplots(1, 3, figsize=(14.8, 4.5), facecolor='white',
-                             gridspec_kw={'wspace': 0.26})
-    for ax, k in zip(axes[:2], (2, 16)):
+    # picture 1: the same policy and the same box, at two pass counts
+    fig, axes = plt.subplots(1, 2, figsize=(11.4, 4.5), facecolor='white',
+                             gridspec_kw={'wspace': 0.24})
+    for ax, k in zip(axes, (2, 16)):
         _plain(ax)
         paths, bad = keep[k]
         ax.add_patch(Rectangle((bev[0, 0] - HW, bev[0, 1] - HH), 2 * HW, 2 * HH,
@@ -1186,8 +1220,12 @@ def too_few_passes() -> None:
         ax.set_ylabel('across the table (m)', fontsize=10)
         ax.set_title(f'{k} passes: works on {done[passes.index(k)]:.2f} of runs',
                      fontsize=11, weight='bold')
+    fig.suptitle('One generating policy, the same box, two numbers of passes',
+                 fontsize=12.5, weight='bold')
+    _save(fig, 'too-few-passes.svg')
 
-    axr = axes[2]
+    # picture 2: the passes counted against what they produce
+    fig, axr = plt.subplots(figsize=(7.6, 4.6), facecolor='white')
     _plain(axr)
     axr.plot(passes, done, marker='o', color=SLIDE, lw=2, label='works')
     axr.plot(passes, coll, marker='s', color=GRIP, lw=2, label='hits the box')
@@ -1200,8 +1238,8 @@ def too_few_passes() -> None:
     axr.legend(fontsize=9.5, frameon=False, loc='center right')
     axr.grid(color=GRID, lw=0.6)
     axr.set_axisbelow(True)
-    axr.set_title('Cutting passes destroys the policy', fontsize=11, weight='bold')
-    _save(fig, 'too-few-passes.svg')
+    axr.set_title('Cutting the passes destroys the policy', fontsize=12, weight='bold')
+    _save(fig, 'passes-and-box-hits.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1234,7 +1272,8 @@ def what_fine_tuning_costs() -> None:
               f'training only the adapter needs {a / 1e9:.2f} GB, '
               f'{f / a:.1f} times less')
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.6, 4.6), facecolor='white')
+    # picture 1: what has to fit in the graphics card
+    fig, axl = plt.subplots(figsize=(7.6, 4.8), facecolor='white')
     _plain(axl)
     x = np.arange(2)
     axl.bar(x - 0.18, full, width=0.34, color=GRIP, label='train every weight')
@@ -1253,26 +1292,27 @@ def what_fine_tuning_costs() -> None:
     axl.grid(axis='y', color=GRID, lw=0.6)
     axl.set_axisbelow(True)
     axl.set_title('What has to fit in the graphics card', fontsize=12, weight='bold')
+    _save(fig, 'what-fine-tuning-costs.svg')
 
+    # picture 2: the rank decides how many weights are trained
+    fig, axr = plt.subplots(figsize=(7.6, 4.6), facecolor='white')
     _plain(axr)
     ranks = [4, 8, 16, 32, 64]
     counts = [BLOCKS * PER_BLOCK * 2 * WIDTH * r for r in ranks]
-    axr.bar([str(r) for r in ranks], counts, color=LINK_PALE, edgecolor=LINK, width=0.6)
+    millions = [c / 1e6 for c in counts]
+    axr.bar([str(r) for r in ranks], millions, color=LINK_PALE, edgecolor=LINK, width=0.6)
     for i, (r, c) in enumerate(zip(ranks, counts)):
-        axr.text(i, c * 1.04, f'{c / 1e6:.2f} M', ha='center', fontsize=10, color=INK)
+        axr.text(i, c / 1e6 * 1.04, f'{c / 1e6:.2f} M', ha='center', fontsize=10, color=INK)
         print(f'[tune] rank {r:2d}: {c:,} trainable weights, '
               f'{100 * c / 450e6:.3f} per cent of a 450-million-weight model')
-    axr.set_ylim(0, max(counts) * 1.35)
-    axr.text(0.03, 0.93, f'a rank-{rank} adapter is {100 * adapter / 450e6:.2f} per cent of a\n'
-                         f'450-million-weight model, and {100 * adapter / 7e9:.2f} per cent of\n'
-                         f'a 7-billion-weight one', transform=axr.transAxes, fontsize=9.5,
-             color=MUTED, va='top')
+    axr.set_ylim(0, max(millions) * 1.25)
     axr.set_xlabel('rank of the adapter', fontsize=10)
-    axr.set_ylabel('weights you actually train', fontsize=10)
+    axr.set_ylabel('weights you actually train (millions)', fontsize=10)
     axr.grid(axis='y', color=GRID, lw=0.6)
     axr.set_axisbelow(True)
-    axr.set_title('The rank decides how much you are training', fontsize=12, weight='bold')
-    _save(fig, 'what-fine-tuning-costs.svg')
+    axr.set_title(f'A rank-{rank} adapter trains {100 * adapter / 450e6:.2f} per cent of '
+                  f'the small model', fontsize=12, weight='bold')
+    _save(fig, 'rank-and-trained-weights.svg')
 
 
 TASK_GOALS: Arr = np.array([[0.34, 0.10], [0.46, 0.10], [0.34, -0.04], [0.46, -0.04]])
@@ -1350,7 +1390,8 @@ def instruction_information() -> None:
         print(f'[words] {k} job(s), {np.log2(k):.0f} bit(s) in the instruction: '
               f'told which job {told[-1]:.2f} cm, not told {guess[-1]:.2f} cm')
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.6, 4.6), facecolor='white')
+    # picture 1: how much an instruction can possibly say
+    fig, axl = plt.subplots(figsize=(7.4, 4.4), facecolor='white')
     _plain(axl)
     ks = [1, 2, 4, 8, 16]
     axl.bar([str(k) for k in ks], [np.log2(k) for k in ks], color=JOINT, width=0.6)
@@ -1365,7 +1406,10 @@ def instruction_information() -> None:
     axl.set_axisbelow(True)
     axl.set_title('One job recorded means the words say nothing',
                   fontsize=12, weight='bold')
+    _save(fig, 'instruction-information.svg')
 
+    # picture 2: the same network, with and without the job tag
+    fig, axr = plt.subplots(figsize=(7.4, 4.6), facecolor='white')
     _plain(axr)
     x = np.arange(3)
     axr.bar(x - 0.18, told, width=0.34, color=LINK, label='told which job')
@@ -1381,9 +1425,9 @@ def instruction_information() -> None:
     axr.legend(fontsize=9.5, frameon=False, loc='upper left')
     axr.grid(axis='y', color=GRID, lw=0.6)
     axr.set_axisbelow(True)
-    axr.set_title('The same network, with and without the tag',
+    axr.set_title('The same network, with and without the job tag',
                   fontsize=12, weight='bold')
-    _save(fig, 'instruction-information.svg')
+    _save(fig, 'told-which-job-or-not.svg')
 
 
 def jobs_and_data() -> None:
@@ -1410,7 +1454,8 @@ def jobs_and_data() -> None:
                   f'({total // k} each): success {got[-1]:.3f}')
         lines[k] = got
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.6, 4.6), facecolor='white')
+    # picture 1: one job and four jobs, at the same total number of recordings
+    fig, axl = plt.subplots(figsize=(7.8, 4.6), facecolor='white')
     _plain(axl)
     axl.plot(totals, lines[1], marker='o', color=LINK, lw=2, label='one job')
     axl.plot(totals, lines[4], marker='s', color=GRIP, lw=2, label='four jobs, one model')
@@ -1426,7 +1471,10 @@ def jobs_and_data() -> None:
     axl.set_axisbelow(True)
     axl.set_title('Four jobs need more recordings than one',
                   fontsize=12, weight='bold')
+    _save(fig, 'jobs-and-data.svg')
 
+    # picture 2: the distance between those two curves, drawn on its own
+    fig, axr = plt.subplots(figsize=(7.4, 4.4), facecolor='white')
     _plain(axr)
     gaps = [a - b for a, b in zip(lines[1], lines[4])]
     axr.bar([str(t) for t in totals], gaps, color=WRIST, width=0.6)
@@ -1440,9 +1488,9 @@ def jobs_and_data() -> None:
     axr.set_ylabel('how far the four-job model is behind', fontsize=10)
     axr.grid(axis='y', color=GRID, lw=0.6)
     axr.set_axisbelow(True)
-    axr.set_title('The gap closes as the recordings pile up',
+    axr.set_title('The gap closes as the recordings grow in number',
                   fontsize=12, weight='bold')
-    _save(fig, 'jobs-and-data.svg')
+    _save(fig, 'the-gap-between-one-job-and-four.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1553,7 +1601,8 @@ def horizon_you_can_trust() -> None:
         print(f'[world] {h:2d} steps ahead ({h / HZ:.2f} s): out by {gaps[h - 1]:.2f} mm')
     print(f'[world] the gap passes 1 mm at step {cross}, which is {cross / HZ:.2f} s')
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.6, 4.6), facecolor='white')
+    # picture 1: the model's prediction drawn over what really happened
+    fig, axl = plt.subplots(figsize=(7.4, 4.6), facecolor='white')
     _plain(axl)
     R = np.stack(reals, 1)
     P = np.stack(preds, 1)
@@ -1568,7 +1617,10 @@ def horizon_you_can_trust() -> None:
     axl.legend(fontsize=9.5, frameon=False, loc='best')
     axl.set_title('Four runs of 60 steps, predicted from the start',
                   fontsize=11.5, weight='bold')
+    _save(fig, 'predictions-over-sixty-steps.svg')
 
+    # picture 2: how the gap grows with the number of steps predicted ahead
+    fig, axr = plt.subplots(figsize=(7.6, 4.6), facecolor='white')
     _plain(axr)
     axr.plot(np.arange(1, 61), gaps, color=PURPLE, lw=2.2)
     axr.axhline(1.0, color=MUTED, ls='--', lw=1.1)
@@ -1671,24 +1723,30 @@ def planning_against_it() -> None:
         print(f'[plan] replanning every {e:2d} steps ({e / HZ * 1000:.0f} ms): '
               f'median miss {far[-1]:.2f} cm')
 
-    fig, axes = plt.subplots(1, 3, figsize=(14.8, 4.5), facecolor='white',
-                             gridspec_kw={'wspace': 0.28})
-    ax0, ax1, ax2 = axes
-    _plain(ax0)
+    # picture 1: the same table and the same box, under the two ways of deciding
+    fig, axes = plt.subplots(1, 2, figsize=(11.4, 4.5), facecolor='white',
+                             gridspec_kw={'wspace': 0.24})
     shift = np.stack([0.20 - box[:, 0], -box[:, 1]], 1)
-    for name, col in (('written rule', GRIP), ('planning in the\nlearned model', LINK)):
+    for ax, name, col, short in (
+            (axes[0], 'written rule', GRIP, 'A written rule'),
+            (axes[1], 'planning in the\nlearned model', LINK, 'A planner')):
+        _plain(ax)
         paths = runs[name]
-        for i in range(18):
-            ax0.plot(paths[i, :, 0] + shift[i, 0], paths[i, :, 1] + shift[i, 1],
-                     color=col, lw=0.9, alpha=0.6)
-    ax0.add_patch(Rectangle((0.20 - HW, -HH), 2 * HW, 2 * HH, color='#999999'))
-    ax0.plot([], [], color=GRIP, lw=2, label='written rule')
-    ax0.plot([], [], color=LINK, lw=2, label='planning in the learned model')
-    ax0.set_xlabel('along the table, every run lined up on its box (m)', fontsize=10)
-    ax0.set_ylabel('across the table (m)', fontsize=10)
-    ax0.legend(fontsize=9, frameon=False, loc='lower right')
-    ax0.set_title('A new job, written as a cost', fontsize=11.5, weight='bold')
+        hit = res[name][1]
+        for i in range(24):
+            ax.plot(paths[i, :, 0] + shift[i, 0], paths[i, :, 1] + shift[i, 1],
+                    color=col, lw=1.0, alpha=0.65)
+        ax.add_patch(Rectangle((0.20 - HW, -HH), 2 * HW, 2 * HH, color='#999999'))
+        ax.set_xlim(-0.08, 0.48)
+        ax.set_ylim(-0.11, 0.11)
+        ax.set_xlabel('along the table, every run lined up on its box (m)', fontsize=10)
+        ax.set_ylabel('across the table (m)', fontsize=10)
+        ax.set_title(f'{short}: {hit:.0%} hit the box', fontsize=11.5, weight='bold')
+    fig.suptitle('A new job, written as a cost', fontsize=12.5, weight='bold')
+    _save(fig, 'planning-against-it.svg')
 
+    # picture 2: the three ways of deciding, counted
+    fig, ax1 = plt.subplots(figsize=(7.4, 4.6), facecolor='white')
     _plain(ax1)
     names = list(res)
     hit = [res[n][1] for n in names]
@@ -1708,7 +1766,10 @@ def planning_against_it() -> None:
     ax1.grid(axis='y', color=GRID, lw=0.6)
     ax1.set_axisbelow(True)
     ax1.set_title('No demonstrations at all', fontsize=11.5, weight='bold')
+    _save(fig, 'planner-against-written-rule.svg')
 
+    # picture 3: how often the plan has to be made again
+    fig, ax2 = plt.subplots(figsize=(7.4, 4.6), facecolor='white')
     _plain(ax2)
     ax2.plot([e / HZ * 1000 for e in every], far, marker='o', color=PURPLE, lw=2)
     for e, v in zip(every, far):
@@ -1718,9 +1779,9 @@ def planning_against_it() -> None:
     ax2.set_ylabel('median miss at the end (cm)', fontsize=10)
     ax2.grid(color=GRID, lw=0.6)
     ax2.set_axisbelow(True)
-    ax2.set_title('A stale plan costs more than a wrong model',
+    ax2.set_title('An old plan costs more than a wrong model',
                   fontsize=11.5, weight='bold')
-    _save(fig, 'planning-against-it.svg')
+    _save(fig, 'how-often-to-replan.svg')
 
 
 def planning_arithmetic() -> None:
@@ -1734,7 +1795,8 @@ def planning_arithmetic() -> None:
     print(f'[arith] one decision with {PLAN_N} futures of {PLAN_H} steps is '
           f'{PLAN_N * PLAN_H:,} model steps')
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.6, 4.6), facecolor='white')
+    # picture 1: how many futures fit between two commands
+    fig, axl = plt.subplots(figsize=(7.8, 4.6), facecolor='white')
     _plain(axl)
     labs = [f'{u:g}' for u in speeds]
     axl.bar(labs, fits, color=[SLIDE, LINK, JOINT, GRIP], width=0.6)
@@ -1751,7 +1813,10 @@ def planning_arithmetic() -> None:
     axl.grid(axis='y', color=GRID, lw=0.6)
     axl.set_axisbelow(True)
     axl.set_title('A big model leaves no room to search', fontsize=12, weight='bold')
+    _save(fig, 'planning-arithmetic.svg')
 
+    # picture 2: what one decision costs in calls of the model
+    fig, axr = plt.subplots(figsize=(7.6, 4.6), facecolor='white')
     _plain(axr)
     cand = np.array([4, 16, 64, 256, 1024])
     for h, c in ((10, LINK), (20, PURPLE), (40, GRIP)):
@@ -1768,9 +1833,9 @@ def planning_arithmetic() -> None:
     axr.legend(fontsize=9.5, frameon=False, loc='upper left')
     axr.grid(color=GRID, lw=0.6)
     axr.set_axisbelow(True)
-    axr.set_title('The bill is futures multiplied by how far ahead',
+    axr.set_title('One decision costs futures multiplied by how far ahead',
                   fontsize=12, weight='bold')
-    _save(fig, 'planning-arithmetic.svg')
+    _save(fig, 'calls-for-one-decision.svg')
 
 
 def data_without_a_person() -> None:
@@ -1796,7 +1861,8 @@ def data_without_a_person() -> None:
         print(f'[auto] {c:6,} transitions: one-step error {e:.3f} mm '
               f'({c / (per_hour / 60):.1f} minutes of pushing)')
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.6, 4.6), facecolor='white')
+    # picture 1: who has to be in the room, and how much that gathers in an hour
+    fig, axl = plt.subplots(figsize=(6.8, 4.6), facecolor='white')
     _plain(axl)
     axl.bar(['a script pushing\nthe arm about', 'a person\ndemonstrating'],
             [per_hour, demo_hour], color=[SLIDE, GRIP], width=0.5)
@@ -1808,20 +1874,23 @@ def data_without_a_person() -> None:
     axl.set_axisbelow(True)
     axl.set_title('Only one of these needs somebody in the room',
                   fontsize=12, weight='bold')
+    _save(fig, 'data-without-a-person.svg')
 
+    # picture 2: how the one-step error falls as transitions pile up
+    fig, axr = plt.subplots(figsize=(7.6, 4.6), facecolor='white')
     _plain(axr)
     axr.plot(counts, errs, marker='o', color=PURPLE, lw=2)
     axr.set_xscale('log')
     axr.set_yscale('log')
     axr.set_xticks(counts)
-    axr.set_xticklabels([f'{c // 1000}k' if c >= 1000 else str(c) for c in counts],
+    axr.set_xticklabels([f'{c / 1000:g}k' if c >= 1000 else str(c) for c in counts],
                         fontsize=9.5)
     axr.set_xlabel('transitions used to fit the model (log scale)', fontsize=10)
     axr.set_ylabel('one-step error (mm, log scale)', fontsize=10)
     axr.grid(color=GRID, lw=0.6)
     axr.set_axisbelow(True)
-    axr.set_title('Cheap data, and the error falls with it', fontsize=12, weight='bold')
-    _save(fig, 'data-without-a-person.svg')
+    axr.set_title('Ten minutes of pushing is enough', fontsize=12, weight='bold')
+    _save(fig, 'transitions-and-one-step-error.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1956,12 +2025,15 @@ def what_the_search_costs() -> None:
     print(f'[search] reward of the best ten went from {s.curve_r[0]:.1f} to '
           f'{s.curve_r[-1]:.1f}, and their success from {s.curve_s[0]:.3f} to '
           f'{s.curve_s[-1]:.3f}')
+    print(f'[search] the randomised search went from {s.rcurve_s[0]:.3f} to '
+          f'{s.rcurve_s[-1]:.3f} over the same {GENS} rounds')
     print(f'[search] on a real arm at {STEPS / HZ:.0f} s a try and 20 s to reset, that is '
           f'{arm_h:.1f} hours, or {arm_h / 24:.1f} days of running')
     print(f'[search] the cloned policy of section 1 needed 40 demonstrations, '
           f'{demo_h * 60:.0f} minutes of a person')
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.6, 4.6), facecolor='white')
+    # picture 1: the search learning from its own attempts
+    fig, axl = plt.subplots(figsize=(7.8, 4.6), facecolor='white')
     _plain(axl)
     g = np.arange(1, GENS + 1)
     axl.plot(g, s.curve_s, marker='o', ms=4, color=SLIDE, lw=2, label='nothing randomised')
@@ -1975,7 +2047,10 @@ def what_the_search_costs() -> None:
     axl.set_axisbelow(True)
     axl.set_title(f'{episodes:,} tries, and no person in the room',
                   fontsize=12, weight='bold')
+    _save(fig, 'what-the-search-costs.svg')
 
+    # picture 2: the same two policies, bought on a real arm instead
+    fig, axr = plt.subplots(figsize=(6.8, 4.6), facecolor='white')
     _plain(axr)
     hrs = [demo_h, arm_h]
     axr.bar(['40 demonstrations\nfor copying', f'{episodes:,} tries\nfor searching'],
@@ -1989,9 +2064,9 @@ def what_the_search_costs() -> None:
     axr.set_ylabel('hours on a real arm (log scale)', fontsize=10)
     axr.grid(axis='y', color=GRID, lw=0.6)
     axr.set_axisbelow(True)
-    axr.set_title('The same two policies, bought on a real arm',
+    axr.set_title('What each of the two would cost on a real arm',
                   fontsize=12, weight='bold')
-    _save(fig, 'what-the-search-costs.svg')
+    _save(fig, 'hours-on-a-real-arm.svg')
 
 
 def the_simulator_must_be_right() -> None:
@@ -2010,8 +2085,8 @@ def the_simulator_must_be_right() -> None:
         print(f'[gap] {name.replace(chr(10), " ")}: success {v:.3f} '
               f'({100 * (v - base) / base:+.0f} per cent)')
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(13.2, 4.8), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.25, 1.0]})
+    # picture 1: one searched policy, five arms it might meet
+    fig, axl = plt.subplots(figsize=(8.4, 4.8), facecolor='white')
     _plain(axl)
     cols = [SLIDE] + [GRIP] * 3 + [INK]
     bars = axl.bar(range(len(cases)), vals, color=cols, width=0.6)
@@ -2025,11 +2100,14 @@ def the_simulator_must_be_right() -> None:
     axl.grid(axis='y', color=GRID, lw=0.6)
     axl.set_axisbelow(True)
     axl.set_title('One policy, five arms it might meet', fontsize=12, weight='bold')
+    _save(fig, 'the-simulator-must-be-right.svg')
 
-    _plain(axr)
+    # picture 2: what randomising the simulator does to the range that works
     dls = list(range(0, 8))
     plain = [_rl_eval(s.plain, np.random.default_rng(612), delay=d) for d in dls]
     rand = [_rl_eval(s.rand, np.random.default_rng(612), delay=d) for d in dls]
+    fig, axr = plt.subplots(figsize=(7.8, 4.6), facecolor='white')
+    _plain(axr)
     axr.plot(dls, plain, marker='o', color=GRIP, lw=2, label='searched in one simulator')
     axr.plot(dls, rand, marker='s', color=PURPLE, lw=2, label='searched in many')
     axr.axvline(0, color=MUTED, ls='--', lw=1.1)
@@ -2044,7 +2122,7 @@ def the_simulator_must_be_right() -> None:
     for d, a, b in zip(dls, plain, rand):
         print(f'[gap] commands {d} steps late ({d / HZ * 1000:.0f} ms): '
               f'one simulator {a:.3f}, randomised {b:.3f}')
-    _save(fig, 'the-simulator-must-be-right.svg')
+    _save(fig, 'randomising-widens-the-range.svg')
 
 
 def cloning_against_searching() -> None:
@@ -2064,9 +2142,10 @@ def cloning_against_searching() -> None:
           f'{real_rand:.3f}')
     print(f'[choose] cloned policy from 40 demonstrations, on the arm they were '
           f'recorded on: {bc:.3f}')
+    print(f'[choose] copying uses 40 episodes, {40 * per / 60:.0f} minutes of a person; '
+          f'searching uses {GENS * POP * TASKS:,} episodes from the simulator only')
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(14.4, 4.8), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.0, 1.45]})
+    fig, axl = plt.subplots(figsize=(8.6, 4.8), facecolor='white')
     _plain(axl)
     labs = ['searched,\nin its simulator', 'searched,\non the other arm',
             'searched with\nrandomising,\non the other arm',
@@ -2075,7 +2154,7 @@ def cloning_against_searching() -> None:
     cols = [MUTED, GRIP, PURPLE, LINK]
     bars = axl.bar(range(4), vals, color=cols, width=0.6)
     axl.set_xticks(range(4))
-    axl.set_xticklabels(labs, fontsize=8.5)
+    axl.set_xticklabels(labs, fontsize=9)
     for b, v in zip(bars, vals):
         axl.text(b.get_x() + b.get_width() / 2, v + 0.02, f'{v:.2f}', ha='center',
                  fontsize=10.5, color=INK)
@@ -2084,26 +2163,6 @@ def cloning_against_searching() -> None:
     axl.grid(axis='y', color=GRID, lw=0.6)
     axl.set_axisbelow(True)
     axl.set_title('Four policies on the same job', fontsize=12, weight='bold')
-
-    _table_axes(axr)
-    axr.set_xlim(0, 1)
-    axr.set_ylim(0, 1)
-    rows = [('what it needs first', 'somebody to drive it', 'a simulator and a reward'),
-            ('data it uses here', f'40 episodes, {40 * per / 60:.0f} minutes',
-             f'{GENS * POP * TASKS:,} episodes'),
-            ('where that data comes from', 'the real arm', 'the simulator only'),
-            ('what goes wrong', 'the copy drifts', 'the simulator is not the arm'),
-            ('first milestone', 'one run works end to end', 'the reward keeps rising')]
-    axr.text(0.34, 0.93, 'copying a person', fontsize=11, weight='bold', color=LINK)
-    axr.text(0.68, 0.93, 'searching for a policy', fontsize=11, weight='bold', color=GRIP)
-    axr.plot([0.0, 1.0], [0.89, 0.89], color=GRID, lw=1.2)
-    for i, (a, b, c) in enumerate(rows):
-        y = 0.78 - i * 0.16
-        axr.text(0.0, y, a, fontsize=10, color=INK)
-        axr.text(0.34, y, b, fontsize=10, color=LINK)
-        axr.text(0.68, y, c, fontsize=10, color=GRIP)
-    axr.set_title('What each one asks of you before it starts',
-                  fontsize=12, weight='bold')
     _save(fig, 'cloning-against-searching.svg')
 
 

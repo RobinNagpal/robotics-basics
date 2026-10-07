@@ -36,7 +36,7 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib.axes import Axes  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
-from matplotlib.patches import FancyArrowPatch, Rectangle  # noqa: E402
+from matplotlib.patches import Rectangle  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from numpy.typing import NDArray  # noqa: E402
@@ -174,7 +174,7 @@ def report_shape() -> None:
     print(f'output head            {OUT_HEAD:>15,}')
     print(f'TOTAL                  {TOTAL:>15,}   ({_big(TOTAL)})')
     print(f'bf16 weights only      {_gib(TOTAL * 2):.3f} GiB')
-    print('--- the five rungs ---')
+    print('--- the five choices ---')
     for name, tr, by in zip(RUNGS, RUNG_TRAIN, RUNG_BYTES):
         pct = 100.0 * tr / TOTAL
         print(f'{name.replace(chr(10), " "):36s} trainable {tr:>13,}  '
@@ -546,7 +546,8 @@ def quantise_net(ws: list[Arr], bits: int, mode: str = 'per-channel',
 
 
 def train_qat(ws: list[Arr], bs: list[Arr], x: Arr, y: Ints, bits: int, steps: int,
-              lr: float, rng: np.random.Generator, batch: int = 64) -> list[Arr]:
+              lr: float, rng: np.random.Generator, batch: int = 64,
+              trace: list[tuple[Arr, Arr, Arr]] | None = None) -> list[Arr]:
     """Quantisation-aware training: the forward pass uses quantised weights, the
     update is applied to the stored full-precision weights (straight-through)."""
     ws = [w.copy() for w in ws]
@@ -556,6 +557,10 @@ def train_qat(ws: list[Arr], bs: list[Arr], x: Arr, y: Ints, bits: int, steps: i
     for _ in range(steps):
         idx = rng.integers(0, len(y), min(batch, len(y)))
         wq = quantise_net(ws, bits, 'per-channel')
+        if trace is not None:
+            _deq, qi, sc = quantise(ws[1], bits, 'per-channel')
+            trace.append((ws[1][:, 0].copy(), wq[1][:, 0].copy(),
+                          qi[:, 0].astype(float).copy()))
         acts = _fwd(wq, bs, x[idx])
         dw, db = _back(wq, acts, _ce_grad(acts[-1], y[idx]))
         _clip(dw, db)
@@ -802,15 +807,26 @@ def exp_forgetting() -> dict[str, object]:
             w, b, _ = train_full(s.w, s.b, s.x_new, s.y_new, st, lr, r2, batch=64)
             front.append((lr, st, accuracy(w, b, s.x_old_t, s.y_old_t),
                           accuracy(w, b, s.x_new_t, s.y_new_t)))
+    pred_before = np.argmax(_fwd(s.w, s.b, s.x_old_t)[-1], axis=1)
+    pred_after = np.argmax(_fwd(w_hard, b_hard, s.x_old_t)[-1], axis=1)
+    per_class: list[tuple[float, float]] = []
+    for c in range(N_CLASS):
+        m = s.y_old_t == c
+        per_class.append((float(np.mean(pred_before[m] == c)),
+                          float(np.mean(pred_after[m] == c))))
     print('--- forgetting ---')
     print(f'before the fine-tune: old {s.acc_old:.3f}, new {s.acc_new_before:.3f}')
+    print('  accuracy on each of the six objects, before and after 300 hard steps:')
+    for c, (bef, aft) in enumerate(per_class):
+        tag = ' (the new job shows this one)' if c in NEW_CLASSES else ''
+        print(f'    object {c}: before {bef:.3f}, after {aft:.3f}{tag}')
     for i in (0, 5, 10, 25, 50, 100, 200, 300):
         print(f'  after {i:>3} steps of a hard full fine-tune: '
               f'old {hist[0][i]:.3f}, new {hist[1][i]:.3f}')
     for name, old, new in recipes:
         print(f'  {name.replace(chr(10), " "):32s} old {old:.3f}  new {new:.3f}')
     out = {'hist': hist, 'recipes': recipes, 'front': front,
-           'w_hard': w_hard, 'b_hard': b_hard}
+           'w_hard': w_hard, 'b_hard': b_hard, 'per_class': per_class}
     _CACHE['forget'] = out
     return out
 
@@ -894,35 +910,6 @@ def exp_distance() -> dict[str, object]:
     return out
 
 
-def exp_narrow() -> dict[str, float]:
-    """64 examples from one corner of the new job, against 64 spread over all of it."""
-    if 'narrow' in _CACHE:
-        return _CACHE['narrow']          # type: ignore[return-value]
-    s = sim()
-    res: dict[str, float] = {}
-    for label, spread in (('narrow', 0.3), ('spread', SPREAD)):
-        vals_new: list[float] = []
-        vals_train: list[float] = []
-        for rep in range(5):
-            rng = np.random.default_rng(770 + rep)
-            off = None
-            if label == 'narrow':
-                off = np.zeros(FEAT)
-                off[:4] = np.array([0.45, 0.4, -0.4, 0.35])
-            xs, ys = s.new_job(1.0, 32, rng, spread=spread, offset=off)
-            w, b, _ = _finetune(s, 'full', xs, ys, rng)
-            vals_new.append(accuracy(w, b, s.x_new_t, s.y_new_t))
-            vals_train.append(accuracy(w, b, xs, ys))
-        res[label + '_test'] = float(np.mean(vals_new))
-        res[label + '_train'] = float(np.mean(vals_train))
-    print('--- 64 examples from one corner against 64 spread over the whole job ---')
-    for label in ('narrow', 'spread'):
-        print(f'  {label:7s} examples: on its own examples {res[label + "_train"]:.3f}, '
-              f'on the whole new job {res[label + "_test"]:.3f}')
-    _CACHE['narrow'] = res
-    return res
-
-
 def exp_variation() -> dict[str, object]:
     """How much data the new job needs as the job itself gets more varied."""
     if 'variation' in _CACHE:
@@ -960,6 +947,39 @@ def exp_variation() -> dict[str, object]:
     out = {'spreads': spreads, 'ceilings': ceils, 'ns': ns,
            'curves': curves, 'needed': needed}
     _CACHE['variation'] = out
+    return out
+
+
+def exp_rank_accuracy() -> dict[str, object]:
+    """What a larger rank buys on the new job, with few examples and with many."""
+    if 'rankacc' in _CACHE:
+        return _CACHE['rankacc']         # type: ignore[return-value]
+    s = sim()
+    ranks = [1, 2, 4, 8, 16]
+    counts: list[int] = []
+    rows: dict[int, list[float]] = {}
+    for n in (16, 512):
+        row: list[float] = []
+        for r in ranks:
+            vals: list[float] = []
+            ntr = 0
+            for rep in range(REPEATS):
+                rng = np.random.default_rng(480 + rep)
+                xs, ys = s.new_job(1.0, n // 2, rng)
+                w, b, _h, ntr = train_lowrank(s.w, s.b, xs, ys, r, FT_STEPS, FT_LR,
+                                              rng, batch=32)
+                vals.append(accuracy(w, b, s.x_new_t, s.y_new_t))
+            row.append(float(np.mean(vals)))
+            if n == 16:
+                counts.append(ntr)
+        rows[n] = row
+    print(f'--- what the rank of the adapter is worth (mean of {REPEATS} runs) ---')
+    print('rank          ' + ' '.join(f'{r:>6}' for r in ranks))
+    print('numbers trained' + ' '.join(f'{c:>6,}' for c in counts))
+    for n, row in rows.items():
+        print(f'{n:>4} examples ' + ' '.join(f'{v:6.3f}' for v in row))
+    out = {'ranks': ranks, 'counts': counts, 'rows': rows}
+    _CACHE['rankacc'] = out
     return out
 
 
@@ -1072,6 +1092,13 @@ def exp_per_channel() -> dict[str, object]:
     print('  extra bits per weight for the scales: '
           f'per-tensor {16.0 / w.size:.5f}, per-channel {16.0 / rows:.4f}, '
           f'groups of 16 {16.0 / 16:.2f}')
+    cmax = np.abs(w).max(axis=0)
+    res['chan_max'] = cmax
+    print(f'  the 48 channel maxima of the matrix as trained: smallest {cmax.min():.3f}, '
+          f'typical (median) {float(np.median(cmax)):.3f}, largest {cmax.max():.3f}')
+    print(f'  so with one scale for the whole matrix the quietest channel uses '
+          f'{100.0 * cmax.min() / cmax.max():.0f}% of the levels and the typical channel '
+          f'{100.0 * float(np.median(cmax)) / cmax.max():.0f}%')
     res['w'] = w
     res['loud'] = loud
     _CACHE['perchan'] = res
@@ -1115,6 +1142,35 @@ def exp_ptq_qat() -> dict[str, object]:
     out = {'bits': bit_list, 'ptq': ptq, 'qat': qat, 'clips': clips, 'float': b.acc,
            'modes': modes}
     _CACHE['ptqqat'] = out
+    return out
+
+
+def exp_qat_trace() -> dict[str, object]:
+    """One weight followed through a 2-bit quantisation-aware training run."""
+    if 'qattrace' in _CACHE:
+        return _CACHE['qattrace']        # type: ignore[return-value]
+    s = sim()
+    b = big()
+    trace: list[tuple[Arr, Arr, Arr]] = []
+    rng = np.random.default_rng(302)
+    train_qat(b.w, b.b, s.x_old, s.y_old, 2, 600, 0.03, rng, batch=96, trace=trace)
+    stored = np.array([t[0] for t in trace])          # steps x 48
+    used = np.array([t[1] for t in trace])            # steps x 48
+    ints = np.array([t[2] for t in trace])            # steps x 48
+    flips = np.sum(np.abs(np.diff(ints, axis=0)) > 0.5, axis=0)
+    pick = int(np.argmax(flips))
+    print('--- one weight during 2-bit quantisation-aware training ---')
+    print('this is the same run the 2-bit point of the accuracy curve comes from')
+    print(f'weight {pick} of the first column of the second layer')
+    print(f'  the stored value starts at {stored[0, pick]:+.4f} and ends at '
+          f'{stored[-1, pick]:+.4f}')
+    print(f'  the integer it was rounded to changed {int(flips[pick])} times, '
+          f'between {ints[:, pick].min():+.0f} and {ints[:, pick].max():+.0f}')
+    print(f'  so the weight the forward pass used ran between '
+          f'{used[:, pick].min():+.4f} and {used[:, pick].max():+.4f}')
+    out = {'stored': stored[:, pick], 'used': used[:, pick], 'ints': ints[:, pick],
+           'index': pick, 'flips': int(flips[pick])}
+    _CACHE['qattrace'] = out
     return out
 
 
@@ -1231,8 +1287,18 @@ def exp_prune() -> dict[str, object]:
         sizes = [FEAT, k, k, N_CLASS]
         stru_macs.append(macs(sizes))
         stru_sparsity.append(1.0 - macs(sizes) / b.macs)
+    flat = np.sort(np.concatenate([np.abs(w).ravel() for w in b.w]))
+    shares: list[tuple[float, float, float]] = []
+    for sp in (0.5, 0.7, 0.9):
+        k = int(sp * len(flat))
+        shares.append((sp, float(flat[k]), float(flat[:k].sum() / flat.sum())))
     print('--- pruning ---')
     print(f'the full network scores {b.acc:.3f} with {b.macs:,} multiply-adds')
+    print(f'  the three weight matrices hold {len(flat):,} weights, the largest '
+          f'{flat[-1]:.4f}')
+    for sp, thr, share in shares:
+        print(f'  the smallest {100 * sp:.0f}% of them are all below {thr:.4f} and hold '
+              f'{100 * share:.1f}% of the total size')
     for sp, a in zip(sparsities, uns):
         print(f'  {100 * sp:4.0f}% of the weights set to zero, scattered: {a:.3f} '
               f'(still {b.macs:,} multiply-adds on ordinary hardware)')
@@ -1243,7 +1309,8 @@ def exp_prune() -> dict[str, object]:
               f'({100 * spr:4.1f}% less arithmetic)')
     out = {'sparsities': sparsities, 'uns': uns, 'two_four': two_four,
            'keeps': keeps, 'stru': stru, 'stru_macs': stru_macs,
-           'stru_sparsity': stru_sparsity, 'base_macs': b.macs, 'base_acc': b.acc}
+           'stru_sparsity': stru_sparsity, 'base_macs': b.macs, 'base_acc': b.acc,
+           'sorted_sizes': flat, 'shares': shares}
     _CACHE['prune'] = out
     return out
 
@@ -1349,7 +1416,7 @@ def fig_rungs_what_moves() -> None:
                 color=INK)
         ax.text(0.65, -5.8, f'{pct:.4f}% of the model', ha='center', va='center',
                 fontsize=8.5, color=MUTED)
-    fig.suptitle('The five rungs: grey parts never change, coloured parts are what '
+    fig.suptitle('The five choices: grey parts never change, coloured parts are what '
                  'training is allowed to move',
                  fontsize=12.5, weight='bold', y=1.03)
     _save(fig, FT_DOC, 'rungs-what-moves.svg')
@@ -1372,7 +1439,7 @@ def fig_rung_trainable_bars() -> None:
     for i, (v, t) in enumerate(zip(vals, RUNG_TRAIN)):
         txt = 'none at all' if t == 0 else f'{t:,}  ({100.0 * t / TOTAL:.4f}% of the model)'
         ax.text(v * 1.4, i, txt, va='center', fontsize=9.5, color=INK)
-    ax.set_title(f'One rung to the next multiplies the work: 0, then {NEW_HEAD:,}, then '
+    ax.set_title(f'Each choice multiplies the work: 0, then {NEW_HEAD:,}, then '
                  f'{LORA_QV:,}, then {LAST_BLOCKS:,}, then all {TOTAL:,}',
                  fontsize=11.5, weight='bold')
     ax.grid(axis='x', color=GRID, lw=0.6, alpha=0.7)
@@ -1675,10 +1742,9 @@ def fig_lora_rank_counts() -> None:
     _save(fig, FT_DOC, 'lora-rank-counts.svg')
 
 
-def fig_lora_where() -> None:
-    """Section 3: the seven weight matrices of a block, and three places to attach."""
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(14.6, 5.6), facecolor='white',
-                                  gridspec_kw={'width_ratios': [1.15, 1.0], 'wspace': 0.52})
+def fig_lora_block_matrices() -> None:
+    """Section 3: the seven weight matrices one block holds, with their shapes."""
+    fig, ax = plt.subplots(figsize=(10.4, 5.4), facecolor='white')
     _blank(ax)
     mats = [('query', D_MODEL, D_MODEL, LINK), ('key', D_MODEL, D_MODEL, LINK),
             ('value', D_MODEL, D_MODEL, LINK), ('output', D_MODEL, D_MODEL, LINK),
@@ -1688,55 +1754,63 @@ def fig_lora_where() -> None:
         y = 6 - i
         ax.add_patch(Rectangle((0, y), 4.3, 0.76, facecolor=col, alpha=0.20,
                                edgecolor=col, lw=1.1))
-        ax.text(0.14, y + 0.38, name, va='center', fontsize=10, color=INK)
-        ax.text(1.25, y + 0.38, f'{rows} x {cols}', va='center', fontsize=9.3, color=MUTED)
-        ax.text(4.16, y + 0.38, f'{rows * cols:,}', va='center', ha='right', fontsize=9.3,
+        ax.text(0.14, y + 0.38, name, va='center', fontsize=10.5, color=INK)
+        ax.text(1.35, y + 0.38, f'{rows} x {cols}', va='center', fontsize=10, color=MUTED)
+        ax.text(4.16, y + 0.38, f'{rows * cols:,}', va='center', ha='right', fontsize=10,
                 color=INK)
         n8 = lora_count(rows, cols, LORA_R)
-        ax.text(6.4, y + 0.38, f'{n8:,}', va='center', ha='right', fontsize=9.3, color=col)
-    ax.text(1.25, 7.15, 'its shape', fontsize=9.3, color=MUTED, weight='bold')
-    ax.text(4.16, 7.15, 'numbers in it', ha='right', fontsize=9.3, color=MUTED,
+        ax.text(6.5, y + 0.38, f'{n8:,}', va='center', ha='right', fontsize=10, color=col)
+    ax.text(1.35, 7.18, 'its shape', fontsize=9.6, color=MUTED, weight='bold')
+    ax.text(4.16, 7.18, 'numbers in it', ha='right', fontsize=9.6, color=MUTED,
             weight='bold')
-    ax.text(6.4, 7.0, f'a rank-{LORA_R} adapter\nwould train', ha='right', fontsize=9.3,
-            color=MUTED, weight='bold')
-    ax.text(-0.12, 6.4, 'attention', rotation=90, ha='right', va='center', fontsize=9.3,
+    ax.text(6.5, 7.02, f'a rank-{LORA_R} adapter\non it would train', ha='right',
+            fontsize=9.6, color=MUTED, weight='bold')
+    ax.text(-0.14, 6.4, 'attention', rotation=90, ha='right', va='center', fontsize=10,
             color=LINK)
-    ax.text(-0.12, 1.15, 'feed-forward', rotation=90, ha='right', va='center',
-            fontsize=9.3, color=WRIST)
-    ax.set_xlim(-0.95, 6.6)
-    ax.set_ylim(-0.3, 8.0)
-    ax.set_title('The seven weight matrices in one block', fontsize=11.5, weight='bold')
-    _plain(ax2)
+    ax.text(-0.14, 1.15, 'feed-forward', rotation=90, ha='right', va='center',
+            fontsize=10, color=WRIST)
+    ax.set_xlim(-1.1, 6.8)
+    ax.set_ylim(0.1, 8.0)
+    ax.set_title('The seven weight matrices in one block, and what a rank-8 adapter on '
+                 'each would cost', fontsize=11.8, weight='bold')
+    _save(fig, FT_DOC, 'lora-matrices-in-a-block.svg')
+
+
+def fig_lora_attach_choices() -> None:
+    """Section 3: three common choices of where to put the adapters."""
+    fig, ax = plt.subplots(figsize=(10.8, 4.6), facecolor='white')
+    _plain(ax)
     names = list(ATTACH.keys())
     vals = [ATTACH[n] for n in names]
     yy = np.arange(len(names))
-    ax2.barh(yy, vals, color=[LINK, TEAL, WRIST], height=0.5)
-    ax2.set_yticks(yy)
-    ax2.set_yticklabels([n.replace(' and ', ' and\n') for n in names], fontsize=9.5)
-    ax2.invert_yaxis()
-    ax2.set_xlim(0, 3.4e7)
+    ax.barh(yy, vals, color=[LINK, TEAL, WRIST], height=0.5)
+    ax.set_yticks(yy)
+    ax.set_yticklabels([n.replace(' and ', ' and\n') for n in names], fontsize=10)
+    ax.invert_yaxis()
+    ax.set_xlim(0, 3.4e7)
     for y, v in zip(yy, vals):
-        ax2.text(v * 1.04, y, f'{v:,} numbers\n{100.0 * v / TOTAL:.4f}% of the model',
-                 va='center', fontsize=9.3, color=INK)
-    ax2.set_xlabel('numbers you train, over all 32 blocks', fontsize=10)
-    ax2.set_title(f'Where you attach the rank-{LORA_R} adapters', fontsize=11.5,
-                  weight='bold')
-    ax2.grid(axis='x', color=GRID, lw=0.6, alpha=0.7)
-    ax2.set_axisbelow(True)
-    _save(fig, FT_DOC, 'lora-where-in-the-block.svg')
+        ax.text(v * 1.04, y, f'{v:,} numbers\n{100.0 * v / TOTAL:.4f}% of the model',
+                va='center', fontsize=10, color=INK)
+    ax.set_xlabel(f'numbers you train with rank-{LORA_R} adapters, over all 32 blocks',
+                  fontsize=10)
+    ax.set_title('Covering the feed-forward matrices as well trains almost five times as '
+                 'many numbers', fontsize=11.8, weight='bold')
+    ax.grid(axis='x', color=GRID, lw=0.6, alpha=0.7)
+    ax.set_axisbelow(True)
+    _save(fig, FT_DOC, 'lora-where-to-attach.svg')
 
 
-def fig_lora_scaling_folding() -> None:
-    """Section 3: what the scaling factor does, and that folding changes nothing."""
+def fig_lora_scaling_choices() -> None:
+    """Section 3: how big a change the adapter adds, under three ways of scaling it."""
     d = lora_scaling()
     ranks = d['ranks']                       # type: ignore[index]
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(13.0, 5.2), facecolor='white')
+    fig, ax = plt.subplots(figsize=(10.6, 5.4), facecolor='white')
     _plain(ax)
-    ax.plot(ranks, d['raw'], marker='o', color=GRIP, lw=2.2,         # type: ignore[arg-type]
+    ax.plot(ranks, d['raw'], marker='o', color=GRIP, lw=2.4,         # type: ignore[arg-type]
             label='no scaling at all')
-    ax.plot(ranks, d['by_r'], marker='s', color=LINK, lw=2.2,        # type: ignore[arg-type]
+    ax.plot(ranks, d['by_r'], marker='s', color=LINK, lw=2.4,        # type: ignore[arg-type]
             label='multiplied by alpha / rank')
-    ax.plot(ranks, d['by_sqrt'], marker='^', color=SLIDE, lw=2.2,    # type: ignore[arg-type]
+    ax.plot(ranks, d['by_sqrt'], marker='^', color=SLIDE, lw=2.4,    # type: ignore[arg-type]
             label='multiplied by alpha / square root of rank')
     ax.set_xscale('log', base=2)
     ax.set_yscale('log')
@@ -1744,12 +1818,20 @@ def fig_lora_scaling_folding() -> None:
     ax.set_xticklabels([str(r) for r in ranks])
     ax.set_xlabel('rank of the adapter', fontsize=10)
     ax.set_ylabel('size of the change the adapter adds (log scale)', fontsize=10)
-    ax.set_title('With no scaling the adapter pushes harder as the rank grows',
-                 fontsize=11.2, weight='bold')
-    ax.legend(fontsize=9.3, frameon=False, loc='lower left')
+    raw: list[float] = d['raw']              # type: ignore[assignment]
+    ax.set_title(f'With no scaling the change grows {raw[-1] / raw[0]:.1f} times from '
+                 f'rank 1 to rank 128', fontsize=11.8, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='lower left')
     ax.grid(color=GRID, lw=0.6, alpha=0.6)
     ax.set_axisbelow(True)
-    _blank(ax2)
+    _save(fig, FT_DOC, 'lora-scaling-choices.svg')
+
+
+def fig_lora_folding_cost() -> None:
+    """Section 3: folding the adapter into the weights costs nothing when the model runs."""
+    d = lora_scaling()
+    fig, ax = plt.subplots(figsize=(10.8, 4.4), facecolor='white')
+    _blank(ax)
     mac_w: int = d['mac_w']                  # type: ignore[assignment]
     mac_side: int = d['mac_side']            # type: ignore[assignment]
     bars = [('the matrix on its own', mac_w, LINK),
@@ -1757,25 +1839,60 @@ def fig_lora_scaling_folding() -> None:
             ('with the adapter folded in', mac_w, SLIDE)]
     for i, (name, v, col) in enumerate(bars):
         y = 2 - i
-        ax2.add_patch(Rectangle((0, y), v / mac_w * 6.0, 0.55, facecolor=col,
-                                edgecolor='none'))
-        ax2.text(0.12, y + 0.275, name, va='center', fontsize=10, color='white')
-        ax2.text(v / mac_w * 6.0 + 0.12, y + 0.275, f'{v:,} multiply-adds', va='center',
-                 fontsize=9.6, color=INK)
-    ax2.text(0.0, -0.5,
-             'The folded weights give the same answer as the separate side path:\n'
-             f'the largest difference between the two is {d["gap"]:.1e}, which is only '
-             'the rounding\nof the arithmetic itself. So a folded adapter costs nothing '
-             'at all when the model runs.',
-             fontsize=9.6, color=INK, va='top')
-    ax2.set_xlim(-0.1, 9.6)
-    ax2.set_ylim(-1.7, 3.1)
-    ax2.set_title('Folding the adapter back into the weights', fontsize=11.2, weight='bold')
-    _save(fig, FT_DOC, 'lora-scaling-and-folding.svg')
+        ax.add_patch(Rectangle((0, y), v / mac_w * 6.0, 0.6, facecolor=col,
+                               edgecolor='none'))
+        ax.text(0.14, y + 0.30, name, va='center', fontsize=11, color='white')
+        ax.text(v / mac_w * 6.0 + 0.14, y + 0.30,
+                f'{v:,} multiply-adds for one token', va='center', fontsize=10.5,
+                color=INK)
+    ax.text(0.0, -0.45, f'The folded weights and the separate side path differ by at most '
+                        f'{d["gap"]:.1e}, which is the rounding of the arithmetic itself.',
+            fontsize=10, color=MUTED, va='top')
+    ax.set_xlim(-0.1, 10.6)
+    ax.set_ylim(-1.1, 3.0)
+    ax.set_title('A separate side path costs 0.39% more arithmetic; folding it into the '
+                 'weights costs nothing', fontsize=11.8, weight='bold')
+    _save(fig, FT_DOC, 'lora-folding-cost.svg')
+
+
+def fig_lora_rank_accuracy() -> None:
+    """Section 3: a larger rank helps only when there are examples to fill it."""
+    d = exp_rank_accuracy()
+    s = sim()
+    ranks = d['ranks']                       # type: ignore[index]
+    rows = d['rows']                         # type: ignore[index]
+    fig, ax = plt.subplots(figsize=(10.8, 5.4), facecolor='white')
+    _plain(ax)
+    ax.plot(ranks, rows[16], marker='o', color=WRIST, lw=2.4, ms=7,   # type: ignore[index]
+            label='16 examples of the new job')
+    ax.plot(ranks, rows[512], marker='s', color=LINK, lw=2.4, ms=7,   # type: ignore[index]
+            label='512 examples of the new job')
+    for r, v in zip(ranks, rows[16]):        # type: ignore[index]
+        ax.annotate(f'{v:.3f}', xy=(r, v), xytext=(r, v - 0.018), ha='center',
+                    fontsize=9.4, color=WRIST)
+    for r, v in zip(ranks, rows[512]):       # type: ignore[index]
+        ax.annotate(f'{v:.3f}', xy=(r, v), xytext=(r, v + 0.012), ha='center',
+                    fontsize=9.4, color=LINK)
+    ax.axhline(s.ceiling, color=INK, lw=1.5, ls='--')
+    ax.text(1.0, s.ceiling + 0.006, f'nothing can beat {s.ceiling:.3f} on this job',
+            fontsize=9.8, color=INK)
+    ax.set_xscale('log', base=2)
+    ax.set_xticks(ranks)
+    ax.set_xticklabels([f'rank {r}\n{c:,} numbers' for r, c in
+                        zip(ranks, d['counts'])], fontsize=9.4)   # type: ignore[arg-type]
+    ax.set_xlabel('the rank you choose for the adapter', fontsize=10)
+    ax.set_ylabel(f'accuracy on the new job (mean of {REPEATS} runs)', fontsize=10)
+    ax.set_ylim(0.655, 0.875)
+    ax.set_title('On the simulated job the rank changes almost nothing, while the number '
+                 'of examples changes a lot', fontsize=11.6, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='upper right')
+    ax.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax.set_axisbelow(True)
+    _save(fig, FT_DOC, 'lora-rank-accuracy.svg')
 
 
 def fig_qlora_memory() -> None:
-    """Section 4: what fits on one card once the base is squeezed to 4 bits."""
+    """Section 4: what fits on one card once the base is stored in 4 bits."""
     bpw = bits_per_weight(4, 64)
     base4 = TOTAL * bpw / 8
     base16 = TOTAL * 2.0
@@ -1810,28 +1927,36 @@ def fig_qlora_memory() -> None:
     _save(fig, FT_DOC, 'qlora-memory-stack.svg')
 
 
-def fig_qlora_groups() -> None:
-    """Section 4: the scales cost bits too, and smaller groups cost more."""
-    d = exp_per_channel()
-    b = big()
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.8, 4.9), facecolor='white')
+def fig_qlora_bits_per_weight() -> None:
+    """Section 4: four-bit storage is never exactly four bits a weight."""
+    fig, ax = plt.subplots(figsize=(10.6, 5.0), facecolor='white')
     _plain(ax)
     groups = [32, 64, 128, 256, 1024]
     bpws = [bits_per_weight(4, g) for g in groups]
     xx = np.arange(len(groups))
     ax.bar(xx, [4.0] * len(groups), color=LINK, width=0.55, label='the 4-bit integers')
     ax.bar(xx, [v - 4.0 for v in bpws], bottom=4.0, color=WRIST, width=0.55,
-           label='a 16-bit scale for each group')
+           label='a 16-bit scale shared by each group')
     for x, (g, v) in enumerate(zip(groups, bpws)):
-        ax.text(x, v + 0.04, f'{v:.3f} bits\n{_gib(TOTAL * v / 8):.2f} GiB', ha='center',
-                fontsize=9.2, color=INK)
+        ax.text(x, v + 0.06, f'{v:.3f} bits\n{_gib(TOTAL * v / 8):.2f} GiB',
+                ha='center', fontsize=10, color=INK)
     ax.set_xticks(xx)
-    ax.set_xticklabels([f'{g} weights\nto a scale' for g in groups], fontsize=9.3)
+    ax.set_xticklabels([f'{g} weights\nto a scale' for g in groups], fontsize=10)
     ax.set_ylim(0, 6.2)
     ax.set_ylabel('bits stored for each weight', fontsize=10)
-    ax.set_title('What the scales add to four bits', fontsize=11.2, weight='bold')
-    ax.legend(fontsize=9.3, frameon=False, loc='upper right')
-    _plain(ax2)
+    ax.set_title('Smaller groups mean more scales: with 64 weights to a scale the real '
+                 'cost is 4.250 bits a weight', fontsize=11.6, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='upper right')
+    ax.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax.set_axisbelow(True)
+    _save(fig, FT_DOC, 'qlora-bits-per-weight.svg')
+
+
+def fig_qlora_group_error() -> None:
+    """Section 4: what the bits spent on scales buy back, on a real weight matrix."""
+    b = big()
+    fig, ax = plt.subplots(figsize=(10.6, 5.2), facecolor='white')
+    _plain(ax)
     w = b.w[1]
     gsizes = [8, 16, 24, 48]
     errs = []
@@ -1841,65 +1966,72 @@ def fig_qlora_groups() -> None:
     deq, _q, _s = quantise(w, 4, 'per-tensor')
     per_tensor = 100.0 * rms(deq - w) / rms(w)
     xs = [16.0 / g for g in gsizes]
-    ax2.plot(xs, errs, marker='o', color=LINK, lw=2.2)
+    ax.plot(xs, errs, marker='o', color=LINK, lw=2.4, ms=7)
     for x, g, e in zip(xs, gsizes, errs):
-        ax2.annotate(f'groups of {g}\n{e:.2f}%', xy=(x, e), xytext=(x, e + 0.22),
-                     fontsize=9.0, color=INK, ha='center')
-    ax2.axhline(per_tensor, color=GRIP, lw=1.8, ls='--')
-    ax2.text(0.28, per_tensor - 0.75, f'one scale for the whole matrix: {per_tensor:.2f}%',
-             fontsize=9.3, color=GRIP)
-    ax2.set_xlim(0.2, 2.35)
-    ax2.set_xlabel('extra bits per weight spent on scales', fontsize=10)
-    ax2.set_ylabel('error left after reading the weights back (%)', fontsize=10)
-    ax2.set_ylim(min(errs) - 0.5, per_tensor + 1.4)
-    ax2.set_title('Measured on a real trained 48 x 48 weight matrix', fontsize=11.2,
-                  weight='bold')
-    ax2.grid(color=GRID, lw=0.6, alpha=0.6)
-    ax2.set_axisbelow(True)
-    _save(fig, FT_DOC, 'qlora-bits-and-groups.svg')
+        ax.annotate(f'groups of {g}\n{e:.2f}%', xy=(x, e), xytext=(x, e + 0.30),
+                    fontsize=9.8, color=INK, ha='center')
+    ax.axhline(per_tensor, color=GRIP, lw=1.8, ls='--')
+    ax.text(0.28, per_tensor - 0.85, f'one scale for the whole matrix: {per_tensor:.2f}%',
+            fontsize=10, color=GRIP)
+    ax.set_xlim(0.22, 2.45)
+    ax.set_xlabel('extra bits per weight spent on scales', fontsize=10)
+    ax.set_ylabel('error left after reading the weights back (%)', fontsize=10)
+    ax.set_ylim(min(errs) - 0.6, per_tensor + 1.6)
+    ax.set_title('Measured on a real trained 48 x 48 weight matrix: the first extra third '
+                 'of a bit buys the most', fontsize=11.4, weight='bold')
+    ax.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax.set_axisbelow(True)
+    _save(fig, FT_DOC, 'qlora-group-error.svg')
 
 
-def fig_qlora_recovers() -> None:
-    """Section 4: an adapter on a 4-bit base gets back nearly all of the loss."""
+def fig_qlora_old_job() -> None:
+    """Section 4: what storing the frozen base in fewer bits costs on the old job."""
     d = exp_quant_adapter()
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.8, 5.0), facecolor='white')
+    fig, ax = plt.subplots(figsize=(9.6, 5.0), facecolor='white')
     _plain(ax)
     names = ['float base', '8-bit base', '4-bit base']
     vals = [d['old job, float base'], d['old job, 8-bit base'], d['old job, 4-bit base']]
     xx = np.arange(3)
-    ax.bar(xx, vals, color=[LINK, TEAL, WRIST], width=0.55)
+    ax.bar(xx, vals, color=[LINK, TEAL, WRIST], width=0.5)
     for x, v in zip(xx, vals):
-        ax.text(x, v + 0.008, f'{v:.3f}', ha='center', fontsize=10.5, color=INK,
+        ax.text(x, v + 0.004, f'{v:.3f}', ha='center', fontsize=11.5, color=INK,
                 weight='bold')
     ax.set_xticks(xx)
-    ax.set_xticklabels(names, fontsize=10)
-    ax.set_ylim(0.8, 0.98)
+    ax.set_xticklabels(names, fontsize=10.5)
+    ax.set_ylim(0.88, 0.95)
     ax.set_ylabel('accuracy on the old six-way job', fontsize=10)
-    ax.set_title('Squeezing the frozen base to 4 bits costs '
-                 f'{d["old job, float base"] - d["old job, 4-bit base"]:.3f} of accuracy',
-                 fontsize=11.2, weight='bold')
+    ax.set_title('Storing the frozen base in 4 bits costs '
+                 f'{d["old job, float base"] - d["old job, 4-bit base"]:.3f} of accuracy '
+                 'on the job it was already good at', fontsize=11.4, weight='bold')
     ax.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
     ax.set_axisbelow(True)
-    _plain(ax2)
+    _save(fig, FT_DOC, 'qlora-old-job-cost.svg')
+
+
+def fig_qlora_new_job() -> None:
+    """Section 4: a small adapter on a 4-bit base still learns the new job."""
+    d = exp_quant_adapter()
+    fig, ax = plt.subplots(figsize=(10.4, 5.2), facecolor='white')
+    _plain(ax)
     labels = ['4-bit base,\nno adapter', 'float base +\nrank-2 adapter',
               '8-bit base +\nrank-2 adapter', '4-bit base +\nrank-2 adapter']
     keys = ['4-bit base, no adapter', 'float base + rank-2 adapter',
             '8-bit base + rank-2 adapter', '4-bit base + rank-2 adapter']
-    vals2 = [d[k] for k in keys]
-    xx2 = np.arange(len(labels))
-    ax2.bar(xx2, vals2, color=[MUTED, LINK, TEAL, WRIST], width=0.58)
-    for x, v in zip(xx2, vals2):
-        ax2.text(x, v + 0.008, f'{v:.3f}', ha='center', fontsize=10.5, color=INK,
-                 weight='bold')
-    ax2.set_xticks(xx2)
-    ax2.set_xticklabels(labels, fontsize=9.5)
-    ax2.set_ylim(0.4, 0.84)
-    ax2.set_ylabel('accuracy on the new job after 64 examples', fontsize=10)
-    ax2.set_title('A small adapter on a squeezed base still learns the new job',
-                  fontsize=11.2, weight='bold')
-    ax2.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
-    ax2.set_axisbelow(True)
-    _save(fig, FT_DOC, 'qlora-adapter-recovers.svg')
+    vals = [d[k] for k in keys]
+    xx = np.arange(len(labels))
+    ax.bar(xx, vals, color=[MUTED, LINK, TEAL, WRIST], width=0.56)
+    for x, v in zip(xx, vals):
+        ax.text(x, v + 0.008, f'{v:.3f}', ha='center', fontsize=11.5, color=INK,
+                weight='bold')
+    ax.set_xticks(xx)
+    ax.set_xticklabels(labels, fontsize=10)
+    ax.set_ylim(0.4, 0.84)
+    ax.set_ylabel('accuracy on the new job after 128 examples', fontsize=10)
+    ax.set_title('The adapter does nearly all the work, and it does most of it even when '
+                 'the base is stored in 4 bits', fontsize=11.4, weight='bold')
+    ax.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax.set_axisbelow(True)
+    _save(fig, FT_DOC, 'qlora-new-job-adapter.svg')
 
 
 def fig_forgetting_curves() -> None:
@@ -1964,6 +2096,36 @@ def fig_forgetting_what_helps() -> None:
     _save(fig, FT_DOC, 'forgetting-what-helps.svg')
 
 
+def fig_forgetting_which_classes() -> None:
+    """Section 5: forgetting is not spread evenly over the six objects."""
+    d = exp_forgetting()
+    per = d['per_class']                     # type: ignore[index]
+    before = [v[0] for v in per]             # type: ignore[union-attr]
+    after = [v[1] for v in per]              # type: ignore[union-attr]
+    fig, ax = plt.subplots(figsize=(10.8, 5.2), facecolor='white')
+    _plain(ax)
+    xx = np.arange(N_CLASS)
+    ax.bar(xx - 0.19, before, width=0.36, color=LINK,
+           label='before the fine-tune')
+    ax.bar(xx + 0.19, after, width=0.36, color=GRIP,
+           label='after 300 hard steps on the new job')
+    for x, (b_, a_) in enumerate(zip(before, after)):
+        ax.text(x - 0.19, b_ + 0.015, f'{b_:.3f}', ha='center', fontsize=9.4, color=INK)
+        ax.text(x + 0.19, a_ + 0.015, f'{a_:.3f}', ha='center', fontsize=9.4, color=INK)
+    ax.set_xticks(xx)
+    ax.set_xticklabels([f'object {c}' + ('\n(the new job\nshows this one)'
+                                         if c in NEW_CLASSES else '')
+                        for c in range(N_CLASS)], fontsize=9.6)
+    ax.set_ylabel('share of that object\'s readings named correctly', fontsize=10)
+    ax.set_ylim(0, 1.14)
+    ax.set_title('The four objects the new job never shows are the ones the model loses '
+                 'almost completely', fontsize=11.8, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='upper center', ncol=2)
+    ax.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax.set_axisbelow(True)
+    _save(fig, FT_DOC, 'forgetting-which-objects.svg')
+
+
 def fig_forgetting_mix() -> None:
     """Section 5: how much of the old data has to go back into each batch."""
     rows = exp_mix_fraction()
@@ -2006,8 +2168,6 @@ def fig_forgetting_frontier() -> None:
         pts = sorted([(f[1], f[3], f[2]) for f in front if f[0] == lr])
         ax.plot([p[1] for p in pts], [p[2] for p in pts], marker='o', color=col, lw=1.8,
                 ms=6, label=f'learning rate {lr}')
-        for st, nx, oy in (pts[0], pts[-1]):
-            pass
         ax.annotate(f'{pts[0][0]} steps', xy=(pts[0][1], pts[0][2]),
                     xytext=(pts[0][1] - 0.012, pts[0][2] + 0.022), fontsize=8.4, color=col,
                     ha='right')
@@ -2055,7 +2215,7 @@ def fig_data_curves() -> None:
     ax.set_xlabel('examples of the new job', fontsize=10)
     ax.set_ylabel(f'accuracy on the new job (mean of {REPEATS} runs)', fontsize=10)
     ax.set_ylim(0.44, 0.90)
-    ax.set_title('The cheap rungs climb first and then stop, and only full fine-tuning '
+    ax.set_title('The cheap choices climb first and then stop, and only full fine-tuning '
                  'reaches the ceiling', fontsize=11.6, weight='bold')
     ax.legend(fontsize=9.6, frameon=False, loc='lower right')
     ax.grid(color=GRID, lw=0.6, alpha=0.6)
@@ -2353,7 +2513,7 @@ def fig_error_per_weight() -> None:
     ax.axhline(d['rms8'], color=LINK, lw=1.2, ls=':')     # type: ignore[index]
     ax.text(0, -0.049,                                    # type: ignore[index]
             f'at 8 bits it is {d["rms8"]:.6f}, which is '
-            f'{d["rms4"] / d["rms8"]:.0f} times smaller', fontsize=9.3, color=LINK,
+            f'{d["rms4"] / d["rms8"]:.1f} times smaller', fontsize=9.3, color=LINK,
             bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor='none'))
     ax.axhline(0, color=INK, lw=0.8)
     ax.set_xlabel('weight number', fontsize=10)
@@ -2455,9 +2615,9 @@ def fig_ptq_vs_qat() -> None:
     fig, ax = plt.subplots(figsize=(10.8, 5.4), facecolor='white')
     _plain(ax)
     ax.plot(bits, d['ptq'], marker='o', color=LINK, lw=2.4, ms=7,   # type: ignore[arg-type]
-            label='trained first, then squeezed')
+            label='trained first, then stored in fewer bits')
     ax.plot(bits, d['qat'], marker='s', color=SLIDE, lw=2.4, ms=7,  # type: ignore[arg-type]
-            label='trained with the squeezing switched on')
+            label='trained with the rounding already applied')
     ax.axhline(d['float'], color=GRIP, lw=1.8, ls='--')             # type: ignore[arg-type]
     ax.text(8.1, d['float'] + 0.006, f'the full-precision network: {d["float"]:.3f}',
             ha='right', fontsize=9.5, color=GRIP)
@@ -2472,7 +2632,7 @@ def fig_ptq_vs_qat() -> None:
     ax.set_ylabel('accuracy on the six-way test set', fontsize=10)
     ax.set_ylim(0.80, 0.958)
     ax.set_title('Down to three bits it makes no difference; at two bits, training with '
-                 'the squeezing on wins back 0.086',
+                 'the rounding applied wins back 0.086',
                  fontsize=11.6, weight='bold')
     ax.legend(fontsize=9.8, frameon=False, loc='lower right')
     ax.grid(color=GRID, lw=0.6, alpha=0.6)
@@ -2480,44 +2640,90 @@ def fig_ptq_vs_qat() -> None:
     _save(fig, SM_DOC, 'ptq-vs-qat.svg')
 
 
-def fig_mode_accuracy() -> None:
-    """Section 3: the choice of scale, measured as accuracy rather than error."""
+def fig_scale_choice_accuracy() -> None:
+    """Section 3: the choice of scale, measured as accuracy rather than as error."""
     d = exp_ptq_qat()
     bits = d['bits']                         # type: ignore[index]
     modes = d['modes']                       # type: ignore[index]
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.8, 5.0), facecolor='white')
+    fig, ax = plt.subplots(figsize=(10.6, 5.2), facecolor='white')
     _plain(ax)
     for (name, vals), col, mk in zip(modes.items(), (GRIP, LINK, SLIDE), ('o', 's', '^')):
         nice = {'per-tensor': 'one scale for the whole matrix',
                 'per-channel': 'one scale for each channel',
                 'grouped': 'one scale for every 16 weights'}[name]
-        ax.plot(bits, vals, marker=mk, color=col, lw=2.2, ms=6.5, label=nice)
+        ax.plot(bits, vals, marker=mk, color=col, lw=2.4, ms=7, label=nice)
+        dy = {'per-tensor': 0.0, 'per-channel': 0.014, 'grouped': -0.018}[name]
+        ax.annotate(f'{vals[-1]:.3f}', xy=(bits[-1], vals[-1]),
+                    xytext=(bits[-1] - 0.12, vals[-1] + dy), va='center',
+                    fontsize=9.6, color=col, ha='right')
     ax.axhline(d['float'], color=MUTED, lw=1.4, ls='--')            # type: ignore[arg-type]
+    ax.text(7.9, d['float'] + 0.008, f'the full-precision network: {d["float"]:.3f}',
+            ha='right', fontsize=9.8, color=MUTED)
     ax.set_xticks(bits)
     ax.set_xlabel('bits kept for each weight', fontsize=10)
     ax.set_ylabel('accuracy on the six-way test set', fontsize=10)
-    ax.set_ylim(0.6, 0.97)
-    ax.set_title('Where the scale starts to matter', fontsize=11.2, weight='bold')
-    ax.legend(fontsize=9.3, frameon=False, loc='lower right')
+    ax.set_xlim(1.45, 8.3)
+    ax.set_ylim(0.6, 0.98)
+    ax.set_title('The choice of scale changes nothing down to 4 bits and decides '
+                 'everything at 2', fontsize=11.6, weight='bold')
+    ax.legend(fontsize=9.6, frameon=False, loc='lower right')
     ax.grid(color=GRID, lw=0.6, alpha=0.6)
     ax.set_axisbelow(True)
-    _plain(ax2)
+    _save(fig, SM_DOC, 'scale-choice-accuracy.svg')
+
+
+def fig_clipping_choice() -> None:
+    """Section 3: setting the scale from a percentile instead of the largest weight."""
+    d = exp_ptq_qat()
     clips = d['clips']                       # type: ignore[index]
+    fig, ax = plt.subplots(figsize=(10.2, 5.0), facecolor='white')
+    _plain(ax)
     names = [c[0] for c in clips]
     vals = [c[1] for c in clips]
     xx = np.arange(len(names))
-    ax2.bar(xx, vals, color=[LINK, TEAL, WRIST, GRIP], width=0.58)
+    ax.bar(xx, vals, color=[LINK, TEAL, WRIST, GRIP], width=0.56)
     for x, v in zip(xx, vals):
-        ax2.text(x, v + 0.0015, f'{v:.3f}', ha='center', fontsize=10.2, color=INK,
-                 weight='bold')
-    ax2.set_xticks(xx)
-    ax2.set_xticklabels([n.replace(' ', '\n') for n in names], fontsize=9.3)
-    ax2.set_ylabel('accuracy at 4 bits, one scale per channel', fontsize=10)
-    ax2.set_ylim(0.90, 0.945)
-    ax2.set_title('Where the range is cut off, at 4 bits', fontsize=11.2, weight='bold')
-    ax2.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
-    ax2.set_axisbelow(True)
-    _save(fig, SM_DOC, 'scale-and-clipping-accuracy.svg')
+        ax.text(x, v + 0.0015, f'{v:.3f}', ha='center', fontsize=11.5, color=INK,
+                weight='bold')
+    ax.set_xticks(xx)
+    ax.set_xticklabels([n.replace(' ', '\n') for n in names], fontsize=10)
+    ax.set_xlabel('what the scale for each channel is set from', fontsize=10)
+    ax.set_ylabel('accuracy at 4 bits, one scale per channel', fontsize=10)
+    ax.set_ylim(0.90, 0.945)
+    ax.set_title('Ignoring the largest few weights does not help here, because a scale '
+                 'per channel has already dealt with them', fontsize=11.4, weight='bold')
+    ax.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax.set_axisbelow(True)
+    _save(fig, SM_DOC, 'clipping-choice-accuracy.svg')
+
+
+def fig_qat_one_weight() -> None:
+    """Section 3: the stored weight moves every step; the weight in use is rounded."""
+    d = exp_qat_trace()
+    stored = np.asarray(d['stored'])         # type: ignore[arg-type]
+    used = np.asarray(d['used'])             # type: ignore[arg-type]
+    steps = np.arange(len(stored))
+    fig, ax = plt.subplots(figsize=(11.0, 5.2), facecolor='white')
+    _plain(ax)
+    ax.axhline(0.0, color=INK, lw=0.8)
+    ax.plot(steps, stored, color=LINK, lw=2.0,
+            label='the stored weight, which every update moves')
+    ax.plot(steps, used, color=GRIP, lw=2.0,
+            label='the 2-bit weight the forward pass used instead')
+    ax.set_xlabel('step of quantisation-aware training', fontsize=10)
+    ax.set_ylabel('value of this one weight', fontsize=10)
+    ax.set_xlim(0, len(stored))
+    ax.text(0.27 * len(stored), float(np.max(used)) * 0.62,
+            f'the rounding changed {d["flips"]} times in 600 steps, and each time\n'
+            'the value the forward pass used jumped between 0 and the scale',
+            fontsize=10, color=INK)
+    ax.set_ylim(-0.03, float(np.max(used)) * 1.28)
+    ax.set_title('One weight during the 2-bit run: training moves a value the forward '
+                 'pass never sees', fontsize=11.6, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='upper center')
+    ax.grid(color=GRID, lw=0.6, alpha=0.5)
+    ax.set_axisbelow(True)
+    _save(fig, SM_DOC, 'qat-one-weight.svg')
 
 
 def fig_soft_target() -> None:
@@ -2697,53 +2903,100 @@ def fig_prune_masks() -> None:
     _save(fig, SM_DOC, 'scattered-zeros-against-whole-channels.svg')
 
 
-def fig_prune_accuracy() -> None:
-    """Section 5: accuracy as weights are removed, two ways."""
+def fig_prune_scattered() -> None:
+    """Section 5: accuracy as the smallest weights are zeroed wherever they are."""
     d = exp_prune()
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(13.0, 5.2), facecolor='white')
+    fig, ax = plt.subplots(figsize=(10.8, 5.2), facecolor='white')
     _plain(ax)
     sp = [100 * v for v in d['sparsities']]            # type: ignore[union-attr]
-    ax.plot(sp, d['uns'], marker='o', color=LINK, lw=2.4, ms=6,   # type: ignore[arg-type]
+    ax.plot(sp, d['uns'], marker='o', color=LINK, lw=2.4, ms=6.5,  # type: ignore[arg-type]
             label='smallest weights set to zero, wherever they are')
-    ax.plot([50], [d['two_four']], '*', color=WRIST, ms=18)       # type: ignore[index]
+    ax.plot([50], [d['two_four']], '*', color=WRIST, ms=18)        # type: ignore[index]
     ax.annotate(f'2 of every 4 kept: {d["two_four"]:.3f}', xy=(50, d['two_four']),
-                xytext=(14, 0.80), fontsize=9.6, color=WRIST,
+                xytext=(14, 0.76), fontsize=9.8, color=WRIST,
                 arrowprops=dict(arrowstyle='-|>', color=WRIST, lw=1.2))
-    ax.axhline(d['base_acc'], color=GRIP, lw=1.6, ls='--')        # type: ignore[arg-type]
+    ax.axhline(d['base_acc'], color=GRIP, lw=1.6, ls='--')         # type: ignore[arg-type]
     ax.text(0, d['base_acc'] + 0.015, f'the full network: {d["base_acc"]:.3f}',
-            fontsize=9.5, color=GRIP)
-    for x, v in zip(sp, d['uns']):                                # type: ignore[arg-type]
-        if x in (70.0, 80.0, 90.0):
-            ax.annotate(f'{v:.3f}', xy=(x, v), xytext=(x - 2.0, v - 0.07), fontsize=9.2,
-                        color=LINK)
+            fontsize=9.8, color=GRIP)
+    for x, v in zip(sp, d['uns']):                                 # type: ignore[arg-type]
+        if x == 50.0:
+            ax.annotate(f'{v:.3f}', xy=(x, v), xytext=(x, v + 0.035), fontsize=9.6,
+                        color=LINK, ha='center')
+        elif x in (70.0, 80.0, 90.0):
+            ax.annotate(f'{v:.3f}', xy=(x, v), xytext=(x + 1.5, v + 0.035), fontsize=9.6,
+                        color=LINK, ha='left')
     ax.set_xlabel('share of the weights set to zero (%)', fontsize=10)
     ax.set_ylabel('accuracy on the six-way test set', fontsize=10)
     ax.set_ylim(0.1, 1.02)
-    ax.set_title('Half the weights can go without being noticed', fontsize=11.2,
-                 weight='bold')
-    ax.legend(fontsize=9.4, frameon=False, loc='lower left')
+    ax.set_title('Half the weights can be set to zero without being noticed, and the '
+                 'arithmetic does not get any smaller', fontsize=11.6, weight='bold')
+    ax.legend(fontsize=9.6, frameon=False, loc='lower left')
     ax.grid(color=GRID, lw=0.6, alpha=0.6)
     ax.set_axisbelow(True)
-    _plain(ax2)
+    _save(fig, SM_DOC, 'accuracy-against-scattered-zeros.svg')
+
+
+def fig_prune_neurons() -> None:
+    """Section 5: accuracy against arithmetic that is really saved."""
+    d = exp_prune()
+    fig, ax = plt.subplots(figsize=(10.8, 5.2), facecolor='white')
+    _plain(ax)
     saved = [100 * v for v in d['stru_sparsity']]     # type: ignore[union-attr]
-    ax2.plot(saved, d['stru'], marker='s', color=SLIDE, lw=2.4, ms=6,  # type: ignore
-             label='whole hidden neurons removed')
-    ax2.plot([0], [d['base_acc']], 'o', color=GRIP, ms=8)              # type: ignore[index]
+    ax.plot(saved, d['stru'], marker='s', color=SLIDE, lw=2.4, ms=6.5,  # type: ignore
+            label='whole hidden neurons removed')
+    ax.plot([0], [d['base_acc']], 'o', color=GRIP, ms=8)               # type: ignore[index]
     for x, v, k, mc in zip(saved, d['stru'], d['keeps'], d['stru_macs']):   # type: ignore
         if k in (40, 32, 24, 16, 8):
-            ax2.annotate(f'{k} kept\n{mc:,} multiply-adds', xy=(x, v),
-                         xytext=(x - 3.0, v - 0.13), fontsize=8.8, color=INK, ha='center')
-    ax2.axhline(d['base_acc'], color=GRIP, lw=1.6, ls='--')            # type: ignore[arg-type]
-    ax2.set_xlabel('arithmetic actually saved (%)', fontsize=10)
-    ax2.set_ylabel('accuracy on the six-way test set', fontsize=10)
-    ax2.set_ylim(0.1, 1.02)
-    ax2.set_xlim(-4, 100)
-    ax2.set_title('Arithmetic you can really save costs more accuracy', fontsize=11.2,
-                  weight='bold')
-    ax2.legend(fontsize=9.4, frameon=False, loc='lower left')
-    ax2.grid(color=GRID, lw=0.6, alpha=0.6)
-    ax2.set_axisbelow(True)
-    _save(fig, SM_DOC, 'accuracy-against-pruning.svg')
+            ax.annotate(f'{k} kept\n{mc:,} multiply-adds', xy=(x, v),
+                        xytext=(x - 3.0, v - 0.13), fontsize=9.2, color=INK, ha='center')
+    ax.axhline(d['base_acc'], color=GRIP, lw=1.6, ls='--')             # type: ignore[arg-type]
+    ax.text(1.0, d['base_acc'] + 0.015, f'the full network: {d["base_acc"]:.3f}',
+            fontsize=9.8, color=GRIP)
+    ax.set_xlabel('arithmetic actually saved (%)', fontsize=10)
+    ax.set_ylabel('accuracy on the six-way test set', fontsize=10)
+    ax.set_ylim(0.1, 1.02)
+    ax.set_xlim(-4, 100)
+    ax.set_title('Taking whole neurons out really does save arithmetic, and it costs much '
+                 'more accuracy', fontsize=11.6, weight='bold')
+    ax.legend(fontsize=9.6, frameon=False, loc='lower left')
+    ax.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax.set_axisbelow(True)
+    _save(fig, SM_DOC, 'accuracy-against-neurons-removed.svg')
+
+
+def fig_pruning_threshold() -> None:
+    """Section 5: the smallest half of the weights hold very little of the total size."""
+    d = exp_prune()
+    flat = np.asarray(d['sorted_sizes'])     # type: ignore[arg-type]
+    shares = d['shares']                     # type: ignore[index]
+    n = len(flat)
+    fig, ax = plt.subplots(figsize=(11.0, 5.2), facecolor='white')
+    _plain(ax)
+    xs = np.arange(n)
+    half = int(0.5 * n)
+    ax.fill_between(xs[:half], 0, flat[:half], color=LINK_PALE,
+                    label='the smallest half: all set to zero')
+    ax.fill_between(xs[half:], 0, flat[half:], color=LINK,
+                    label='the larger half: kept')
+    thr50 = shares[0][1]                     # type: ignore[index]
+    ax.axvline(half, color=INK, lw=1.2, ls=':')
+    ax.annotate(f'these {half:,} weights are all smaller than {thr50:.4f},\n'
+                f'and together they hold only '
+                f'{100 * shares[0][2]:.1f}% of the total size',   # type: ignore[index]
+                xy=(half, thr50), xytext=(90, 0.85), fontsize=10, color=INK,
+                arrowprops=dict(arrowstyle='-|>', color=INK, lw=1.2))
+    ax.set_xlabel(f'the {n:,} weights of the trained network, ordered by size',
+                  fontsize=10)
+    ax.set_ylabel('size of the weight, ignoring its sign', fontsize=10)
+    ax.set_xlim(0, n)
+    ax.set_ylim(0, float(flat[-1]) * 1.05)
+    ax.set_title('Why zeroing the smallest weights costs so little: most weights are '
+                 'small and the few large ones carry the network',
+                 fontsize=11.6, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='upper left')
+    ax.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax.set_axisbelow(True)
+    _save(fig, SM_DOC, 'pruning-threshold.svg')
 
 
 def fig_two_of_four() -> None:
@@ -2823,7 +3076,7 @@ def fig_accuracy_against_saving() -> None:
     ax.set_ylabel('accuracy given up', fontsize=10)
     best = pts[-1]
     lost = round(b.acc, 3) - round(best[1], 3)
-    ax.set_title(f'Measured on the same small network: a distilled student squeezed to 4 '
+    ax.set_title(f'Measured on the same small network: a distilled student stored in 4 '
                  f'bits is {best[2]:.0f} times smaller for {lost:.3f} '
                  f'of accuracy', fontsize=11.6, weight='bold')
     ax.grid(color=GRID, lw=0.6, alpha=0.6)
@@ -2857,7 +3110,7 @@ def fig_summary_table() -> None:
          '2.0 times', '2.0 times', 'measured'),
         ('distilled into a smaller student', f'{dist["soft"][-1]:.3f}',
          gap(dist['soft'][-1]), '20.7 times', '22.0 times', 'measured'),
-        ('distilled, then squeezed to 4 bits', f'{dist["q4"]:.3f}',
+        ('distilled, then stored in 4 bits', f'{dist["q4"]:.3f}',
          gap(dist['q4']), '82.8 times', '22.0 times', 'measured'),
     ]
     fig, ax = plt.subplots(figsize=(13.6, 5.8), facecolor='white')
@@ -2947,13 +3200,19 @@ def main() -> None:
     fig_unfreeze_blocks()
     fig_lora_two_thin_matrices()
     fig_lora_rank_counts()
-    fig_lora_where()
-    fig_lora_scaling_folding()
+    fig_lora_block_matrices()
+    fig_lora_attach_choices()
+    fig_lora_scaling_choices()
+    fig_lora_folding_cost()
+    fig_lora_rank_accuracy()
     fig_qlora_memory()
-    fig_qlora_groups()
-    fig_qlora_recovers()
+    fig_qlora_bits_per_weight()
+    fig_qlora_group_error()
+    fig_qlora_old_job()
+    fig_qlora_new_job()
     fig_forgetting_curves()
     fig_forgetting_what_helps()
+    fig_forgetting_which_classes()
     fig_forgetting_mix()
     fig_forgetting_frontier()
     fig_data_curves()
@@ -2969,13 +3228,17 @@ def main() -> None:
     fig_per_channel_scales()
     fig_scale_choice_error()
     fig_ptq_vs_qat()
-    fig_mode_accuracy()
+    fig_qat_one_weight()
+    fig_scale_choice_accuracy()
+    fig_clipping_choice()
     fig_soft_target()
     fig_temperature()
     fig_student_curves()
     fig_teacher_student_size()
     fig_prune_masks()
-    fig_prune_accuracy()
+    fig_prune_scattered()
+    fig_prune_neurons()
+    fig_pruning_threshold()
     fig_two_of_four()
     fig_accuracy_against_saving()
     fig_summary_table()

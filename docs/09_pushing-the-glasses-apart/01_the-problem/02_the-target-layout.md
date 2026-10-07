@@ -59,6 +59,15 @@ condition that only looks at the distance between two middles misses exactly the
 case where a narrow glass is crowded by a wide neighbour that is not crowded
 itself.
 
+![Two glasses 112 mm apart, a wide one and a narrow one, each drawn with the room it needs clear: the wide glass has its room and the narrow one does not, at the same distance between middles.](../../images/pushing-the-glasses-apart/the-target-layout/layout-room-is-asymmetric.png)
+
+The picture above is that case drawn. Both glasses stand 112 mm apart, which is
+one distance and not two, and yet the wide glass has its room while the narrow
+one does not. That happens because what a glass needs clear depends on how wide
+its **neighbour** is: the narrow glass needs 70 mm plus half of 105, which is
+122.5 mm, and the wide one needs 70 mm plus half of 65, which is 102.5 mm. Any
+gap between those two numbers crowds one glass and not the other.
+
 **Every glass stands inside the glass zone**, the 320 by 360 mm rectangle of
 table where glasses are allowed to be, and **outside the rack**, the 60 by
 40 mm rectangle where they are eventually stood upside down.
@@ -106,6 +115,17 @@ good its objective would be. Here the constraints are the four conditions
 above: a pair of middles no closer than the required distance, every glass
 inside the zone, outside the rack, inside the reach, and with one of its nine
 side-on viewpoints clear.
+
+Read the four that follow against this table, which says what each one is for
+before the detail arrives. The first column is the method, the second what it
+buys, and the third what it costs.
+
+| method | what it is good for | what it costs |
+|---|---|---|
+| a constrained optimisation | being right: it is the one actually minimising the travel, so its answer defines the floor | needs a solver, slowest of the four, and can settle in a local optimum |
+| repulsive relaxation | speed and simplicity, and it hands back the path as well as the destination | no guarantee it lands anywhere optimal |
+| assignment to slots | certainty: the layout cannot come out illegal | the answer is as good as the slots somebody chose |
+| Lloyd's algorithm | being almost nothing to write | a starting layout and a sanity check rather than an answer |
 
 ### A constrained optimisation
 

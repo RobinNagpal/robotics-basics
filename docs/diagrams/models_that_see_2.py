@@ -312,6 +312,63 @@ def shots_curve() -> None:
 # section 2: one space for pictures and words
 # --------------------------------------------------------------------------
 
+MAP_REGIONS: list[tuple[str, str]] = [
+    ('white mug, handle in view', 'picture of a mug'),
+    ('white bowl', 'picture of a bowl'),
+    ('glass tumbler', 'picture of a glass'),
+    ('tin of beans', 'picture of a tin'),
+]
+
+
+def shared_space_map() -> None:
+    """Words and picture regions placed by two measured cosines, in one space."""
+    ref_a, ref_b = 'mug', 'tin can'
+    print(f'[map] every item measured against the word "{ref_a}" and the word '
+          f'"{ref_b}"')
+    pts = []
+    for n in NAMES6:
+        v = WORDS[n]
+        pts.append((f'"{n}"', _cos(v, WORDS[ref_a]), _cos(v, WORDS[ref_b]), 'word'))
+        print(f'[map] word "{n:8s}" -> {pts[-1][1]:.3f}, {pts[-1][2]:.3f}')
+    for key, lab in MAP_REGIONS:
+        v = REGIONS[key]
+        pts.append((lab, _cos(v, WORDS[ref_a]), _cos(v, WORDS[ref_b]), 'region'))
+        print(f'[map] {lab:20s} -> {pts[-1][1]:.3f}, {pts[-1][2]:.3f}')
+    gap = float(np.hypot(_cos(REGIONS['white mug, handle in view'], WORDS[ref_a])
+                         - _cos(WORDS['mug'], WORDS[ref_a]),
+                         _cos(REGIONS['white mug, handle in view'], WORDS[ref_b])
+                         - _cos(WORDS['mug'], WORDS[ref_b])))
+    print(f'[map] the mug picture lands {gap:.3f} from the word "mug" on this map')
+
+    fig, ax = plt.subplots(figsize=(9.8, 5.6), facecolor='white')
+    _plain(ax)
+    offsets = {'"mug"': (0.014, -0.040), '"cup"': (-0.016, 0.022),
+               '"bowl"': (-0.016, 0.020), '"glass"': (-0.016, -0.038),
+               '"tin can"': (0.018, 0.026), '"jug"': (-0.018, 0.004),
+               'picture of a mug': (0.014, 0.034), 'picture of a bowl': (0.014, -0.038),
+               'picture of a glass': (0.014, 0.020),
+               'picture of a tin': (0.018, -0.040)}
+    for lab, xa, yb, kind in pts:
+        word = kind == 'word'
+        ax.plot([xa], [yb], marker='s' if word else 'o', ms=11 if word else 10,
+                color=PURPLE if word else TEAL, mec=INK, mew=0.9)
+        dx, dy = offsets.get(lab, (0.012, 0.018))
+        ax.text(xa + dx, yb + dy, lab, fontsize=9.6,
+                color=PURPLE if word else TEAL,
+                ha='left' if dx > 0 else 'right')
+    ax.plot([], [], marker='s', ls='none', color=PURPLE, ms=9, label='a word')
+    ax.plot([], [], marker='o', ls='none', color=TEAL, ms=9, label='a picture region')
+    ax.set_xlim(0.28, 1.14)
+    ax.set_ylim(0.28, 1.14)
+    ax.set_xlabel(f'cosine similarity with the word "{ref_a}"', fontsize=10)
+    ax.set_ylabel(f'cosine similarity with the word "{ref_b}"', fontsize=10)
+    ax.set_title('One space: each picture region lands beside the word that '
+                 'describes it',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper center', ncol=2)
+    _save(fig, OV_DOC, 'shared-space-map.svg')
+
+
 def thirteen_directions() -> None:
     """The made-up table that every later number on the page comes from."""
     rows = NAMES6 + ['white mug, handle hidden', 'white mug, handle in view']
@@ -564,11 +621,83 @@ def score_matrix() -> None:
     _save(fig, OV_DOC, 'score-matrix.svg')
 
 
-def threshold_sweep() -> None:
-    """Raising the keep-it threshold trades missed objects against wrong ones."""
+NAME_LISTS: list[list[str]] = [['mug', 'cup', 'bowl'], ['mug', 'bowl', 'tin can']]
+
+
+def name_list_decides() -> None:
+    """The same region, two lists of names you supply, two different answers."""
+    pic = REGIONS['white mug, handle hidden']
+    results = []
+    for names in NAME_LISTS:
+        scores = [_cos(pic, WORDS[n]) for n in names]
+        k = int(np.argmax(scores))
+        results.append((names, scores, k))
+        print(f'[prompt] names offered {names} -> answer "{names[k]}" '
+              f'at {scores[k]:.4f}')
+
+    fig, ax = plt.subplots(figsize=(10.0, 5.0), facecolor='white')
+    _plain(ax)
+    labels, vals, colours = [], [], []
+    for row, (names, scores, k) in enumerate(results):
+        for j, (n, s) in enumerate(zip(names, scores)):
+            labels.append(f'"{n}"\nlist {row + 1}')
+            vals.append(s)
+            colours.append(SLIDE if j == k else LINK_PALE)
+    ax.bar(labels, vals, color=colours, ec=INK, lw=0.8)
+    for i, v in enumerate(vals):
+        ax.text(i, v + 0.008, f'{v:.4f}', ha='center', fontsize=9.4)
+    ax.axvline(2.5, color=MUTED, lw=1.2, ls=':')
+    ax.text(1.0, 1.14, 'list 1 offers "cup"\nanswer: "cup"', fontsize=10, ha='center',
+            color=INK)
+    ax.text(4.0, 1.14, 'list 2 leaves "cup" out\nanswer: "mug"', fontsize=10,
+            ha='center', color=INK)
+    ax.set_ylim(0, 1.32)
+    ax.set_ylabel('cosine similarity with the same picture region', fontsize=10)
+    ax.tick_params(axis='x', labelsize=9.2)
+    ax.set_title('One mug region, two lists of names, two different answers',
+                 fontsize=12, weight='bold')
+    _save(fig, OV_DOC, 'name-list-decides.svg')
+
+
+def _sweep_sets() -> tuple[Arr, Arr]:
+    """Simulated best-score-in-the-picture for 40 present and 120 absent cases."""
     rng = np.random.default_rng(5)
-    present = rng.normal(0.935, 0.018, size=40)
-    absent = rng.normal(0.893, 0.026, size=120)
+    return rng.normal(0.935, 0.018, size=40), rng.normal(0.893, 0.026, size=120)
+
+
+def threshold_overlap() -> None:
+    """The two cases cannot be told apart by their best score."""
+    present, absent = _sweep_sets()
+    print(f'[overlap] simulated present cases: mean {present.mean():.4f}, '
+          f'lowest {present.min():.4f}')
+    print(f'[overlap] simulated absent cases:  mean {absent.mean():.4f}, '
+          f'highest {absent.max():.4f}')
+    both = float(((absent >= present.min()) & (absent <= present.max())).mean())
+    print(f'[overlap] {both * 100:.1f}% of the absent cases score inside the range '
+          'the present cases cover')
+
+    fig, ax = plt.subplots(figsize=(9.8, 4.8), facecolor='white')
+    _plain(ax)
+    bins = np.linspace(0.80, 1.00, 34)
+    ax.hist(absent, bins=bins, color=GRIP, alpha=0.75,
+            label='the named thing is absent (120 pictures)')
+    ax.hist(present, bins=bins, color=SLIDE, alpha=0.75,
+            label='the named thing is there (40 pictures)')
+    ax.axvspan(present.min(), absent.max(), color='#f2e6c8', zorder=0)
+    ax.text((present.min() + absent.max()) / 2, 15.5, 'both kinds of picture\nland here',
+            fontsize=9.5, ha='center', color=WRIST)
+    ax.set_xlabel('best score anywhere in the picture', fontsize=10)
+    ax.set_ylabel('how many pictures', fontsize=10)
+    ax.set_ylim(0, 19)
+    ax.set_title('Simulated: the scores of the two cases land on top of each other',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    _save(fig, OV_DOC, 'threshold-overlap.svg')
+
+
+def threshold_trade() -> None:
+    """Raising the keep-it threshold trades missed objects against wrong ones."""
+    present, absent = _sweep_sets()
     ths = np.arange(0.86, 0.981, 0.01)
     kept_right = np.array([(present >= t).sum() for t in ths])
     kept_wrong = np.array([(absent >= t).sum() for t in ths])
@@ -576,28 +705,25 @@ def threshold_sweep() -> None:
         print(f'[sweep] threshold {t:.2f} -> kept {r:2d}/40 right, {w:3d}/120 wrong '
               '(simulated)')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.6), facecolor='white',
-                             gridspec_kw={'wspace': 0.28})
-    _plain(axes[0])
-    bins = np.linspace(0.80, 1.00, 34)
-    axes[0].hist(absent, bins=bins, color=GRIP, alpha=0.75, label='the named thing is absent')
-    axes[0].hist(present, bins=bins, color=SLIDE, alpha=0.75, label='the named thing is there')
-    axes[0].axvline(0.92, color=INK, lw=1.8, ls='--')
-    axes[0].text(0.921, axes[0].get_ylim()[1] * 0.92, 'threshold 0.92', fontsize=9.5)
-    axes[0].set_xlabel('best score in the picture', fontsize=10)
-    axes[0].set_ylabel('how many pictures', fontsize=10)
-    axes[0].set_title('Simulated: the two cases overlap', fontsize=11.5, weight='bold')
-    axes[0].legend(fontsize=9, frameon=False, loc='upper left')
-    _plain(axes[1])
-    axes[1].plot(ths, kept_right / 40 * 100, marker='o', color=SLIDE, lw=2,
-                 label='right boxes kept (% of 40)')
-    axes[1].plot(ths, kept_wrong / 120 * 100, marker='s', color=GRIP, lw=2,
-                 label='wrong boxes kept (% of 120)')
-    axes[1].set_xlabel('keep-it threshold', fontsize=10)
-    axes[1].set_ylabel('percentage kept', fontsize=10)
-    axes[1].set_title('No threshold separates them', fontsize=11.5, weight='bold')
-    axes[1].legend(fontsize=9, frameon=False)
-    _save(fig, OV_DOC, 'threshold-sweep.svg')
+    fig, ax = plt.subplots(figsize=(9.8, 4.8), facecolor='white')
+    _plain(ax)
+    ax.plot(ths, kept_right / 40 * 100, marker='o', color=SLIDE, lw=2.2,
+            label='right boxes kept (% of 40)')
+    ax.plot(ths, kept_wrong / 120 * 100, marker='s', color=GRIP, lw=2.2,
+            label='wrong boxes kept (% of 120)')
+    for t in (0.90, 0.93):
+        k = int(np.argmin(np.abs(ths - t)))
+        ax.axvline(ths[k], color=INK, lw=1.0, ls=':')
+        ax.text(ths[k], 83.0, f'{kept_right[k]} right\n{kept_wrong[k]} wrong',
+                fontsize=9.2, color=INK, ha='center', va='center',
+                bbox=dict(facecolor='white', edgecolor='none', pad=2.0))
+    ax.set_xlabel('keep-it threshold', fontsize=10)
+    ax.set_ylabel('percentage kept', fontsize=10)
+    ax.set_ylim(0, 118)
+    ax.set_title('Every threshold either keeps wrong boxes or throws right ones away',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper right')
+    _save(fig, OV_DOC, 'threshold-trade.svg')
 
 
 def box_to_mask() -> None:
@@ -737,64 +863,78 @@ def noun_cannot_choose() -> None:
     _save(fig, OV_DOC, 'noun-cannot-choose.svg')
 
 
-def relation_from_geometry() -> None:
-    """Working the relation out from the measured distances instead."""
+def _relation_numbers() -> tuple[float, float, float, float, float]:
+    """The two depth differences, the shared match score and the combined scores."""
     za, zb, zc = MUG_A[2], MUG_B[2], BOWL_C[2]
     da, db = za - zc, zb - zc
-    reg = REGIONS['white mug, handle in view']
-    match = _cos(reg, _phrase('mug', 'behind', 'bowl'))
-    rel_a = 1.0 if da > 0 else 0.0
-    rel_b = 1.0 if db > 0 else 0.0
-    comb_a = 0.6 * match + 0.4 * rel_a
-    comb_b = 0.6 * match + 0.4 * rel_b
-    print(f'[relation] mug A is {da * 1000:.0f} mm further than the bowl, '
-          f'mug B is {db * 1000:.0f} mm further')
-    print(f'[relation] match score {match:.4f} for both; '
-          f'relation 1 for A and 0 for B')
-    print(f'[relation] combined 0.6 x match + 0.4 x relation: '
-          f'A = {comb_a:.4f}, B = {comb_b:.4f}')
+    match = _cos(REGIONS['white mug, handle in view'],
+                 _phrase('mug', 'behind', 'bowl'))
+    comb_a = 0.6 * match + 0.4 * (1.0 if da > 0 else 0.0)
+    comb_b = 0.6 * match + 0.4 * (1.0 if db > 0 else 0.0)
+    return da, db, match, comb_a, comb_b
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.6), facecolor='white',
-                             gridspec_kw={'wspace': 0.3, 'width_ratios': [1.15, 1]})
-    ax = axes[0]
-    _blank(ax)
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 6.0)
-    rows = [('mug A', za, da, rel_a, comb_a, LINK), ('mug B', zb, db, rel_b, comb_b, PURPLE)]
-    heads = ['', 'z (m)', 'z minus bowl z', 'behind?', 'combined']
-    xs = [0.2, 2.2, 3.8, 6.9, 8.8]
-    for x, hd in zip(xs, heads):
-        ax.text(x, 5.3, hd, fontsize=10, weight='bold', ha='left')
-    ax.plot([0.2, 9.8], [5.05, 5.05], color=INK, lw=1.1)
-    ax.text(xs[0], 4.55, f'bowl', fontsize=10, color=JOINT, weight='bold')
-    ax.text(xs[1], 4.55, f'{zc:.3f}', fontsize=10)
-    for k, (lab, z, d, rel, comb, col) in enumerate(rows):
-        y = 3.75 - k * 0.85
-        ax.text(xs[0], y, lab, fontsize=10, color=col, weight='bold')
-        ax.text(xs[1], y, f'{z:.3f}', fontsize=10)
-        ax.text(xs[2], y, f'{d * 1000:+.0f} mm', fontsize=10,
-                color=SLIDE if d > 0 else GRIP)
-        ax.text(xs[3], y, 'yes' if rel > 0 else 'no', fontsize=10,
-                color=SLIDE if rel > 0 else GRIP, weight='bold')
-        ax.text(xs[4], y, f'{comb:.3f}', fontsize=10.5, weight='bold', color=col)
-    ax.text(0.3, 1.7, 'The relation is decided by subtracting two measured distances,\n'
-                      'not by matching the phrase to the picture.',
-            fontsize=10, color=INK)
-    ax.text(0.3, 0.6, f'combined score = 0.6 x {match:.3f} + 0.4 x (1 or 0)',
-            fontsize=10, color=MUTED)
-    ax.set_title('Grounding "the mug behind the bowl" with geometry',
-                 fontsize=11.5, weight='bold')
 
-    ax = axes[1]
+def depth_difference() -> None:
+    """Subtracting the bowl's distance is what decides "behind"."""
+    da, db, _match, _ca, _cb = _relation_numbers()
+    print(f'[relation] mug A is {da * 1000:+.0f} mm from the bowl in depth, '
+          f'mug B is {db * 1000:+.0f} mm')
+
+    fig, ax = plt.subplots(figsize=(10.2, 3.9), facecolor='white')
     _plain(ax)
-    ax.bar(['mug A', 'mug B'], [comb_a, comb_b], color=[LINK, PURPLE], ec=INK, lw=0.9)
-    for i, v in enumerate([comb_a, comb_b]):
-        ax.text(i, v + 0.012, f'{v:.3f}', ha='center', fontsize=11)
-    ax.set_ylim(0, 1.05)
+    ax.axvline(0, color=JOINT, lw=2.6)
+    ax.text(0, 0.62, 'the bowl\n0 mm', fontsize=10, ha='center', color=JOINT,
+            weight='bold', bbox=dict(facecolor='white', edgecolor='none', pad=2.0))
+    ax.spines['left'].set_visible(False)
+    for d, lab, col in ((da, 'mug A', LINK), (db, 'mug B', PURPLE)):
+        mm = d * 1000
+        ax.annotate('', xy=(mm, 0), xytext=(0, 0),
+                    arrowprops=dict(arrowstyle='->', color=col, lw=2.6))
+        ax.plot([mm], [0], marker='o', color=col, ms=12, mec=INK, mew=0.9)
+        ax.text(mm, -0.30, f'{lab}\n{mm:+.0f} mm', fontsize=10.5, ha='center',
+                color=col, weight='bold')
+        ax.text(mm, 0.26, 'behind' if mm > 0 else 'in front',
+                fontsize=10, ha='center', color=SLIDE if mm > 0 else GRIP)
+    ax.set_yticks([])
+    ax.set_ylim(-0.62, 0.95)
+    ax.set_xlim(-230, 265)
+    ax.set_xlabel('distance minus the bowl\'s distance (mm)', fontsize=10)
+    ax.set_title('One subtraction decides which mug is behind the bowl',
+                 fontsize=12, weight='bold')
+    _save(fig, OV_DOC, 'depth-difference.svg')
+
+
+def relation_score() -> None:
+    """Adding a measured yes-or-no term separates the two mugs."""
+    _da, _db, match, comb_a, comb_b = _relation_numbers()
+    print(f'[relation] match score {match:.4f} for both mugs; '
+          'relation 1 for A and 0 for B')
+    print(f'[relation] combined 0.6 x match + 0.4 x relation: '
+          f'A = {comb_a:.4f}, B = {comb_b:.4f}, which differ by '
+          f'{comb_a - comb_b:.4f}')
+
+    fig, ax = plt.subplots(figsize=(9.4, 4.8), facecolor='white')
+    _plain(ax)
+    for i, (lab, comb, rel, col) in enumerate((('mug A', comb_a, 1.0, LINK),
+                                               ('mug B', comb_b, 0.0, PURPLE))):
+        ax.bar([i], [0.6 * match], width=0.5, color=LINK_PALE, ec=INK, lw=0.9,
+               label='0.6 x match score' if i == 0 else None)
+        ax.bar([i], [0.4 * rel], width=0.5, bottom=[0.6 * match], color=col, ec=INK,
+               lw=0.9, label='0.4 x measured relation' if i == 0 else None)
+        ax.text(i, comb + 0.02, f'{comb:.3f}', ha='center', fontsize=12,
+                weight='bold', color=col)
+        ax.text(i, 0.6 * match / 2, f'{0.6 * match:.3f}', ha='center', va='center',
+                fontsize=9.6, color=INK)
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(['mug A\n(behind the bowl)', 'mug B\n(in front of the bowl)'],
+                       fontsize=10.5)
+    ax.set_ylim(0, 1.12)
     ax.set_ylabel('combined score', fontsize=10)
-    ax.set_title(f'Now the two differ by {comb_a - comb_b:.3f}', fontsize=11.5,
-                 weight='bold')
-    _save(fig, OV_DOC, 'relation-from-geometry.svg')
+    ax.set_title(f'The measured relation is the whole difference: '
+                 f'{comb_a:.3f} against {comb_b:.3f}',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper right')
+    _save(fig, OV_DOC, 'relation-score.svg')
 
 
 def opposite_phrases() -> None:
@@ -838,11 +978,9 @@ def opposite_phrases() -> None:
 # section 5: the failure modes, and what they cost an arm
 # --------------------------------------------------------------------------
 
-def counting_and_denial() -> None:
-    """Counting words and the word "not" barely move the score."""
+def counting_words() -> None:
+    """A counting word cannot change what the comparison sees."""
     white = REGIONS['white mug, handle in view']
-    reg = REGIONS['red mug, handle in view']
-    blue = REGIONS['blue mug, handle in view']
     counts = {'just "mug"': _cos(white, _phrase('mug')),
               '"two mugs"': _cos(white, _phrase('two', 'mug')),
               '"three mugs"': _cos(white, _phrase('three', 'mug'))}
@@ -853,39 +991,57 @@ def counting_and_denial() -> None:
     print(f'[counting] "two mugs" and "three mugs" differ by {gap:.4f}, '
           f'while adding any count word at all costs {cost:.4f}')
 
+    fig, ax = plt.subplots(figsize=(9.2, 4.8), facecolor='white')
+    _plain(ax)
+    ax.bar(list(counts.keys()), list(counts.values()),
+           color=[LINK, GRIP, GRIP], ec=INK, lw=0.8, width=0.55)
+    for i, v in enumerate(counts.values()):
+        ax.text(i, v + 0.032, f'{v:.4f}', ha='center', fontsize=10.5)
+    two, three = counts['"two mugs"'], counts['"three mugs"']
+    ax.plot([1.2, 2.46], [two, two], color=INK, lw=0.9, ls=':')
+    ax.plot([2.2, 2.46], [three, three], color=INK, lw=0.9, ls=':')
+    ax.annotate('', xy=(2.46, two), xytext=(2.46, three),
+                arrowprops=dict(arrowstyle='<->', color=INK, lw=1.4))
+    ax.text(2.52, (two + three) / 2, f'{gap:.4f}\napart', fontsize=10, va='center',
+            weight='bold')
+    ax.set_xlim(-0.6, 3.1)
+    ax.set_ylim(0, 1.22)
+    ax.set_ylabel('cosine similarity with one mug region', fontsize=10)
+    ax.tick_params(axis='x', labelsize=10.5)
+    ax.set_title('Asking for two mugs and asking for three give almost the same score',
+                 fontsize=12, weight='bold')
+    _save(fig, OV_DOC, 'counting-words.svg')
+
+
+def denial_words() -> None:
+    """The word "not" pulls the phrase towards the thing it excludes."""
+    red = REGIONS['red mug, handle in view']
+    blue = REGIONS['blue mug, handle in view']
     red_p = _phrase('red', 'mug')
     not_red_p = _phrase('not', 'red', 'mug')
     print(f'[denial] "the red mug" vs "the mug that is not red": '
           f'cosine between the phrases = {_cos(red_p, not_red_p):.4f}')
-    print(f'[denial] "not red mug" scores {_cos(reg, not_red_p):.4f} on the RED mug '
+    print(f'[denial] "the red mug" scores {_cos(red, red_p):.4f} on the red mug')
+    print(f'[denial] "not red mug" scores {_cos(red, not_red_p):.4f} on the RED mug '
           f'and {_cos(blue, not_red_p):.4f} on the blue mug')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.4, 4.7), facecolor='white',
-                             gridspec_kw={'wspace': 0.3})
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.8, 4.9), facecolor='white')
     _plain(ax)
-    ax.bar(list(counts.keys()), list(counts.values()), color=LINK, ec=INK, lw=0.8)
-    for i, v in enumerate(counts.values()):
-        ax.text(i, v + 0.006, f'{v:.4f}', ha='center', fontsize=9.6)
-    ax.set_ylim(0, max(counts.values()) * 1.2)
-    ax.set_ylabel('cosine similarity', fontsize=10)
-    ax.tick_params(axis='x', labelrotation=14)
-    ax.set_title(f'"Two" and "three" are {gap:.4f} apart, and the picture\nhas three '
-                 'mugs in it either way',
-                 fontsize=11.5, weight='bold')
-    ax = axes[1]
-    _plain(ax)
-    labels = ['red mug\n"the red mug"', 'red mug\n"the mug that is not red"',
-              'blue mug\n"the mug that is not red"']
-    vals = [_cos(reg, red_p), _cos(reg, not_red_p), _cos(blue, not_red_p)]
-    ax.bar(labels, vals, color=[GRIP, GRIP, LINK], ec=INK, lw=0.8)
+    labels = ['the red mug', 'the blue mug']
+    vals = [_cos(red, not_red_p), _cos(blue, not_red_p)]
+    ax.bar(labels, vals, color=[GRIP, LINK], ec=INK, lw=0.8, width=0.5)
     for i, v in enumerate(vals):
-        ax.text(i, v + 0.006, f'{v:.4f}', ha='center', fontsize=9.6)
-    ax.set_ylim(0, max(vals) * 1.2)
-    ax.set_ylabel('cosine similarity', fontsize=10)
-    ax.tick_params(axis='x', labelrotation=10, labelsize=8.6)
-    ax.set_title('"Not red" still prefers the red mug', fontsize=11.5, weight='bold')
-    _save(fig, OV_DOC, 'counting-and-denial.svg')
+        ax.text(i, v + 0.008, f'{v:.4f}', ha='center', fontsize=11.5, weight='bold')
+    ax.text(0, 0.42, 'the mug the words\nwere meant to exclude', fontsize=9.8,
+            ha='center', color='white')
+    ax.text(1, 0.37, 'the mug the words\nwere meant to pick', fontsize=9.8,
+            ha='center', color='white')
+    ax.set_ylim(0, 1.10)
+    ax.set_ylabel('score for the phrase "the mug that is not red"', fontsize=10)
+    ax.tick_params(axis='x', labelsize=11)
+    ax.set_title('The phrase "not red" scores higher on the red mug than on the blue one',
+                 fontsize=12, weight='bold')
+    _save(fig, OV_DOC, 'denial-words.svg')
 
 
 def near_synonyms() -> None:
@@ -918,55 +1074,100 @@ def near_synonyms() -> None:
     _save(fig, OV_DOC, 'near-synonyms.svg')
 
 
+def _absent_sets() -> tuple[Arr, Arr]:
+    """Simulated best score in 300 pictures with the thing and 300 without it."""
+    rng = np.random.default_rng(23)
+    return rng.normal(0.901, 0.021, size=300), rng.normal(0.938, 0.016, size=300)
+
+
 def absent_object() -> None:
     """A thing that is not in the picture still gets a box."""
-    rng = np.random.default_rng(23)
-    absent_top = rng.normal(0.901, 0.021, size=300)
-    present_top = rng.normal(0.938, 0.016, size=300)
-    th = 0.92
-    f_abs = float((absent_top >= th).mean())
-    f_pre = float((present_top >= th).mean())
-    print(f'[absent] simulated: with the threshold at {th:.2f}, '
-          f'{f_abs * 100:.1f}% of pictures without the thing still return a box, '
-          f'and {f_pre * 100:.1f}% of pictures with it do')
-    print(f'[absent] mean top score absent {absent_top.mean():.4f}, '
-          f'present {present_top.mean():.4f}, difference '
-          f'{present_top.mean() - absent_top.mean():.4f}')
+    absent_top, _present = _absent_sets()
+    worst = float(absent_top.max())
+    print(f'[absent] of the 300 simulated pictures with no screwdriver in them, '
+          f'the most confident wrong answer scores {worst:.3f}')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.4, 4.7), facecolor='white',
-                             gridspec_kw={'wspace': 0.26, 'width_ratios': [1, 1.1]})
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.2, 4.6), facecolor='white')
     _blank(ax)
     ax.set_xlim(0, 10)
-    ax.set_ylim(0, 4.4)
-    ax.add_patch(Rectangle((0.3, 0.9), 9.4, 0.24, fc='#e8e2d8', ec=INK, lw=1.0))
-    _bowl(ax, 2.6, 1.14, w=1.5, h=0.62)
-    _mug(ax, 5.4, 1.14, w=0.7, h=0.84)
-    _tin(ax, 7.8, 1.14, w=0.6, h=0.68)
-    ax.add_patch(Rectangle((7.3, 1.10), 1.0, 0.80, fill=False, ec=GRIP, lw=2.4))
-    ax.text(7.8, 2.14, '"a screwdriver"\n0.934', ha='center', fontsize=10,
-            color=GRIP, weight='bold')
-    ax.text(5.0, 4.05, 'Asked for a screwdriver in a picture\nthat holds no screwdriver',
-            fontsize=11.5, weight='bold', ha='center')
-    ax.text(5.0, 3.15, 'the model returns the tin, above the threshold',
-            fontsize=10.5, ha='center', color=GRIP)
-    ax.text(5.0, 0.28, 'There is no "nothing here" answer, because every\nregion gets '
-                       'a score and one of them is highest.',
-            fontsize=9.5, ha='center', color=MUTED)
-    ax = axes[1]
-    _plain(ax)
-    bins = np.linspace(0.83, 1.00, 36)
-    ax.hist(absent_top, bins=bins, color=GRIP, alpha=0.75, label='no such thing in the picture')
-    ax.hist(present_top, bins=bins, color=SLIDE, alpha=0.75, label='the thing is in the picture')
-    ax.axvline(th, color=INK, lw=1.8, ls='--')
-    ax.set_ylim(0, 58)
-    ax.text(th + 0.003, 44, f'threshold {th:.2f}', fontsize=9.5)
-    ax.set_xlabel('best score anywhere in the picture', fontsize=10)
-    ax.set_ylabel('how many pictures (of 300 each)', fontsize=10)
-    ax.set_title(f'Simulated: {f_abs * 100:.0f}% of the absent cases clear the threshold',
-                 fontsize=11.5, weight='bold')
-    ax.legend(fontsize=9, frameon=False, loc='upper left')
+    ax.set_ylim(0, 4.0)
+    ax.add_patch(Rectangle((0.3, 0.75), 9.4, 0.24, fc='#e8e2d8', ec=INK, lw=1.0))
+    _bowl(ax, 2.6, 0.99, w=1.5, h=0.62)
+    _mug(ax, 5.4, 0.99, w=0.7, h=0.84)
+    _tin(ax, 7.8, 0.99, w=0.6, h=0.68)
+    ax.text(2.6, 0.45, 'a bowl', fontsize=9.5, ha='center', color=MUTED)
+    ax.text(5.4, 0.45, 'a mug', fontsize=9.5, ha='center', color=MUTED)
+    ax.text(7.8, 0.45, 'a tin', fontsize=9.5, ha='center', color=MUTED)
+    ax.add_patch(Rectangle((7.3, 0.95), 1.0, 0.80, fill=False, ec=GRIP, lw=2.4))
+    ax.annotate(f'returned for "a screwdriver"\nat {worst:.3f}',
+                xy=(8.3, 1.75), xytext=(9.5, 2.95), ha='right', fontsize=10.5,
+                color=GRIP, weight='bold',
+                arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.6))
+    ax.text(5.0, 3.70, 'Asked for a screwdriver in a picture that holds no screwdriver',
+            fontsize=12, weight='bold', ha='center')
+    ax.text(5.0, 0.10, 'Every region gets a score, one of them is the highest, '
+                       'and that one is returned.',
+            fontsize=9.8, ha='center', color=MUTED)
     _save(fig, OV_DOC, 'absent-object.svg')
+
+
+def absent_fraction() -> None:
+    """How often a picture without the thing still clears the threshold."""
+    absent_top, present_top = _absent_sets()
+    ths = (0.90, 0.92, 0.94)
+    counts = [int((absent_top >= t).sum()) for t in ths]
+    kept = [int((present_top >= t).sum()) for t in ths]
+    for t, c, k in zip(ths, counts, kept):
+        print(f'[absent] threshold {t:.2f}: {c} of 300 pictures with no screwdriver '
+              f'still return a box ({c / 3:.1f}%), and {k} of 300 with one do')
+
+    fig, ax = plt.subplots(figsize=(9.4, 4.8), facecolor='white')
+    _plain(ax)
+    labels = [f'{t:.2f}' for t in ths]
+    ax.bar(labels, counts, color=GRIP, ec=INK, lw=0.8, width=0.5)
+    for i, c in enumerate(counts):
+        ax.text(i, c + 4, f'{c} of 300\n({c / 3:.1f}%)', ha='center', fontsize=10.5)
+    ax.set_ylim(0, max(counts) * 1.38)
+    ax.set_xlabel('keep-it threshold', fontsize=10)
+    ax.set_ylabel('pictures with no screwdriver that still return a box', fontsize=10)
+    ax.set_title('Simulated: raising the threshold never takes the wrong boxes to zero',
+                 fontsize=12, weight='bold')
+    _save(fig, OV_DOC, 'absent-fraction.svg')
+
+
+def margin_over_runner_up() -> None:
+    """How far the winning name beats the second name, region by region."""
+    rows = []
+    for r in SCENE_REGIONS:
+        s = np.array([_cos(REGIONS[r], WORDS[n]) for n in NAMES6])
+        o = np.argsort(-s)
+        rows.append((r, NAMES6[o[0]], NAMES6[o[1]], float(s[o[0]] - s[o[1]])))
+        print(f'[margin] {r:26s} best "{NAMES6[o[0]]}" beats "{NAMES6[o[1]]}" '
+              f'by {s[o[0]] - s[o[1]]:.4f}')
+    need = 0.05
+    safe = [r for r in rows if r[3] >= need]
+    print(f'[margin] with a required margin of {need:.2f}, '
+          f'{len(safe)} of {len(rows)} regions are safe to act on')
+
+    fig, ax = plt.subplots(figsize=(10.2, 4.8), facecolor='white')
+    _plain(ax)
+    labels = [f'{r[0]}\n"{r[1]}" over "{r[2]}"' for r in rows][::-1]
+    vals = [r[3] for r in rows][::-1]
+    colours = [SLIDE if v >= need else GRIP for v in vals]
+    ax.barh(labels, vals, color=colours, ec=INK, lw=0.8, height=0.58)
+    for i, v in enumerate(vals):
+        ax.text(v + 0.006, i, f'{v:.4f}', va='center', fontsize=10)
+    ax.axvline(need, color=INK, ls='--', lw=1.5)
+    ax.text(need + 0.009, 3.52, f'a margin of {need:.2f} required\nbefore the arm moves',
+            fontsize=9.5, color=INK, va='center',
+            bbox=dict(facecolor='white', edgecolor='none', pad=2.0))
+    ax.set_xlim(0, 0.42)
+    ax.set_xlabel('best score minus second-best score', fontsize=10)
+    ax.tick_params(axis='y', labelsize=8.8)
+    ax.set_title('The two mug regions win by less than the margin, '
+                 'and the other three win clearly',
+                 fontsize=12, weight='bold')
+    _save(fig, OV_DOC, 'margin-over-runner-up.svg')
 
 
 def cost_on_an_arm() -> None:
@@ -1171,7 +1372,39 @@ def same_picture_two_sizes() -> None:
     _save(fig, D3_DOC, 'same-picture-two-sizes.svg')
 
 
-def size_assumption() -> None:
+def height_falls_with_distance() -> None:
+    """Two objects of different real sizes reach the same picture height."""
+    f = 600.0
+    h_px = 142.5
+    print(f'[height] with f = {f:.0f} px, a 95 mm object is {h_px:.1f} px tall at '
+          f'{f * 0.095 / h_px:.2f} m and a 285 mm object is {h_px:.1f} px tall at '
+          f'{f * 0.285 / h_px:.2f} m')
+
+    fig, ax = plt.subplots(figsize=(9.8, 4.8), facecolor='white')
+    _plain(ax)
+    z_grid = np.linspace(0.2, 1.5, 200)
+    ax.plot(z_grid, f * 0.095 / z_grid, color=LINK, lw=2.4,
+            label='an object 95 mm tall')
+    ax.plot(z_grid, f * 0.285 / z_grid, color=PURPLE, lw=2.4,
+            label='an object 285 mm tall')
+    ax.axhline(h_px, color=GRIP, lw=1.6, ls='--')
+    ax.text(1.42, h_px + 20, f'{h_px:.1f} px tall', fontsize=9.8, color=GRIP,
+            ha='right')
+    ax.plot([0.40, 1.20], [h_px, h_px], marker='o', color=GRIP, ls='none', ms=9)
+    ax.annotate('0.40 m', xy=(0.40, h_px), xytext=(0.42, 300), fontsize=9.6,
+                color=LINK, arrowprops=dict(arrowstyle='->', color=LINK, lw=1.2))
+    ax.annotate('1.20 m', xy=(1.20, h_px), xytext=(1.10, 300), fontsize=9.6,
+                color=PURPLE, arrowprops=dict(arrowstyle='->', color=PURPLE, lw=1.2))
+    ax.set_xlabel('distance from the camera z (m)', fontsize=10)
+    ax.set_ylabel('height in the picture (pixels)', fontsize=10)
+    ax.set_ylim(0, 620)
+    ax.set_title('Height in the picture falls as one divided by the distance',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False)
+    _save(fig, D3_DOC, 'height-falls-with-distance.svg')
+
+
+def size_guess_becomes_distance() -> None:
     """A guessed size turns straight into a guessed distance."""
     f = 600.0
     h_px = 142.5
@@ -1184,34 +1417,25 @@ def size_assumption() -> None:
     print(f'[assumption] a 20% spread of assumed heights (76 mm to 114 mm) moves the '
           f'answer by {err:.0f} mm')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.6), facecolor='white',
-                             gridspec_kw={'wspace': 0.3})
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.6, 4.8), facecolor='white')
     _plain(ax)
-    z_grid = np.linspace(0.2, 1.5, 200)
-    ax.plot(z_grid, f * 0.095 / z_grid, color=LINK, lw=2.2, label='a 95 mm object')
-    ax.plot(z_grid, f * 0.285 / z_grid, color=PURPLE, lw=2.2, label='a 285 mm object')
-    ax.axhline(h_px, color=GRIP, lw=1.6, ls='--')
-    ax.text(1.15, h_px + 18, f'{h_px:.1f} px tall', fontsize=9.5, color=GRIP)
-    ax.plot([0.40, 1.20], [h_px, h_px], marker='o', color=GRIP, ls='none', ms=8)
-    ax.set_xlabel('distance z (m)', fontsize=10)
-    ax.set_ylabel('height in the picture (pixels)', fontsize=10)
-    ax.set_ylim(0, 600)
-    ax.set_title('Height in pixels falls as one over the distance',
-                 fontsize=11.5, weight='bold')
-    ax.legend(fontsize=9.5, frameon=False)
-    ax = axes[1]
-    _plain(ax)
-    ax.bar([f'{s * 1000:.0f}' for s in sizes], zs, color=TEAL, ec=INK, lw=0.8)
+    ax.bar([f'{s * 1000:.0f}' for s in sizes], zs, color=TEAL, ec=INK, lw=0.8,
+           width=0.55)
     for i, z in enumerate(zs):
-        ax.text(i, z + 0.012, f'{z:.3f} m', ha='center', fontsize=9.6)
+        ax.text(i, z + 0.014, f'{z:.3f} m', ha='center', fontsize=10.5)
+    ax.plot([0, 4.66], [zs[0], zs[0]], color=GRIP, lw=0.9, ls=':')
+    ax.plot([4, 4.66], [zs[-1], zs[-1]], color=GRIP, lw=0.9, ls=':')
+    ax.annotate('', xy=(4.66, zs[0]), xytext=(4.66, zs[-1]),
+                arrowprops=dict(arrowstyle='<->', color=GRIP, lw=1.8))
+    ax.text(4.78, (zs[0] + zs[-1]) / 2, f'{err:.0f} mm\nof spread', fontsize=10,
+            color=GRIP, va='center', weight='bold')
     ax.set_xlabel('assumed real height of the object (mm)', fontsize=10)
     ax.set_ylabel('distance that follows (m)', fontsize=10)
-    ax.set_ylim(0, zs.max() * 1.2)
-    ax.set_title(f'The same {h_px:.1f} px, five size guesses, '
-                 f'{err:.0f} mm of spread',
-                 fontsize=11.5, weight='bold')
-    _save(fig, D3_DOC, 'size-assumption.svg')
+    ax.set_xlim(-0.6, 5.5)
+    ax.set_ylim(0, zs.max() * 1.25)
+    ax.set_title(f'The same {h_px:.1f} pixels of height, five guesses at the real size',
+                 fontsize=12, weight='bold')
+    _save(fig, D3_DOC, 'size-guess-becomes-distance.svg')
 
 
 def _relative_row() -> tuple[Arr, Arr, Arr]:
@@ -1290,11 +1514,12 @@ def affine_freedom() -> None:
     _save(fig, D3_DOC, 'affine-freedom.svg')
 
 
-def align_then_measure() -> None:
-    """Two known distances fix the scale, and the error that is left."""
-    col, true, pred = _relative_row()
-    opening, width = 85.0, 72.0
-    margin = (opening - width) / 2
+GRIP_MARGIN: float = (85.0 - 72.0) / 2
+
+
+def _anchor_runs() -> dict[str, tuple[int, int, float, float, Arr, Arr]]:
+    """Fit the relative row onto metres from two anchors, well placed and badly."""
+    _col, true, pred = _relative_row()
     runs = {}
     for lab, (i1, i2) in (('far apart in depth', (85, 110)),
                           ('close together in depth', (5, 110))):
@@ -1309,42 +1534,57 @@ def align_then_measure() -> None:
         print(f'[align]   left over: mean {resid.mean():.1f} mm, '
               f'worst {resid.max():.1f} mm, on the mug '
               f'{np.abs(fixed[70:100] - true[70:100]).mean() * 1000:.1f} mm, '
-              f'which is {resid.max() / margin:.1f} times the '
-              f'{margin:.1f} mm gripper margin')
+              f'which is {resid.max() / GRIP_MARGIN:.1f} times the '
+              f'{GRIP_MARGIN:.1f} mm gripper margin')
+    return runs
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.4, 4.8), facecolor='white',
-                             gridspec_kw={'wspace': 0.3})
-    ax = axes[0]
+
+def anchors_fit_the_scale() -> None:
+    """Two measured distances carry the relative row onto metres."""
+    col, true, _pred = _relative_row()
+    runs = _anchor_runs()
+
+    fig, ax = plt.subplots(figsize=(10.2, 5.0), facecolor='white')
     _plain(ax)
-    ax.plot(col, true, color=TEAL, lw=2.4, label='true distance')
-    for (lab, (i1, i2, a, b, fixed, _r)), colour in zip(runs.items(), (LINK, GRIP)):
-        ax.plot(col, fixed, color=colour, lw=1.7,
-                label=f'fitted with anchors {lab}')
+    ax.plot(col, true, color=TEAL, lw=2.6, label='true distance')
+    for (lab, (i1, i2, _a, _b, fixed, _r)), colour in zip(runs.items(), (LINK, GRIP)):
+        ax.plot(col, fixed, color=colour, lw=1.8,
+                label=f'fitted from anchors {lab}')
         ax.plot([col[i1], col[i2]], [true[i1], true[i2]], marker='o', color=colour,
-                ls='none', ms=8)
-    ax.set_xlabel('pixel column', fontsize=10)
+                ls='none', ms=9, mec=INK, mew=0.8)
+    ax.set_xlabel('pixel column along the row', fontsize=10)
     ax.set_ylabel('distance (m)', fontsize=10)
-    ax.set_ylim(0.30, 0.95)
-    ax.set_title('Two measured anchors turn a relative map into metres',
-                 fontsize=11.5, weight='bold')
-    ax.legend(fontsize=8.6, frameon=False, loc='upper left')
-    ax = axes[1]
+    ax.set_ylim(0.30, 0.98)
+    ax.set_title('The two circles are the measured anchors, and each fit is forced '
+                 'through its own pair',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.2, frameon=False, loc='upper left')
+    _save(fig, D3_DOC, 'anchors-fit-the-scale.svg')
+
+
+def error_after_fitting() -> None:
+    """What distance error is left over after each fit."""
+    col, _true, _pred = _relative_row()
+    runs = _anchor_runs()
+
+    fig, ax = plt.subplots(figsize=(10.2, 4.9), facecolor='white')
     _plain(ax)
     for (lab, (_i1, _i2, _a, _b, _f, resid)), colour in zip(runs.items(), (LINK, GRIP)):
-        ax.plot(col, resid, color=colour, lw=1.8,
-                label=f'{lab}: worst {resid.max():.1f} mm')
-    ax.axhline(margin, color=INK, ls='--', lw=1.6)
-    ax.text(50, 34, f'gripper margin {margin:.1f} mm', fontsize=9.5, ha='center')
-    ax.annotate('', xy=(50, margin), xytext=(50, 31),
-                arrowprops=dict(arrowstyle='->', color=INK, lw=1.2))
-    ax.set_xlabel('pixel column', fontsize=10)
+        ax.plot(col, resid, color=colour, lw=2.0,
+                label=f'anchors {lab}: worst {resid.max():.1f} mm')
+    worst = [r[5].max() for r in runs.values()]
+    ax.axhline(GRIP_MARGIN, color=SLIDE, ls='--', lw=1.8)
+    ax.annotate(f'the gripper allows {GRIP_MARGIN:.1f} mm',
+                xy=(58, GRIP_MARGIN), xytext=(58, 56), fontsize=9.8, ha='center',
+                color=SLIDE, arrowprops=dict(arrowstyle='->', color=SLIDE, lw=1.3))
+    ax.set_xlabel('pixel column along the row', fontsize=10)
     ax.set_ylabel('distance error left over (mm)', fontsize=10)
-    ax.set_ylim(0, 215)
-    ax.set_title('Anchors at nearly the same distance leave\nan error far above the '
-                 'gripper margin',
-                 fontsize=11.5, weight='bold')
-    ax.legend(fontsize=9, frameon=False, loc='upper center')
-    _save(fig, D3_DOC, 'align-then-measure.svg')
+    ax.set_ylim(0, 175)
+    ax.set_title(f'Both fits leave more error than the gripper allows, and the bad '
+                 f'one leaves {worst[1] / worst[0]:.0f} times more',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper center')
+    _save(fig, D3_DOC, 'error-after-fitting.svg')
 
 
 def relative_versus_metric() -> None:
@@ -1369,51 +1609,27 @@ def relative_versus_metric() -> None:
           f'{(max(guesses) - min(guesses)) * 1000:.0f} mm, against a gripper margin '
           f'of {margin:.1f} mm')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.8, 4.8), facecolor='white',
-                             gridspec_kw={'wspace': 0.28, 'width_ratios': [1, 1.1]})
-    ax = axes[0]
-    _blank(ax)
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 6.6)
-    rows = [('Which object is nearest?', 'yes', 'yes'),
-            ('Is the mug in front?', 'yes', 'yes'),
-            ('How far must the arm reach?', 'no', 'yes'),
-            ('Will the fingers clear the rim?', 'no', 'yes')]
-    ax.text(0.2, 5.9, 'question', fontsize=10.5, weight='bold')
-    ax.text(7.4, 5.9, 'relative', fontsize=10.5, weight='bold', ha='center')
-    ax.text(9.3, 5.9, 'metric', fontsize=10.5, weight='bold', ha='center')
-    ax.plot([0.15, 10.0], [5.6, 5.6], color=INK, lw=1.1)
-    for k, (q, r, m) in enumerate(rows):
-        y = 4.9 - k * 0.95
-        ax.text(0.2, y, q, fontsize=9.6, va='center')
-        for x, v in ((7.4, r), (9.3, m)):
-            ax.text(x, y, v, fontsize=10.5, ha='center', va='center', weight='bold',
-                    color=SLIDE if v == 'yes' else GRIP)
-    ax.text(0.2, 0.55, 'Relative depth answers questions about order.\n'
-                       'Only metric depth answers questions in millimetres.',
-            fontsize=10, color=INK, va='center')
-    ax.set_title('What each kind of depth can be asked', fontsize=11.5, weight='bold')
-
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(10.2, 5.0), facecolor='white')
     _plain(ax)
-    labels = ['truth'] + [f'relative,\nread as\n{n:.2f}-{f:.2f} m' for n, f in reads] \
-        + ['after two\nmeasured\nanchors']
+    labels = ['the truth'] + [f'relative map,\nread as\n{n:.2f} to {f:.2f} m'
+                              for n, f in reads] \
+        + ['relative map,\nafter two\nmeasured anchors']
     vals = [truth] + guesses + [aligned]
     colours = [TEAL, LINK, PURPLE, WRIST, SLIDE]
-    ax.bar(labels, vals, color=colours, ec=INK, lw=0.8)
+    ax.bar(labels, vals, color=colours, ec=INK, lw=0.8, width=0.56)
     ax.axhspan(truth - margin / 1000, truth + margin / 1000, color='#d8f0dc', zorder=0)
-    ax.text(0.5, truth + 0.10, f'the {margin:.1f} mm the gripper allows',
-            fontsize=9, ha='center', color=SLIDE)
-    ax.annotate('', xy=(0.5, truth + 0.012), xytext=(0.5, truth + 0.092),
-                arrowprops=dict(arrowstyle='->', color=SLIDE, lw=1.2))
+    ax.annotate(f'the {margin:.1f} mm the gripper allows',
+                xy=(1.4, truth + 0.010), xytext=(1.4, truth + 0.185),
+                fontsize=9.6, ha='center', color=SLIDE,
+                arrowprops=dict(arrowstyle='->', color=SLIDE, lw=1.3))
     for i, v in enumerate(vals):
-        ax.text(i, v + 0.012, f'{v:.3f} m', ha='center', fontsize=9.4)
-    ax.set_ylim(0, 0.75)
+        ax.text(i, v + 0.014, f'{v:.3f} m', ha='center', fontsize=10)
+    ax.set_ylim(0, 0.80)
     ax.set_ylabel('distance the arm would reach to (m)', fontsize=10)
-    ax.tick_params(axis='x', labelsize=8.4)
+    ax.tick_params(axis='x', labelsize=8.8)
     ax.set_title(f'The same relative map puts the mug anywhere over '
                  f'{(max(guesses) - min(guesses)) * 1000:.0f} mm',
-                 fontsize=11.5, weight='bold')
+                 fontsize=12, weight='bold')
     _save(fig, D3_DOC, 'relative-versus-metric.svg')
 
 
@@ -1427,45 +1643,137 @@ def stereo_geometry() -> None:
     for z, d in zip(zs, disp):
         print(f'[stereo]   z = {z:.2f} m -> disparity {d:.2f} px')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.4, 4.8), facecolor='white',
-                             gridspec_kw={'wspace': 0.3})
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.4, 5.0), facecolor='white')
     _plain(ax)
     z0 = 0.40
-    ax.plot([-base / 2, base / 2], [0, 0], marker='^', color=INK, ms=13, ls='none')
-    ax.text(-base / 2, -0.072, 'left camera', fontsize=9.3, ha='center')
-    ax.text(base / 2, -0.072, 'right camera', fontsize=9.3, ha='center')
-    ax.annotate('', xy=(-base / 2, -0.026), xytext=(base / 2, -0.026),
-                arrowprops=dict(arrowstyle='<->', color=GRIP, lw=1.6))
-    ax.text(0, -0.050, f'baseline {base * 1000:.0f} mm', fontsize=9.5, ha='center',
+    ax.plot([-base / 2, base / 2], [0, 0], marker='^', color=INK, ms=14, ls='none')
+    ax.text(-base / 2, -0.085, 'left camera', fontsize=9.6, ha='center')
+    ax.text(base / 2, -0.085, 'right camera', fontsize=9.6, ha='center')
+    ax.annotate('', xy=(-base / 2, -0.030), xytext=(base / 2, -0.030),
+                arrowprops=dict(arrowstyle='<->', color=GRIP, lw=1.8))
+    ax.text(0, -0.058, f'baseline {base * 1000:.0f} mm', fontsize=10, ha='center',
             color=GRIP)
-    ax.plot([0.012], [z0], marker='o', color=LINK, ms=11)
-    ax.text(0.020, z0, f'point at z = {z0:.2f} m', fontsize=9.8, va='center', color=LINK)
-    ax.plot([-base / 2, 0.012], [0, z0], color=MUTED, lw=1.4)
-    ax.plot([base / 2, 0.012], [0, z0], color=MUTED, lw=1.4)
-    ax.set_xlim(-0.09, 0.13)
-    ax.set_ylim(-0.095, 0.50)
+    ax.plot([0.012], [z0], marker='o', color=LINK, ms=12, mec=INK, mew=0.8)
+    ax.text(0.024, z0, f'one surface point\nat z = {z0:.2f} m', fontsize=10,
+            va='center', color=LINK)
+    ax.plot([-base / 2, 0.012], [0, z0], color=MUTED, lw=1.5)
+    ax.plot([base / 2, 0.012], [0, z0], color=MUTED, lw=1.5)
+    ax.text(-0.052, 0.22, 'the left camera\nsees it this way', fontsize=9.4,
+            color=MUTED, ha='center')
+    ax.text(0.056, 0.22, 'the right camera\nsees it this way', fontsize=9.4,
+            color=MUTED, ha='center')
+    ax.set_xlim(-0.10, 0.13)
+    ax.set_ylim(-0.105, 0.52)
     ax.set_xlabel('sideways position x (m)', fontsize=10)
     ax.set_ylabel('distance z (m)', fontsize=10)
-    ax.set_title(f'disparity = f x baseline / z\n= {f:.0f} x {base:.3f} / {z0:.2f} '
+    ax.set_title(f'disparity = f x baseline / z = {f:.0f} x {base:.3f} / {z0:.2f} '
                  f'= {f * base / z0:.1f} pixels',
-                 fontsize=11.5, weight='bold')
-    ax = axes[1]
-    _plain(ax)
-    z_grid = np.linspace(0.25, 4.2, 300)
-    ax.plot(z_grid, f * base / z_grid, color=LINK, lw=2.2)
-    ax.plot(zs, disp, marker='o', color=GRIP, ls='none', ms=8)
-    for z, d in zip(zs, disp):
-        ax.text(z + 0.06, d + 2.5, f'{d:.1f} px', fontsize=9.2, color=GRIP)
-    ax.set_xlabel('distance z (m)', fontsize=10)
-    ax.set_ylabel('disparity (pixels)', fontsize=10)
-    ax.set_xlim(0.1, 4.7)
-    ax.set_title('Far things shift by almost nothing', fontsize=11.5, weight='bold')
+                 fontsize=12, weight='bold')
     _save(fig, D3_DOC, 'stereo-geometry.svg')
 
 
+def disparity_falls_with_distance() -> None:
+    """How little a far surface shifts between the two pictures."""
+    f, base = 700.0, 0.060
+    zs = np.array([0.30, 0.40, 0.60, 1.00, 2.00, 4.00])
+    disp = f * base / zs
+
+    fig, ax = plt.subplots(figsize=(9.8, 4.8), facecolor='white')
+    _plain(ax)
+    z_grid = np.linspace(0.25, 4.2, 300)
+    ax.plot(z_grid, f * base / z_grid, color=LINK, lw=2.4)
+    ax.plot(zs, disp, marker='o', color=GRIP, ls='none', ms=9, mec=INK, mew=0.8)
+    for z, d in zip(zs, disp):
+        ax.text(z + 0.08, d + 4.0, f'{d:.1f} px', fontsize=9.6, color=GRIP)
+    ax.set_xlabel('distance from the cameras z (m)', fontsize=10)
+    ax.set_ylabel('disparity: how far the point moves between\nthe two pictures '
+                  '(pixels)',
+                  fontsize=10)
+    ax.set_xlim(0.1, 4.7)
+    ax.set_ylim(0, 160)
+    ax.set_title('A point at 0.30 m shifts by 140 pixels and a point at 4 m by 10.5',
+                 fontsize=12, weight='bold')
+    _save(fig, D3_DOC, 'disparity-falls-with-distance.svg')
+
+
+def wider_baseline_near_limit() -> None:
+    """A wider baseline stops both cameras from seeing a close object."""
+    f, half_width = 700.0, 320.0
+    half_angle = float(np.arctan(half_width / f))
+    bases = [0.060, 0.250]
+    print(f'[baseline] a {half_width * 2:.0f} pixel wide picture with f = {f:.0f} px '
+          f'sees {np.rad2deg(half_angle) * 2:.1f} degrees across')
+    limits = []
+    for base in bases:
+        near = (base / 2) / np.tan(half_angle)
+        limits.append(near)
+        print(f'[baseline] with a baseline of {base * 1000:.0f} mm, both cameras see '
+              f'the middle of the scene only from {near * 1000:.0f} mm outwards')
+
+    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.8), facecolor='white', sharey=True,
+                             gridspec_kw={'wspace': 0.12})
+    for ax, base, near, colour in zip(axes, bases, limits, (LINK, GRIP)):
+        _plain(ax)
+        ax.axhspan(0, near, color='#f6e3e3', zorder=0)
+        for side in (-1, 1):
+            cx = side * base / 2
+            ax.plot([cx], [0], marker='^', color=colour, ms=13)
+            for sgn in (-1, 1):
+                ax.plot([cx, cx + np.tan(half_angle) * 0.62 * sgn], [0, 0.62],
+                        color=colour, lw=1.3, ls='--')
+        ax.plot([0], [near], marker='o', color=INK, ms=10)
+        ax.annotate(f'nearest point both\ncameras see: {near * 1000:.0f} mm',
+                    xy=(0, near), xytext=(0.01, near + 0.17), fontsize=9.8,
+                    color=INK, ha='left',
+                    arrowprops=dict(arrowstyle='->', color=INK, lw=1.2))
+        ax.set_xlim(-0.30, 0.30)
+        ax.set_ylim(-0.075, 0.66)
+        ax.set_xlabel('sideways position x (m)', fontsize=10)
+        ax.set_title(f'{base * 1000:.0f} mm apart', fontsize=11.5, weight='bold',
+                     color=colour)
+    axes[0].set_ylabel('distance from the cameras z (m)', fontsize=10)
+    axes[0].text(-0.285, 0.016, 'the two cones do not\noverlap in this band',
+                 fontsize=9.4, color=GRIP, va='bottom')
+    fig.suptitle(f'Moving the cameras from {bases[0] * 1000:.0f} mm apart to '
+                 f'{bases[1] * 1000:.0f} mm pushes the nearest shared point from '
+                 f'{limits[0] * 1000:.0f} mm to {limits[1] * 1000:.0f} mm',
+                 fontsize=12, weight='bold', y=1.03)
+    _save(fig, D3_DOC, 'wider-baseline-near-limit.svg')
+
+
+def baseline_and_error() -> None:
+    """What a wider baseline buys in accuracy at one distance."""
+    f, dd, z = 700.0, 0.25, 1.00
+    bases = np.array([0.030, 0.060, 0.120, 0.250])
+    errs = z ** 2 / (f * bases) * dd * 1000
+    print(f'[baseline-error] at z = {z:.2f} m with f = {f:.0f} px and {dd:.2f} px of '
+          'matching error:')
+    for b, e in zip(bases, errs):
+        print(f'[baseline-error]   baseline {b * 1000:.0f} mm -> {e:.1f} mm of '
+              'distance error')
+
+    fig, ax = plt.subplots(figsize=(9.4, 4.8), facecolor='white')
+    _plain(ax)
+    ax.bar([f'{b * 1000:.0f}' for b in bases], errs, color=PURPLE, ec=INK, lw=0.8,
+           width=0.5)
+    for i, e in enumerate(errs):
+        inside = e > 2.0
+        ax.text(i, e - 0.9 if inside else e + 0.35, f'{e:.1f} mm', ha='center',
+                va='top' if inside else 'bottom', fontsize=10.5, zorder=5,
+                color='white' if inside else INK)
+    ax.axhline(GRIP_MARGIN, color=SLIDE, ls='--', lw=1.8)
+    ax.text(3.45, GRIP_MARGIN + 0.9, f'the gripper allows {GRIP_MARGIN:.1f} mm',
+            fontsize=9.8, ha='right', color=SLIDE)
+    ax.set_xlabel('baseline: how far apart the two cameras sit (mm)', fontsize=10)
+    ax.set_ylabel('distance error at 1 metre (mm)', fontsize=10)
+    ax.set_ylim(0, errs.max() * 1.22)
+    ax.set_title('Doubling the baseline halves the distance error at the same place',
+                 fontsize=12, weight='bold')
+    _save(fig, D3_DOC, 'baseline-and-error.svg')
+
+
 def stereo_error() -> None:
-    """Half a pixel of matching error, turned into millimetres at each distance."""
+    """A quarter of a pixel of matching error, turned into millimetres at each distance."""
     f, base = 700.0, 0.060
     dd = 0.25
     zs = np.array([0.30, 0.40, 0.60, 1.00, 2.00, 4.00])
@@ -1496,8 +1804,8 @@ def stereo_error() -> None:
     _save(fig, D3_DOC, 'stereo-error.svg')
 
 
-def texture_is_needed() -> None:
-    """Matching only works where the surface has something to match."""
+def _texture_rows() -> tuple[Arr, Arr, dict[str, Arr], int]:
+    """Two simulated brightness rows, and the matching cost curve for each."""
     rng = np.random.default_rng(13)
     n, true_d, win = 200, 12, 24
     textured = np.clip(0.5 + np.cumsum(rng.normal(0, 0.09, n)) * 0.25, 0.02, 0.98)
@@ -1524,30 +1832,50 @@ def texture_is_needed() -> None:
               f'gap {sad[second] - sad[best]:.3f}, whole curve spans '
               f'{sad.max() - sad.min():.3f}')
     print(f'[texture] the true shift in this made-up pair is {true_d} px')
+    return textured, plain, out, true_d
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.4, 4.6), facecolor='white',
-                             gridspec_kw={'wspace': 0.28})
-    _plain(axes[0])
-    axes[0].plot(textured, color=WRIST, lw=1.5, label='textured wood')
-    axes[0].plot(plain, color=LINK, lw=1.5, label='plain white wall')
-    axes[0].set_xlabel('pixel along the row', fontsize=10)
-    axes[0].set_ylabel('brightness', fontsize=10)
-    axes[0].set_ylim(0, 1.05)
-    axes[0].set_title('Simulated: two rows from the left picture', fontsize=11.5,
-                      weight='bold')
-    axes[0].legend(fontsize=9, frameon=False, loc='lower left')
-    _plain(axes[1])
+
+def two_rows_of_brightness() -> None:
+    """What the matcher is given on a textured surface and on a plain one."""
+    textured, plain, _out, _d = _texture_rows()
+
+    fig, ax = plt.subplots(figsize=(10.0, 4.6), facecolor='white')
+    _plain(ax)
+    ax.plot(textured, color=WRIST, lw=1.7, label='a row across textured wood')
+    ax.plot(plain, color=LINK, lw=1.7, label='a row across a plain white wall')
+    ax.text(204, 0.818, 'flat: nothing here\nmarks one pixel out\nfrom its neighbours',
+            fontsize=9.6, color=LINK, ha='left', va='center')
+    ax.set_xlabel('pixel along the row', fontsize=10)
+    ax.set_ylabel('brightness (0 to 1)', fontsize=10)
+    ax.set_xlim(-6, 290)
+    ax.set_ylim(0, 1.12)
+    ax.set_title('Simulated: one row of the left picture, on wood and on a plain wall',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='lower left')
+    _save(fig, D3_DOC, 'two-rows-of-brightness.svg')
+
+
+def matching_cost_curve() -> None:
+    """The shift that matches best, and whether there is a best at all."""
+    _t, _p, out, true_d = _texture_rows()
+
+    fig, ax = plt.subplots(figsize=(10.0, 4.8), facecolor='white')
+    _plain(ax)
     for name, colour in (('textured wood', WRIST), ('plain white wall', LINK)):
-        axes[1].plot(out[name], color=colour, lw=2.0, marker='o', ms=3.4, label=name)
-    axes[1].axvline(true_d, color=GRIP, ls='--', lw=1.5)
-    axes[1].text(true_d + 0.5, max(out['textured wood']) * 0.92,
-                 f'true shift {true_d} px', fontsize=9.5, color=GRIP)
-    axes[1].set_xlabel('shift tried (pixels)', fontsize=10)
-    axes[1].set_ylabel('how badly the two windows differ', fontsize=10)
-    axes[1].set_title('A sharp dip on wood, no dip at all on the wall',
-                      fontsize=11.5, weight='bold')
-    axes[1].legend(fontsize=9, frameon=False)
-    _save(fig, D3_DOC, 'texture-is-needed.svg')
+        ax.plot(out[name], color=colour, lw=2.0, marker='o', ms=3.6, label=name)
+    ax.axvline(true_d, color=GRIP, ls='--', lw=1.6)
+    ax.text(true_d + 0.6, max(out['textured wood']) * 0.94,
+            f'the true shift is {true_d} px', fontsize=9.8, color=GRIP)
+    ax.annotate('one clear lowest point', xy=(true_d, out['textured wood'][true_d]),
+                xytext=(true_d - 7.5, 0.030), fontsize=9.8, color=WRIST, ha='left',
+                arrowprops=dict(arrowstyle='->', color=WRIST, lw=1.3))
+    ax.set_xlabel('shift tried (pixels)', fontsize=10)
+    ax.set_ylabel('how badly the two windows differ', fontsize=10)
+    ax.set_ylim(0, max(out['textured wood']) * 1.12)
+    ax.set_title('On wood one shift is clearly best, and on the plain wall none is',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper right')
+    _save(fig, D3_DOC, 'matching-cost-curve.svg')
 
 
 SURFACES: list[tuple[str, float]] = [('matte paper', 0.97), ('black rubber', 0.52),
@@ -1607,34 +1935,36 @@ def holes_in_the_depth_map() -> None:
         bars.append((name, pct))
         print(f'[holes] over the {name} patch, {pct:.1f}% of pixels have a distance')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.4, 4.5), facecolor='white',
-                             gridspec_kw={'wspace': 0.26, 'width_ratios': [1.15, 1]})
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.6, 5.2), facecolor='white')
     ax.imshow(valid.astype(float), cmap='Greys_r', vmin=0, vmax=1)
     for name, _prob, rs, cs in regions:
         ax.add_patch(Rectangle((cs.start - 0.5, rs.start - 0.5),
                                cs.stop - cs.start, rs.stop - rs.start,
                                fill=False, ec=GRIP, lw=1.8))
-        below = name == 'black rubber'
-        ax.text((cs.start + cs.stop) / 2,
-                rs.stop + 3.4 if below else rs.start - 2.0, name, ha='center',
-                fontsize=9, color=GRIP,
+        left = name == 'black rubber'
+        ax.text((cs.start + cs.stop) / 2 - (6 if left else 0), rs.start - 2.0, name,
+                ha='center', fontsize=9.4, color=GRIP,
                 bbox=dict(facecolor='white', edgecolor='none', pad=1.2))
     ax.set_xticks([])
     ax.set_yticks([])
-    ax.set_title(f'Simulated depth map: black means no distance\n'
+    ax.set_title(f'Simulated depth map: black means the camera got no distance back '
                  f'({valid.mean() * 100:.1f}% of pixels are filled)',
                  fontsize=11.5, weight='bold')
-    ax = axes[1]
+    _save(fig, D3_DOC, 'holes-in-the-depth-map.svg')
+
+    fig, ax = plt.subplots(figsize=(9.4, 4.4), facecolor='white')
     _plain(ax)
     ax.barh([b[0] for b in bars][::-1], [b[1] for b in bars][::-1],
             color=[LINK, WRIST, GRIP, SLIDE][::-1], ec=INK, lw=0.8, height=0.55)
     for i, (_n, p) in enumerate(bars[::-1]):
-        ax.text(p + 1.5, i, f'{p:.0f}%', va='center', fontsize=10)
-    ax.set_xlim(0, 112)
-    ax.set_xlabel('pixels with a distance (%)', fontsize=10)
-    ax.set_title('The glass patch is almost empty', fontsize=11.5, weight='bold')
-    _save(fig, D3_DOC, 'holes-in-the-depth-map.svg')
+        ax.text(p + 1.8, i, f'{p:.1f}%', va='center', fontsize=10.5)
+    ax.set_xlim(0, 118)
+    ax.set_xlabel('pixels of that patch that carry a distance (%)', fontsize=10)
+    ax.tick_params(axis='y', labelsize=10.5)
+    ax.set_title('The clear glass patch is almost empty and the matte paper is almost '
+                 'full',
+                 fontsize=12, weight='bold')
+    _save(fig, D3_DOC, 'fill-per-material.svg')
 
 
 def glass_reads_the_table() -> None:
@@ -1786,8 +2116,8 @@ def cloud_from_map() -> None:
     _save(fig, D3_DOC, 'cloud-from-map.svg')
 
 
-def order_does_not_matter() -> None:
-    """Max over points survives a reshuffle; a flattened layer does not."""
+def _order_example() -> tuple[Arr, Arr, Arr, Arr, Arr, Arr]:
+    """Five points through a small network, pooled and flattened, both orders."""
     pts = np.array([[0.05, 0.02, 0.56],
                     [-0.07, 0.00, 0.48],
                     [0.09, 0.09, 0.57],
@@ -1815,59 +2145,74 @@ def order_does_not_matter() -> None:
     print(f'[order] flattened layer, reshuffled      = {np.round(flat2, 4)}')
     print(f'[order] biggest change from the reshuffle = '
           f'{np.abs(flat1 - flat2).max():.4f}')
+    return pts, feats, pooled, pooled2, flat1, flat2
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.9), facecolor='white',
-                             gridspec_kw={'wspace': 0.2, 'width_ratios': [1.3, 1]})
-    ax = axes[0]
+
+def max_ignores_order() -> None:
+    """Keeping the largest value in each column gives the same answer either way."""
+    pts, feats, pooled, pooled2, _f1, _f2 = _order_example()
+
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
     _blank(ax)
     ax.set_xlim(0, 10)
-    ax.set_ylim(0, 8.8)
-    ax.text(0.2, 8.3, 'every point goes through the same small network,',
-            fontsize=10.2, weight='bold', color=INK)
-    ax.text(0.2, 7.75, 'and we keep the largest value in each column',
-            fontsize=10.2, weight='bold', color=INK)
+    ax.set_ylim(0, 8.6)
+    ax.text(0.2, 8.2, 'one point', fontsize=10.2, weight='bold', color=INK)
+    ax.text(4.6, 8.2, 'the four numbers the small network gives it', fontsize=10.2,
+            weight='bold', color=INK)
+    ax.plot([0.2, 9.4], [7.85, 7.85], color=INK, lw=1.1)
     for k, (p, f) in enumerate(zip(pts, feats)):
-        y = 6.8 - k * 0.78
-        ax.text(0.2, y, f'({p[0]:+.2f}, {p[1]:+.2f}, {p[2]:.2f})', fontsize=9.4,
+        y = 7.25 - k * 0.80
+        ax.text(0.2, y, f'({p[0]:+.2f}, {p[1]:+.2f}, {p[2]:.2f})', fontsize=9.6,
                 family='monospace', va='center')
-        ax.text(3.9, y, '->', fontsize=9.4, va='center', color=MUTED)
-        ax.text(4.6, y, '  '.join(f'{x:5.2f}' for x in f), fontsize=9.4,
+        ax.text(3.9, y, '->', fontsize=9.6, va='center', color=MUTED)
+        ax.text(4.6, y, '  '.join(f'{x:5.3f}' for x in f), fontsize=9.6,
                 family='monospace', va='center', color=LINK)
-    ax.plot([4.5, 9.4], [2.55, 2.55], color=INK, lw=1.2)
-    ax.text(0.2, 2.10, 'largest in each column', fontsize=9.8, weight='bold',
+    ax.plot([0.2, 9.4], [2.95, 2.95], color=INK, lw=1.2)
+    ax.text(0.2, 2.45, 'largest in each column', fontsize=10, weight='bold',
             va='center')
-    ax.text(4.6, 2.10, '  '.join(f'{x:5.2f}' for x in pooled), fontsize=9.8,
+    ax.text(4.6, 2.45, '  '.join(f'{x:5.3f}' for x in pooled), fontsize=10,
             family='monospace', va='center', weight='bold', color=SLIDE)
-    ax.text(0.2, 1.40, 'the same points, reshuffled', fontsize=9.8, va='center')
-    ax.text(4.6, 1.40, '  '.join(f'{x:5.2f}' for x in pooled2), fontsize=9.8,
+    ax.text(0.2, 1.65, 'the same five points, reshuffled', fontsize=10, va='center')
+    ax.text(4.6, 1.65, '  '.join(f'{x:5.3f}' for x in pooled2), fontsize=10,
             family='monospace', va='center', weight='bold', color=SLIDE)
-    ax.text(0.2, 0.55, 'identical, because the largest of a set\ndoes not depend on '
-                       'the order',
-            fontsize=9.8, color=SLIDE, va='center')
-    ax = axes[1]
+    ax.text(0.2, 0.70, 'The two rows are identical, because the largest value in a '
+                       'set does not depend on the order.',
+            fontsize=10, color=SLIDE, va='center')
+    ax.set_title('Keeping the largest value in each column survives a reshuffle',
+                 fontsize=12, weight='bold')
+    _save(fig, D3_DOC, 'max-ignores-order.svg')
+
+
+def flat_layer_breaks() -> None:
+    """A layer that reads all the numbers in one row changes its answer."""
+    _p, _fe, _po, _po2, flat1, flat2 = _order_example()
+
+    fig, ax = plt.subplots(figsize=(9.6, 4.8), facecolor='white')
     _plain(ax)
     x = np.arange(4)
     ax.bar(x - 0.2, flat1, width=0.38, color=LINK, ec=INK, lw=0.8,
-           label='original order')
-    ax.bar(x + 0.2, flat2, width=0.38, color=GRIP, ec=INK, lw=0.8, label='reshuffled')
+           label='the five points in their original order')
+    ax.bar(x + 0.2, flat2, width=0.38, color=GRIP, ec=INK, lw=0.8,
+           label='the same five points, reshuffled')
     for i in range(4):
-        ax.text(x[i] - 0.2, flat1[i] + 0.012 * np.sign(flat1[i]), f'{flat1[i]:.3f}',
-                ha='center', fontsize=9, va='bottom' if flat1[i] >= 0 else 'top')
-        ax.text(x[i] + 0.2, flat2[i] + 0.012 * np.sign(flat2[i]), f'{flat2[i]:.3f}',
-                ha='center', fontsize=9, va='bottom' if flat2[i] >= 0 else 'top')
+        ax.text(x[i] - 0.2, flat1[i] + 0.015, f'{flat1[i]:.3f}',
+                ha='center', fontsize=9.6, va='bottom')
+        ax.text(x[i] + 0.2, flat2[i] + 0.015, f'{flat2[i]:.3f}',
+                ha='center', fontsize=9.6, va='bottom')
     ax.axhline(0, color=INK, lw=1.0)
     ax.set_xticks(x)
-    ax.set_xticklabels([f'output {i + 1}' for i in x], fontsize=10)
-    ax.set_ylabel('value', fontsize=10)
-    ax.set_title('A layer that reads all 15 numbers in a row gives\na different '
-                 f'answer, up to {np.abs(flat1 - flat2).max():.2f} different',
-                 fontsize=11.5, weight='bold')
-    ax.legend(fontsize=9.5, frameon=False)
-    _save(fig, D3_DOC, 'order-does-not-matter.svg')
+    ax.set_xticklabels([f'output {i + 1}' for i in x], fontsize=10.5)
+    ax.set_ylabel('value the layer gives', fontsize=10)
+    ax.set_ylim(0, 1.18)
+    ax.set_title(f'The same points in a different order change every output, '
+                 f'by up to {np.abs(flat1 - flat2).max():.2f}',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    _save(fig, D3_DOC, 'flat-layer-breaks.svg')
 
 
-def voxels_and_occupancy() -> None:
-    """Chopping the space into cubes, and what that costs."""
+def _voxel_counts() -> tuple[dict[float, tuple[int, int, int]], Arr, Arr, float]:
+    """Cube counts at three cube sizes over a one metre box."""
     rng = np.random.default_rng(17)
     cloud = _simulated_cloud(rng)
     lo = np.array([-0.30, -0.02, 0.38])
@@ -1887,7 +2232,12 @@ def voxels_and_occupancy() -> None:
         print(f'[voxel]   one byte a cube is {dense / 1e6:.1f} MB dense, '
               f'against {len(occupied) * 12 / 1e3:.1f} kB for a list of the '
               'occupied ones')
+    return out, cloud, lo, side
 
+
+def voxel_layer() -> None:
+    """One flat layer of the cube grid, with the cubes that hold a point shaded."""
+    _out, cloud, lo, side = _voxel_counts()
     step = 0.020
     n = int(round(side / step))
     layer = int((0.020 - lo[1]) / step)
@@ -1899,9 +2249,7 @@ def voxels_and_occupancy() -> None:
           f'{(layer * 20 + 20 + lo[1] * 1000):.0f} mm above the table, and '
           f'{len(cells)} of its {n * n} cells hold a point')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.9), facecolor='white',
-                             gridspec_kw={'wspace': 0.32, 'width_ratios': [1, 1.05]})
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.4, 6.2), facecolor='white')
     _plain(ax)
     for a in range(n):
         for c in range(n):
@@ -1915,28 +2263,36 @@ def voxels_and_occupancy() -> None:
     ax.set_ylim(lo[2], lo[2] + side)
     ax.set_xlabel('sideways position x (m)', fontsize=10)
     ax.set_ylabel('distance z (m)', fontsize=10)
-    ax.set_title(f'One 20 mm layer of the grid seen from above:\n{len(cells)} of '
-                 f'{n * n} cells in this layer hold a point',
+    ax.set_title(f'One 20 mm layer of the grid seen from above: {len(cells)} of its '
+                 f'{n * n} cells hold a point',
                  fontsize=11.5, weight='bold')
-    ax = axes[1]
+    _save(fig, D3_DOC, 'voxel-layer.svg')
+
+
+def voxel_memory() -> None:
+    """Storing every cube against storing only the full ones."""
+    out, _cloud, _lo, _side = _voxel_counts()
+
+    fig, ax = plt.subplots(figsize=(10.0, 4.9), facecolor='white')
     _plain(ax)
     labels, vals, colours = [], [], []
     for mm in (20.0, 5.0, 2.0):
         _nn, dense, occ = out[mm]
-        labels += [f'{mm:.0f} mm\nall cubes', f'{mm:.0f} mm\nfull only']
+        labels += [f'{mm:.0f} mm cubes\nevery cube', f'{mm:.0f} mm cubes\nonly the full ones']
         vals += [dense / 1e6, occ * 12 / 1e6]
         colours += [GRIP, SLIDE]
     ax.bar(labels, vals, color=colours, ec=INK, lw=0.8)
     for i, v in enumerate(vals):
-        ax.text(i, v * 1.7, f'{v:.1f} MB' if v > 1 else f'{v * 1000:.0f} kB',
-                ha='center', fontsize=9.6)
+        ax.text(i, v * 1.8, f'{v:.1f} MB' if v > 1 else f'{v * 1000:.0f} kB',
+                ha='center', fontsize=9.8)
     ax.set_yscale('log')
     ax.set_ylim(1e-3, 1e4)
     ax.set_ylabel('memory for one scene (MB, log scale)', fontsize=10)
-    ax.tick_params(axis='x', labelsize=8.6)
-    ax.set_title('Every cube against only the full ones,\nat three cube sizes',
-                 fontsize=11.5, weight='bold')
-    _save(fig, D3_DOC, 'voxels-and-occupancy.svg')
+    ax.tick_params(axis='x', labelsize=8.4)
+    ax.set_title('Storing every cube of a one metre box, against storing only the '
+                 'cubes that hold a point',
+                 fontsize=12, weight='bold')
+    _save(fig, D3_DOC, 'voxel-memory.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1966,7 +2322,10 @@ def _render_strip(cam: tuple[float, float], look: float, rays: int = 160,
     """
     cx, cz = cam
     half = np.deg2rad(27.0)
-    angles = np.linspace(look - half, look + half, rays)
+    # Ray 0 is the left edge of the rendered strip, so the angles run from the
+    # camera's left to its right. A camera looking along +z has +x on its right,
+    # which is why the first angle is the larger one.
+    angles = np.linspace(look + half, look - half, rays)
     t = np.linspace(0.05, 1.10, samples)
     dt = float(t[1] - t[0])
     strip = np.zeros((rays, 3))
@@ -1992,6 +2351,56 @@ def _render_strip(cam: tuple[float, float], look: float, rays: int = 160,
         if contrib.max() > 0.08:
             owner[r] = int(np.argmax(contrib))
     return np.clip(strip, 0, 1), owner, lookups
+
+
+def ray_samples() -> None:
+    """One pixel of a radiance field: sample along the ray and mix in order."""
+    cam = (0.00, 0.02)
+    angle = np.deg2rad(99.3)
+    samples = 48
+    t = np.linspace(0.05, 1.10, samples)
+    dt = float(t[1] - t[0])
+    px = cam[0] + np.cos(angle) * t
+    pz = cam[1] + np.sin(angle) * t
+    dens = np.zeros(samples)
+    for bx, bz, s, op, _u, _c in BLOBS:
+        d2 = (px - bx) ** 2 + (pz - bz) ** 2
+        dens += op * np.exp(-d2 / (2 * s ** 2)) * 40.0
+    alpha = 1.0 - np.exp(-dens * dt)
+    trans = np.concatenate([[1.0], np.cumprod(1.0 - alpha)[:-1]])
+    weight = alpha * trans
+    first = int(np.argmax(weight))
+    behind = float(weight[t > t[first] + 0.15].sum())
+    print(f'[ray-samples] one ray, {samples} samples from {t[0]:.2f} m to '
+          f'{t[-1]:.2f} m along it')
+    print(f'[ray-samples] the heaviest sample is at {t[first]:.3f} m and carries '
+          f'{weight[first] * 100:.1f}% of the pixel')
+    print(f'[ray-samples] everything more than 0.15 m behind it carries '
+          f'{behind * 100:.1f}% in total, because the bowl blocks it')
+    print(f'[ray-samples] the weights add to {weight.sum() * 100:.1f}%, so nothing of '
+          'the background is left showing through')
+    print(f'[ray-samples] the eight heaviest samples between '
+          f'{t[first] - 0.05:.2f} m and {t[first] + 0.07:.2f} m carry '
+          f'{weight[(t >= t[first] - 0.05) & (t <= t[first] + 0.07)].sum() * 100:.1f}% '
+          'of the pixel between them')
+
+    fig, ax = plt.subplots(figsize=(10.2, 4.9), facecolor='white')
+    _plain(ax)
+    ax.bar(t, weight * 100, width=dt * 0.8, color=LINK, ec=INK, lw=0.5)
+    ax.annotate(f'the bowl, at {t[first]:.2f} m along the ray',
+                xy=(t[first], weight[first] * 100),
+                xytext=(t[first] + 0.14, weight[first] * 100 + 6), fontsize=9.8,
+                color=INK, arrowprops=dict(arrowstyle='->', color=INK, lw=1.2))
+    ax.annotate('the box behind it, almost\nnothing reaches the pixel',
+                xy=(0.80, 1.5), xytext=(0.72, 26), fontsize=9.8, color=MUTED,
+                arrowprops=dict(arrowstyle='->', color=MUTED, lw=1.2))
+    ax.set_xlabel('distance along the ray from the camera (m)', fontsize=10)
+    ax.set_ylabel('share of this pixel (%)', fontsize=10)
+    ax.set_ylim(0, max(weight * 100) * 1.45)
+    ax.set_title(f'One pixel: {samples} samples along one ray, and the first surface '
+                 'takes almost all of it',
+                 fontsize=12, weight='bold')
+    _save(fig, D3_DOC, 'ray-samples.svg')
 
 
 def query_counting() -> None:
@@ -2022,7 +2431,7 @@ def query_counting() -> None:
     _save(fig, D3_DOC, 'query-counting.svg')
 
 
-def splat_parameters() -> None:
+def splat_memory() -> None:
     """What one blob stores, and what a whole scene of them costs."""
     parts = [('where it is', 3), ('how wide in each direction', 3),
              ('how it is turned', 4), ('how solid it is', 1),
@@ -2038,45 +2447,35 @@ def splat_parameters() -> None:
     for c, m in zip(counts, mb):
         print(f'[splat] {c:,} blobs -> {m:.0f} MB')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.4, 4.7), facecolor='white',
-                             gridspec_kw={'wspace': 0.3})
-    ax = axes[0]
-    _blank(ax)
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 7.4)
-    for k, (lab, n) in enumerate(parts):
-        y = 6.2 - k * 0.86
-        ax.add_patch(Rectangle((0.3, y - 0.26), 6.2, 0.56, fc=LINK_PALE, ec=LINK, lw=1.0))
-        ax.text(0.5, y, lab, fontsize=10.2, va='center', color=INK)
-        ax.text(7.0, y, f'{n} number' + ('' if n == 1 else 's'), fontsize=10.2,
-                va='center', weight='bold', color=LINK)
-    ax.plot([0.3, 9.4], [1.55, 1.55], color=INK, lw=1.2)
-    ax.text(0.5, 1.05, 'one blob', fontsize=11, weight='bold', va='center')
-    ax.text(7.0, 1.05, f'{total} numbers = {bytes_each} bytes', fontsize=11,
-            weight='bold', va='center', color=GRIP)
-    ax.set_title('What one Gaussian blob stores', fontsize=11.5, weight='bold')
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(9.6, 4.8), facecolor='white')
     _plain(ax)
-    ax.bar([f'{c // 1000:,}k' for c in counts], mb, color=PURPLE, ec=INK, lw=0.8)
+    ax.bar([f'{c // 1000:,}k' for c in counts], mb, color=PURPLE, ec=INK, lw=0.8,
+           width=0.52)
     for i, m in enumerate(mb):
-        ax.text(i, m + 25, f'{m:.0f} MB', ha='center', fontsize=10)
+        ax.text(i, m + 22, f'{m:.0f} MB', ha='center', fontsize=10.5)
+    ax.axhline(5.0, color=SLIDE, ls='--', lw=1.6)
+    ax.annotate('a small network holding\nthe same scene: a few MB',
+                xy=(0.45, 12), xytext=(0.45, 540), fontsize=9.8, ha='left',
+                color=SLIDE, arrowprops=dict(arrowstyle='->', color=SLIDE, lw=1.3))
     ax.set_xlabel('number of blobs in the scene', fontsize=10)
-    ax.set_ylabel('memory for the scene (MB)', fontsize=10)
-    ax.set_ylim(0, mb.max() * 1.2)
-    ax.set_title(f'At {bytes_each} bytes a blob, a scene is '
+    ax.set_ylabel('memory for one scene (MB)', fontsize=10)
+    ax.set_ylim(0, mb.max() * 1.22)
+    ax.set_title(f'At {total} numbers, or {bytes_each} bytes, a blob, a scene costs '
                  'hundreds of megabytes',
-                 fontsize=11.5, weight='bold')
-    _save(fig, D3_DOC, 'splat-parameters.svg')
+                 fontsize=12, weight='bold')
+    _save(fig, D3_DOC, 'splat-memory.svg')
 
 
-def new_viewpoints() -> None:
-    """What a fitted scene gives a robot: a view it never photographed."""
-    cam_a = (0.00, 0.02)
-    cam_b = (0.52, 0.42)
-    look_a = np.deg2rad(90.0)
-    look_b = np.deg2rad(150.0)
-    strip_a, own_a, look_ups_a = _render_strip(cam_a, look_a)
-    strip_b, own_b, look_ups_b = _render_strip(cam_b, look_b)
+CAM_A: tuple[float, float] = (0.00, 0.02)
+CAM_B: tuple[float, float] = (0.52, 0.42)
+LOOK_A: float = float(np.deg2rad(90.0))
+LOOK_B: float = float(np.deg2rad(150.0))
+
+
+def _two_views() -> tuple[Arr, Arr, Arr, Arr, int, int]:
+    """Render the blob scene from the photographed place and from a new one."""
+    strip_a, own_a, look_ups_a = _render_strip(CAM_A, LOOK_A)
+    strip_b, own_b, _look_ups_b = _render_strip(CAM_B, LOOK_B)
     mug_blobs = {3, 4}
     seen_a = int(sum(1 for o in own_a if o in mug_blobs))
     seen_b = int(sum(1 for o in own_b if o in mug_blobs))
@@ -2090,44 +2489,73 @@ def new_viewpoints() -> None:
     set_b = sorted(set(own_b.tolist()) - {-1})
     print(f'[views] blobs that own at least one ray: first camera {len(set_a)} '
           f'{set_a}, second camera {len(set_b)} {set_b}, of {len(BLOBS)} in the scene')
+    return strip_a, strip_b, own_a, own_b, seen_a, seen_b
 
-    fig = plt.figure(figsize=(11.6, 5.4), facecolor='white')
-    gs = fig.add_gridspec(2, 2, height_ratios=[3.2, 1.0], hspace=0.42, wspace=0.26)
-    ax = fig.add_subplot(gs[0, :])
+
+def blob_scene() -> None:
+    """The fitted scene, with the place it was photographed from and a new place."""
+    _two_views()
+
+    fig, ax = plt.subplots(figsize=(10.0, 5.4), facecolor='white')
     _plain(ax)
     for bx, bz, s, op, _u, c in BLOBS:
         ax.add_patch(Circle((bx, bz), s * 1.9, fc=c, ec='none', alpha=0.55 * op))
-    for cam, look, lab, colour, pos in (
-            (cam_a, look_a, 'camera 1:\na real photo', LINK, (0.0, -0.105)),
-            (cam_b, look_b, 'camera 2:\na view nobody stood at', GRIP, (0.655, 0.26))):
-        ax.plot([cam[0]], [cam[1]], marker='^', color=colour, ms=13)
+    for cam, look, lab, colour, pos, ha in (
+            (CAM_A, LOOK_A, 'camera 1:\nwhere a photo was taken', LINK,
+             (0.0, -0.11), 'center'),
+            (CAM_B, LOOK_B, 'camera 2:\na place nobody stood at', GRIP,
+             (0.66, 0.30), 'right')):
+        ax.plot([cam[0]], [cam[1]], marker='^', color=colour, ms=14)
         for sign in (-1, 1):
             a = look + sign * np.deg2rad(27.0)
             ax.plot([cam[0], cam[0] + np.cos(a) * 1.05],
                     [cam[1], cam[1] + np.sin(a) * 1.05], color=colour, lw=1.3, ls='--')
-        ax.text(pos[0], pos[1], lab, fontsize=9.6,
-                ha='center' if cam is cam_a else 'right', va='center', color=colour)
-    ax.text(0.055, 0.63, 'mug', fontsize=9.6, ha='center')
-    ax.text(-0.075, 0.41, 'bowl', fontsize=9.6, ha='center')
-    ax.text(-0.20, 0.90, 'box', fontsize=9.6, ha='center')
-    ax.text(0.24, 0.80, 'plant', fontsize=9.6, ha='center')
-    ax.set_xlim(-0.42, 0.68)
-    ax.set_ylim(-0.18, 1.00)
+        ax.text(pos[0], pos[1], lab, fontsize=9.8, ha=ha, va='center', color=colour)
+    ax.text(0.055, 0.64, 'mug', fontsize=10, ha='center')
+    ax.text(-0.075, 0.40, 'bowl', fontsize=10, ha='center')
+    ax.text(-0.20, 0.91, 'box', fontsize=10, ha='center')
+    ax.text(0.245, 0.81, 'plant', fontsize=10, ha='center')
+    ax.set_xlim(-0.42, 0.70)
+    ax.set_ylim(-0.20, 1.02)
     ax.set_xlabel('sideways position x (m)', fontsize=10)
     ax.set_ylabel('distance z (m)', fontsize=10)
     ax.set_title('Nine blobs standing for a table scene, seen from above, '
-                 'with two camera positions',
+                 'with two camera places',
                  fontsize=12, weight='bold')
-    for k, (strip, seen, lab, colour) in enumerate(
-            ((strip_a, seen_a, 'rendered from camera 1', LINK),
-             (strip_b, seen_b, 'rendered from camera 2', GRIP))):
-        axs = fig.add_subplot(gs[1, k])
-        axs.imshow(strip[None, :, :], aspect='auto')
-        axs.set_yticks([])
-        axs.set_xticks([0, 80, 159])
-        axs.set_xticklabels(['left', 'middle', 'right'], fontsize=9)
-        axs.set_title(f'{lab}: the mug fills {seen} of 160 rays', fontsize=10.5,
-                      weight='bold', color=colour)
+    _save(fig, D3_DOC, 'blob-scene.svg')
+
+
+def new_viewpoints() -> None:
+    """The same scene drawn from the photographed place and from the new one."""
+    strip_a, strip_b, own_a, own_b, seen_a, seen_b = _two_views()
+    mug_blobs = {3, 4}
+
+    fig, axes = plt.subplots(2, 1, figsize=(10.0, 4.0), facecolor='white',
+                             gridspec_kw={'hspace': 1.25})
+    for ax, strip, own, seen, lab, colour in (
+            (axes[0], strip_a, own_a, seen_a,
+             'drawn from camera 1, where the photo was taken', LINK),
+            (axes[1], strip_b, own_b, seen_b,
+             'drawn from camera 2, where nobody stood', GRIP)):
+        ax.imshow(strip[None, :, :], aspect='auto', extent=(0.0, 160.0, 0.0, 1.0))
+        is_mug = np.array([o in mug_blobs for o in own])
+        start = None
+        for i in range(len(is_mug) + 1):
+            if i < len(is_mug) and is_mug[i] and start is None:
+                start = i
+            elif start is not None and (i == len(is_mug) or not is_mug[i]):
+                ax.add_patch(Rectangle((start, -0.42), i - start, 0.26, fc=GRIP,
+                                       ec='none', clip_on=False))
+                start = None
+        ax.text(162, -0.29, f'the mug: {seen} rays', fontsize=9.6, color=GRIP,
+                va='center', ha='left')
+        ax.set_ylim(-0.45, 1.0)
+        ax.set_yticks([])
+        ax.set_xticks([0, 80, 160])
+        ax.set_xticklabels(['left edge', 'middle', 'right edge'], fontsize=9.5)
+        ax.tick_params(axis='x', pad=14)
+        ax.set_title(f'{lab}: the mug fills {seen} of the 160 rays', fontsize=10.8,
+                     weight='bold', color=colour)
     _save(fig, D3_DOC, 'new-viewpoints.svg')
 
 
@@ -2144,6 +2572,7 @@ def main() -> None:
     closed_list()
     list_growth()
     shots_curve()
+    shared_space_map()
     thirteen_directions()
     cosine_arithmetic()
     nearest_name()
@@ -2151,15 +2580,21 @@ def main() -> None:
     scaled_softmax()
     proposals_and_names()
     score_matrix()
-    threshold_sweep()
+    name_list_decides()
+    threshold_overlap()
+    threshold_trade()
     box_to_mask()
     two_mugs_scene()
     noun_cannot_choose()
-    relation_from_geometry()
+    depth_difference()
+    relation_score()
     opposite_phrases()
-    counting_and_denial()
+    counting_words()
+    denial_words()
     near_synonyms()
     absent_object()
+    absent_fraction()
+    margin_over_runner_up()
     cost_on_an_arm()
 
     # 04_depth-and-3d.md
@@ -2167,23 +2602,33 @@ def main() -> None:
     depth_map_grid()
     brightness_edge_depth_edge()
     same_picture_two_sizes()
-    size_assumption()
+    height_falls_with_distance()
+    size_guess_becomes_distance()
     monocular_shape_right_scale_wrong()
     affine_freedom()
-    align_then_measure()
+    anchors_fit_the_scale()
+    error_after_fitting()
     relative_versus_metric()
     stereo_geometry()
+    disparity_falls_with_distance()
     stereo_error()
-    texture_is_needed()
+    wider_baseline_near_limit()
+    baseline_and_error()
+    two_rows_of_brightness()
+    matching_cost_curve()
     pattern_on_surfaces()
     holes_in_the_depth_map()
     glass_reads_the_table()
     pixel_to_point()
     cloud_from_map()
-    order_does_not_matter()
-    voxels_and_occupancy()
+    max_ignores_order()
+    flat_layer_breaks()
+    voxel_layer()
+    voxel_memory()
+    ray_samples()
     query_counting()
-    splat_parameters()
+    splat_memory()
+    blob_scene()
     new_viewpoints()
 
     print(f'wrote the diagrams under {IMAGES}')

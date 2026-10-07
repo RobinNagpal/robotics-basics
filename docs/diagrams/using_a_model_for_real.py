@@ -350,11 +350,8 @@ def checkpoint_files() -> None:
     mb16 = p.weight_megabytes('float16')
     ax.text(0.108, 0.80, f'{mb32:.0f} MB at four bytes a number\n{mb16:.0f} MB at two',
             ha='center', va='bottom', fontsize=9.5, color=LINK)
-    ax.text(0.5, 0.22,
-            'Lose any one of the four small files and the weights alone cannot be used:\n'
-            'the shapes say how to rebuild the network, the picture settings say how to turn a photo\n'
-            'into the numbers it was trained on, and the command scaling turns its output back into joint angles.',
-            ha='center', va='center', fontsize=10, color=INK)
+    ax.text(0.5, 0.24, 'Lose any one of the four small files and the weights cannot be used.',
+            ha='center', va='center', fontsize=10.5, color=INK)
     _save(fig, RUN_DOC, 'checkpoint-files.svg')
 
 
@@ -370,8 +367,7 @@ def parameter_shares() -> None:
     for nm, v in zip(parts, vals):
         print(f'[p1-s1] share {nm.splitlines()[0]:24s} {v:12,}  {100 * v / p.total_params:5.1f}%')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.5, 4.6), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.25, 1.0]})
+    fig, ax1 = plt.subplots(figsize=(9.6, 4.2), facecolor='white')
     _plain(ax1)
     y = np.arange(len(parts))[::-1]
     cols = [LINK, TEAL, PURPLE, JOINT]
@@ -384,20 +380,28 @@ def parameter_shares() -> None:
     ax1.set_xlim(0, max(vals) / 1e6 * 1.38)
     ax1.set_xlabel('parameters, in millions', fontsize=10)
     ax1.set_title('More than a quarter of the file is the word-piece table',
-                   fontsize=11.5, weight='bold')
+                  fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'parameter-shares.svg')
 
+
+def weight_precisions() -> None:
+    """The same weights written with four, two and one byte for each number."""
+    p = POL
+    fig, ax2 = plt.subplots(figsize=(7.0, 4.4), facecolor='white')
     _plain(ax2)
     precs = ['float32', 'float16', 'int8']
     mbs = [p.weight_megabytes(q) for q in precs]
     ax2.bar(np.arange(3), mbs, color=[LINK, TEAL, SLIDE], width=0.55)
     for i, m in enumerate(mbs):
-        ax2.text(i, m + 4, f'{m:.0f} MB', ha='center', fontsize=10, weight='bold', color=INK)
+        ax2.text(i, m + 4, f'{m:.0f} MB', ha='center', fontsize=11, weight='bold', color=INK)
     ax2.set_xticks(np.arange(3))
-    ax2.set_xticklabels(['4 bytes\na number', '2 bytes\na number', '1 byte\na number'], fontsize=9.5)
+    ax2.set_xticklabels(['4 bytes\na number', '2 bytes\na number', '1 byte\na number'],
+                        fontsize=9.5)
     ax2.set_ylim(0, max(mbs) * 1.22)
     ax2.set_ylabel('size of the weights file (MB)', fontsize=10)
-    ax2.set_title('The same weights, written three ways', fontsize=11.5, weight='bold')
-    _save(fig, RUN_DOC, 'parameter-shares.svg')
+    ax2.set_title(f'The same {p.total_params / 1e6:.0f} million weights, written three ways',
+                  fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'weight-precisions.svg')
 
 
 def _scene(rng: np.random.Generator) -> Arr:
@@ -533,28 +537,32 @@ def wrong_normalisation() -> None:
         print(f'[p1-s2]   subtract a mean that is {s:+.2f} out -> '
               f'{100 * COL.accuracy_with(COL.mean + s, COL.std):.1f}%')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.6, 4.5), facecolor='white')
+    fig, ax1 = plt.subplots(figsize=(8.6, 4.6), facecolor='white')
     _plain(ax1)
-    ax1.plot(factors, [100 * a for a in acc_std], color=LINK, lw=2.2)
+    ax1.plot(factors, [100 * a for a in acc_std], color=LINK, lw=2.4)
     ax1.axvline(1.0, color=SLIDE, lw=1.4, ls='--')
-    ax1.text(1.03, 32, 'the setting the\nmodel was trained with', fontsize=9, color=SLIDE)
-    ax1.scatter([1.0], [100 * COL.base], color=SLIDE, zorder=4, s=36)
+    ax1.text(1.04, 30, 'the spread the model\nwas trained with', fontsize=9.5, color=SLIDE)
+    ax1.scatter([1.0], [100 * COL.base], color=SLIDE, zorder=4, s=40)
     ax1.set_xlabel('the spread used at run time, as a multiple of the trained one', fontsize=10)
     ax1.set_ylabel('accuracy on 2,000 test objects (%)', fontsize=10)
     ax1.set_ylim(15, 100)
-    ax1.set_title('Dividing by the wrong spread', fontsize=11.5, weight='bold')
+    ax1.set_title('Dividing by the wrong spread raises no error, and costs accuracy',
+                  fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'wrong-spread.svg')
 
+    fig, ax2 = plt.subplots(figsize=(8.6, 4.6), facecolor='white')
     _plain(ax2)
-    ax2.plot(shifts, [100 * a for a in acc_mean], color=PURPLE, lw=2.2)
+    ax2.plot(shifts, [100 * a for a in acc_mean], color=PURPLE, lw=2.4)
     ax2.axvline(0.0, color=SLIDE, lw=1.4, ls='--')
-    ax2.scatter([0.0], [100 * COL.base], color=SLIDE, zorder=4, s=36)
-    ax2.set_xlabel('error in the mean that is subtracted (brightness units of 0 to 1)', fontsize=10)
-    ax2.set_ylabel('accuracy (%)', fontsize=10)
+    ax2.text(0.012, 30, 'the mean the model\nwas trained with', fontsize=9.5, color=SLIDE)
+    ax2.scatter([0.0], [100 * COL.base], color=SLIDE, zorder=4, s=40)
+    ax2.set_xlabel('error in the mean that is subtracted (brightness units of 0 to 1)',
+                   fontsize=10)
+    ax2.set_ylabel('accuracy on 2,000 test objects (%)', fontsize=10)
     ax2.set_ylim(15, 100)
-    ax2.set_title('Subtracting the wrong mean', fontsize=11.5, weight='bold')
-    fig.suptitle('A settings file that is slightly wrong costs accuracy and raises no error',
-                 fontsize=12.5, weight='bold', y=1.02)
-    _save(fig, RUN_DOC, 'wrong-normalisation.svg')
+    ax2.set_title('Subtracting the wrong mean costs more, for a smaller mistake',
+                  fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'wrong-mean.svg')
 
 
 def channel_swap() -> None:
@@ -574,18 +582,23 @@ def channel_swap() -> None:
         print(f'[p1-s2]   {nm:12s} called {CLASS_NAMES[int(conf[i].argmax())]:12s} '
               f'{conf[i].max():.0f}% of the time')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.4, 4.4), facecolor='white',
-                                   gridspec_kw={'width_ratios': [0.8, 1.2]})
+    fig, ax1 = plt.subplots(figsize=(6.6, 4.4), facecolor='white')
     _plain(ax1)
     ax1.bar([0, 1], [100 * acc_ok, 100 * acc_bad], color=[SLIDE, GRIP], width=0.5)
+    ax1.axhline(25.0, color=MUTED, ls='--', lw=1.3)
+    ax1.text(0.68, 33, 'guessing at random: 25%', ha='center', fontsize=9.5, color=MUTED)
     for i, v in enumerate([100 * acc_ok, 100 * acc_bad]):
-        ax1.text(i, v + 2, f'{v:.1f}%', ha='center', fontsize=11, weight='bold', color=INK)
+        ax1.text(i, v + 2.5, f'{v:.1f}%', ha='center', fontsize=12, weight='bold', color=INK)
     ax1.set_xticks([0, 1])
-    ax1.set_xticklabels(['channels in the\ntrained order', 'red and blue\nswapped'], fontsize=9.5)
+    ax1.set_xticklabels(['channels in the\ntrained order', 'red and blue\nswapped'],
+                        fontsize=10)
     ax1.set_ylim(0, 108)
-    ax1.set_ylabel('accuracy (%)', fontsize=10)
-    ax1.set_title('One line of loading code', fontsize=11.5, weight='bold')
+    ax1.set_ylabel('accuracy on 2,000 test objects (%)', fontsize=10)
+    ax1.set_title('One line of loading code takes the model down to guessing',
+                  fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'channel-swap.svg')
 
+    fig, ax2 = plt.subplots(figsize=(6.8, 5.0), facecolor='white')
     _blank(ax2)
     im = ax2.imshow(conf, cmap='Blues', vmin=0, vmax=100)
     ax2.set_xticks(range(4))
@@ -599,8 +612,9 @@ def channel_swap() -> None:
                      color='white' if conf[i, j] > 55 else INK)
     ax2.set_xlabel('what the model said', fontsize=10)
     ax2.set_ylabel('what it really was', fontsize=10)
-    ax2.set_title('With the channels swapped, in per cent of each row', fontsize=11, weight='bold')
-    _save(fig, RUN_DOC, 'channel-swap.svg')
+    ax2.set_title('Red and blue swapped: one confident wrong answer,\n'
+                  'as a percentage of each row', fontsize=11.5, weight='bold')
+    _save(fig, RUN_DOC, 'channel-swap-answers.svg')
 
 
 JOINT_LOW: Arr = np.array([-170.0, -95.0, -140.0, -170.0, -110.0, -175.0, 0.0])
@@ -625,21 +639,25 @@ def action_scaling() -> None:
           f'worst joint {per_joint.max():.1f} degrees on joint {int(per_joint.argmax()) + 1}, '
           f'largest single error {err.max():.1f} degrees')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.6, 4.4), facecolor='white')
-    fig.subplots_adjust(wspace=0.3)
+    fig, ax1 = plt.subplots(figsize=(8.4, 4.4), facecolor='white')
     _plain(ax1)
     x = np.arange(7)
-    ax1.bar(x - 0.19, JOINT_HIGH - JOINT_LOW, width=0.36, color=LINK,
+    ax1.bar(x - 0.19, JOINT_HIGH - JOINT_LOW, bottom=JOINT_LOW, width=0.36, color=LINK,
             label='range in the training data')
-    ax1.bar(x + 0.19, OTHER_HIGH - OTHER_LOW, width=0.36, color=WRIST,
+    ax1.bar(x + 0.19, OTHER_HIGH - OTHER_LOW, bottom=OTHER_LOW, width=0.36, color=WRIST,
             label='range in the file that was loaded')
+    ax1.axhline(0.0, color=MUTED, lw=1.0)
     ax1.set_xticks(x)
     ax1.set_xticklabels([f'J{i + 1}' for i in range(6)] + ['grip'], fontsize=9.5)
-    ax1.set_ylabel('width of the range (degrees, or mm for the grip)', fontsize=9.5)
-    ax1.legend(fontsize=9, frameon=False, loc='upper left')
-    ax1.set_ylim(0, 420)
-    ax1.set_title('Two command-scaling files that look alike', fontsize=11, weight='bold')
+    ax1.set_ylabel('lowest and highest value (degrees,\nor mm for the grip)', fontsize=9.5)
+    ax1.legend(fontsize=9.5, frameon=False, loc='upper center', ncol=2,
+               bbox_to_anchor=(0.5, -0.12))
+    ax1.set_ylim(-210, 210)
+    ax1.set_title('Two command-scaling files, joint by joint: nothing looks wrong',
+                  fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'action-ranges.svg')
 
+    fig, ax2 = plt.subplots(figsize=(8.4, 4.4), facecolor='white')
     _plain(ax2)
     ax2.bar(x, per_joint, color=GRIP, width=0.55)
     for i, v in enumerate(per_joint):
@@ -649,7 +667,7 @@ def action_scaling() -> None:
     ax2.set_ylabel('average error in the command sent (degrees)', fontsize=9.5)
     ax2.set_ylim(0, per_joint.max() * 1.25)
     ax2.set_title(f'The arm ends up {err.mean():.1f} degrees out, on average',
-                  fontsize=11, weight='bold')
+                  fontsize=12, weight='bold')
     _save(fig, RUN_DOC, 'action-scaling.svg')
 
 
@@ -665,9 +683,7 @@ def macs_by_stage() -> None:
              'projector',
              'action head']
     vals = [p.vit_macs, p.trunk_macs, p.proj_macs, p.head_macs]
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.6, 4.6), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.25, 1.0]})
-    fig.subplots_adjust(wspace=0.35)
+    fig, ax1 = plt.subplots(figsize=(9.8, 4.4), facecolor='white')
     _plain(ax1)
     y = np.arange(len(names))[::-1]
     ax1.barh(y, [v / 1e6 for v in vals], color=[LINK, TEAL, PURPLE, JOINT], height=0.55)
@@ -680,8 +696,14 @@ def macs_by_stage() -> None:
     ax1.set_xlim(1, 2e5)
     ax1.set_xlabel('multiply-adds in one forward pass, in millions (log scale)', fontsize=9.5)
     ax1.set_title(f'{p.total_macs / 1e9:.1f} thousand million multiply-adds, one decision',
-                  fontsize=11, weight='bold')
+                  fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'macs-by-stage.svg')
 
+
+def arithmetic_against_memory() -> None:
+    """Whether the forward pass waits on the arithmetic or on reading the weights."""
+    p = POL
+    fig, ax2 = plt.subplots(figsize=(7.6, 4.4), facecolor='white')
     _plain(ax2)
     precs = ['float32', 'float16', 'int8']
     ar = [p.arithmetic_ms(q) for q in precs]
@@ -694,32 +716,35 @@ def macs_by_stage() -> None:
         ax2.text(i - 0.18, ar[i] + 0.25, f'{ar[i]:.1f}', ha='center', fontsize=9, color=INK)
         ax2.text(i + 0.18, me[i] + 0.25, f'{me[i]:.2f}', ha='center', fontsize=9, color=INK)
     ax2.set_xticks(x)
-    ax2.set_xticklabels(precs, fontsize=10)
-    ax2.set_ylabel('milliseconds', fontsize=10)
+    ax2.set_xticklabels(['4 bytes a number\n(float32)', '2 bytes a number\n(float16)',
+                         '1 byte a number\n(int8)'], fontsize=9.5)
+    ax2.set_ylabel('milliseconds for one forward pass', fontsize=10)
     ax2.set_ylim(0, max(ar) * 1.2)
-    ax2.legend(fontsize=9, frameon=False)
-    ax2.set_title('The arithmetic is what costs the time',
-                  fontsize=11, weight='bold')
-    _save(fig, RUN_DOC, 'macs-by-stage.svg')
+    ax2.legend(fontsize=9.5, frameon=False)
+    ax2.set_title('At every precision, the arithmetic is the slower of the two',
+                  fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'arithmetic-against-memory.svg')
 
 
 def launch_overhead() -> None:
     """Counting the separate operations, before and after they are joined up."""
     p = POL
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.8, 4.4), facecolor='white')
-    fig.subplots_adjust(wspace=0.3)
+    fig, ax1 = plt.subplots(figsize=(7.0, 4.4), facecolor='white')
     _plain(ax1)
     ax1.bar([0, 1], [p.ops_plain, p.ops_fused], color=[WRIST, SLIDE], width=0.5)
     for i, v in enumerate([p.ops_plain, p.ops_fused]):
-        ax1.text(i, v + 8, f'{v} operations', ha='center', fontsize=10.5, weight='bold', color=INK)
+        ax1.text(i, v + 10, f'{v} operations', ha='center', fontsize=11.5, weight='bold',
+                 color=INK)
     ax1.set_xticks([0, 1])
     ax1.set_xticklabels(['run layer by layer,\nas the training code does',
-                         'exported and joined up\nby the runtime'], fontsize=9.5)
+                         'exported and joined up\nby the runtime'], fontsize=10)
     ax1.set_ylim(0, p.ops_plain * 1.22)
     ax1.set_ylabel('separate pieces of work sent to the graphics processor', fontsize=9.5)
-    ax1.set_title('Joining operations up removes the hand-offs',
-                  fontsize=11, weight='bold')
+    ax1.set_title('One decision, counted as pieces of work',
+                  fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'operation-count.svg')
 
+    fig, ax2 = plt.subplots(figsize=(7.0, 4.6), facecolor='white')
     _plain(ax2)
     ar16 = p.arithmetic_ms('float16')
     bars = [[ar16, p.overhead_ms(False)], [ar16, p.overhead_ms(True)]]
@@ -740,8 +765,8 @@ def launch_overhead() -> None:
     saved = p.overhead_ms(False) - p.overhead_ms(True)
     print(f'[p1-s3] joining operations up saves {saved:.2f} ms per forward pass, which is '
           f'{100 * saved / (ar16 + p.overhead_ms(False)):.0f}% of the layer-by-layer time')
-    ax2.set_title(f'That is {saved:.2f} ms back on every decision',
-                  fontsize=11, weight='bold')
+    ax2.set_title(f'{saved:.2f} ms back on every decision',
+                  fontsize=12, weight='bold')
     _save(fig, RUN_DOC, 'launch-overhead.svg')
 
 
@@ -1006,8 +1031,11 @@ def where_the_time_goes() -> None:
     ax1.set_yticks(y)
     ax1.set_yticklabels(names, fontsize=9.5)
     ax1.set_xlim(0, 48)
-    ax1.set_xlabel('share of the 30 ms loop (%)', fontsize=10)
-    ax1.set_title('The network is the fourth biggest cost', fontsize=11.5, weight='bold')
+    ax1.set_xlabel(f'share of the {total:.0f} ms loop (%)', fontsize=10)
+    rank = 1 + int((vals > vals[3]).sum())
+    ax1.set_title(f'The network is the {("", "largest", "second largest", "third largest")[rank]}'
+                  f' cost', fontsize=11.5, weight='bold')
+    print(f'[p1-s5] the forward pass is the number {rank} largest stage of the budget')
 
     _plain(ax2)
     ax2.bar([0, 1], [camera, software], color=[JOINT, LINK], width=0.5)
@@ -1063,11 +1091,10 @@ def action_chunk_timeline() -> None:
                 color=edge, ls='--', lw=1.0)
     ax.text(0.5, 0.98,
             f'Re-planning every {replan} commands: the model runs {calls:.1f} times a second '
-            f'and uses {share:.0f}% of the machine',
+            f'and uses {share:.1f}% of the machine',
             transform=ax.transAxes, ha='center', va='top', fontsize=12, weight='bold', color=INK)
-    ax.text(0.5, 0.06, f'Only the first {replan} commands of each chunk are ever sent, '
-                       f'so the arm never acts on a command older than {staleness:.0f} ms.',
-            transform=ax.transAxes, ha='center', va='bottom', fontsize=10, color=MUTED)
+    ax.text(0.5, 0.06, f'No command older than {staleness:.0f} ms ever reaches the arm.',
+            transform=ax.transAxes, ha='center', va='bottom', fontsize=10.5, color=MUTED)
     _save(fig, RUN_DOC, 'action-chunk-timeline.svg')
 
 
@@ -1190,9 +1217,7 @@ def trial_positions() -> None:
           f'{100 * outside_ok / outside_n:.0f}% (95% interval {100 * lo_o:.0f}% to '
           f'{100 * hi_o:.0f}%)')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13.2, 5.2), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.3, 0.75]})
-    fig.subplots_adjust(wspace=0.55)
+    fig, ax1 = plt.subplots(figsize=(9.4, 5.4), facecolor='white')
     im = ax1.imshow(100 * grid, origin='lower', extent=(-20, 20, 10, 40), cmap='RdYlGn',
                     vmin=0, vmax=100, aspect='auto')
     ax1.scatter(train[:, 0], train[:, 1], s=9, color=INK, alpha=0.65,
@@ -1211,8 +1236,11 @@ def trial_positions() -> None:
     cb = fig.colorbar(im, ax=ax1, fraction=0.045, pad=0.02)
     cb.set_label('successes out of 12 trials, as a percentage', fontsize=8.5)
     cb.ax.tick_params(labelsize=8)
-    ax1.set_title('48 cells, 12 trials each, on simulated data', fontsize=11.5, weight='bold')
+    ax1.set_title('Where the policy succeeds: 48 cells, 12 simulated trials each',
+                  fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'trial-positions.svg')
 
+    fig, ax2 = plt.subplots(figsize=(6.4, 4.8), facecolor='white')
     _plain(ax2)
     ax2.bar([0, 1], [100 * inside_ok / inside_n, 100 * outside_ok / outside_n],
             color=[SLIDE, GRIP], width=0.5)
@@ -1226,10 +1254,10 @@ def trial_positions() -> None:
     ax2.set_xticklabels([f'inside the dashed box\n({inside_n} trials)',
                          f'outside it\n({outside_n} trials)'], fontsize=9.5)
     ax2.set_ylim(0, 108)
-    ax2.set_ylabel('success rate (%)', fontsize=10)
-    ax2.set_title('A trial list that stays inside the box\nflatters the policy',
-                  fontsize=11, weight='bold')
-    _save(fig, RUN_DOC, 'trial-positions.svg')
+    ax2.set_ylabel('success rate, with its 95% interval (%)', fontsize=10)
+    ax2.set_title('A trial list that stays inside the box\nflatters the same policy',
+                  fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'inside-and-outside.svg')
 
 
 def trials_and_intervals() -> None:
@@ -1254,8 +1282,7 @@ def trials_and_intervals() -> None:
     print(f'[p1-s6] the first trial count in that list with an 80% chance of separating '
           f'is {first}')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.2, 5.0), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.15, 1.0]})
+    fig, ax1 = plt.subplots(figsize=(8.8, 5.0), facecolor='white')
     _plain(ax1)
     for i, n in enumerate(counts):
         for k, (p, col) in enumerate(((0.70, WRIST), (0.90, LINK))):
@@ -1275,8 +1302,11 @@ def trials_and_intervals() -> None:
     ax1.plot([], [], color=LINK, lw=4, label='a policy that scored 90%')
     ax1.legend(fontsize=9, frameon=False, loc='upper center', ncol=2,
                bbox_to_anchor=(0.5, -0.17))
-    ax1.set_title('Exact 95% intervals for the same two scores', fontsize=11.5, weight='bold')
+    ax1.set_title('The same two scores, measured with more and more trials',
+                  fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'trials-and-intervals.svg')
 
+    fig, ax2 = plt.subplots(figsize=(8.0, 4.8), facecolor='white')
     _plain(ax2)
     ax2.plot(ns, [100 * s for s in sep], color=PURPLE, lw=2.3, marker='o', ms=4)
     ax2.axhline(80, color=MUTED, ls='--', lw=1.2)
@@ -1284,13 +1314,13 @@ def trials_and_intervals() -> None:
     for n in (20, 60, 120):
         s = sep[ns.index(n)]
         ax2.annotate(f'{100 * s:.0f}%', (n, 100 * s), textcoords='offset points',
-                     xytext=(6, -16), fontsize=9.5, color=INK)
+                     xytext=(8, 7), fontsize=9.5, color=INK)
     ax2.set_xlabel('trials run on each of the two policies', fontsize=10)
     ax2.set_ylabel('chance the two intervals do not overlap (%)', fontsize=10)
     ax2.set_ylim(0, 105)
-    ax2.set_title('A policy that is truly 70% against one that is truly 90%',
-                  fontsize=11.5, weight='bold')
-    _save(fig, RUN_DOC, 'trials-and-intervals.svg')
+    ax2.set_title('Telling a truly 70% policy from a truly 90% one',
+                  fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'telling-two-apart.svg')
 
 
 ABLATIONS: list[tuple[str, dict[str, float]]] = [
@@ -1334,9 +1364,6 @@ def ablation_bars() -> None:
     ax.set_ylabel(f'successes in {n} simulated trials (%), with the 95% interval', fontsize=10)
     ax.set_title('Taking one part away at a time, on simulated episodes',
                  fontsize=12, weight='bold')
-    ax.text(0.5, -0.17, 'The last three intervals all overlap, so 80 trials cannot order '
-                        'them, and the training loss does not order them either.',
-            transform=ax.transAxes, ha='center', fontsize=9.5, color=MUTED)
     _save(fig, RUN_DOC, 'ablation-bars.svg')
 
 
@@ -1352,7 +1379,10 @@ def out_of_distribution() -> None:
     n = 2000
     res = []
     for i, (name, kw) in enumerate(conds):
-        x, y = make_objects(n, np.random.default_rng(90 + i), **kw)  # type: ignore[arg-type]
+        # The same seeds as where_each_breaks on page 2, so the two pages agree:
+        # seed 8 is the very test set the model's headline accuracy was measured on.
+        seed = 8 if i == 0 else 700 + i
+        x, y = make_objects(n, np.random.default_rng(seed), **kw)  # type: ignore[arg-type]
         acc = COL.accuracy_with(COL.mean, COL.std, x, y)
         ok = int(round(acc * n))
         lo, hi = cp_interval(ok, n)
@@ -1360,8 +1390,7 @@ def out_of_distribution() -> None:
         print(f'[p1-s6] out of distribution: {name:22s} {100 * acc:.1f}%  '
               f'95% interval {100 * lo:.1f}% to {100 * hi:.1f}%')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.8, 4.6), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.0, 1.0]})
+    fig, ax1 = plt.subplots(figsize=(7.6, 4.8), facecolor='white')
     _plain(ax1)
     x = np.arange(len(res))
     rates = [100 * r[1] for r in res]
@@ -1376,8 +1405,11 @@ def out_of_distribution() -> None:
     ax1.set_xticklabels([r[0] for r in res], fontsize=9, rotation=12, ha='right')
     ax1.set_ylim(0, 112)
     ax1.set_ylabel('accuracy on 2,000 objects (%)', fontsize=10)
-    ax1.set_title('The same weights, four conditions', fontsize=11.5, weight='bold')
+    ax1.set_title('The same weights under four conditions,\nwith 95% intervals',
+                  fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'out-of-distribution.svg')
 
+    fig, ax2 = plt.subplots(figsize=(8.0, 4.6), facecolor='white')
     _plain(ax2)
     lights = np.linspace(0.6, 1.8, 25)
     accs = []
@@ -1391,30 +1423,39 @@ def out_of_distribution() -> None:
     ax2.set_xlabel('brightness of the light, as a multiple of the trained one', fontsize=10)
     ax2.set_ylabel('accuracy (%)', fontsize=10)
     ax2.set_ylim(10, 102)
-    ax2.set_title('Accuracy falls away on both sides', fontsize=11.5, weight='bold')
+    ax2.set_title('Accuracy falls away on both sides of the trained brightness',
+                  fontsize=12, weight='bold')
     print('[p1-s6] accuracy against brightness: '
           + '  '.join(f'{lg:.2f}x:{a:.0f}%' for lg, a in zip(lights, accs) if
                       abs(lg - round(lg * 5) / 5) < 1e-9))
-    _save(fig, RUN_DOC, 'out-of-distribution.svg')
+    _save(fig, RUN_DOC, 'accuracy-against-light.svg')
 
 
 # ==========================================================================
 # page 1, section 7: reading a failure, and the safety layer
 # ==========================================================================
 
-def failure_triage() -> None:
-    """Three logged episodes, each with a different kind of fault in the numbers."""
+def failure_episodes() -> None:
+    """Three logged episodes, each drawn on its own, each with a different fault.
+
+    The three are separate pictures rather than three panels of one, because
+    each one is a different episode making a different argument.
+    """
     rng = np.random.default_rng(61)
     hz = 20.0
     t = np.arange(48) / hz
+
+    # Episode A: the detector loses the object, so the policy is fed nonsense.
     conf = np.where(t < 1.0, 0.91, 0.18) + rng.normal(0, 0.02, len(t))
     target = np.where(t < 1.0, 18.0 + 2 * t, 18.0 + 2 * 1.0 + rng.normal(0, 9.0, len(t)))
-    cmd_a = np.clip(np.cumsum(np.where(t < 1.0, 0.5, 0.0)), 0, None)
 
+    # Episode B: perception holds steady and the command oscillates anyway.
     base = 20.0 * np.sin(2 * np.pi * 0.35 * t)
     chatter = np.where(t < 0.8, 0.0, 11.0 * np.sin(2 * np.pi * 4.0 * t) * (t - 0.8) / 1.6)
     cmd_b = base + chatter
+    conf_b = 0.90 + rng.normal(0, 0.02, len(t))
 
+    # Episode C: the command is smooth and the joint stops following it.
     cmd_c = 24.0 * t
     meas_c = cmd_c.copy()
     stall = t >= 1.2
@@ -1428,51 +1469,68 @@ def failure_triage() -> None:
           f'{conf[:20].mean():.2f} to {conf[25:].mean():.2f} at 1.0 s, and the target '
           f'the policy was given then jumps by up to {np.abs(np.diff(target[20:])).max():.0f} mm')
     print(f'[p1-s7] policy failure: the command shakes at 4.0 Hz, growing to '
-          f'{np.abs(chatter).max():.1f} degrees, while nothing else in the log changes')
+          f'{np.abs(chatter).max():.1f} degrees, while the detector score in the same '
+          f'episode stays at {conf_b.mean():.2f} and never moves by more than '
+          f'{np.abs(np.diff(conf_b)).max():.2f}')
     print(f'[p1-s7] hardware failure: the measured joint stops at '
           f'{meas_c[-1]:.1f} degrees while the command reaches {cmd_c[-1]:.1f}, so the '
           f'tracking error passes {thresh:.0f} degrees at {crossed:.2f} s and peaks at '
           f'{track.max():.1f}')
 
-    fig, axes = plt.subplots(1, 3, figsize=(13.0, 4.3), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(7.8, 4.4), facecolor='white')
     _plain(ax)
-    ax.plot(t, conf, color=PURPLE, lw=2.0, label='detector score')
-    ax.plot(t, target / 40.0, color=WRIST, lw=2.0, label='target position / 40')
+    l1, = ax.plot(t, conf, color=PURPLE, lw=2.2, label='detector score')
     ax.axvline(1.0, color=GRIP, ls='--', lw=1.3)
-    ax.text(1.05, 1.26, 'the box is lost', fontsize=9, color=GRIP)
-    ax.set_ylim(-0.1, 1.38)
-    ax.set_xlabel('seconds into the episode', fontsize=9.5)
-    ax.set_ylabel('score, and scaled target', fontsize=9.5)
-    ax.legend(fontsize=8.5, frameon=False, loc='lower left')
-    ax.set_title('Perception failed:\nthe score collapsed first', fontsize=11, weight='bold')
+    ax.text(1.05, 1.30, 'the box is lost', fontsize=9.5, color=GRIP)
+    ax.set_ylim(-0.08, 1.42)
+    ax.set_yticks([0.0, 0.25, 0.5, 0.75, 1.0])
+    ax.set_xlabel('seconds into the episode', fontsize=10)
+    ax.set_ylabel('detector score (0 to 1)', fontsize=10)
+    axr = ax.twinx()
+    axr.tick_params(labelsize=9.5, colors=INK)
+    l2, = axr.plot(t, target, color=WRIST, lw=2.0,
+                   label='target handed to the policy')
+    axr.set_ylim(-26, 72)
+    axr.set_yticks([-20, 0, 20, 40])
+    axr.set_ylabel('target position (mm)', fontsize=10)
+    ax.legend(handles=[l1, l2], fontsize=9.5, frameon=False, loc='lower left')
+    ax.set_title('Perception failed: the score collapsed before anything moved',
+                 fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'failure-perception.svg')
 
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(7.8, 4.4), facecolor='white')
     _plain(ax)
-    ax.plot(t, cmd_b, color=LINK, lw=2.0, label='commanded joint 2')
-    ax.plot(t, base, color=GRID, lw=1.6, ls='--', label='what a steady policy would send')
-    ax.set_xlabel('seconds into the episode', fontsize=9.5)
-    ax.set_ylabel('degrees', fontsize=9.5)
-    ax.legend(fontsize=8.5, frameon=False, loc='lower left')
-    ax.set_title('The policy failed:\nthe command shook, the score did not',
-                 fontsize=11, weight='bold')
+    l1, = ax.plot(t, cmd_b, color=LINK, lw=2.0, label='commanded joint 2')
+    l2, = ax.plot(t, base, color=MUTED, lw=1.6, ls='--',
+                  label='a steady answer, for comparison')
+    ax.set_xlabel('seconds into the episode', fontsize=10)
+    ax.set_ylabel('commanded joint 2 (degrees)', fontsize=10)
+    ax.set_ylim(-48, 34)
+    axr = ax.twinx()
+    axr.tick_params(labelsize=9.5, colors=INK)
+    l3, = axr.plot(t, conf_b, color=PURPLE, lw=1.8, label='detector score')
+    axr.set_ylim(0.0, 1.9)
+    axr.set_yticks([0.0, 0.5, 1.0])
+    axr.set_ylabel('detector score (0 to 1)', fontsize=10)
+    ax.legend(handles=[l1, l2, l3], fontsize=9.5, frameon=False, loc='lower left')
+    ax.set_title('The policy failed: the command shook, the score did not',
+                 fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'failure-policy.svg')
 
-    ax = axes[2]
+    fig, ax = plt.subplots(figsize=(7.8, 4.4), facecolor='white')
     _plain(ax)
-    ax.plot(t, cmd_c, color=LINK, lw=2.0, label='commanded joint 4')
-    ax.plot(t, meas_c, color=GRIP, lw=2.0, label='measured joint 4')
+    ax.plot(t, cmd_c, color=LINK, lw=2.2, label='commanded joint 4')
+    ax.plot(t, meas_c, color=GRIP, lw=2.2, label='measured joint 4')
     ax.fill_between(t, cmd_c, meas_c, color='#f3dede', alpha=0.8)
     ax.axvline(crossed, color=INK, ls='--', lw=1.2)
-    ax.text(0.06, 48, f'{thresh:.0f} degrees of error\nat {crossed:.2f} s',
-            ha='left', va='top', fontsize=9, color=INK)
-    ax.set_xlabel('seconds into the episode', fontsize=9.5)
-    ax.set_ylabel('degrees', fontsize=9.5)
-    ax.legend(fontsize=8.5, frameon=False, loc='lower right')
-    ax.set_title('The hardware failed:\nthe joint stopped following',
-                 fontsize=11, weight='bold')
-    fig.suptitle('Three simulated episodes that all look the same from outside the robot',
-                 fontsize=12.5, weight='bold', y=1.04)
-    _save(fig, RUN_DOC, 'failure-triage.svg')
+    ax.text(crossed + 0.06, 8, f'{thresh:.0f} degrees of error\nat {crossed:.2f} s',
+            ha='left', va='bottom', fontsize=9.5, color=INK)
+    ax.set_xlabel('seconds into the episode', fontsize=10)
+    ax.set_ylabel('degrees', fontsize=10)
+    ax.legend(fontsize=9, frameon=False, loc='upper left')
+    ax.set_title('The hardware failed: the joint stopped following a smooth command',
+                 fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'failure-hardware.svg')
 
 
 LOG_STREAMS: list[tuple[str, float, int, bool]] = [
@@ -1563,7 +1621,7 @@ def safety_layer() -> None:
           f'{fires / period:.1f} missed commands, and the brake goes on '
           f'{stall - fires:.0f} ms before the model recovers')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.2, 4.7), facecolor='white')
+    fig, ax1 = plt.subplots(figsize=(8.2, 4.6), facecolor='white')
     _plain(ax1)
     ax1.plot(t, want, color=GRIP, lw=1.9, label='what the model asked for')
     ax1.plot(t, safe, color=SLIDE, lw=2.2, label='what the clamp let through')
@@ -1574,8 +1632,10 @@ def safety_layer() -> None:
     ax1.set_ylim(60, 235)
     ax1.legend(fontsize=9, frameon=False, loc='lower left')
     ax1.set_title(f'The clamp caught {breaks} commands that were too fast',
-                  fontsize=11.5, weight='bold')
+                  fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'command-clamp.svg')
 
+    fig, ax2 = plt.subplots(figsize=(9.0, 3.8), facecolor='white')
     _blank(ax2)
     ax2.set_xlim(-130, 760)
     ax2.set_ylim(0, 1)
@@ -1598,8 +1658,8 @@ def safety_layer() -> None:
     ax2.text(gap_start + stall + 14, 0.52, 'the model\ncatches up', ha='left', va='center',
              fontsize=9.5, color=SLIDE)
     ax2.set_title('The watchdog does not know why the command is late',
-                  fontsize=11.5, weight='bold')
-    _save(fig, RUN_DOC, 'safety-layer.svg')
+                  fontsize=12, weight='bold')
+    _save(fig, RUN_DOC, 'watchdog-timeline.svg')
 
 
 
@@ -1621,7 +1681,8 @@ CHAPTERS: list[tuple[int, str, int]] = [
     (10, 'Language and multimodal models', 4),
     (11, 'Learning from outcomes', 2),
     (12, 'Models that act', 4),
-    (13, 'Using a model for real', 2),
+    (13, 'Starting your own model', 6),
+    (14, 'Using a model for real', 2),
 ]
 
 SHORT: dict[int, str] = {
@@ -1629,13 +1690,13 @@ SHORT: dict[int, str] = {
     4: 'Making training work', 5: 'The world as numbers', 6: 'The transformer',
     7: 'Pretraining and adapting', 8: 'Models that generate', 9: 'Models that see',
     10: 'Language and multimodal', 11: 'Learning from outcomes', 12: 'Models that act',
-    13: 'Using a model for real',
+    13: 'Starting your own model', 14: 'Using a model for real',
 }
 
 NEEDS: list[tuple[int, int]] = [
     (1, 2), (2, 3), (3, 4), (2, 5), (5, 6), (4, 6), (6, 7), (3, 8),
     (6, 9), (5, 9), (6, 10), (9, 10), (3, 11), (7, 12), (8, 12),
-    (9, 12), (10, 12), (11, 12), (12, 13), (7, 13),
+    (9, 12), (10, 12), (11, 12), (12, 13), (4, 13), (13, 14), (7, 14),
 ]
 
 
@@ -1661,39 +1722,54 @@ def book_map() -> None:
     for lv in sorted(levels):
         print(f'[p2-s1]   level {lv}: ' + ', '.join(f'{c} {names[c]}' for c in levels[lv]))
 
+    # One level to a row, reading downwards, with a free gutter on the right
+    # that the arrows spanning more than one level are routed through, so that
+    # no line crosses a box.
+    bw, bh = 0.225, 0.052
+    top, step = 0.905, 0.0855
     pos: dict[int, tuple[float, float]] = {}
     for lv, members in levels.items():
         for k, c in enumerate(members):
-            y = 0.5 if len(members) == 1 else 0.5 + (k - (len(members) - 1) / 2) * 0.295
-            pos[c] = ((lv - 0.5) / max(levels), y)
+            pos[c] = (0.205 + k * 0.245, top - (lv - 0.5) * step)
 
-    fig, ax = plt.subplots(figsize=(15.0, 7.0), facecolor='white')
+    fig, ax = plt.subplots(figsize=(11.8, 8.8), facecolor='white')
     _blank(ax)
-    ax.set_xlim(-0.01, 1.01)
-    ax.set_ylim(0.02, 0.98)
-    bw, bh = 0.098, 0.215
-    for a, b in NEEDS:
-        xa, ya = pos[a]
-        xb, yb = pos[b]
-        _arrow(ax, xa + bw / 2, ya, xb - bw / 2, yb, '#8fb8dd', 1.3)
+    ax.set_xlim(0.0, 1.0)
+    ax.set_ylim(0.0, 1.0)
     groups = {1: '#eef3f9', 2: '#eef3f9', 3: '#eef3f9', 4: '#eef3f9',
               5: '#e4f0e4', 6: '#e4f0e4', 7: '#e4f0e4',
               8: '#f6efe0', 9: '#f6efe0', 10: '#f6efe0', 11: '#f6efe0', 12: '#f6efe0',
-              13: '#f3dede'}
+              13: '#f3dede', 14: '#f3dede'}
+    lane = 0
+    for a, b in NEEDS:
+        xa, ya = pos[a]
+        xb, yb = pos[b]
+        if depth[b] - depth[a] == 1:
+            _arrow(ax, xa, ya - bh / 2, xb, yb + bh / 2, '#8fb8dd', 1.2)
+        else:
+            # Down into the empty band under the source row, right along the
+            # gutter, then into the target from the right: never across a box.
+            gx = 0.822 + 0.029 * (lane % 6)
+            lane += 1
+            band = ya - bh / 2 - 0.0167
+            ax.plot([xa, xa, gx, gx], [ya - bh / 2, band, band, yb], color='#8fb8dd',
+                    lw=1.1, zorder=1, solid_capstyle='round')
+            _arrow(ax, gx, yb, xb + bw / 2, yb, '#8fb8dd', 1.1)
     for c, (x, y) in pos.items():
         _box(ax, x - bw / 2, y - bh / 2, bw, bh, '', groups[c])
-        ax.text(x, y + 0.062, f'{c}', ha='center', va='center', fontsize=12.5,
+        ax.text(x, y + 0.011, f'{c}. {SHORT[c]}', ha='center', va='center', fontsize=8.6,
                 weight='bold', color=INK)
-        ax.text(x, y - 0.005, _wrap(SHORT[c], 13), ha='center', va='center', fontsize=7.6,
-                color=INK, linespacing=1.35)
-        ax.text(x, y - 0.078, f'{pages[c]} pages', ha='center', va='center',
-                fontsize=7.4, color=MUTED)
-    ax.text(0.5, 0.975, f'The whole book: {len(CHAPTERS)} chapters, {total} pages, '
+        ax.text(x, y - 0.016, f'{pages[c]} pages', ha='center', va='center',
+                fontsize=7.8, color=MUTED)
+    for lv in sorted(levels):
+        ax.text(0.004, top - (lv - 0.5) * step, f'level {lv}', ha='left', va='center',
+                fontsize=7.6, color=MUTED)
+    ax.text(0.5, 0.985, f'The whole book: {len(CHAPTERS)} chapters, {total} pages, '
                         f'and what each one needs before it',
             ha='center', va='top', fontsize=13, weight='bold', color=INK)
-    ax.text(0.01, 0.045, 'blue: the machinery      green: how it is built and adapted      '
+    ax.text(0.5, 0.035, 'blue: the machinery      green: how it is built and adapted      '
                         'orange: the families      red: putting one to work',
-            ha='left', va='center', fontsize=9.5, color=MUTED)
+            ha='center', va='center', fontsize=9.5, color=MUTED)
     _save(fig, MAP_DOC, 'book-map.svg')
 
 
@@ -1716,18 +1792,18 @@ def pages_per_chapter() -> None:
     ax.set_xticks(nums)
     ax.set_xticklabels([f'{c}. {n}' for c, n, _ in CHAPTERS], fontsize=8.4,
                        rotation=32, ha='right')
-    ax.set_ylim(0, 5.6)
+    ax.set_ylim(0, max(pages) * 1.5)
     ax.set_ylabel('pages in the chapter', fontsize=10)
     ax2 = ax.twinx()
     ax2.plot(nums, cum, color=INK, lw=1.8, marker='o', ms=4)
     ax2.set_ylabel('pages read so far', fontsize=10)
-    ax2.set_ylim(0, 44)
+    ax2.set_ylim(0, cum[-1] * 1.1)
     ax2.tick_params(labelsize=9.5)
     for c, v in zip(nums, cum):
-        if c in (4, 7, 12, 13):
-            ax2.annotate(str(v), (c, v), textcoords='offset points', xytext=(-16, 5),
-                         fontsize=9, color=INK)
-    ax.set_title('Forty pages, and where you are after each chapter',
+        if c in (4, 7, 12, 14):
+            ax2.annotate(f'{v} pages read', (c, v), textcoords='offset points',
+                         xytext=(-6, 12), ha='right', fontsize=9, color=INK)
+    ax.set_title(f'{cum[-1]} pages, and where you are after each chapter',
                  fontsize=12.5, weight='bold')
     _save(fig, MAP_DOC, 'pages-per-chapter.svg')
 
@@ -1754,7 +1830,7 @@ def dependency_depth() -> None:
     ax.set_xticks(range(1, max(vals) + 1))
     ax.set_xlabel('the longest chain of chapters that has to be read first, '
                   'counting this one', fontsize=10)
-    ax.set_title('Nine chapters deep: why this page is the last one',
+    ax.set_title(f'{max(vals)} levels deep: why this chapter is the last one',
                  fontsize=12.5, weight='bold')
     _save(fig, MAP_DOC, 'dependency-depth.svg')
 
@@ -1885,18 +1961,13 @@ def data_and_run_cost() -> None:
     _save(fig, MAP_DOC, 'data-and-run-cost.svg')
 
 
-EPISODE: list[tuple[str, float, float, float]] = [
-    # name, calls a second, seconds it runs for, multiply-adds per call in thousand millions
-    ('language model, planning the steps', 0.0, 0.0, 0.0),
-]
-
-
 def calls_per_episode() -> None:
     """One six-second pick-and-place, and how often each family is asked."""
     secs = 6.0
     rows = [
         ('language model: the steps, once', 1.0 / secs, FAMILIES[4].macs / 1e9 * 60, PURPLE),
-        ('vision-language model: check the scene', 0.5, FAMILIES[5].macs / 1e9 * 20, PURPLE),
+        ('vision-language model: check the scene,\nonce every two seconds', 0.5,
+         FAMILIES[5].macs / 1e9 * 20, PURPLE),
         ('open-vocabulary detector', 5.0, FAMILIES[1].macs / 1e9, LINK),
         ('depth model', 5.0, FAMILIES[3].macs / 1e9, LINK),
         ('the policy, with chunks of 16', 2.5, FAMILIES[6].macs / 1e9, SLIDE),
@@ -1924,8 +1995,9 @@ def calls_per_episode() -> None:
     ax1.barh(y, [r[1] * secs for r in rows], color=[r[3] for r in rows], height=0.55)
     ax1.set_xscale('log')
     for yy, r in zip(y, rows):
-        ax1.text(r[1] * secs * 1.3, yy, f'{r[1] * secs:.0f} calls', va='center',
-                 fontsize=9, color=INK)
+        n_calls = r[1] * secs
+        ax1.text(n_calls * 1.3, yy, f'{n_calls:.0f} call' + ('' if n_calls < 1.5 else 's'),
+                 va='center', fontsize=9, color=INK)
     ax1.set_yticks(y)
     ax1.set_yticklabels([r[0] for r in rows], fontsize=8.8)
     ax1.set_xlim(0.5, 2e4)
@@ -2014,9 +2086,7 @@ def data_needed() -> None:
     """What each answer costs in examples, and in a person's time where it is demonstrations."""
     learned = [j for j in JOBS if j[4] > 0]
     secs_each = 20.0
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.8, 5.0), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.3, 0.85]})
-    fig.subplots_adjust(wspace=0.6)
+    fig, ax1 = plt.subplots(figsize=(10.4, 4.4), facecolor='white')
     _plain(ax1)
     y = np.arange(len(learned))[::-1]
     ax1.barh(y, [j[4] for j in learned], color=LINK, height=0.55)
@@ -2027,8 +2097,12 @@ def data_needed() -> None:
     ax1.set_yticklabels([j[1] for j in learned], fontsize=9)
     ax1.set_xlim(1e2, 1e18)
     ax1.set_xlabel('training examples, as a rough order of magnitude (log scale)', fontsize=9.5)
-    ax1.set_title('Most of these have been trained already', fontsize=11.5, weight='bold')
+    ax1.set_title('Most of these have been trained already', fontsize=12, weight='bold')
+    for j in learned:
+        print(f'[p2-s3] {j[1]:34s} needs about {j[4]:,.0f} {j[5]}')
+    _save(fig, MAP_DOC, 'data-needed.svg')
 
+    fig, ax2 = plt.subplots(figsize=(7.4, 4.4), facecolor='white')
     _plain(ax2)
     counts = [200, 500, 1000, 2000, 5000]
     hours = [c * secs_each / 3600 for c in counts]
@@ -2040,22 +2114,21 @@ def data_needed() -> None:
     ax2.set_xlabel('demonstrations recorded', fontsize=9.5)
     ax2.set_ylabel(f'hours of a person driving the arm, at {secs_each:.0f} s each', fontsize=9.5)
     ax2.set_ylim(0, max(hours) * 1.22)
-    ax2.set_title('The one cost you pay yourself', fontsize=11.5, weight='bold')
-    for j in learned:
-        print(f'[p2-s3] {j[1]:34s} needs about {j[4]:,.0f} {j[5]}')
+    ax2.set_title('Demonstrations: the one cost you pay yourself',
+                  fontsize=12, weight='bold')
     for c, h in zip(counts, hours):
         print(f'[p2-s3] {c:,} demonstrations at {secs_each:.0f} seconds each is '
               f'{h:.1f} hours of a person driving the arm')
-    _save(fig, MAP_DOC, 'data-needed.svg')
+    _save(fig, MAP_DOC, 'demonstration-hours.svg')
 
 
 def choosing_a_family() -> None:
     """The questions that pick a family, in the order worth asking them."""
-    fig, ax = plt.subplots(figsize=(14.2, 6.4), facecolor='white')
+    fig, ax = plt.subplots(figsize=(14.2, 5.8), facecolor='white')
     _blank(ax)
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    ax.text(0.5, 0.985, 'Four questions, asked in this order, and where each answer leads',
+    ax.set_xlim(0, 1.02)
+    ax.set_ylim(0.05, 0.95)
+    ax.text(0.51, 0.945, 'Four questions, asked in this order, and where each answer leads',
             ha='center', va='top', fontsize=13, weight='bold', color=INK)
     qs = [
         ('Can a person write down\nthe rule that decides it?', 0.095),
@@ -2064,10 +2137,10 @@ def choosing_a_family() -> None:
         ('Does it have to move the arm\nmoment by moment?', 0.695),
     ]
     for text, x in qs:
-        _box(ax, x - 0.085, 0.60, 0.17, 0.17, text, '#eef3f9', size=9.0)
+        _box(ax, x - 0.078, 0.60, 0.156, 0.17, text, '#eef3f9', size=9.0)
     for i in range(3):
-        _arrow(ax, qs[i][1] + 0.085, 0.685, qs[i + 1][1] - 0.085, 0.685, MUTED, 1.6)
-        ax.text((qs[i][1] + qs[i + 1][1]) / 2, 0.705, 'no', ha='center', fontsize=9,
+        _arrow(ax, qs[i][1] + 0.080, 0.685, qs[i + 1][1] - 0.080, 0.685, MUTED, 1.6)
+        ax.text((qs[i][1] + qs[i + 1][1]) / 2, 0.715, 'no', ha='center', fontsize=9,
                 color=MUTED)
     leaves = [
         ('write it:\nthresholds, geometry,\nplanners, controllers', 0.095, '#e4f0e4',
@@ -2080,21 +2153,21 @@ def choosing_a_family() -> None:
          '200 to 2,000\ndemonstrations'),
     ]
     for text, x, col, note in leaves:
-        _box(ax, x - 0.09, 0.21, 0.18, 0.17, text, col, size=9.0)
+        _box(ax, x - 0.082, 0.21, 0.164, 0.17, text, col, size=9.0)
         ax.text(x, 0.145, note, ha='center', va='center', fontsize=8.4, color=MUTED)
         _arrow(ax, x, 0.60, x, 0.385, MUTED, 1.6)
         ax.text(x + 0.012, 0.49, 'yes', ha='left', fontsize=9, color=MUTED)
-    _box(ax, 0.835, 0.21, 0.155, 0.17,
+    _box(ax, 0.830, 0.21, 0.164, 0.17,
          'a vision-language-\naction model,\nor break the job up', '#f3dede', size=9.0)
-    ax.text(0.9125, 0.145, 'co-trained on web\nand robot data', ha='center', va='center',
+    ax.text(0.912, 0.145, 'co-trained on web\nand robot data', ha='center', va='center',
             fontsize=8.4, color=MUTED)
-    _arrow(ax, qs[3][1] + 0.085, 0.685, 0.9125, 0.685, MUTED, 1.6)
-    _arrow(ax, 0.9125, 0.60, 0.9125, 0.385, MUTED, 1.6)
-    ax.text(0.845, 0.705, 'no', ha='center', fontsize=9, color=MUTED)
-    ax.text(0.5, 0.06, 'Ask the first question honestly. Three of the ten jobs on this page '
-                       'are answered without any model at all, and those three run in '
-                       'microseconds and never surprise you.',
-            ha='center', va='center', fontsize=10, color=INK)
+    _arrow(ax, qs[3][1] + 0.080, 0.685, 0.912, 0.685, MUTED, 1.6)
+    _arrow(ax, 0.912, 0.60, 0.912, 0.385, MUTED, 1.6)
+    ax.text(0.845, 0.715, 'no', ha='center', fontsize=9, color=MUTED)
+    written = sum(1 for j in JOBS if j[4] == 0)
+    ax.text(0.51, 0.06, f'{written} of the {len(JOBS)} jobs on this page stop at the '
+                       f'first question.',
+            ha='center', va='center', fontsize=10.5, color=INK)
     _save(fig, MAP_DOC, 'choosing-a-family.svg')
 
 
@@ -2199,6 +2272,58 @@ def cost_comparison() -> None:
     _save(fig, MAP_DOC, 'cost-comparison.svg')
 
 
+def written_rule_margin() -> None:
+    """One idea: a written rule can say, for each answer, how near a border it was.
+
+    The nearest-colour rule measures the distance from a reading to each of the
+    four nominal colours. The gap between the nearest and the second nearest is
+    a number you can read off before trusting the answer, and the rule's
+    accuracy rises with it. A network gives no comparable number.
+    """
+    xte, yte = COL.xte, COL.yte
+    dist = np.sqrt(((xte[:, None, :] - CLASS_RGB[None, :, :]) ** 2).sum(axis=2))
+    order = np.sort(dist, axis=1)
+    margin = order[:, 1] - order[:, 0]
+    right = _written_rule(xte) == yte
+    edges = [0.0, 0.02, 0.05, 0.08, 0.12, 0.18, 0.25, 0.6]
+    mids, rate, lo, hi = [], [], [], []
+    for a, b in zip(edges[:-1], edges[1:]):
+        m = (margin >= a) & (margin < b)
+        if m.sum() < 10:
+            continue
+        s = int(right[m].sum())
+        n = int(m.sum())
+        l, h = cp_interval(s, n)
+        mids.append((a + b) / 2)
+        rate.append(s / n)
+        lo.append(l)
+        hi.append(h)
+        print(f'[p2-s4] written rule, gap {a:.2f} to {b:.2f} from the border: '
+              f'{s} of {n} right = {100 * s / n:.0f}% '
+              f'(95% interval {100 * l:.0f}% to {100 * h:.0f}%)')
+    narrow = float((margin < 0.05).mean())
+    print(f'[p2-s4] {100 * narrow:.0f}% of the 2,000 test objects sit within 0.05 of a '
+          f'border, and those are the ones the written rule gets wrong')
+
+    fig, ax = plt.subplots(figsize=(8.6, 4.8), facecolor='white')
+    _plain(ax)
+    ax.errorbar(mids, [100 * r for r in rate],
+                yerr=[[100 * (r - l) for r, l in zip(rate, lo)],
+                      [100 * (h - r) for r, h in zip(rate, hi)]],
+                fmt='o-', color=SLIDE, ecolor=INK, capsize=5, lw=2.4, ms=6)
+    ax.axvline(0.05, color=MUTED, ls='--', lw=1.3)
+    ax.text(0.056, 30, f'{100 * narrow:.0f}% of readings\nsit left of this line',
+            fontsize=9.5, color=MUTED)
+    ax.set_xlabel('gap between the nearest nominal colour and the second nearest',
+                  fontsize=10)
+    ax.set_ylabel('share the written rule gets right,\nwith its 95% interval (%)',
+                  fontsize=10)
+    ax.set_ylim(0, 105)
+    ax.set_title('A written rule can say how near a border each answer was',
+                 fontsize=12, weight='bold')
+    _save(fig, MAP_DOC, 'written-rule-margin.svg')
+
+
 def where_each_breaks() -> None:
     """The same four conditions, put to both answers."""
     conds = [
@@ -2286,9 +2411,7 @@ def reliability_compounding() -> None:
     rates = [0.95, 0.98, 0.99, 0.999]
     cols = [GRIP, WRIST, TEAL, SLIDE]
     bar = 0.95
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.4, 5.0), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.15, 0.9]})
-    fig.subplots_adjust(wspace=0.32)
+    fig, ax1 = plt.subplots(figsize=(8.6, 4.8), facecolor='white')
     _plain(ax1)
     for p, c in zip(rates, cols):
         ax1.plot(steps, 100 * p ** steps, color=c, lw=2.2, label=f'{100 * p:g}% a step')
@@ -2301,8 +2424,10 @@ def reliability_compounding() -> None:
     ax1.set_ylabel('chance the whole task works (%)', fontsize=10)
     ax1.set_ylim(0, 104)
     ax1.legend(fontsize=9.5, frameon=False, loc='lower left')
-    ax1.set_title('A good step rate is not a good task rate', fontsize=11.5, weight='bold')
+    ax1.set_title('A good step rate is not a good task rate', fontsize=12, weight='bold')
+    _save(fig, MAP_DOC, 'steps-multiply.svg')
 
+    fig, ax2 = plt.subplots(figsize=(7.4, 4.6), facecolor='white')
     _plain(ax2)
     task_rates = [0.90, 0.95, 0.99, 0.999]
     per_hour = 3600 / 40.0
@@ -2322,9 +2447,9 @@ def reliability_compounding() -> None:
     ax2.set_xlabel('whole-task success rate', fontsize=10)
     ax2.set_ylabel('hours between call-outs (log scale)', fontsize=10)
     ax2.set_ylim(0.01, 100)
-    ax2.set_title(f'One shift without a call-out needs {100 * need:.2f}%',
-                  fontsize=11.5, weight='bold')
-    _save(fig, MAP_DOC, 'reliability-compounding.svg')
+    ax2.set_title(f'One eight-hour shift without a call-out needs {100 * need:.2f}%',
+                  fontsize=12, weight='bold')
+    _save(fig, MAP_DOC, 'call-out-interval.svg')
 
 
 def evaluation_cost() -> None:
@@ -2454,9 +2579,9 @@ def library_shelf() -> None:
     ax.text(0.5, 0.985, f'The library: {len(BOOKS)} books and {sum(counts)} chapters, '
                         f'and where this book sits among them',
             ha='center', va='top', fontsize=13, weight='bold', color=INK)
-    w = 0.108
+    w = 0.098
     for i, ((f, t), c) in enumerate(zip(BOOKS, counts)):
-        x = 0.018 + i * (w + 0.0125)
+        x = 0.016 + i * (w + 0.0105)
         here = f.endswith('neural-networks')
         col = '#f3dede' if here else '#eef3f9'
         h = 0.17 + 0.028 * c
@@ -2466,10 +2591,9 @@ def library_shelf() -> None:
                 linespacing=1.35)
         ax.text(x + w / 2, 0.345, f'{c} chapters', ha='center', va='center', fontsize=8.6,
                 color=MUTED)
-    ax.text(0.5, 0.15, 'This book explains the machinery. The one on its right lists the '
-                       'models built out of it, and the one on its left holds the methods '
-                       'that were written rather than learned.',
-            ha='center', va='center', fontsize=10, color=INK)
+    ax.text(0.5, 0.17, 'Written methods on the left, the catalogue of real models on '
+                       'the right.',
+            ha='center', va='center', fontsize=10.5, color=INK)
     _save(fig, MAP_DOC, 'library-shelf.svg')
 
 
@@ -2541,21 +2665,21 @@ def reading_order() -> None:
     ax.set_ylim(0, 1)
     ax.text(0.5, 0.97, f'Where to go after this page: {total} chapters, in this order',
             ha='center', va='top', fontsize=13, weight='bold', color=INK)
-    w = 0.148
+    w = 0.128
     for i, (word, folder, note) in enumerate(steps):
-        x = 0.015 + i * (w + 0.015)
+        x = 0.012 + i * (w + 0.012)
         here = i == 0
         _box(ax, x, 0.40, w, 0.33, '', '#f3dede' if here else '#eef3f9',
              edge=GRIP if here else INK)
         ax.text(x + w / 2, 0.695, word, ha='center', va='center', fontsize=8.4, color=MUTED)
-        ax.text(x + w / 2, 0.585, _wrap(titles[folder], 15), ha='center', va='center',
-                fontsize=8.8, weight='bold', color=INK, linespacing=1.35)
+        ax.text(x + w / 2, 0.585, _wrap(titles[folder], 13), ha='center', va='center',
+                fontsize=8.4, weight='bold', color=INK, linespacing=1.35)
         ax.text(x + w / 2, 0.445, f'{counts[folder]} chapters', ha='center', va='center',
-                fontsize=8.6, color=MUTED)
-        ax.text(x + w / 2, 0.365, _wrap(note, 24), ha='center', va='top', fontsize=7.8,
+                fontsize=8.2, color=MUTED)
+        ax.text(x + w / 2, 0.365, _wrap(note, 21), ha='center', va='top', fontsize=7.5,
                 color=MUTED, linespacing=1.4)
         if i:
-            _arrow(ax, x - 0.014, 0.565, x - 0.002, 0.565, MUTED, 1.5)
+            _arrow(ax, x - 0.0115, 0.565, x - 0.0015, 0.565, MUTED, 1.4)
     _save(fig, MAP_DOC, 'reading-order.svg')
 
 
@@ -2568,11 +2692,13 @@ def main() -> None:
     report_policy()
     checkpoint_files()
     parameter_shares()
+    weight_precisions()
     resize_mismatch()
     wrong_normalisation()
     channel_swap()
     action_scaling()
     macs_by_stage()
+    arithmetic_against_memory()
     launch_overhead()
     runtime_steps()
     throughput_vs_batch()
@@ -2586,7 +2712,7 @@ def main() -> None:
     trials_and_intervals()
     ablation_bars()
     out_of_distribution()
-    failure_triage()
+    failure_episodes()
     what_to_log()
     safety_layer()
     book_map()
@@ -2600,6 +2726,7 @@ def main() -> None:
     choosing_a_family()
     rule_vs_learned()
     cost_comparison()
+    written_rule_margin()
     where_each_breaks()
     data_cost_curve()
     reliability_compounding()

@@ -45,9 +45,10 @@ including all the times there is nothing there.
 
 ## 2. A worked example
 
-Everything below follows from the cell's own geometry and from the design above.
-It is a walk through the design rather than a record of a run, and nothing in it
-is a measurement.
+The arrangement below follows from the cell's own geometry and from the design
+above. It is a walk through the design rather than a record of a run, so where a
+number appears it is either a limit of the kind or something the examiner
+measured with its own exact masks and no model anywhere, and it says which.
 
 **The arrangement.** Five glasses of one kind stand on the table, and the camera
 looks down from the top. Three of them stand clear of each other. The other two
@@ -57,8 +58,8 @@ point, so splay stretches the taller one's outline across part of the shorter
 one. In the picture their two outlines join into one region with no seam along
 it.
 
-**What the first way would return.** The queries work over the whole picture,
-so the two close glasses occupy two different slots, and the joined region is
+**What the first way returns.** The queries work over the whole picture, so the
+two close glasses occupy two different slots, and the joined region is
 never considered as one thing. Five slots come back filled, and because the
 training matched slots to glasses one to one, no sixth slot reports either of
 the close pair a second time and nothing has to discard a duplicate. The two
@@ -67,31 +68,44 @@ and that is allowed, because each mask says "these pixels are part of me" about
 a different glass. Nothing separated the two, and that is the point worth taking
 away: there was never a joined region for anything to divide.
 
-**What the first way would still get wrong.** The shorter glass's mask stops
-where the taller one begins, so it is a slice lying all to one side. Handed to
-the shared arithmetic, that slice gives a width under the truth and a place off
-to one side of where the glass stands, and the width is still one this kind
-allows, so nothing objects. Five glasses are reported, one of them smaller than
-it is and standing where it is not.
+**What the first way still gets wrong.** The shorter glass's mask stops where
+the taller one begins, so it is a slice lying all to one side. Handed to the
+shared arithmetic, that slice gives a width under the truth and a place pulled
+off to the side the evidence lies on, and the width is still one this kind
+allows, so nothing objects. The examiner has measured how far the place moves:
+over its crowded blocks, with exact masks and no model anywhere, a partly hidden
+glass lands 12.2 mm from the truth at the median and 51.3 mm at the worst, while
+the same arithmetic over a whole crowded run of exact masks, most of whose
+glasses have nothing in front of them, has a median of 0.4 mm. Five glasses are
+reported, one of them narrower than it is and standing a little to one side of
+where it is.
 
-**What the second way would return instead.** The shorter glass's mask covers
-the part behind the taller one as well, so the shorter glass is a region of its
-own and its visible slice is credited to it rather than absorbed into the taller
-glass's region. The mask is then split: the observed part is the slice, and the
-asserted part is the rest. The asserted pixels carry the taller glass's depth
-readings, so they are named and the examiner leaves them out, and the place and the
-width come from the slice alone. The place is good enough to send a camera to.
-The width is still under the truth, and the visible fraction travelling with the
-answer says so. The asserted part lies in the taller glass's own shadow, where
-the camera could not see, so nothing is claimed where the camera had a clear
-view, and neither prescribed check has anything to refuse.
+That the check cannot fire is worth seeing on a scale. The kind's footprints run
+from 65 to 105 mm, so a glass at the top of that range can lose 38% of its width
+before it leaves the range at all. Two glasses coming back as one region leave
+it at once, even at the closest spacing the examiner ever uses.
 
-**What the flag then buys.** Because the visible fraction is low, the reported
-width plans and does not grip. The arm goes round to the side, stands back at
-the measuring standoff and looks level, and from there nothing is in front of
-the shorter glass, so its two masks coincide and its footprint is measured
-rather than asserted. The completion decided **where to look**, and the look
-from the side decides **what is true**.
+![The kind's range of footprints on one axis, with the two directions a reported width can be wrong marked on it.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/10-how-wrong-a-width-can-be.png)
+
+**What the second way would change, and what it would not.** The shorter
+glass's mask would cover the part behind the taller one as well. The mask is then split: the
+observed part is the slice, and the asserted part is the rest. The asserted
+pixels carry the taller glass's depth readings, so they are named and left out,
+and the place and the width come from the slice alone — which is exactly what
+the first way measured. So the measurements do not move, and that is measured
+rather than argued: handed the examiner's own exact masks, a run on visible
+masks and a run on whole masks with the asserted pixels named produce the same
+scorecard, column for column. What the second way adds is the **visible
+fraction**, which says that only part of this glass was seen. Nothing else about the answer is better,
+and the asserted part lies in the taller glass's own shadow, so neither check
+has anything to refuse.
+
+**What that one number then buys.** Because the visible fraction is low, the
+reported width plans and does not grip. The arm goes round to the side, stands
+back at the measuring standoff and looks level, and from there nothing is in
+front of the shorter glass, so its two masks coincide and its footprint is
+measured rather than asserted. The completion decided **where to look**, and the
+look from the side decides **what is true**.
 
 **Now the case neither of them answers.** Push the shorter glass directly behind
 the taller one along that line, close enough that the taller one's stretched

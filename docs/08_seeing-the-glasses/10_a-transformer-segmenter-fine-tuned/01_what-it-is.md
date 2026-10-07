@@ -1,21 +1,21 @@
 # What it is
 
 > **What it uses** — the RF-DETR package, with PyTorch underneath it, reaching
-> this machine's graphics processor through the MPS backend. The model is
+> this machine's graphics processor through Metal Performance Shaders, Apple's
+> own layer for that, which PyTorch calls its MPS backend. The model is
 > **RF-DETR-Seg**, a transformer that detects and segments in one pass. It is
 > published under the Apache 2.0 licence and it is offered in a range of sizes,
 > so the size can be chosen to suit the machine.
 > **What it does** — it takes one picture from the top and returns one mask per
 > glass, with no step in between that has to cut a joined region apart. The
-> first of its two ways is built and has been scored; the second was never
-> fitted to completion and claims no number. The model arrives with its weights
-> already fitted to a large collection of ordinary labelled pictures, and
-> training then continues on this cell's own pictures with the list of classes
-> cut down to the single class "glass". The model carries a fixed number of
-> **queries**, each of which either reports one glass or reports nothing, and a
-> mask is predicted over the whole picture rather than inside a rectangle.
-> Because of that, this is also the one solution of the six that can be asked
-> for the part of a glass nobody saw.
+> model arrives with its weights already fitted to a large collection of
+> ordinary labelled pictures, and training then continues on this cell's own
+> pictures with the list of classes cut down to the single class "glass". The
+> model carries a fixed number of **queries**, each of which either reports one
+> glass or reports nothing, and a mask is predicted over the whole picture
+> rather than inside a rectangle. Because of that, this is also the one solution
+> of the six that can be asked for the part of a glass nobody saw. That request
+> is its second way, and the second way was never fitted to completion.
 > **How the output is produced** — the grey picture shaded from depth goes in;
 > the model's body turns it into a description of every part of the picture; the
 > queries read that description and each returns a class, a rectangle and a mask
@@ -62,14 +62,15 @@ of the six that can reasonably be asked to mark the part of a glass that nothing
 in the picture shows, which is the **second way** of this solution and is
 described in full below.
 
-One thing has to be said before the rest. **The first way is built and has
-been scored by the examiner; the second way is not.** Its fine-tune was started
-with the same settings as the first and stopped unfinished when the machine
-filled up, so no number is claimed for it anywhere. This document quotes no
-scorecard of its own either: the first way's numbers sit beside its code, in
+One thing has to be said before the rest. The first way is built and has been
+scored by the examiner; the second way is not. Its fine-tune was started with
+the same settings as the first and stopped unfinished when the machine filled
+up, so no number is claimed for it anywhere, here or beside its code in
 [`06-rf-detr-fine-tuned/`](../../../code/src/08_seeing-the-glasses/06-rf-detr-fine-tuned).
-So where this document says what the second way would do, that is the design
-speaking and not a run.
+Where this chapter says what the second way would do, that is the design
+speaking and not a run. What the first way scored is in [how it
+compares](06_how-it-compares.md), and beside the other five in [the
+results](../11_the-results.md).
 
 By the end you will understand what a query is and why a fixed number of them is
 a different idea from a search that proposes regions, what set prediction means
@@ -91,27 +92,24 @@ full in [the problem](../02_the-problem/01_what-is-asked-for.md), is to say whic
 glass, to give each glass a place on the table, and to give each a rough
 footprint width. Nothing is picked up here and no shape is measured.
 
-What makes that hard is the way a picture from the top treats a glass. A camera
-looking straight down does not draw a glass's outline on top of the glass,
-because the rim is nearer the lens than the table is, so the outline is thrown
-outwards away from the point directly below the camera, and the taller the glass
-the further out it goes. This project calls that outward throw **splay**.
-Because the kind on the table draws from a wide range of proportions, with its
-tall end more than twice the height of its short end, two glasses of one kind
-are splayed by very different amounts, and the taller one's stretched outline
-can reach across the ground where the shorter one stands.
+What makes that hard is **splay**, which [the cell](../01_the-cell.md)
+describes: a camera looking straight down throws a glass's outline outwards from
+the point directly below it, and the taller the glass the further out it goes.
+The kind on the table is drawn from a wide range of proportions, with its tall
+end more than twice the height of its short end, so a tall glass's stretched
+outline can reach across the ground where a shorter one stands.
 
 Two different failures follow from that, and this solution is aimed at both.
 
 The first is that two glasses standing clear of each other on the table can
 leave **one joined region** in the picture. A **mask** is a picture the same
-size as the photograph in which every pixel holds nothing but yes or no, where
-yes means "this is glass". When two outlines meet, the yes pixels of the two
-glasses form one joined region, and the usual way of turning such a region into
-objects — spread out from a yes pixel to every yes pixel touching it, and call
-everything reached one object — returns one object where two glasses stand. That
-spreading answers only the question *are these pixels joined?*, and joined is
-exactly what the two outlines are.
+size as the photograph in which every pixel says yes or no, where yes means
+"this is glass". When two outlines meet, the yes pixels of the two glasses form
+one joined region, and the usual way of turning such a region into objects —
+spread out from a yes pixel to every yes pixel touching it, and call everything
+reached one object — returns one object where two glasses stand. That spreading
+answers only the question *are these pixels joined?*, and joined is exactly what
+the two outlines are.
 
 The second is that a glass can be **partly covered** by the glass in front of
 it. Its mask then stops where the near glass begins, and what is left is not a

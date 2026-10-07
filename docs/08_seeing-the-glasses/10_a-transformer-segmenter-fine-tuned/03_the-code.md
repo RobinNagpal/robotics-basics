@@ -16,8 +16,8 @@ Two pieces of code carry this solution, and both are worth seeing before the
 document explains them. The first is the **fine-tune**, which is what turns a
 model fitted on everyday photographs into a finder of glasses in this room. The
 second is the **split**, which separates the pixels of a mask the camera really
-saw from the pixels the model only asserts, and without it the second way
-could not be let near the arm.
+saw from the pixels the model only asserts, and neither way could be let near
+the arm without it.
 
 The fine-tune is two steps, in `06-rf-detr-fine-tuned/rf_detr_seg.py`. The
 borrowed weights are built into a model, and the package's own training loop is
@@ -71,6 +71,8 @@ def hidden_by_others(picture, masks: list[np.ndarray], nadir: tuple[float, float
     return behind
 ```
 
+![Two reports claiming the same pixels, with the middle of each report's own uncontested part marked and its distance from the point below the camera written beside it.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/10-who-owns-a-contested-pixel.png)
+
 The two blocks are the two halves of what this solution costs. The first is the
 borrowed work: the `rfdetr` package with PyTorch under it, and one `train` call
 doing everything this document means by fine-tuning. The second is the part
@@ -78,6 +80,13 @@ nobody can borrow, and what it returns is handed to
 `masks_to_glasses.one_glass` as pixels whose depth readings are to be left out
 of the measurement. A second, smaller set of asserted pixels is named by the
 check described further down, and it is left out the same way.
+
+The split is not only for the second way. On the crowded arrangements, where the
+model is trained against the pixels the camera can see, 876 of 1313 reports
+across the five scored blocks still had an asserted part named and left out, and
+the least visible of them was 11% observed. A predicted mask bleeds over the
+glass in front of it whether or not it was trained to, and the reading under the
+bleed belongs to that other glass either way.
 
 ## 2. The masks are what this contributes
 
@@ -99,7 +108,10 @@ glass standing upright on a flat table has no orientation left to find.
 The one thing this solution owes that step, beyond the masks themselves, is the
 split described in [the
 trap](../12_how-a-mask-becomes-a-record.md#4-why-a-mask-that-asserts-pixels-must-say-which-ones): when a mask
-claims pixels the camera never saw the glass at, it must say which ones.
+claims pixels the camera never saw the glass at, it must say which ones. That
+page measures what skipping it costs — with exact masks and no model anywhere, a
+partly hidden glass lands 12.2 mm from the truth when the asserted pixels are
+named and 42.7 mm when they are fed in.
 
 ## 3. How the concepts fit together
 
@@ -118,14 +130,16 @@ duplicate each other, so no step afterwards has to reduce overlapping claims to
 one answer.
 
 On the second way the mask covers the glass's **whole silhouette** rather than
-only what the camera saw, so it is then split into its **observed part**, where
-the depth reading agrees that the surface seen there belongs to this glass, and
-its **asserted part**, which is the rest. The observed pixels go to the shared
+only what the camera saw. Either way it is then split into its **observed
+part**, where no nearer report claims the pixel, and its **asserted part**,
+which is the rest. The observed pixels go to the shared
 arithmetic and become points on the table. The asserted pixels are named and
 excluded, because the reading under each of them belongs to whatever stood in
 front. Out of that come a **place** and a **rough width**, both measurements of
-the part that was seen, and the **visible fraction** this document prescribes
-carrying alongside them.
+the part that was seen, and the **visible fraction**, which is the observed
+share of a report's own mask. Every report carries it, because every consumer
+further down has its own tolerance for how much of an answer was asserted and
+none of them can apply it once the two parts have been merged.
 
 Then the two checks, each of which can only refuse. The width must lie inside
 the range the kind allows, unless the mask it was measured from reaches the edge
@@ -142,7 +156,7 @@ answers the hardest part of the problem, because a fixed set of slots filled one
 to one holds separate objects without anything having to divide a joined region.
 The **absence of a rectangle round each mask** is what makes the second way a
 change of target rather than a change of architecture. And the **separation of
-observed from asserted pixels** is what keeps the second way honest, because
-the arithmetic and both surviving checks need the two kinds of pixel kept apart.
+observed from asserted pixels** is what keeps either way honest, because the
+arithmetic and both checks need the two kinds of pixel kept apart.
 
 ← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →

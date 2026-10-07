@@ -11,22 +11,25 @@ worth being plain about that before anyone starts.
 
 It needs a **deep learning framework and the environment to run it in**, which
 is a large dependency for a cell whose simplest answer is a page of arithmetic.
-It needs a **downloaded file of weights**, which is large, which is fetched
-rather than committed with the code, and which this project cannot produce, so
-it comes from outside and is taken on trust.
+It needs a **downloaded file of weights**, 128 MB, which is fetched rather than
+committed with the code and which this project cannot produce, so it comes from
+outside and is taken on trust.
 
 It needs a **training set**, which the examiner renders and labels for nothing,
 including the crowded arrangements the cell's own rule would never produce. That
 is the genuinely cheap part and it is what makes fine-tuning reasonable here. It
 needs **time on the machine** for the fine-tune, far less than a start from
-random numbers would need but still the largest cost in the solution, and the
-second way may need more of it than the first.
+random numbers would need but still the largest cost in the solution. The one
+fine-tune measured here took 932 seconds, on a machine shared with other
+training runs, so that is an upper bound. The second way is the same model on
+the same settings, and it was stopped unfinished rather than timed.
 
 It needs **hardware it fits on**. The machine here is a laptop whose graphics
 processor shares memory with the main processor, and PyTorch reaches that
-graphics processor through its MPS backend, so the code would select MPS when it
-is available and fall back to the main processor otherwise. There is no NVIDIA
-card here and no CUDA. The shared memory is part of why a model of this size
+graphics processor through Metal Performance Shaders, Apple's own layer for
+that, which PyTorch calls its MPS backend. The code picks MPS where it is
+available, falls back to the main processor otherwise, and says which it got.
+There is no NVIDIA card here and no CUDA. The shared memory is part of why a model of this size
 fits at all, and the model being offered in a range of sizes is the other part,
 because a smaller size can be chosen if the larger one does not fit.
 
@@ -42,7 +45,8 @@ The licence is the one thing it does not need to worry about. Apache 2.0 is
 permissive: the model may be used, changed and shipped inside other work without
 any obligation falling on the code around it. That is a real difference from
 [YOLO as it downloads](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md) and [the same YOLO fine-tuned
-here](../08_the-same-model-fine-tuned/01_what-it-is.md), both of which are covered by the AGPL, and it is
-worth knowing before a choice is made rather than after.
+here](../08_the-same-model-fine-tuned/01_what-it-is.md), both of which are
+covered by the Affero General Public License (AGPL), and it is worth knowing
+before a choice is made rather than after.
 
 ← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

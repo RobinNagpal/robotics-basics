@@ -12,6 +12,39 @@ beside the other five.
 
 ## 1. Where it is strong and where it breaks
 
+Marked by [the examiner](../03_the-examiner/01_the-examiner.md) over five blocks
+of 20 held-out arrangements, it finds 96.4 glasses per 100 on the layouts the
+cell's own rule spaces, with the blocks spread between 94.9 and 98.0, and 81.9
+per 100 when the glasses are crowded closer than that rule allows, spread
+between 77.2 and 86.5.
+
+The crowded row is the one worth stopping at. Solutions 1, 2, 4 and 5 average
+73.0, 74.6, 72.0 and 73.6, and their brackets overlap one another entirely, so
+the test does not separate those four from each other at all. Only two
+statements about that row survive the spread: this solution is ahead, and the
+untrained model is far behind. This solution's *worst* block, 77.2, is above
+every one of the other four's averages. The honest
+qualification is that 77.2 also sits below the best block of [a network trained
+from scratch](../06_a-network-trained-from-scratch/01_what-it-is.md), 79.8, so
+that one pair is not settled beyond doubt; the other three are.
+
+![Every solution's crowded score with the spread of its five blocks, and the floor the examiner's own exact masks reach.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/10-read-the-brackets.png)
+
+Read that column against 86.4 rather than against 100, because 86.4 is what the
+examiner's own exact masks score on the same five blocks: a glass standing
+wholly behind another is in no picture, and no segmenter can find it. This
+solution is four and a half glasses per 100 short of a result nothing can beat.
+On the crowded set it also has the best position error of the six, 0.5 mm at the
+median glass against a floor of 0.4 mm, and at the median glass none of its mask
+was anything but the glass, in either set.
+
+Where it is not best is the easy set. [The same YOLO fine-tuned
+here](../08_the-same-model-fine-tuned/01_what-it-is.md) finds 99.4 glasses per
+100 there against this solution's 96.4, and its masks cover more of each glass
+on both sets: 99.7% against 96.6% where the layout rule spaces them, and 99.2%
+against 97.2% where they crowd. The newer architecture wins where the
+arrangement is hard and the older one wins where it is easy.
+
 **It answers the question actually asked.** The problem asks which pixels belong
 to which glass, and the output is one mask per glass. Every method in this set
 that answers a different question has to add machinery to convert its answer,
@@ -23,10 +56,13 @@ joined region and nothing to divide.
 
 **It has one fewer number to justify than the older shape does.** Because the
 slots are matched to the glasses one to one during training, there is no overlap
-amount deciding when two claims are duplicates, and so no setting that has to be
-generous enough to survive the worst legitimate overlap this cell can produce.
-The score threshold remains, and it is a plain number with an obvious meaning
-rather than a length that has to be defended against the geometry of the cell.
+amount deciding when two claims are duplicates. That number is not currently
+losing anything: the worst two different glasses overlap in this cell is 0.48 of
+what their rectangles cover between them, against the 0.7 the fine-tuned YOLO is
+set to. But it is a number somebody had to choose against the geometry of this
+cell and would have to choose again if the geometry moved. The score threshold
+remains, and it is a plain number with an obvious meaning rather than a length
+that has to be defended.
 
 **It is the only one of the six that can be asked for the part of a glass nobody
 saw**, and that is a consequence of its shape rather than a feature bolted on.
@@ -58,7 +94,7 @@ about the input rather than about the model.
 print one number and see why; when this model is wrong you can look at the
 picture and guess. Every quantity inside it is a block of numbers with no
 meaning anybody assigned, so working out a failure is a matter of examples
-rather than of reasoning, and the prescribed checks on the width and on where
+rather than of reasoning, and the two checks on the width and on where
 the assertion lies are what have to make that tolerable.
 
 **Its weights are a second copy of the world, and most of them came from
@@ -193,12 +229,14 @@ is the sharpest in the set after solutions 3 and 4, and it is the reason this
 solution exists. Both are fitted the same way, on the same pictures, with the
 same single class and the same free labels, so **the amount of fitting is held
 still and the architecture is what changes**. The gap between those two is
-therefore about design rather than about training. Two differences of design are
-worth naming. The first is the one-to-one matching, which removes the overlap
-amount deciding when two claims are duplicates. The second is that there is no
-rectangle round each mask, which is what lets this solution be asked for a whole
-silhouette while the other cannot be without reworking what its rectangles are
-trained to cover. The licence differs too, and it is not a small thing: that
+therefore about design rather than about training, and it goes both ways: that
+solution finds 99.4 glasses per 100 to this one's 96.4 where the layout rule
+spaces them, and 72.0 to this one's 81.9 where they crowd. Two differences of
+design are worth naming. The first is the one-to-one matching, which removes the
+overlap amount deciding when two claims are duplicates. The second is that there
+is no rectangle round each mask, which is what lets this solution be asked for a
+whole silhouette while the other cannot be without reworking what its rectangles
+are trained to cover. The licence differs too, and it is not a small thing: that
 solution is covered by the AGPL and this one by Apache 2.0.
 
 Against [YOLO as it downloads](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md), two things change at once,
@@ -217,8 +255,10 @@ its domain gap wide open, as solution 3 also does, because nothing in the
 borrowed weights is ever adjusted to the pictures this cell renders. This
 solution fits the whole model, so its weights have actually seen the pictures it
 will be run on, which is why its domain gap is expected to cost accuracy and
-training time rather than correctness. If the question is how little training
-one can get away with, that solution wins; if it is which of them has met this
+training time rather than correctness. The price of borrowing more shows in both
+rows: 83.0 glasses per 100 against 96.4 where the layout rule spaces them, and
+73.6 against 81.9 where they crowd. If the question is how little training one
+can get away with, that solution wins; if it is which of them has met this
 cell's pictures, this one does.
 
 Against [a network trained from scratch](../06_a-network-trained-from-scratch/01_what-it-is.md), both fit
@@ -232,14 +272,20 @@ own glass lies, and the glasses are then the piles that those votes form, which
 are counted afterwards. So both solutions hold separate objects, and what
 differs is where the separating happens. This solution asks the model for
 instances and gets them with nothing counted afterwards, in exchange for a large
-downloaded file it cannot regenerate. So the choice is not "borrowed is better";
+downloaded file it cannot regenerate. What the borrowed weights buy is visible
+in the spaced row, 96.4 glasses per 100 against 64.1, and much less visible in
+the crowded one, 81.9 against 74.6. So the choice is not "borrowed is better";
 it is capability now against a model the project fully owns.
 
-Against [rules on the table](../05_rules-on-the-table/01_what-it-is.md), the comparison is the
-one every fitted solution here faces, and it is not flattering. On any day the
-depth readings work, that solution is better in almost every way that matters:
-it is a page of arithmetic rather than a file of weights, it needs no training
-set, it explains its own failures, and it can say where it has not looked. This
+Against [rules on the table](../05_rules-on-the-table/01_what-it-is.md), the
+comparison is the one every fitted solution here faces, and it is not
+flattering. On any day the depth readings work and the glasses stand where the
+layout rule puts them, that solution is better in almost every way that matters:
+it finds all 100 glasses per 100 where this one finds 96.4, and it is a page of
+arithmetic rather than a file of weights, it needs no training set, it explains
+its own failures, and it can say where it has not looked. The crowded table is
+where the two change places — 81.9 against 73.0, and that solution merges nearly
+eleven reports per 100 to reach its number where this one merges 1.4. This
 solution needs depth too, because depth shaded into grey is the only picture the
 renderer makes, so it buys no independence from the depth camera. What it does
 buy is that no length has to be chosen and defended, that two joined glasses

@@ -74,12 +74,18 @@ the glass in front of it has evidence in the picture only on one side, so the
 smallest rectangle round the pixels the camera saw of it is smaller than the
 glass really is. In the older shape, that rectangle is the frame the mask is
 painted in, so a mask that should cover the whole glass is clipped at an edge
-decided by the evidence. Here there is no such edge. A mask may claim any pixel
-in the picture it likes, so asking the model for the whole shape of a glass is a
-request the architecture can express rather than one it has to be forced into.
-That request is [the second
-way](#6-a-second-way--training-against-the-whole-silhouette), and it is the
-reason this architecture was chosen for this place in the set.
+the evidence drew. The picture below measures how much that costs on one glass
+of this cell: of the part of it nothing in the picture shows, 61% falls outside
+the rectangle its visible pixels draw, so a mask painted in that rectangle could
+reach at most the other 39% however it was trained.
+
+![The same partly covered glass twice. On the left the smallest rectangle round the pixels the camera saw, with the part of the glass that falls outside it shaded; on the right the same glass with no rectangle at all.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/10-no-rectangle-to-escape.png)
+
+Here there is no such edge. A mask may claim any pixel in the picture it likes,
+so asking the model for the whole shape of a glass is a request the architecture
+can express rather than one it has to be forced into. That request is [the
+second way](#6-a-second-way--training-against-the-whole-silhouette), and it is
+the reason this architecture was chosen for this place in the set.
 
 ## 3. One class
 
@@ -140,17 +146,28 @@ reduce the cluster to one answer: sort the claims by score, keep the best,
 discard every claim overlapping it by more than a chosen amount, and repeat.
 That step is called non-maximum suppression, and it has one setting and one
 assumption. The setting is how much overlap counts as duplication. The
-assumption is that heavy overlap **means** duplication — and in this cell that
-assumption is awkward, because splay can push one glass's stretched outline
-right across another's, so two genuinely different objects can overlap heavily
-and one of them can be thrown away for looking like a duplicate of the other.
+assumption is that heavy overlap means duplication.
 
-Set prediction removes both the setting and the assumption. There is no overlap
-amount to choose, so there is one fewer number that somebody has to justify
-against the geometry of this cell, and two heavily overlapping objects are not
-in competition with each other, because each occupies its own slot. That is a
-real advantage here and it should be stated as the design expectation it is, not
-as something this book has measured.
+It is worth being exact about how much trouble that assumption is here, because
+the obvious fear turns out not to be the real cost. Splay pushes one glass's
+stretched outline across another's, so two genuinely different glasses really do
+overlap in this cell. They do not overlap enough to be pruned. Taking the pair
+that overlaps most — two glasses at the tall, wide corner of the kind, standing
+on a line out from the camera — and standing them as close as the examiner's
+crowded arrangements ever stand them, their two rectangles share 0.48 of what
+they cover between them, against the 0.7 the fine-tuned YOLO's pruning step
+uses.
+
+![How much two different glasses' rectangles overlap as they are stood closer together, against the 0.7 a pruning step is set to. The curve never reaches the line.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/10-the-overlap-number.png)
+
+So the setting is not currently throwing glasses away. What it is instead is a
+number somebody had to pick with that geometry in mind, and would have to pick
+again if the camera moved, the survey height changed, or a taller kind came to
+the table.
+Set prediction removes the setting and the assumption together. There is no
+overlap amount to choose, so there is one fewer number to justify against the
+geometry of this cell, and two heavily overlapping objects are never in
+competition, because each occupies its own slot.
 
 The cost of set prediction is also real and worth naming. Matching the slots to
 the objects one to one is a decision the training step has to make before it can
@@ -211,15 +228,16 @@ run time, they are the input it is fitted on. So the gap is expected to cost
 accuracy and training effort rather than correctness. That is reasoning about
 the design and not a result.
 
-There is a second warning about the training set, and it is a rule this document
-prescribes rather than something any code here does. The cell's own placement
-rule keeps glasses a comfortable distance apart, so a training set drawn only
-from that rule never shows the model a pair that was hard to separate. The
-training arrangements therefore have to include pairs standing much closer than
-the rule allows and pairs whose outlines overlap heavily after splay, while
-keeping the ordinary case in proportion. The principle is worth remembering:
+The training arrangements themselves need one deliberate choice. The cell's own
+placement rule keeps glasses a comfortable distance apart, so a training set
+drawn only from that rule would never show the model a pair that was hard to
+separate. The examiner therefore builds arrangements that stand glasses closer
+than the rule allows, on lines running out from under the camera, and half of
+every training set is drawn from those. The principle is worth remembering:
 **the edge of the specification should sit somewhere in the middle of the
-training set**, so that the model has met worse than it ever will.
+training set**, so that the model has met worse than it ever will. The held-out
+arrangements this solution is scored on are drawn the same two ways, and the
+crowded table is the one where the architecture earns its keep.
 
 ## 6. A second way — training against the whole silhouette
 
@@ -236,49 +254,50 @@ one, and the difference between them is the **hidden part**.
 
 ![The same arrangement from the top, shown three ways: the modal mask of the covered glass holds only the pixels where its own surface was seen, the amodal mask holds its whole silhouette, and the difference between the two is the hidden part.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/10-modal-against-amodal.png)
 
-**Why it helps** is the quiet failure. Put one glass partly behind another, and
-a mask marking only visible pixels loses every pixel behind the near glass's
-surface. What is left is a slice, cut along one side. Hand that slice to the
-shared arithmetic and it reads a glass that is both narrower than the truth and
-standing where no glass stands — and nothing objects, because a kind whose
-range runs from a small glass to a much larger one has room for a short
-measurement. A slice does not look like an error; it looks like a shorter
-glass. Compare that with two glasses coming back as one region, where the width
-exceeds anything the kind allows, the check fires, and the region is reported
-as doubtful. **A loud failure is a result; a quiet one is a trap.**
+It helps because the failure it answers is a quiet one. Put one glass partly
+behind another, and a mask marking only visible pixels loses every pixel behind
+the near glass's surface. What is left is a slice, cut along one side. Hand that
+slice to the shared arithmetic and it reads a glass narrower than the truth, and
+nothing objects, because a kind whose footprints run from 65 to 105 mm has room
+for a short measurement. A slice does not look like an error; it looks like a
+shorter glass. Compare that with two glasses coming back as one region, where
+the width exceeds anything the kind allows, the check fires, and the region is
+reported as doubtful. A loud failure is a result; a quiet one is a trap, and
+[the worked example](04_a-worked-example.md#2-a-worked-example) measures how
+much room the quiet one has.
 
-**Why this architecture suits it** is that there is no rectangle to escape. In
-the older shape the mask is painted inside a rectangle found from what the
-picture shows, so a completion is clipped at an edge the evidence drew, and
-making it work means training the rectangles to be amodal too. Here the mask is
-computed over the whole picture from the start, so asking for the whole
-silhouette changes only what the mask is scored against. That is worth knowing
-generally: **one network answers a different question by changing its target
-rather than its shape.** The task is not small even though the change is:
-tracing a boundary that is not in the picture needs the model to have learned
-the shape of the kind and to get the near-and-far relation right.
+The architecture suits the request because asking for the whole silhouette
+changes only what the mask is scored against. Nothing about the model's shape
+moves, which is worth knowing generally: **one network answers a different
+question by changing its target rather than its shape.** The task is not small
+even though the change is, because tracing a boundary that is not in the picture
+needs the model to have learned the shape of the kind and to get the
+near-and-far relation right.
 
-**One rule is absolute.** A mask claiming pixels the camera never saw the glass
-at must say which pixels those are, because the depth reading at such a pixel
+One rule is absolute. A mask claiming pixels the camera never saw the glass at
+must say which pixels those are, because the depth reading at such a pixel
 belongs to whatever stood in front. [How a mask becomes a
 record](../12_how-a-mask-becomes-a-record.md#4-why-a-mask-that-asserts-pixels-must-say-which-ones)
-sets out what that costs when it is got wrong, and the examiner leaves those
+measures what that costs when it is got wrong, and the examiner leaves those
 readings out rather than guessing values for them.
 
-**Two checks come free.** On a glass with nothing in front of it the amodal
-mask must equal the modal one, so measuring what the model adds to unobstructed
-glasses gives a direct test for a model that completes a little everywhere. And
-the measure to watch during training is the **overlap over the hidden part
-alone**, which the examiner can supply by subtracting one of its own masks from
-the other. Overlap against the visible truth punishes the model for working,
-since every pixel of a correct completion lies outside that truth, so the best
-score would go to a model that ignores the amodal target entirely: **a score
-that rewards doing nothing will be optimised by a model that does nothing.**
+Two checks on such a model come free in a simulator. On a glass with nothing in
+front of it the amodal mask must equal the modal one, so measuring what the
+model adds to unobstructed glasses tests directly for a model that completes a
+little everywhere. And the measure to watch during training is the **overlap
+over the hidden part alone**, which the examiner can supply by subtracting one
+of its own masks from the other. Overlap against the visible truth punishes the
+model for working, since every pixel of a correct completion lies outside that
+truth, so the best score would go to a model that ignores the amodal target
+entirely: **a score that rewards doing nothing will be optimised by a model that
+does nothing.**
 
 ![A stand-in prediction that completes most of the hidden part but stops short of its far edge scores well when the overlap is counted over the pixels the camera saw and much worse when it is counted over the hidden part alone, which is why the hidden part alone is the number to watch.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/10-measuring-whether-it-works.png)
 
-**This way was never fitted to completion, so it claims no number.** Everything
-above is a prescription, and the row this solution has in the results is the
-first way, trained against the pixels the camera can see.
+**This way was never fitted to completion, so it claims no number.** Its
+fine-tune reached four epochs of ten, with the validation score still rising,
+before a machine full of other training runs stopped it. Everything in this
+section is therefore a specification, and the row this solution has in the
+results is the first way, trained against the pixels the camera can see.
 
 ← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

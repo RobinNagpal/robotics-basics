@@ -13,11 +13,14 @@ chain here is short:
 1. shade the depth picture into the three-channel picture the model expects,
    which is `pictures.shade` and is shared with every other borrowed model here;
 2. keep the outlines the model named as drinking vessels, and drop the name;
-3. drop an outline that covers substantially the same pixels as a better-scoring
+3. put the keepers in order, surest first, which is what makes the next step
+   keep the better-scoring one of a pair;
+4. turn each surviving outline into a boolean mask;
+5. drop a mask that covers substantially the same pixels as a better-scoring
    one, because a single glass can be named twice under two neighbouring
    categories and the bench counts a real glass with two reports as a split;
-4. turn each surviving outline into a boolean mask and hand it to
-   `masks_to_glasses`, which is the bench's arithmetic and not this solution's.
+6. hand what is left to `masks_to_glasses`, which is the bench's arithmetic and
+   not this solution's.
 
 **The kind of glass is handed in and this solution has no use for it.** Every
 other solution here uses it to refuse a footprint no glass of the kind could
@@ -86,6 +89,7 @@ SAME_OUTLINE = 0.7
 CORNERS_OF_A_SHAPE = 3
 
 
+# Step 1: load the borrowed model once and keep it -- every later picture reuses it for free.
 @lru_cache(maxsize=1)
 def _model():
     """The borrowed model and the processor to run it on. Never trained here.
@@ -97,6 +101,7 @@ def _model():
     from ultralytics.utils.downloads import attempt_download_asset
 
     CACHE.mkdir(parents=True, exist_ok=True)
+    # Step 1: fetch the weights, downloading them if missing -- none of them was fitted here.
     return YOLO(attempt_download_asset(CACHE / MODEL)), device.pick()
 
 
@@ -112,6 +117,7 @@ def outline_to_mask(outline: np.ndarray, shape: tuple[int, int]) -> np.ndarray:
     """
     mask = np.zeros(shape, dtype=np.uint8)
     corners = np.asarray(outline, dtype=np.float64).reshape(-1, 2)
+    # Step 8: fill the ring of corners in, so the outline becomes a mask the bench can read.
     if len(corners) >= CORNERS_OF_A_SHAPE:
         cv2.fillPoly(mask, [np.round(corners).astype(np.int32)], 1)
     return mask.astype(bool)
@@ -119,6 +125,7 @@ def outline_to_mask(outline: np.ndarray, shape: tuple[int, int]) -> np.ndarray:
 
 def above_the_bar(confidences) -> np.ndarray:
     """Per outline, whether its confidence clears the hand-set bar."""
+    # Step 6: compare each confidence with the hand-set bar -- a knob set by eye, not a probability.
     return np.asarray(confidences, dtype=float).ravel() >= CONFIDENCE_BAR_SET_BY_HAND
 
 
@@ -139,6 +146,7 @@ def merge_doubles(masks: Iterable[np.ndarray]) -> list[np.ndarray]:
     """
     kept: list[np.ndarray] = []
     for mask in masks:
+        # Step 8: keep this mask only if no kept mask overlaps it -- one glass, one report.
         if not any(_overlap(mask, other) > SAME_OUTLINE for other in kept):
             kept.append(mask)
     return kept
@@ -152,12 +160,18 @@ def masks_from(answer, shape: tuple[int, int]) -> list[np.ndarray]:
     what kind of thing was outlined. Surest first, so that `merge_doubles` keeps
     the better-scoring of a pair.
     """
+    # Step 5: with nothing outlined there is nothing to keep, so hand back an empty list.
     if answer.masks is None or len(answer.masks.xy) == 0:
         return []
+    # Step 5: read the model's own list of category names -- the numbering belongs to the weights.
     names: Mapping[int, str] = answer.names
+    # Step 5: read how sure the model was about each outline -- only their order is worth trusting.
     confidences = np.asarray(answer.boxes.conf, dtype=float).ravel()
+    # Step 6: keep the outlines named a drinking vessel that also clear the bar -- name, then score.
     keep = drinking_vessels.are_drinking_vessels(answer.boxes.cls, names) & above_the_bar(confidences)
+    # Step 7: put the outlines in order, surest first -- so a repeated glass keeps its better mask.
     surest = sorted(range(len(confidences)), key=lambda index: -confidences[index])
+    # Step 8: fill every kept outline into a mask, surest first, and drop the ones that repeat.
     return merge_doubles(outline_to_mask(answer.masks.xy[index], shape) for index in surest if keep[index])
 
 
@@ -169,13 +183,16 @@ def look(picture) -> object:
     What goes in has the shape of a photograph and none of its content, and that
     is the largest risk in this solution rather than an accident of the code.
     """
+    # Step 2: ask for that model and its processor -- only the first picture pays for loading it.
     model, where = _model()
+    # Step 3: shade the depth picture into the three-channel picture the model expects, and run it.
     answers = model.predict(
         pictures.shade(picture),
         conf=CONFIDENCE_BAR_SET_BY_HAND,
         device=where,
         verbose=False,
     )
+    # Step 4: bring the answer back into ordinary memory -- the rest of the chain is plain numpy.
     return answers[0].cpu()
 
 

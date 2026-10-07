@@ -149,9 +149,11 @@ def fresh():
     pictures. They download on first use, which is the one thing in this folder
     that needs the network.
     """
+    # Step 1: point the package's weight cache at this folder -- it reads that when it is imported
     weights.borrowed()
     import rfdetr
 
+    # Step 2: build the model Roboflow publishes -- the borrowed weights download here on first use
     return getattr(rfdetr, SIZE)(device=str(device.pick()))
 
 
@@ -183,21 +185,27 @@ def hidden_by_others(picture, masks: list[np.ndarray], nadir: tuple[float, float
     place comes from the pixels no other report claims, which are the pixels
     nothing can be hiding it at.
     """
+    # Step 10: keep only the pixels of each mask that came back with a depth reading
     usable = [mask & np.isfinite(picture.depth) for mask in masks]
     if not usable:
         return []
+    # Step 11: mark every pixel more than one report claims -- those are the ones to settle
     contested = np.sum(np.stack(usable), axis=0) > 1
     away = []
     for mine in usable:
+        # Step 12: place each report from the pixels it holds alone -- nothing can hide it there
         alone = masks_to_glasses.one_glass(picture, mine & ~contested)
+        # Step 13: measure how far it is from the point below the camera -- the nearer is in front
         away.append(np.inf if alone is None else float(np.hypot(alone.x - nadir[0], alone.y - nadir[1])))
 
     behind = []
     for index, mine in enumerate(usable):
         theirs = np.zeros_like(mine)
         for other, nearer in enumerate(usable):
+            # Step 14: collect the masks of the reports standing nearer the camera than this one
             if other != index and away[other] < away[index]:
                 theirs |= nearer
+        # Step 15: the asserted pixels are the contested ones a nearer report also claims
         behind.append(mine & contested & theirs)
     return behind
 
@@ -385,11 +393,16 @@ def fit(
     or against the glass's whole silhouette. The model's shape does not change.
     """
     save = Path(save)
+    # Step 3: pick a working folder for this target -- the two targets keep their datasets apart
     folder = weights.workings("amodal" if amodal else "modal")
+    # Step 4: split the scenes into the ones to fit on and the ones held back to watch the fit
     fitting, validating = _split(examples, VALIDATION_SHARE)
+    # Step 5: write both splits as pictures and labels -- amodal decides what each mask is drawn to
     written = _dataset(fitting, validating, amodal, folder / "dataset")
 
+    # Step 6: build the borrowed model -- Steps 1 and 2 above, now that the folder is written
     model = fresh()
+    # Step 7: run the package's own training loop over that folder -- with one class name, "glass"
     model.train(
         dataset_dir=str(folder / "dataset"),
         output_dir=str(folder / "run"),
@@ -399,9 +412,11 @@ def fit(
         class_names=[labels.CLASS],
         tensorboard=False,
     )
+    # Step 8: find the checkpoint the run calls its best -- the averaged weights where there are any
     best = _best(folder / "run")
     if best is None:
         raise RuntimeError(f"the fine-tune wrote no checkpoint in {folder / 'run'}")
+    # Step 9: copy that checkpoint to where load() will look for it -- the fit's one lasting output
     shutil.copyfile(best, save)
     counted = {
         f"{split} {measure}": value

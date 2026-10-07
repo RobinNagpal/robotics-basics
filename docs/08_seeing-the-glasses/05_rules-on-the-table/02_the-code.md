@@ -22,52 +22,81 @@ is asked again of every part a split produces.
 Everything else in the folder is the arithmetic that turns pixels into dots and
 the plumbing that hands masks to the examiner.
 
-This is the fit, from `01-rules-on-the-table/find.py`. The first function is
-the one-shot least-squares solve, which is NumPy's `lstsq` and nothing else;
-the second hands it the outside of the patch rather than all of the patch,
-which is OpenCV's `convexHull`.
+This is the fit, from `01-rules-on-the-table/find.py`. It runs in five steps,
+and the comments in the code carry the same numbers. Step 1 writes each dot as
+one row of an equation, because the circle equation multiplied out is a straight
+line in three unknowns. Step 2 solves all of those rows at once with NumPy's
+`lstsq`, which is one solve and no starting guess. Step 3 reads the circle's
+centre off that solution. Step 4 turns the third unknown and the centre back
+into a width. Step 5 is the second function, which hands the solve the outline
+of the patch rather than every dot in it, using OpenCV's `convexHull`.
 
 ```python
 def circle_width(dots: np.ndarray) -> float:
     """How wide the circle through a ring of dots is, in one solve and with no starting guess.
     ...
     """
+    # Step 1: one row per dot, holding its x, its y and a 1 -- the circle equation written out flat
     terms = np.column_stack([dots, np.ones(len(dots))])
+    # Step 2: solve every row at once for D, E and F -- least squares, so no starting guess is used
     solved = np.linalg.lstsq(terms, (dots**2).sum(1), rcond=None)[0]
+    # Step 3: halve D and E to get the centre -- that is where the multiplied-out equation puts it
     x, y = solved[0] / 2.0, solved[1] / 2.0
+    # Step 4: turn F and the centre back into a width -- held at zero so a bad fit cannot go under
     return 2.0 * float(np.sqrt(max(solved[2] + x * x + y * y, 0.0)))
 
 def footprint(dots: np.ndarray) -> float:
     """How wide the circle round the patch of table a group of dots marks is.
     ...
     """
+    # Step 5: fit the circle to the outline of the patch only -- all the dots would read too narrow
     return circle_width(cv2.convexHull(dots.astype(np.float32)).reshape(-1, 2).astype(float))
 ```
 
-This is the check itself, from the same file. It is the four outcomes described
-below, and the repetition is the last line of the second function asking the
-first function again.
+This is the check itself, from the same file, and it is the four outcomes
+described below. The step numbers carry on from the fit. Step 6 measures the
+patch of table a group's pixels stand on. Step 7 accepts a patch whose width the
+kind allows as one glass. Step 8 sends a patch wider than the kind allows to be
+split. Step 9 keeps a patch narrower than the kind allows only when its pixels
+reach the edge of the frame, and refuses it otherwise. Steps 10 and 11 are the
+split: the dots are cut in two with k-means, and a cut that leaves one half
+empty ends the attempt. Steps 12 and 13 turn each half back into a mask and hand
+it to the examiner to be placed and measured. Step 14 is the repetition, where
+the question of step 6 is asked again of the half.
 
 ```python
 def as_glasses(picture: Picture, one: Found, widths: tuple[float, float]) -> list[Found] | None:
     """The glasses one patch of dots holds, or None if the fitted circles cannot say.
     ...
     """
+    # Step 6: measure the patch of table this group's own pixels stand on
     width = footprint(dots_of(picture, one.pixels))
+    # Step 7: a width the kind allows means one glass, and this patch is finished
     if widths[0] <= width <= widths[1]:
         return [one]
+    # Step 8: wider than the kind allows means more than one glass, so split the patch
     if width > widths[1]:
         return come_apart(picture, one, widths)
+    # Step 9: narrower is forgiven only when the frame cut the patch short, else refuse to guess
     return [one] if one.cut_off else None
 
 def come_apart(picture: Picture, one: Found, widths: tuple[float, float]) -> list[Found] | None:
     ...
+    # Step 10: cut the patch's dots in two with k-means -- which of the two halves each dot went to
     mine = halve(dots_of(picture, one.pixels))
+    # Step 11: a cut that leaves one half empty is no cut, so hand the whole group over as doubtful
     if mine.all() or not mine.any():
         return None
     parts: list[Found] = []
     for half in (~mine, mine):
-        ...
+        # Step 12: turn this half's dots back into a mask of the picture's own pixels
+        side = np.zeros(picture.depth.shape, dtype=bool)
+        side[one.pixels[half, 0], one.pixels[half, 1]] = True
+        # Step 13: let the examiner place and measure the half, as it does any other mask
+        measured = masks_to_glasses.one_glass(picture, side)
+        if measured is None:
+            return None
+        # Step 14: ask Step 6 again of the half -- a part still too wide is split again
         got = as_glasses(picture, measured, widths)
         if got is None:
             return None

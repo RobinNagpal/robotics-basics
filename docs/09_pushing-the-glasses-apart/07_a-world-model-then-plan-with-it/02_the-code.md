@@ -25,7 +25,15 @@ reads the model's mind.
 
 The borrowed library does its work in the four `nn.Linear` lines, and
 everything around them is the ensemble, in
-[`code/src/09_pushing-the-glasses-apart/04-a-world-model/model.py`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/model.py):
+[`code/src/09_pushing-the-glasses-apart/04-a-world-model/model.py`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/model.py).
+
+The model is built in three steps and asked in two. Step 1 stacks the four
+layers that are the network. Step 2 stores the average and the spread of the
+training inputs alongside the weights. Step 3 uses those two numbers, scaling
+every input before the layers see it. Step 4 switches off the bookkeeping that
+training needs and answering does not. Step 5 asks all five copies the same
+question and keeps their five answers separate, which is the only reason there
+are five of them.
 
 ```python
 ENSEMBLE = 5
@@ -34,51 +42,127 @@ HIDDEN = 256
 class PushNet(nn.Module):
     def __init__(self) -> None:
         super().__init__()
+        # Step 1: stack four layers of arithmetic with a bend between them -- this
+        # is the whole network, and it turns one push into what that push would do
         self.net = nn.Sequential(
             nn.Linear(features.INPUTS, HIDDEN), nn.SiLU(),
             nn.Linear(HIDDEN, HIDDEN), nn.SiLU(),
             nn.Linear(HIDDEN, HIDDEN), nn.SiLU(),
             nn.Linear(HIDDEN, features.OUTPUTS),
         )  # fmt: skip
+        # Step 2: keep the training set's own average and spread beside the
+        # weights -- so a push asked about later is scaled as training scaled it
+        self.register_buffer("mean", torch.zeros(features.INPUTS))
+        self.register_buffer("spread", torch.ones(features.INPUTS))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Step 3: subtract that average and divide by that spread, then run the
+        # layers -- every number reaches the first layer at about the same size
+        return self.net((x - self.mean) / self.spread)
 ...
 class Ensemble:
     """ENSEMBLE copies, asked together."""
     ...
     def predict(self, x: np.ndarray) -> np.ndarray:
         """(copies, rows, outputs), raw: movements scaled, yes-or-no as logits."""
+        # Step 4: answer without recording the workings -- nothing is being
+        # trained here, so the workings would only cost time and memory
         with torch.no_grad():
             x_t = torch.as_tensor(x)
+            # Step 5: ask all five copies the same question and keep the five
+            # answers apart -- where they disagree is how the planner sees doubt
             return np.stack([net(x_t).numpy() for net in self.nets])
 ```
 
 What the five answers are then used for is in
 [`code/src/09_pushing-the-glasses-apart/04-a-world-model/plan.py`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/plan.py),
 where every candidate push is scored at once and the unacceptable ones are given
-a cost of infinity:
+a cost of infinity.
+
+That arithmetic runs in fifteen steps, and they all go one way: ask first, then
+judge. Step 6 writes each candidate push, and the table it would be made on, as
+one row of numbers. Step 7 hands every row to all five copies at once. Steps 8
+to 10 boil the five answers down to three numbers per candidate: the average
+movement, the worst copy's chance of toppling something, and the average chance
+the jaw is blocked on the way down. Steps 11 and 12 ask the topple question
+again on four copies of the table shifted by about the camera's error, and keep
+the highest answer of all of them. Step 13 builds the table each candidate is
+predicted to leave behind. Steps 14 to 16 mark the candidates that have to go:
+the glass predicted to travel far further than the push, the jaw path that
+leaves the arm's comfortable reach, and the moved glass that lands outside the
+zone. Step 17 measures the room still missing, on each predicted table and on
+the table as it stands. Step 18 turns that into one cost per candidate. Steps 19
+and 20 gather the three refusals and price every refused candidate at infinity.
 
 ```python
 def score(model: Ensemble, seen: list, target, kind: str, heading, offset, travel, rng: np.random.Generator):
     """Expected crowding after each candidate push, and why any were dropped.
     ...
     """
+    # Step 6: write every candidate push, together with the table it would be
+    # made on, as one row of numbers each -- this is all the model is ever shown
     rows = features.encode(seen, target, kind, heading, offset, travel)
+    # Step 7: ask all five copies of the model about every candidate at once
     out = model.predict(rows)
+    # Step 8: average the five copies' predicted movements -- for how far a glass
+    # slides, the middle of the five answers is the best guess available
     move = out.mean(0)
+    # Step 9: take the worst copy's chance of toppling, not the average -- one
+    # copy calling a push risky is enough to treat it as risky
     topple = sigmoid(out[:, :, features.TOPPLED]).max(0)
+    # Step 10: average the five copies' chance that the jaw is blocked on the way
+    # down, which costs the push rather than endangering a glass
     blocked = sigmoid(out[:, :, features.BLOCKED]).mean(0)
+    # Step 11: ask the topple question again on four copies of the table, each
+    # reading moved by about as much as the camera could be wrong
     for _ in range(JITTERS):
         shifted = jittered(seen, rng)
         mine = next(s for s in shifted if s.id == target.id)
         out = model.predict(features.encode(shifted, mine, kind, heading, offset, travel))
+        # Step 12: keep the highest topple chance seen on any of those tables --
+        # so a push has to look safe however the measurements fell
         topple = np.maximum(topple, sigmoid(out[:, :, features.TOPPLED]).max(0))
+
+    # Step 13: build the table each candidate is predicted to leave behind: start
+    # from what the camera sees and add every glass's predicted movement, read
+    # back out of the push's own along-and-across frame into table directions
+    along, left = features.frame(heading)
     ...
+    landing = after[:, index[target.id]]
+
+    # Step 14: mark a candidate whose glass is predicted to travel much further
+    # than the push itself -- that is the model guessing beyond what it has seen
+    moved_far = np.linalg.norm(landing - now[index[target.id]], axis=1) > travel + ENVELOPE
+    # Step 15: work out both ends of the jaw's path, where the fingertips come
+    # down and where they stop, and mark a candidate the arm cannot comfortably
+    # reach at either end
+    start = np.array([features.jaw_start(target, h, o) for h, o in zip(heading, offset, strict=True)])
+    tip_end = start + (features.jaw_reach(target) + travel)[:, None] * along
+    reachable = _in_reach(start) & _in_reach(tip_end)
+    # Step 16: mark a candidate that would leave a moved glass outside the zone
+    # glasses are allowed to stand in. A glass the push leaves where it is may
+    # stand near the edge already; only one it moves has to land well inside.
+    moves = np.linalg.norm(after - now[None], axis=-1) > STILL
+    inside = np.all(
+        [_in_zone(after[:, i]) | ~moves[:, i] for i in range(len(seen))], axis=0
+    )
+
+    # Step 17: measure the room still missing on each predicted table, and on the
+    # table as it stands now, which is what a blocked jaw would leave it as
+    crowding = np.array([shortfall(a, widest) for a in after])
+    here = shortfall(now, widest)
+    # Step 18: the score for one candidate -- the missing room it is expected to
+    # leave, weighted by whether the jaw gets down, plus a small charge for travel
     cost = blocked * here + (1 - blocked) * crowding + TRAVEL_COST * travel
 
+    # Step 19: collect the three reasons a candidate is unacceptable
     dropped = {
         "topple": ~(topple <= TOPPLE_LIMIT),
         "map": ~(inside & reachable),
         "unsure": moved_far,
     }
+    # Step 20: price every unacceptable candidate at infinity -- the search then
+    # throws it away without needing to know why
     cost[dropped["topple"] | dropped["map"] | dropped["unsure"]] = math.inf
     return cost, landing, {k: int(v.sum()) for k, v in dropped.items()}
 ```

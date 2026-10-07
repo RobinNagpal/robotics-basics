@@ -21,20 +21,42 @@ second is the **split**, which separates the pixels of a mask the camera really
 saw from the pixels the model only asserts, and neither way could be let near
 the arm without it.
 
-The fine-tune is two steps, in `06-rf-detr-fine-tuned/rf_detr_seg.py`. The
-borrowed weights are built into a model, and the package's own training loop is
-then run over the folder of pictures and labels this cell wrote for it, with the
-list of classes cut down to one entry.
+The fine-tune is nine steps, in `06-rf-detr-fine-tuned/rf_detr_seg.py`, and the
+first two are the borrowing. Step 1 points the package's own weight cache at a
+folder beside the code. Step 2 builds the model Roboflow publishes, which is
+when the borrowed weights come down over the network. Step 3 picks a working
+folder for this target, so the two targets never share a dataset or a run. Step
+4 splits the stream of scenes into the ones to fit on and the ones held back to
+watch the fit on. Step 5 writes both splits out as pictures and labels in the
+layout the package reads, and that is the one place the choice of target acts.
+Step 6 builds the borrowed model, which is where Steps 1 and 2 run. Step 7 hands
+the folder to the package's own training loop, with the list of classes cut down
+to one entry. Step 8 picks out the checkpoint the run calls its best, and Step 9
+copies that one file to the name the finder reads back later.
 
 ```python
 def fresh():
     ...
+    # Step 1: point the package's weight cache at this folder -- it reads that when it is imported
     weights.borrowed()
     import rfdetr
 
+    # Step 2: build the model Roboflow publishes -- the borrowed weights download here on first use
     return getattr(rfdetr, SIZE)(device=str(device.pick()))
+
+
+def fit(examples, *, amodal: bool, save: Path, epochs: int = EPOCHS, batch: int = BATCH) -> Mapping:
     ...
+    # Step 3: pick a working folder for this target -- the two targets keep their datasets apart
+    folder = weights.workings("amodal" if amodal else "modal")
+    # Step 4: split the scenes into the ones to fit on and the ones held back to watch the fit
+    fitting, validating = _split(examples, VALIDATION_SHARE)
+    # Step 5: write both splits as pictures and labels -- amodal decides what each mask is drawn to
+    written = _dataset(fitting, validating, amodal, folder / "dataset")
+
+    # Step 6: build the borrowed model -- Steps 1 and 2 above, now that the folder is written
     model = fresh()
+    # Step 7: run the package's own training loop over that folder -- with one class name, "glass"
     model.train(
         dataset_dir=str(folder / "dataset"),
         output_dir=str(folder / "run"),
@@ -44,6 +66,11 @@ def fresh():
         class_names=[labels.CLASS],
         tensorboard=False,
     )
+    # Step 8: find the checkpoint the run calls its best -- the averaged weights where there are any
+    best = _best(folder / "run")
+    ...
+    # Step 9: copy that checkpoint to where load() will look for it -- the fit's one lasting output
+    shutil.copyfile(best, save)
 ```
 
 The split is this project's own arithmetic, in the same file, and it asks the
@@ -52,23 +79,38 @@ point below it, so of two reports whose masks overlap the one standing nearer
 that point is the one in front, and every pixel the two both claim belongs to
 it. What comes back is, per report, the pixels of it some nearer report covers.
 
+It takes six more steps. Step 10 drops the pixels of every mask that came back
+without a depth reading. Step 11 marks the pixels more than one report claims.
+Step 12 places each report from the pixels it holds alone, which are the pixels
+nothing can be hiding it at. Step 13 measures how far that place is from the
+point below the camera. Step 14 gathers, for one report, the masks of every
+report standing nearer that point than it does. Step 15 keeps the pixels that
+are both contested and covered by one of those nearer reports, and those are
+the pixels this report only asserts.
+
 ```python
 def hidden_by_others(picture, masks: list[np.ndarray], nadir: tuple[float, float]) -> list[np.ndarray]:
     ...
+    # Step 10: keep only the pixels of each mask that came back with a depth reading
     usable = [mask & np.isfinite(picture.depth) for mask in masks]
     ...
+    # Step 11: mark every pixel more than one report claims -- those are the ones to settle
     contested = np.sum(np.stack(usable), axis=0) > 1
     away = []
     for mine in usable:
+        # Step 12: place each report from the pixels it holds alone -- nothing can hide it there
         alone = masks_to_glasses.one_glass(picture, mine & ~contested)
+        # Step 13: measure how far it is from the point below the camera -- the nearer is in front
         away.append(np.inf if alone is None else float(np.hypot(alone.x - nadir[0], alone.y - nadir[1])))
 
     behind = []
     for index, mine in enumerate(usable):
         theirs = np.zeros_like(mine)
         for other, nearer in enumerate(usable):
+            # Step 14: collect the masks of the reports standing nearer the camera than this one
             if other != index and away[other] < away[index]:
                 theirs |= nearer
+        # Step 15: the asserted pixels are the contested ones a nearer report also claims
         behind.append(mine & contested & theirs)
     return behind
 ```

@@ -96,10 +96,15 @@ class Downloaded:
         if picture.dtype != np.uint8 or picture.ndim != 3 or picture.shape[2] != 3:
             raise ValueError(f"the top view is (rows, columns, 3) uint8, not {picture.shape} {picture.dtype}")
         batch = {
+            # Step 1: the picture, as the model takes it -- colour first, and 0 to 1 not 0 to 255
             CAMERA: torch.from_numpy(picture.copy()).permute(2, 0, 1).float() / 255.0,
+            # Step 2: where the jaw is standing -- the model answers in these same units
             "observation.state": torch.from_numpy(to_state(jaw, self.up)).float(),
+            # Step 3: the instruction -- the same sentence on every table and every push
             "task": INSTRUCTION,
         }
+        # Step 4: one pass through the borrowed model -- it draws 50 actions from fresh noise
         with torch.no_grad():
             actions = self.policy.predict_action_chunk(self.pre(batch))
+        # Step 5: read those 50 actions as waypoints for this jaw -- joining.py sets the scale
         return to_jaw(self.post(actions)[0].numpy().astype(float), self.up)

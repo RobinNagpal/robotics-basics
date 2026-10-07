@@ -21,35 +21,57 @@ answer back into waypoints the examiner will carry out, is this solution's own
 contribution, and beside it sits the single call that reaches into the borrowed
 library.
 
-The conversion is in
+The whole join is twenty numbered steps. Steps 1 to 8 turn a recorded path into
+numbers a model can be fitted on, and they are in
 [`code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/chunks.py`](../../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/chunks.py),
-which holds no model and no geometry of pushing. `push_segment` keeps the part
-of a recorded path at push height, from where the jaw started travelling across
-the table to the furthest point it reached, and drops the descent, the back-off
-and the lift, because the examiner does all three itself.
+which holds no model and no geometry of pushing. Steps 9 to 16 build the model
+and ask it for an answer, and they are in `policy.py`. Steps 17 to 20 turn that
+answer back into waypoints, and they are in `chunks.py` again. Every code block
+below carries the same numbers.
+
+The first six steps are one function, `push_segment`, and between them they drop
+the parts of a recorded path that the examiner does for itself. Step 1 picks out
+every waypoint the jaw took at push height. Step 2 gives up on a path that never
+got down there, because a push blocked on the way down demonstrates nothing.
+Step 3 takes the first and the last of the waypoints at push height, which
+bracket the part worth keeping. Step 4 measures how far the jaw had travelled
+from the start of the push at each of them. Step 5 reads the furthest of those
+distances as the end of the push, because the jaw only goes forward until the
+push is over and the back-off begins. Step 6 keeps the waypoints from the start
+of the push up to that point. The descent, the back-off and the lift are all
+gone, because the examiner does all three itself.
 
 ![A recorded path drawn as height against distance: the jaw comes down from travel height, feels forward, pushes, backs off and lifts, and the demonstration is the two legs in the middle.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-what-a-demonstration-keeps.png)
 
-`to_action` then writes what is left as the five columns the policy is fitted
-on. The way back is the same file's `to_waypoints`, which turns the
-cosine-and-sine pair into an angle again and pulls every waypoint inside what
-the jaw can reach:
+Step 7, in `to_action`, writes what is left as the five columns the policy is
+fitted on. Step 8, in the same file's `resample`, stretches or squeezes that run
+onto the chunk's fixed length, which is the only part of the conversion that
+changes how fast the push is replayed.
 
 ```python
 def push_segment(waypoints: tuple[Waypoint, ...]) -> tuple[Waypoint, ...]:
     """The feeling-and-pushing part of a recorded path, with the back-off and lift off.
     ...
     """
+    # Step 1: pick out every waypoint the jaw took at push height -- the push itself is in there
     low = [i for i, point in enumerate(waypoints) if point.z <= PUSH_HEIGHT + AT_PUSH_HEIGHT]
-    ...
+    # Step 2: a path that never got down there holds no push, so hand nothing back
+    if len(low) < 2:
+        return ()
+    # Step 3: the first and last of those bracket the time the jaw spent at push height
     start, end = low[0], low[-1]
+    # Step 4: measure how far the jaw had travelled from the start of the push at each of them
     origin = waypoints[start]
     gone = [math.dist((p.x, p.y), (origin.x, origin.y)) for p in waypoints[start : end + 1]]
+    # Step 5: the furthest it got is where the push ended and the back-off began
     furthest = start + int(np.argmax(gone))
+    # Step 6: keep the start of the push up to that point, and drop everything after it
     return tuple(waypoints[start : furthest + 1]) if furthest > start else ()
 
 def to_action(waypoints: tuple[Waypoint, ...]) -> np.ndarray:
     """A run of waypoints as the (n, 5) numbers a policy is fitted on."""
+    # Step 7: write each waypoint as five numbers -- where the jaw is, then its heading as a
+    # cosine and a sine, which is a pair that does not jump when the angle wraps round
     return np.array(
         [[p.x, p.y, p.z, math.cos(p.heading), math.sin(p.heading)] for p in waypoints],
         dtype=np.float32,
@@ -67,20 +89,31 @@ in the pushes. Two numbers that do not wrap cost one column and remove it.
 
 The borrowed model is reached in one place, in
 [`code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/policy.py`](../../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/policy.py):
-one call that builds LeRobot's ACT, and one that asks it for a chunk.
+one call that builds LeRobot's ACT, and one that asks it for a chunk. Step 9 is
+that first call. Steps 10 and 11 fix how long an answer is and say that the
+whole of it is carried out. Steps 12 and 13 switch off the two LeRobot defaults
+this solution will not have. Step 14 then puts a fitted model into answering
+mode rather than fitting mode, Step 15 hands it one picture of the table and
+takes one chunk back, and Step 16 turns the model's own numbers into the units
+the table is measured in.
 
 ```python
     if kind == "act":
         from lerobot.policies.act.configuration_act import ACTConfig
         from lerobot.policies.act.modeling_act import ACTPolicy
 
+        # Step 9: ask LeRobot for its ACT model -- the one borrowed piece of this solution
         return ACTPolicy(
             ACTConfig(
                 input_features=inputs,
                 output_features=outputs,
+                # Step 10: the answer is one block of this many waypoints
                 chunk_size=chunk,
+                # Step 11: carry the whole block out, because one push is one chunk
                 n_action_steps=chunk,
+                # Step 12: start the vision part from random numbers, downloading nothing
                 pretrained_backbone_weights=None,
+                # Step 13: leave the library's own scaling off; this folder scales the numbers
                 normalization_mapping=_UNTOUCHED,
                 push_to_hub=False,
             )
@@ -88,9 +121,12 @@ one call that builds LeRobot's ACT, and one that asks it for a chunk.
 ...
     def chunk(self, picture: np.ndarray) -> np.ndarray:
         """One action chunk from one picture: (chunk, 5) in the table's own units."""
+        # Step 14: switch the model from being fitted to answering
         self.net.eval()
         with torch.no_grad():
+            # Step 15: hand it the scaled picture of the table and take one chunk back
             answer = self.net.predict_action_chunk(self.batch(picture))
+        # Step 16: turn the model's -1 to 1 numbers back into the table's own units
         return self.scale.back(answer[0].float().cpu().numpy())
 ```
 
@@ -103,8 +139,42 @@ the model are only ones written here; and `n_action_steps` set to the chunk's
 full length, because one push is one chunk and nothing re-plans part way
 through. The rest of the model is LeRobot's, untouched.
 
-Reading the two blocks together says where the measured shortfall has to sit,
-and it does sit there. The first two columns of the chunk come out roughly
+The last four steps are the way back, in `chunks.py` again, in `to_waypoints`.
+Nothing stops a network asking for a position the arm does not have, so Step 17
+pulls every waypoint back onto the table and into the band of heights the jaw
+works at. Step 18 counts the waypoints it had to pull in, so that a chunk aimed
+off the table is reported rather than hidden. Step 19 turns the cosine-and-sine
+pair back into one angle. Step 20 hands the examiner waypoints in its own shape.
+
+```python
+def to_waypoints(action: np.ndarray) -> tuple[tuple[Waypoint, ...], int]:
+    """A policy's chunk as waypoints the bench will accept, and how many it had to pull in.
+    ...
+    """
+    ...
+    # Step 17: pull every waypoint back onto the table and into the heights the jaw works at
+    inside = np.stack(
+        [
+            np.clip(action[:, 0], TABLE_CENTRE_XY[0] - half_x, TABLE_CENTRE_XY[0] + half_x),
+            np.clip(action[:, 1], TABLE_CENTRE_XY[1] - half_y, TABLE_CENTRE_XY[1] + half_y),
+            np.clip(action[:, 2], PUSH_HEIGHT, TRAVEL_HEIGHT),
+        ],
+        axis=1,
+    )
+    # Step 18: count the waypoints that had to be pulled in, so the number can be reported
+    pulled = int(np.any(np.abs(inside - action[:, :3]) > 1e-9, axis=1).sum())
+    # Step 19: turn the cosine and sine pair back into one heading angle
+    headings = np.arctan2(action[:, 4], action[:, 3])
+    # Step 20: hand back waypoints in the bench's own shape, with the count of pulled-in ones
+    points = tuple(
+        Waypoint(float(x), float(y), float(z), float(heading))
+        for (x, y, z), heading in zip(inside, headings, strict=True)
+    )
+    return points, pulled
+```
+
+Reading those three blocks together says where the measured shortfall has to
+sit, and it does sit there. The first two columns of the chunk come out roughly
 right — the policy puts the fingertips down in about the neighbourhood the
 teacher used — while the heading carried in the last two comes out about thirty
 degrees away from the teacher's, which is enough that on a crowded table the

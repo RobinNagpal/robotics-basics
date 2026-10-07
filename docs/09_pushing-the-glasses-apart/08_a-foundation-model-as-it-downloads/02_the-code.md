@@ -27,22 +27,45 @@ The borrowed library does its work in one call, in
 processors the checkpoint ships, which are the ones that do nothing here; and
 `to_jaw` is this project's.
 
+That call runs five steps. Step 1 turns the straight-down picture into the
+array the model takes, with the colour channels first and the values between 0
+and 1 instead of 0 and 255. Step 2 puts the jaw's own pose in beside it,
+written in the same units the answers come back in. Step 3 adds the
+instruction, which is the same sentence every time. Step 4 is the single
+forward pass, which draws 50 actions. Step 5 reads those 50 actions as
+waypoints for this cell's jaw, and that step is the whole of `to_jaw`.
+
 ```python
     def ask(self, picture: np.ndarray, jaw: Waypoint) -> np.ndarray:
         ...
         batch = {
+            # Step 1: the picture, as the model takes it -- colour first, and 0 to 1 not 0 to 255
             CAMERA: torch.from_numpy(picture.copy()).permute(2, 0, 1).float() / 255.0,
+            # Step 2: where the jaw is standing -- the model answers in these same units
             "observation.state": torch.from_numpy(to_state(jaw, self.up)).float(),
+            # Step 3: the instruction -- the same sentence on every table and every push
             "task": INSTRUCTION,
         }
+        # Step 4: one pass through the borrowed model -- it draws 50 actions from fresh noise
         with torch.no_grad():
             actions = self.policy.predict_action_chunk(self.pre(batch))
+        # Step 5: read those 50 actions as waypoints for this jaw -- joining.py sets the scale
         return to_jaw(self.post(actions)[0].numpy().astype(float), self.up)
 ```
 
 The scale that `to_jaw` applies is in
 [`05-smolvla-as-it-downloads/joining.py`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/joining.py),
 and the whole of the choice is one constant and the four lines that spend it.
+
+Step 5 opens out into five smaller steps. Step 6 divides every action by
+`ACTION_SPAN` and clips what is left over, so two standard deviations of the
+model's output reach the edge of the picture's frame and nothing reaches past
+it. Steps 7 and 8 turn two of the six slots into a position on the table,
+measured from the centre of that frame. Step 9 turns a third slot into a height
+between the height the jaw pushes at and the height it travels at. Step 10
+turns a fourth slot into a heading. The remaining two slots are dropped,
+because this cell holds the jaw level and closed and offers no way to change
+either.
 
 ```python
 # Which of SmolVLA's six slots carries what, in the reading above.
@@ -60,12 +83,17 @@ ACTION_SPAN = 2.0
 
 def to_jaw(action: np.ndarray, up: float = UP_HIGHER) -> np.ndarray:
     ...
+    # Step 6: divide by ACTION_SPAN and clip -- two standard deviations become the frame's edge
     unit = np.clip(action / ACTION_SPAN, -1.0, 1.0)
     return np.stack(
         [
+            # Step 7: the across slot sets the position across the table -- from the frame's centre
             VIEW_CENTRE[0] + unit[:, ACROSS] * TOP_VIEW_HALF_FRAME,
+            # Step 8: the out slot sets the position out from the arm -- the frame's other axis
             VIEW_CENTRE[1] + unit[:, OUT] * TOP_VIEW_HALF_FRAME,
+            # Step 9: the up slot sets the height -- between the pushing and the travel height
             PUSH_HEIGHT + (up * unit[:, UP] + 1.0) / 2.0 * (TRAVEL_HEIGHT - PUSH_HEIGHT),
+            # Step 10: the turn slot sets the heading -- a half turn either way, in radians
             unit[:, TURN] * math.pi,
         ],
         axis=1,

@@ -21,18 +21,22 @@ HIDDEN = 256
 class PushNet(nn.Module):
     def __init__(self) -> None:
         super().__init__()
+        # Step 1: stack four layers of arithmetic with a bend between them -- this
+        # is the whole network, and it turns one push into what that push would do
         self.net = nn.Sequential(
             nn.Linear(features.INPUTS, HIDDEN), nn.SiLU(),
             nn.Linear(HIDDEN, HIDDEN), nn.SiLU(),
             nn.Linear(HIDDEN, HIDDEN), nn.SiLU(),
             nn.Linear(HIDDEN, features.OUTPUTS),
         )  # fmt: skip
-        # Inputs are standardised with the training set's own spread, stored
-        # with the weights so that running uses the same numbers.
+        # Step 2: keep the training set's own average and spread beside the
+        # weights -- so a push asked about later is scaled as training scaled it
         self.register_buffer("mean", torch.zeros(features.INPUTS))
         self.register_buffer("spread", torch.ones(features.INPUTS))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Step 3: subtract that average and divide by that spread, then run the
+        # layers -- every number reaches the first layer at about the same size
         return self.net((x - self.mean) / self.spread)
 
 
@@ -95,8 +99,12 @@ class Ensemble:
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         """(copies, rows, outputs), raw: movements scaled, yes-or-no as logits."""
+        # Step 4: answer without recording the workings -- nothing is being
+        # trained here, so the workings would only cost time and memory
         with torch.no_grad():
             x_t = torch.as_tensor(x)
+            # Step 5: ask all five copies the same question and keep the five
+            # answers apart -- where they disagree is how the planner sees doubt
             return np.stack([net(x_t).numpy() for net in self.nets])
 
     def save(self, folder) -> None:

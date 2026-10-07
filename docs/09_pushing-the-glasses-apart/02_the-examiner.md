@@ -50,6 +50,8 @@ want to compare. So when a learned policy clears more tables than a fixed
 nudge, the difference belongs to the policy and not to a kinder table or a
 gentler scorecard.
 
+![The input, the output and the marking are all held fixed, and the one box between them is whatever the solution does, so a difference between two scorecards belongs to the method.](../images/pushing-the-glasses-apart/the-examiner/examiner-flow-what-is-held-still.png)
+
 ## 3. What the examiner draws
 
 The tables are the first of those three fixed things, so they come first.
@@ -108,7 +110,10 @@ cylinder is the foot, which is the edge the glass tips over.
 Given those tables, the next fixed thing is what a solution may read off them.
 
 The examiner offers exactly three calls and nothing else: `look()`, `push()` and
-`take()`.
+`take()`. They form a loop, and what ends the loop is the budget rather than the
+solution's own judgement.
+
+![look, decide, push, and look again until the budget runs out, at which point take ends the run and the examiner marks it.](../images/pushing-the-glasses-apart/the-examiner/examiner-flow-the-three-calls.png)
 
 **`look()` returns one reading per glass still on the table.** For each glass:
 where it stands, how tall it is, how wide it is at its widest, how wide it is
@@ -138,6 +143,11 @@ camera fixed 750 mm above the middle of the glass zone, looking straight down,
 returning a 384 by 384 RGB picture that frames the whole zone. It is separate
 from the camera `film.py` uses, which looks steeply down from the arm's side
 and exists only for watching a run by eye.
+
+The two sides of that arrangement are worth seeing together, because what is
+kept back is as much the design as what is handed over.
+
+![The readings a solution may have in one column, and the truth the examiner keeps in the other, with the friction picked out because nothing in the cell could measure it anyway.](../images/pushing-the-glasses-apart/the-examiner/examiner-flow-given-and-kept.png)
 
 **What a solution is never given is the simulator's record.** The examiner knows
 each glass's true position, its true shape and its mass, and it keeps all of
@@ -250,6 +260,8 @@ emits waypoints can be trained on.
 Allowing two different kinds of output raises an obvious objection: if one
 solution hands over three numbers and another hands over twenty waypoints, how
 can their results be compared at all?
+
+![The questions the examiner never asks in one column and the ones it counts instead in the other: a solution that reaches the rack by an unexpected route scores as well as one that followed the obvious one.](../images/pushing-the-glasses-apart/the-examiner/examiner-flow-outcome-not-action.png)
 
 The answer is that **the examiner never marks the action**. It does not ask
 whether a push was the push it would have chosen, whether the heading was

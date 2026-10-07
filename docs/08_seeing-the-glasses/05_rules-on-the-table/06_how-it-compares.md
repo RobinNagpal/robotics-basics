@@ -12,21 +12,28 @@ beside the other five.
 
 ## 1. Where it is strong and where it breaks
 
+Marked by [the examiner](../03_the-examiner/01_the-examiner.md) over five blocks
+of 20 held-out arrangements, it finds every glass the cell's own layout spaces —
+100.0 per 100, in all five blocks — and 73.0 per 100 when the glasses are
+crowded closer than that layout allows, with the five blocks spread between 70.3
+and 75.5. [The results](../11_the-results.md) sets those two rows beside the
+other five solutions. What follows is why they came out that way.
+
 **It needs nothing fitted, so it can be read.** The rule is one sentence about
-distance on the table, and its one setting is computed from two quantities the
-project already holds.
+distance on the table, and its one setting could be computed from two quantities
+the project already holds.
 
 **It is exact and repeatable.** The same picture gives the same groups every
 time, because nothing in the method samples randomly or depends on an order.
 
 **When it fails, printing one number usually tells you why.** Every step
 produces one quantity worth printing: how many pixels passed the
-standing-above-the-table test, how many bins were marked, how many groups came
-out, how many dots each group held, and each group's fitted width. A table height set slightly too low turns the whole
-table top into one enormous group, and the standing-pixel count says so
-immediately. A grouping distance set too small shows up as too many groups,
-each with too few dots. One set too large shows up as too few groups with one
-impossible width.
+standing-above-the-table test, how many squares were marked, how many groups
+came out, how many dots each group held, and each group's fitted width. A table
+height set slightly too low turns the whole table top into one enormous group,
+and the standing-pixel count says so immediately. A grouping distance set too
+small shows up as too many groups, each with too few dots. One set too large
+shows up as too few groups with one impossible width.
 
 **It answers in real distances from the arm's base**, because it worked in the
 room the whole time rather than converting at the end.
@@ -111,7 +118,8 @@ setting and no assumption about what the objects are. In the robotics
 literature this is **Euclidean cluster extraction**; its better-known cousin in
 the statistics literature is **DBSCAN**, which adds a minimum-neighbours rule
 so that scattered noise cannot form clusters of its own (Ester and colleagues,
-KDD 1996). That extra rule is what the guard described above borrows.
+KDD 1996). This solution keeps noise out more bluntly, by throwing away any
+whole group holding fewer than 100 dots.
 
 It is rarely right for objects that genuinely touch, because distance can only
 separate things that have distance between them.
@@ -122,9 +130,11 @@ analysis](https://en.wikipedia.org/wiki/Cluster_analysis) for the wider family.
 ### Least-squares shape fitting — turning a cloud of dots into a number
 
 Fit a shape to a set of points by minimising an error that can be written as a
-linear equation, which then has a direct solution and needs no iteration. And
-its **residual**, meaning how far the points sit from the fitted shape on
-average, is a free measure of how well the shape really explains the data.
+linear equation, which then has a direct solution and needs no iteration. The
+fit also offers a **residual**, meaning how far the points sit from the fitted
+shape on average, which is a free measure of how well the shape really explains
+the data. Nothing here uses it: none of the four outcomes asks the question it
+answers, so the code computes the width and stops.
 
 It is rarely right for shapes the model does not describe, because then it
 returns a confident number together with a large residual that nobody checks.

@@ -107,11 +107,10 @@ numbers the examiner takes for mask quality.
 good consequence. A pixel is put in the wrong glass's mask only if its dot
 chained into the wrong group, and the two groups are a whole strip of bare table
 apart, so it takes a line of stray dots across that strip for this to happen at
-all. The method also never asserts a pixel it did not see. Every pixel in every
-mask carried a real depth reading, which means this solution never falls into
-the trap the examiner warns about, where a mask claims pixels the camera never saw
-the glass at and the depth reading at such a pixel belongs to whatever stood in
-front. There is nothing for this solution to declare, because it claims nothing.
+all. The method also never asserts a pixel it did not see, so it never falls
+into the trap the examiner warns about, where a mask claims pixels the camera
+never saw the glass at and the depth reading at such a pixel belongs to whatever
+stood in front.
 
 **How much of the real glass the mask covered** is where the consequence is bad,
 and it is bad in a way that no better grouping can repair. The edge of every
@@ -124,26 +123,22 @@ thin rim round the base of every glass in every picture, and the grouping rule
 never had a chance to recover it, because those pixels were gone before the
 grouping started.
 
-Two further points follow, and both are about how to read this solution's score
-rather than about the method.
+The measurement bears both out. Over the five blocks of spaced arrangements
+these masks cover 99.1 per cent of the glass at the median, and 0.0 per cent of
+a mask is not the glass. The lost band is the missing per cent. On the crowded
+arrangements the coverage falls to 91.9 per cent, and that is a different loss
+with a different cause: a mask cut out of a run-together group holds part of a
+glass rather than all of it, which is the price of the splitting rather than a
+property of the depth test.
 
-The first is that the shortfall is **the same shape for every kind of glass**.
-The band lost at the base of a glass with no stem and the band lost at the foot
-of a stemmed glass are both bands at the bottom of the glass, so the per-kind
-breakdown the examiner computes will spread this solution's coverage much less than
-it spreads a model's. A model can learn an outline that follows the glass right
-down to the table, so a model has room to beat this solution on coverage. A
-model can also learn an outline that wanders onto the table or swallows a
-neighbour, which this solution has almost no way to do. **So the two mask
-numbers are expected to disagree about which method is better, and that
-disagreement is itself the useful result.**
-
-The second is that the shortfall is a property of the depth test, which means it
-is a property of the input rather than of the rule. Any solution that built its
-mask from the standing-above-the-table test would lose the same band, and any
-solution that drew its own outline would not. That is worth knowing before
-reading the numbers, because it is easy to credit a model with understanding
-glasses when what it actually learned was where the table is.
+One thing follows that is about how to read the scores rather than about the
+method. A model can learn an outline that follows the glass right down to the
+table, so a model has room to beat this solution on coverage; a model can also
+learn an outline that wanders onto the table or swallows a neighbour, which this
+solution has almost no way to do. **So the two mask numbers are expected to
+disagree about which method is better, and that disagreement is itself the
+useful result.** It is easy to credit a model with understanding glasses when
+what it actually learned was where the table is.
 
 ## 3. How the concepts fit together
 
@@ -174,19 +169,11 @@ flowchart TD
     PAT -- yes --> SUS["report it as an unsearched patch, and ask for a look"]
 ```
 
-Two things about that flow are worth pointing out, because the textbook version
-of this recipe does more work than this one needs.
-
-The first is the saving already described: the standard recipe finds the table
-by searching the point cloud for its largest flat surface, while here the
-table's height is a constant, so finding the table is a comparison rather than a
-search. That is a real saving and it is worth understanding rather than copying,
-because if the table were moved or the arm remounted, the constant would be
-wrong in a way that a search would not be.
-
-The second is that the right-hand branch takes its input from the **glasses
-found** rather than from the pixels. It needs their positions, widths and
-heights and nothing else, which is why it can say something about a glass that
-produced no pixels at all. The next section is where that branch is worked out.
+The right-hand branch is the part of that flow worth looking at twice. It takes
+its input from the **glasses found** rather than from the pixels, and it needs
+their positions, widths and heights and nothing else, which is why it can say
+something about a glass that produced no pixels at all. It is also the one
+branch of this chart that is arithmetic set out in this chapter rather than code
+that runs. [A worked example](04_a-worked-example.md) is where it is worked out.
 
 ← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →

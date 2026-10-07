@@ -47,20 +47,16 @@ anywhere in the room. That is a small loss here and a large one later, and
 breaks](06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks) returns to it, because it is
 the single assumption that would stop this method working outside the simulator.
 
-There is one more thing the camera hands over that is easy to misread, which is
-the **focal length**. Despite its name it is not a length: it is a conversion
-factor between directions and pixels, and it follows from how wide an angle the
-lens covers and how many pixels it spreads that angle across. A wider lens over
-the same number of pixels gives a smaller focal length. The only consequence
-this document needs is that, because the lens spreads a fixed angle over a fixed
-number of pixels, **how much of the world one pixel covers depends only on how
-far away that world is**.
-
-That consequence explains the choice of camera height. From the survey height
-one pixel covers a small patch of table top, which is coarse compared with a
-ruler and fine compared with a glass, because a glass is tens of pixels across.
-The ratio between those two is why a method built on counting pixels into groups
-can work at all.
+One more thing the camera hands over is easy to misread, which is the **focal
+length**. Despite its name it is not a length: it is a conversion factor between
+directions and pixels, and it follows from how wide an angle the lens covers and
+how many pixels it spreads that angle across. Because that angle and that number
+of pixels are both fixed, **how much of the world one pixel covers depends only
+on how far away that world is**. From the survey height one pixel covers about
+1.6 mm of table top, which is coarse compared with a ruler and fine compared
+with a glass, since the narrowest glass the cell handles is still 28 pixels
+across. That ratio is why a method built on counting pixels into groups can work
+at all.
 
 Doing this for every kept pixel gives a **point cloud**, which is simply a list
 of positions in the room with no grid, no neighbours and no order. That loss of
@@ -169,17 +165,14 @@ about shape. However, chaining is also the rule's one weakness, because a single
 stray dot sitting in the strip between two glasses is enough to link them into
 one group.
 
-There is a practical point about running the rule, and it is a useful habit
-rather than a detail of this problem. Comparing every dot with every other dot
-means a number of comparisons that grows with the square of the number of dots,
-which becomes hopeless quickly. Sorting the dots into square bins fixes that,
-because two dots within the grouping distance of each other must then lie in the
-same bin or in a bin close by, so each dot is only ever compared with a handful
-of others. The code takes that one step further and never compares two dots at
-all: it marks a grid of squares much finer than the grouping distance, grows
-every marked square outwards by that distance, and joins the squares that then
-touch, which is two OpenCV calls over a small grid. The same idea under a
-grander name is a k-d tree.
+There is a practical point about running the rule. Comparing every dot with
+every other dot means a number of comparisons that grows with the square of the
+number of dots, which becomes hopeless quickly. The usual fix is to sort the
+dots into a structure that answers "what is near this point?" without looking at
+the far ones, which in this literature is a k-d tree. The code does something
+simpler and never compares two dots at all: it marks a grid of 5 mm squares,
+grows every marked square outwards by the grouping distance, and joins the
+squares that then touch, which is two OpenCV calls over a small grid.
 
 ## 5. The one setting, and where it comes from
 
@@ -212,16 +205,15 @@ come back as one.
 How much room is there between those two limits? The narrowest strip the problem
 allows is comfortably wider than the widest stretch in the dot mesh, so there is
 a broad window and almost any sensible value inside it works. That is a reason
-to compute the value rather than to relax about it. The window is wide because
-of two quantities that live in two different parts of the project — the widest
-rim this kind allows, and the guaranteed distance between centres — and neither
-of them belongs to this solution. So the design prescribes that the grouping
-distance be **computed** from those two rather than typed in, **checked from the
-other side as well** against how far apart the measured dots actually fall, and
-that the run print both ends of the window. A value that is derived stays
-correct the day somebody widens a kind or moves the glasses closer together; a
-value that was typed in once goes quietly wrong on that day, and takes a long
-time to find.
+to compute the value rather than to relax about it. The two quantities that set
+the window — the widest rim this kind allows, and the guaranteed distance
+between centres — live in two different parts of the project, and neither of
+them belongs to this solution. So the design prescribes that the grouping
+distance be **computed** from those two rather than typed in, and that the run
+print both ends of the window. The code has not caught up: it holds 25 mm as a
+constant. A value that is derived stays correct the day somebody widens a kind
+or moves the glasses closer together; a value that was typed in once goes
+quietly wrong on that day, and takes a long time to find.
 
 ![The grouping distance is pinned between a lower end set by how far apart the dots on one glass fall and an upper end set by the narrowest strip of bare table two glasses can leave, and the window between them is broad enough that the value can be computed from the two ends rather than tried out.](../../images/seeing-the-glasses/rules-on-the-table/02-grouping-distance.png)
 
@@ -274,18 +266,18 @@ the widest glass of the widest kind are very different objects. Within a
 the table. So the check available here is far tighter than a general-purpose
 test asking only whether an object is object-sized.
 
-The design prescribes the check as a rule that **repeats**, and it has four
-outcomes. Fit one circle to the group. If its width lies inside the kind's
-range, the group is one glass and its pixels are reported as one mask. If the
-width is **wider** than any glass of this kind, the group is not one glass, so
-it is split in two and the same question is then asked of each part: a part
-inside the range is one glass, and a part still too wide is split again. If the
-width is **narrower** than any glass of this kind, splitting cannot help, since
-both halves of a footprint are narrower than the footprint; such a part is a
-glass the picture did not hold all of when its pixels reach the edge of the
-frame, and a refusal when they do not. And if any part cannot be settled either
-way, the whole group is reported as doubtful, with which side of the range it
-failed, rather than guessed at.
+The check is written as a rule that **repeats**, and it has four outcomes. Fit
+one circle to the group. If its width lies inside the kind's range, the group is
+one glass and its pixels are reported as one mask. If the width is **wider**
+than any glass of this kind, the group is not one glass, so it is split in two
+and the same question is then asked of each part: a part inside the range is one
+glass, and a part still too wide is split again. If the width is **narrower**
+than any glass of this kind, splitting cannot help, since both halves of a
+footprint are narrower than the footprint; such a part is a glass the picture
+did not hold all of when its pixels reach the edge of the frame, and a refusal
+when they do not. And if any part cannot be settled either way, the whole group
+is reported as doubtful, with which side of the range it failed, rather than
+guessed at.
 
 ![One circle fitted to the whole group comes out wider than any glass of this kind can be, so the group is rejected as one glass and two circles are fitted instead; both of those lie inside the widths the kind allows, so the group is split in two, and the fitted width decides only the split, because the width that goes into the record is measured by the examiner.](../../images/seeing-the-glasses/rules-on-the-table/02-circle-fit-decides.png)
 
@@ -308,27 +300,30 @@ Splitting once answers two glasses run together, and two is not what the
 difficult arrangements hold. The examiner's crowded family stands **three** glasses
 to a line and two lines to an arrangement, closer together than the cell's own
 layout rule allows, so a chain of three or more glasses in one group is the
-ordinary case there rather than the exception. It was counted: over 20 held-out
-crowded arrangements, 72 groups held more than one glass and **47 of those held
-three or more**. One split into two necessarily leaves at least one part holding
-two glasses, that part is still too wide, and a rule that stops after one split
-can only hand the whole group over.
+ordinary case there rather than the exception. It was counted over the five
+blocks of 20 held-out crowded arrangements the solutions are scored on: 365
+groups held more than one glass, and **247 of those held three or more**. One
+split into two necessarily leaves at least one part holding two glasses, that
+part is still too wide, and a rule that stops after one split can only hand the
+whole group over.
 
-What the difference is worth was measured both ways on those same 20
-arrangements. Stopping after one split finds **17** of 101 glasses and hands 54
-groups over. Repeating the split on any part still too wide finds **71** of 101
-and hands 3 over. The second reports 10 masks covering two glasses where the
-first reports none, and that is the price of it; the places it reports sit
-6.0 mm from the truth at the median against 0.7 mm. On the spawned arrangements,
-where the layout rule keeps every glass clear of the next, the two rules find
-the same 100 glasses at the same places, and repeating removes the three groups
-one split had to hand over. So the repetition costs nothing where it is not
+![Three glasses of one kind run together into one patch of dots 201 mm across; one cut leaves two parts of 111 mm, which are both still too wide for a glass of this kind; and the same question asked again of each part gives four parts of 69 to 72 mm, every one of them a width the kind allows.](../../images/seeing-the-glasses/rules-on-the-table/05-one-split-is-not-enough.png)
+
+What the difference is worth was measured both ways on those same five blocks,
+which hold 485 glasses between them. Stopping after one split finds **92** of
+them and hands 240 groups over. Repeating the split on any part still too wide
+finds **354** and hands 9 over. The second reports 52 masks covering two glasses
+where the first reports 4, and that is the price of it; the places it reports
+sit 8.7 mm from the truth at the median against 3.3 mm. On the spawned
+arrangements, where the layout rule keeps every glass clear of the next, the two
+rules are indistinguishable: both find all 499 glasses, at the same places, and
+neither hands anything over. So the repetition costs nothing where it is not
 needed.
 
 That is not a new rule so much as the natural form of the one already stated.
 "A group too wide for one glass of this kind is not one glass" is a statement
 about any patch of dots, including a patch that came out of a split, and
-applying it to the parts is what the document means by it.
+applying it to the parts is what this chapter means by it.
 
 ### Where the repetition stops
 
@@ -349,12 +344,13 @@ thing the fit has just said is that it cannot say.
 by the repetition rather than kept as a test of its own.** It was there to catch
 two circles fitted to a smear of three glasses, with the middle glass inside
 neither of them; repeating the split answers that case directly, by cutting the
-smear again. Keeping it as well was measured and it is strictly worse: on the
-crowded arrangements it takes the run from 71 glasses found and 3 groups handed
-over down to 53 found and 37 handed over, and on the spawned arrangements it
-refuses 20 whole glasses that nothing else objects to. The reason is geometry
-rather than bad luck. A part cut out of a filled patch by a straight line is not
-a disc, so a circle fitted to it does not reach into the corners the cut left,
-and the further the splitting goes the less disc-like the parts become.
+smear again. Keeping it as well was measured on one block of 20 crowded
+arrangements, where the rule as it stands finds 71 of the 101 glasses and hands
+3 groups over, and it is strictly worse: with the extra condition the same block
+gives 53 found and 37 handed over, and on the spawned block it refuses 20 whole
+glasses that nothing else objects to. The reason is geometry rather than bad
+luck. A part cut out of a filled patch by a straight line is not a disc, so a
+circle fitted to it does not reach into the corners the cut left, and the
+further the splitting goes the less disc-like the parts become.
 
 ← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

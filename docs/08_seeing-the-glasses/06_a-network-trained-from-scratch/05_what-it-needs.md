@@ -20,9 +20,9 @@ pictures with the camera's movement logged beside each one, which costs arm
 time.
 
 **A training run**, before the solution can answer anything at all. The network
-is small and the pictures are small, so the run is short enough on this machine
-to be repeated whenever the cell changes, which is the property that makes the
-next line bearable.
+holds 144,339 weights and the pictures go in at 160 by 120 pixels, so the run is
+short enough on this machine to be repeated whenever the cell changes, which is
+the property that makes the next line bearable.
 
 **A file of weights kept in step with the cell.** This is the cost that is easy
 to forget. The code says what the cell is; the weights say what the cell looked

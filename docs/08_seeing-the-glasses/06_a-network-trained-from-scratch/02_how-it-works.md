@@ -21,7 +21,7 @@ solution answers and the single idea it rests on.
 ## 1. What exists in code, and what is a design
 
 **What exists.** A network of the shape described below is written in this
-project's code, with the two heads this document describes, in PyTorch on this
+project's code, with the two heads this chapter describes, in PyTorch on this
 machine's integrated graphics. Its training labels are read from the
 simulator's own record of which glass each pixel shows, its votes are piled up
 into a tally, and the peaks of that tally are picked off largest first. Running
@@ -89,7 +89,9 @@ and adds them up. One set of weights produces one output channel, and many
 sets produce many channels, so a convolution turns a picture of a few channels
 into a block of numbers of many channels. Between groups of convolutions the
 block is **halved**, meaning it comes out half as wide and half as tall, while
-the number of channels is doubled.
+the number of channels is doubled. The network here halves twice: three by three
+windows at full size with 16 channels, then at half size with 32, then at
+quarter size with 64.
 
 Two things happen on the way down and they pull against each other. Each
 halving throws away exactly *where* something is, because one unit now stands
@@ -118,8 +120,8 @@ Fischer and Brox, 2015 ([arXiv:1505.04597](https://arxiv.org/abs/1505.04597)).
 
 The network is given the depth reading turned into something like a height
 above the table, and two further channels that say where in the frame each
-pixel sits. All three go in at half size, which is four times quicker to train
-on and still leaves a glass many pixels across.
+pixel sits. All three go in at half size, 160 by 120 pixels, which is four times
+quicker to train on and still leaves a glass more than a dozen pixels across.
 
 The last of those looks like a strange thing to tell a network. A camera
 looking straight down throws a glass's outline outwards from the point below
@@ -127,7 +129,7 @@ the lens, and further the taller the glass is, so the direction from a pixel to
 the middle of its own glass depends on where in the frame that pixel is seen.
 Telling the network where each pixel sits hands it the one fact it cannot see.
 
-### The warning worth checking before training
+### The arithmetic worth doing before training
 
 One piece of arithmetic is worth doing **before** trusting this shape, and it
 follows from the trade on the down path. How much of the picture one deep unit
@@ -136,14 +138,26 @@ little at whatever scale it is working at, and each halving doubles that scale.
 
 Turn the deepest layer's field into a distance on the table and compare it with
 the smallest gap the cell guarantees between two glasses. **If that patch of
-table is smaller than the gap, the one layer with enough context to reason
-about a neighbour cannot see two glasses at once.** Adding a halving fixes it,
-at the price of several times as many weights in the deepest block. Whether the
-extra depth is needed here is not known, and two things could rescue the
-shallower shape: the up path's own convolutions widen the field further, and
-the evidence that separates two joined outlines may be local to the seam. It is
-flagged because the arithmetic is cheaper than diagnosing a network that
-quietly never separates anything.
+table is smaller than the gap, the one layer with enough context to reason about
+a neighbour cannot see two glasses at once**, and the network can never learn to
+separate anything, however long it is trained.
+
+Two halvings alone would not be enough here. They reach 15 pixels of the
+half-size picture, which is 49 mm of table top — not even one glass across. The
+two deepest convolutions therefore spread their windows out instead of being
+packed next to each other, skipping one input in two and then one in four, which
+is called **dilation**. Dilation widens the field without halving again and
+without the several times as many weights another halving would cost. With the
+two dilated convolutions the deepest unit reaches 63 pixels of the half-size
+picture, 126 of the full one, which is 205 mm of table top against the 150 mm
+the cell guarantees between two centres.
+
+![One unit of the deepest layer sees a 205 mm square of table top, which holds two glasses standing the 150 mm apart the cell guarantees; without the two dilated convolutions it would see 49 mm, a square that fits in the gap between them.](../../images/seeing-the-glasses/a-network-trained-from-scratch/06-what-the-deepest-unit-sees.png)
+
+That is a comfortable margin rather than a generous one, and it is worth
+recomputing the day anybody changes the camera height, the lens or the layout
+rule, because the arithmetic is cheaper than diagnosing a network that quietly
+never separates anything.
 
 ## 5. The first head: which pixels are glass
 
@@ -192,18 +206,20 @@ Nothing else changes, which is why the two heads are one network and not two.
 
 ### Why the arrow is an easier question than it looks
 
-The arrow runs from a pixel to the middle of its own glass, so the longest
-arrow that can occur is half the widest footprint the cell handles. Every
-target is therefore a pair of numbers inside a small known box, and **a target
-that is bounded is far easier to fit than an unbounded one**.
+The arrow runs from a pixel to the middle of its own glass's rim as the picture
+draws it, so the longest arrow that can occur is about half of the widest rim
+the cell handles, stretched by splay. Every target is therefore a pair of
+numbers inside a small known box, and **a target that is bounded is far easier
+to fit than an unbounded one**. The code divides each target by 25 pixels before
+training on it, so that the numbers the network learns to produce sit near one.
 
 The second head also spends none of its capacity on the easy question, because
 the loss is applied **over glass pixels only**: a table pixel has no correct
-arrow, since there is no glass for it to point at. And the arrow is scored in a
-way that does not let a handful of wild pixels dominate every update, because
-pixels at the edge of a glass may genuinely belong to either of two glasses,
-and a loss that squares every error would let them drown out the many pixels
-that are nearly right.
+arrow, since there is no glass for it to point at. And the arrow is scored by
+how far it misses rather than by that distance squared, so a handful of wild
+pixels cannot dominate an update: pixels at the edge of a glass may genuinely
+belong to either of two glasses, and squaring would let them drown out the many
+pixels that are nearly right.
 
 ### Which frame the arrow is measured in
 
@@ -257,7 +273,9 @@ back as several peaks. The **ceiling** is the closest two middles can ever be,
 two of the narrowest glasses of the kind standing as close as the cell allows,
 because a window reaching much more than half of that covers both middles and
 the two piles merge. There is comfortable room between the two limits, and a
-careless choice fails quietly: a merged pile looks perfectly tight.
+careless choice fails quietly: a merged pile looks perfectly tight. The code
+takes 8 pixels of the half-size picture, and rubs out twice that round each
+middle it picks.
 
 Two checks go with the counting. The first is in the built code; the second is
 a prescription.
@@ -274,6 +292,21 @@ the range this kind of glass can be is not reported, whatever the votes say. So
 the network proposes and the arithmetic disposes: a learned part decides which
 pixels group together, and a rule nobody trained decides whether the result is
 believable.
+
+### The vote has to land inside the picture
+
+One consequence of counting votes in a tally the size of the picture is easy to
+miss and turns out to be this solution's largest single loss. A vote that lands
+outside the tally is dropped, because there is no square to add it to. The
+middle a glass's pixels vote for is the middle of its own rim as the camera
+draws it, and splay throws that middle outwards from the point below the lens,
+further the taller the glass. So a tall glass standing out towards the side of
+the glass zone has its own middle drawn beyond the edge of the picture, and
+every one of its votes falls off the end of the tally. The pixels are there, the
+arrows are right, and no pile forms.
+
+[Where it is strong and where it breaks](06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks)
+is where that is measured against the arrangements the solutions are scored on.
 
 ## 8. The two ways: where the labels come from
 
@@ -298,8 +331,9 @@ From an id image both heads' labels fall out by arithmetic. **The first head's
 label is the id image with the identities forgotten**: a pixel is glass if the
 id image names any glass there, with nothing to judge and nothing to draw.
 **The second head's label is a subtraction**: for a pixel the id image assigns
-to one glass, the target arrow is that glass's middle minus the pixel's own
-position, and the examiner knows both ends exactly because it put the glass there.
+to one glass, the target arrow is where that glass's rim middle lands in the
+picture, less the pixel's own position. The examiner knows both ends exactly,
+because it put the glass there and it knows where the camera was.
 
 So the labels cost no more than the picture and hold no judgement that could be
 wrong, which is the whole reason training from scratch is sensible here.

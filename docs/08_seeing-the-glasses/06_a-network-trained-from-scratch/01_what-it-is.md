@@ -11,12 +11,12 @@
 > arrow points at, so one glass makes one pile of votes and two glasses make
 > two piles, and a connected blob of glass pixels comes apart into separate
 > glasses without any rule for cutting it having been written down.
-> **How the output is produced** — a survey picture and its depth reading go
-> into the network; the first head gives a glass-or-not score at every pixel
-> and the second head gives an arrow at every glass pixel; each glass pixel
-> casts one vote; the votes are piled up and the peaks are counted; the pixels
-> that voted into one peak are one glass's mask; the examiner's shared arithmetic
-> turns each mask into a place and a width.
+> **How the output is produced** — the depth reading goes into the network at
+> half size; the first head gives a glass-or-not score at every pixel and the
+> second head gives an arrow at every glass pixel; the votes are piled up and
+> the peaks are counted; the pixels that voted into one peak are one glass's
+> mask; the examiner's shared arithmetic turns each mask into a place and a
+> width.
 > **What it costs** — a training set of this cell's own pictures with labels,
 > a training run before the solution can answer anything, and a file of weights
 > that has to be kept in step with the cell. The training run is short enough
@@ -53,23 +53,21 @@ grouping rule nobody can write down neatly. You will understand how one small
 network answers both the question *is this pixel glass* and the question *which
 glass is it*, and why asking the second question as an arrow rather than as a
 label is what makes the merge answerable. You will understand where the
-training labels come from, and this is the part the document is really for,
+training labels come from, and this is the part the chapter is really for,
 because there are two quite different answers to it and the second one is the
 interesting one. And you will understand why this solution is the control for
-the one question the other five cannot answer between themselves, which is what
-borrowing somebody else's weights is worth.
+the one question the other five cannot answer between themselves.
 
-That last point is worth stating now, because it explains why this document
+That last point is worth stating now, because it explains why this chapter
 exists even though a borrowed model is easier to set up. Every other learned
 solution here carries a **domain gap**, which is the gap between the pictures a
 model learned from and the pictures it is asked about. A model fitted to
 photographs of kitchens and streets has never seen this simulator's table, this
 lens or these four kinds of glass, and nobody can say in advance how much of
 what it learned still applies. This solution has no domain gap of any size,
-because everything it knows came from this cell's own pictures. So when the
-six are scored side by side, this one is the line that says whether borrowing
-weights was worth anything at all. Without it, a good score from a borrowed
-model proves only that the model is good, and not that borrowing helped.
+because everything it knows came from this cell's own pictures. Without it, a
+good score from a borrowed model proves only that the model is good, and not
+that borrowing helped.
 
 ![One network answers two questions at every pixel, whether the pixel is glass and which way the middle of its own glass lies, and the pixels then vote, so a connected blob comes apart into separate glasses without any rule for cutting it having been written down.](../../images/seeing-the-glasses/a-network-trained-from-scratch/network-flow-what-it-does.png)
 
@@ -131,12 +129,13 @@ nothing on an ordinary machine.
 
 **The second half is that each glass pixel is asked for an arrow instead of a
 label.** At every pixel it calls glass, the network predicts a short arrow
-pointing towards the middle of that pixel's own glass. Add the arrow to the
-pixel's own position and the result is a **vote** for where that glass's middle
-is. One glass makes one pile of votes, because all of its pixels point at the
-same middle. Two glasses make two piles, because each glass's pixels point at
-their own middle. So counting glasses becomes counting piles, and splitting a
-blob becomes asking which pile each of its pixels voted into.
+pointing towards the middle of that pixel's own glass — strictly, towards the
+middle of its rim, which is what the camera draws from above. Add the arrow to
+the pixel's own position and the result is a **vote** for where that middle is.
+One glass makes one pile of votes, because all of its pixels point at the same
+middle. Two glasses make two piles, because each glass's pixels point at their
+own middle. So counting glasses becomes counting piles, and splitting a blob
+becomes asking which pile each of its pixels voted into.
 
 ![Every glass pixel's arrow ends on the middle of its own glass, so one glass makes one pile of votes and two glasses joined in the picture make two piles, and the seam between them is a change of direction rather than a gap.](../../images/seeing-the-glasses/a-network-trained-from-scratch/06-the-voting-idea.png)
 
@@ -155,12 +154,10 @@ wrong way are a handful of strays in a pile of many. Compare that with
 predicting the seam directly, where one missing pixel along the seam rejoins
 two objects completely.
 
-The rest of this document builds that up. First comes what exists in code and
-what is a design, so that nothing later has to be read twice. Then what a
-network is and what training from scratch means. Then the shape of the network
-and the two heads in turn. Then the two ways of this solution, which are the
-two places the training labels can come from. Then what the solution hands to
-the examiner, the failure that no amount of training can fix, and where this sits
+The rest of this chapter builds that up: what exists in code and what is a
+design, what training from scratch means, the shape of the network and its two
+heads, the two places the training labels can come from, what the solution hands
+to the examiner, the failures no amount of training can fix, and where this sits
 among the other five.
 
 ← [Rules on the table — how it compares](../05_rules-on-the-table/06_how-it-compares.md) · [How it works](02_how-it-works.md) →

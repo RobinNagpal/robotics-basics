@@ -12,6 +12,16 @@ beside the other five.
 
 ## 1. Where it is strong and where it breaks
 
+Marked by [the examiner](../03_the-examiner/01_the-examiner.md) over five blocks
+of 20 held-out arrangements, it reports 64.1 glasses per 100 on the layouts the
+cell's own rule spaces, and 74.6 per 100 when the glasses are crowded closer
+than that rule allows. Those two numbers are the wrong way round from every
+other solution in the book, which all do worse when the glasses crowd, and the
+end of this section is the reason. The places it does report are the most
+accurate of the six on the spaced layouts, 0.6 mm from the truth at the median
+against the next best at 5.6 mm, and 0.9 mm on the crowded ones, where three
+other solutions are within half a millimetre of it.
+
 **It has no domain gap.** Everything it knows came from this cell's own
 pictures, so nothing it learned has to be transferred from a world it will
 never see. This is the reason it is the control for the comparison, and it is
@@ -34,6 +44,32 @@ the one the code measures.
 **It is blind to a glass hidden completely.** No pixels means no votes, which
 means no pile, no spread and no short count. This is a fact about the input
 rather than about the model.
+
+**And it is blind to a glass whose own middle is outside the picture**, which is
+the larger of the two blindnesses by a long way. The votes are counted in a
+tally the size of the picture, so a vote landing outside it is dropped; and a
+tall glass out towards the side of the glass zone has its rim's middle thrown
+beyond the frame edge by splay, so every one of its votes is dropped and no pile
+forms.
+
+![One station's picture, the glass zone inside it, and the boxes a glass has to stand inside for its own rim middle to be drawn within the picture: a wide one for the shortest glass of the kind and a much smaller one for the tallest. A tall glass standing outside the smaller box has its middle drawn beyond the frame edge, where the vote is dropped.](../../images/seeing-the-glasses/a-network-trained-from-scratch/06-the-vote-has-to-land-in-the-picture.png)
+
+How much that costs can be worked out without running the network at all. Over
+the five blocks of spaced arrangements, 499 glasses were visible to some
+station, and only 312 of them — 62.5 per 100 — had their own middle inside the
+picture at any station. The solution reported 64.1 per 100. **It is already
+reporting about as many glasses as that limit leaves it**, so the shortfall is
+in the voting design rather than in the training set. On the crowded
+arrangements the same count comes to 87.0 per 100, because the crowded family
+builds its lines out from under the middle station rather than scattering
+glasses across the zone, and there the solution reported 74.6. That is the whole
+of why this is the one solution in the book that does better on the harder set.
+The two sets differ in where the glasses stand relative to the camera, and this
+failure is about nothing else.
+
+The repair is therefore not more training. It is to count the votes in a tally
+larger than the picture, so that a middle thrown past the frame edge still has a
+square to land in.
 
 **It needs a training set and a training run before it answers anything.** The
 borrowed model that changes nothing can be pointed at a picture on the day it
@@ -206,7 +242,7 @@ exactly the gap the checks after the network fill here.
 
 ### Training from scratch against fine-tuning a large model
 
-The last idea is the choice this whole document turns on. Fine-tuning wins
+The last idea is the choice this whole chapter turns on. Fine-tuning wins
 whenever labels are scarce, which is almost always. Training from scratch wins
 in the narrow case where labels are free, the problem is small, and the borrowed
 weights would bring knowledge of a world you do not have. This cell is that
@@ -221,9 +257,13 @@ comparison is fixed by that and not by its score.
 Against [rules on the table](../05_rules-on-the-table/01_what-it-is.md), the comparison is
 whether a fitted grouping rule beats a written one. The written rule is a page
 of arithmetic that explains its own failures and needs no training set, and on
-any day the depth readings work it is the easier tool. This solution earns its
-place where no single written rule can be made to work, which is where two
-glasses leave no gap anywhere to find.
+any day the depth readings work it is the easier tool: it finds every glass the
+layout spaces, where this one finds 64.1 per 100. But read the crowded rows
+beside each other. There the written rule finds 73.0 per 100 and merges nearly
+11 reports per 100 to do it, while this one finds 74.6 and merges 0.6. **Where
+the glasses are far enough apart for a rule to be written, the rule wins; where
+they are not, the rule only keeps up by cutting patches of dots in places it
+cannot defend.** That is the trade this solution exists to show.
 
 Against the four that borrow weights, the comparison is the one this solution
 exists for. [YOLO as it downloads](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md) borrows everything and

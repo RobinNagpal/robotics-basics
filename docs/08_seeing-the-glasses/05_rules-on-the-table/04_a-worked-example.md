@@ -13,15 +13,12 @@ lesson.
 ## 1. When the glasses are completely hidden
 
 A glass can be covered completely, and then it contributes no pixel to any
-picture. [What is asked for](../02_the-problem/01_what-is-asked-for.md) gives
-the geometry and says how close two glasses have to stand for it, and [looking
-again at what was
+picture. [Looking again at what was
 hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md) is the shared
-answer: work out from arithmetic where a glass could have been standing unseen,
-and go and look there. **No method that reads pictures can do better**, because
-the arrangement with the hidden glass and the same arrangement with it removed
-produce the same picture, pixel for pixel. What follows is only what is this
-solution's own.
+answer every solution relies on, and **no method that reads pictures can do
+better**, because the arrangement with the hidden glass and the same arrangement
+with it removed produce the same picture, pixel for pixel. What follows is only
+what is this solution's own.
 
 **This is the one solution that can say where a glass could have been hiding**,
 and it can because it already works in the room rather than in the picture. It
@@ -56,7 +53,9 @@ that make it interesting were both chosen as worst cases rather than drawn at
 random.
 
 Six glasses of the widest-ranging kind stand in the glass zone. Call them G1 to
-G6.
+G6. The table below says where each one stands and how large it is for its kind;
+read every row as a relation to the others rather than as a measurement, because
+no glass's size is written down anywhere in this cell.
 
 | | where it stands | how big, as this kind goes |
 | --- | --- | --- |
@@ -78,9 +77,10 @@ the largest one, on that same diagonal**. G1 is tall, so splay throws its
 outline a long way out along the diagonal, and G6 is short, so splay barely
 moves it at all.
 
-The camera goes to one station above the zone, lifted to the survey height and
-pointed straight down, so the whole zone is inside the frame and nothing is lost
-for an uninteresting reason.
+The camera goes to one survey station above the zone, lifted to the survey
+height and pointed straight down. One picture from there covers more table than
+the glass zone is wide, so no glass's own place is outside the frame. That does
+not mean no glass's *outline* is, as the next paragraphs show.
 
 ### What grouping in the picture would return
 
@@ -102,16 +102,22 @@ It is worth being careful about *why* this pair merges, because two outlines can
 meet by either of two routes and the two are worth keeping apart.
 
 The first route needs the frame edge. When two glasses of similar height stand
-along the same diagonal from the point below the camera, splay pushes both
+along the same line out from the point below the camera, splay pushes both
 outwards and pushes the further one more, so the distance between them in the
 picture **grows** rather than closes, and they meet only when one of them is
-partly out of frame.
+partly out of frame. That is G1 and G2's route here.
 
 The second route needs no frame edge at all. If the nearer glass is much taller
 than the further one, splay pushes the near one's outline out by a large factor
 and the far one's by a small factor, so the distance between them in the picture
-**closes**. Whether two outlines meet is therefore a question about the
-difference in their heights as much as about where they stand.
+**closes**.
+
+![The same two places on the table drawn twice: with both glasses the same height the gap between their outlines grows from 30 mm on the table to 45 mm in the picture, and with the near one at the tall end of the kind and the far one at the short end the two outlines run together over 78 mm.](../../images/seeing-the-glasses/rules-on-the-table/05-why-two-outlines-meet.png)
+
+So whether two outlines meet is a question about the difference in their heights
+as much as about where they stand, and the first guess — that splay pushes
+neighbouring glasses together — is the wrong way round for two glasses of one
+height.
 
 The merged patch would run from G1's near edge all the way to the corner of the
 frame, several times wider than any glass of this kind can be. So the picture
@@ -129,6 +135,9 @@ strip of nothing, so G1 and G2 come back as two separate groups. Every other
 pair in the arrangement stands further apart than that pair, so every other pair
 is separate too. Five groups come out of the one picture that would have given
 four patches, and five masks go back to the examiner.
+
+The table below has one row per group: what the dots on the table looked like,
+and the mask that group hands back.
 
 | | the group | the mask it gives |
 | --- | --- | --- |

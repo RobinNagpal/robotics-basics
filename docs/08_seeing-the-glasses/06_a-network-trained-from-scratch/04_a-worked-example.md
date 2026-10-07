@@ -50,9 +50,9 @@ This example follows one crowded arrangement through the method, and it is the
 case the whole solution exists for.
 
 **What is on the table.** Two glasses of one kind stand much closer together
-than the cell's own rule allows, which is the crowded family of arrangements
-the examiner draws deliberately. There is still bare table between their rims, but
-only a little.
+than the cell's own rule allows, as the examiner's crowded family stands them:
+somewhere between a third and two thirds of the 150 mm the layout rule
+guarantees. There is still bare table between their rims, but only a little.
 
 **What the picture does to them.** From the top, each glass's outline is thrown
 outwards from the point below the lens, so each covers more of the picture than
@@ -65,11 +65,15 @@ because nothing in a class map says where to cut.
 **What the votes do.** The pixels of the two glasses are exactly as joined as
 before, because nothing has changed about the pixels. Their votes are not. Each
 glass's pixels point inwards at their own glass's middle, so the votes land in
-two piles whose separation is the full distance between the two middles, which
-is comfortably more than the counting step can span. Both piles are tight, both
-have plenty of votes, and a circle fitted to each pile's voters comes back
-inside the range this kind of glass can be. **Two glasses, two masks, out of a
-picture in which the pixels themselves never came apart.**
+two piles whose separation is the full distance between the two middles. At the
+closest the crowded family ever stands two glasses, 45 mm, those middles come
+out 17 to 28 pixels apart in the half-size picture, depending on how tall the
+two glasses are, against the 16 pixels the counting step rubs out round each
+middle it takes. So the second pile survives to be counted — comfortably for two
+tall glasses, and by one pixel for two of the shortest the kind allows.
+Both are tight, both have plenty of votes, and a circle fitted to each pile's
+voters comes back inside the range this kind of glass can be. **Two glasses, two
+masks, out of a picture in which the pixels themselves never came apart.**
 
 **The case that defeats the votes.** Now stand one glass mostly behind another,
 so that only a crescent down one side of it is ever visible. It contributes a
@@ -77,7 +81,7 @@ small fraction of the votes it should, and worse, every one of them comes from
 that same crescent, so the votes agree with each other and are wrong in the
 same direction. The pile lands off the true middle and its spread comes out
 much wider than a tight pile's. The short count is the alarm the code measures
-and it fires on its own; the wide spread is the second warning this document
+and it fires on its own; the wide spread is the second warning this chapter
 prescribes. Neither of them is the network's own opinion of itself: both are
 measurements of the votes. The pair is reported as one the arm could not
 separate, with its reason, which is a result this problem asks for and not a

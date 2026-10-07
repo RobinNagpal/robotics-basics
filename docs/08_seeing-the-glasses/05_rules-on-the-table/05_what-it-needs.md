@@ -13,9 +13,10 @@ half of the arrangements is never read.
 to keep in step with the cell.
 
 **No graphics processor.** The work is a comparison over a grid of depth
-readings, one multiplication per kept pixel, dropping one column of numbers, a
-spreading-out step over a grid of bins, and a direct least-squares solve per
-group. All of it is ordinary processor work on a small picture.
+readings, a back-projection per kept pixel, dropping one column of numbers, a
+spreading-out step over a grid of 5 mm squares, and a direct least-squares solve
+per group. All of it is ordinary processor work on a picture of 320 by 240
+pixels.
 
 **Two libraries, both already in the cell.** NumPy does the arithmetic over the
 depth readings. OpenCV does the picture handling the cell already does, which

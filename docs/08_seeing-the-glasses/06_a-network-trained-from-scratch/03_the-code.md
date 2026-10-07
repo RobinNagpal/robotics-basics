@@ -15,15 +15,17 @@ which is why they are on one page.
 The network is written in
 [`02-train-from-scratch/`](../../../code/src/08_seeing-the-glasses/02-train-from-scratch),
 and the piece worth seeing is not its shape but what it is asked for. It
-answers three numbers at every pixel of a shrunk picture: one saying whether
+answers three numbers at every pixel of a half-size picture: one saying whether
 the pixel is glass, and two holding the arrow to the middle of that pixel's own
 glass.
 
 This is the answer it is trained towards, and the network that produces it,
 from ``02-train-from-scratch/models.py``. The first function builds the target
-out of the simulator's record of which glass each pixel shows. The second is
-where PyTorch does the work, and the two `torch.cat` lines are the copies
-carried from the way down across to the way up.
+out of the simulator's record of which glass each pixel shows, dividing each
+arrow by `VOTE_SCALE` so that the numbers sit near one. The second is where
+PyTorch does the work: `at_full`, `at_half` and `at_quarter` are the down path,
+and the two `torch.cat` lines are the copies carried from the way down across to
+the way up.
 
 ```python
 def top_target(picture: Picture, glasses) -> np.ndarray:
@@ -103,17 +105,18 @@ Everything above is one chain, and it is worth seeing the whole of it in order
 before the failure cases, because each stage inherits what the last one got
 wrong.
 
-A **survey picture** goes in, with its depth reading and two channels saying
-where in the frame each pixel sits. The **network**, whose down path and up
-path are shaped so that a unit near the output can see a large part of the
-scene, produces two things at every pixel: a **probability** that the pixel is
-glass, and an **arrow** towards the middle of that pixel's own glass. The
-probability is thresholded into a **mask**. Every mask pixel adds its arrow to
-its own position and casts a **vote**. The votes pile up, one pile per glass,
-and the piles are counted without anything having been told how many to expect.
-A pile with too few votes is doubted; a pile whose fitted width is not one this
-kind of glass could have would be turned down by the check prescribed above.
-What survives is one mask per glass, handed to the examiner's shared arithmetic.
+A **survey picture** goes in, as a height-like channel made from the depth
+reading and two channels saying where in the frame each pixel sits. The
+**network**, whose down path and up path are shaped so that a unit near the
+output can see 205 mm of table at once, produces two things at every pixel: a
+**probability** that the pixel is glass, and an **arrow** towards the middle of
+that pixel's own glass. The probability is thresholded into a **mask**. Every
+mask pixel adds its arrow to its own position and casts a **vote**. The votes
+pile up, one pile per glass, and the piles are counted without anything having
+been told how many to expect. A pile with too few votes is doubted; a pile whose
+fitted width is not one this kind of glass could have would be turned down by
+the check prescribed above. What survives is one mask per glass, handed to the
+examiner's shared arithmetic.
 
 Three things in that chain are worth holding on to.
 

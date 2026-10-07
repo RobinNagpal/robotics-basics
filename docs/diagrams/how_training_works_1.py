@@ -333,49 +333,97 @@ def the_error_table() -> None:
     _save(fig, SCORE_DOC, 'the-error-table.svg')
 
 
+def signed_errors_cancel() -> None:
+    """One idea: adding the signed errors cannot score a model, because they cancel."""
+    running = np.cumsum(ERR_A)
+    print('[s2] the running total of the signed errors: '
+          + ', '.join(f'{v:+.0f}' for v in running))
+
+    fig, ax = plt.subplots(figsize=(10.2, 5.2), facecolor='white')
+    _plain(ax)
+    idx = np.arange(1, 9)
+    cols = [SLIDE if v >= 0 else GRIP for v in ERR_A]
+    ax.bar(idx, ERR_A, color=cols, edgecolor=INK, lw=0.6, width=0.55, zorder=2)
+    ax.axhline(0, color=INK, lw=1.2, zorder=3)
+    ax.plot(idx, running, color=PURPLE, lw=2.4, marker='o', ms=7, zorder=4,
+            label='the errors added up so far')
+    for i, v in zip(idx, running):
+        off = -0.75 if i == 8 else 0.45
+        ax.text(i, v + off, f'{v:+.0f}', ha='center', fontsize=10, color=PURPLE,
+                weight='bold', va='center')
+    ax.scatter([8], [running[-1]], s=240, facecolor='none', edgecolor=PURPLE, lw=2.2,
+               zorder=5)
+    ax.annotate('the eight errors\nadd up to 0', xy=(8.25, 0.0), xytext=(9.4, 2.4),
+                fontsize=11.5, color=PURPLE, weight='bold', ha='center',
+                arrowprops=dict(arrowstyle='->', color=PURPLE, lw=1.4))
+    ax.set_xticks(idx)
+    ax.set_xlim(0.4, 10.6)
+    ax.set_ylim(-4.6, 6.2)
+    ax.set_xlabel('part on the tray', fontsize=10)
+    ax.set_ylabel('error (mm), and the running total', fontsize=10)
+    ax.set_title('Adding the eight signed errors gives 0, so a model that is 2 mm high\n'
+                 'on one part and 2 mm low on another would score as perfect',
+                 fontsize=12.5, weight='bold', color=INK)
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    _save(fig, SCORE_DOC, 'signed-errors-cancel.svg')
+
+
 def penalty_shapes() -> None:
+    """One idea: the shape of the two penalties as the error grows."""
     e = np.linspace(-5, 5, 801)
     for v in (1.0, 2.0, 4.0, 12.0):
         print(f'[s2] penalty at an error of {v:.0f} mm: squared {v * v:.0f}, '
               f'absolute {v:.0f}; squared is {v:.0f} times the absolute one')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.8), facecolor='white')
-    _plain(axes[0])
-    axes[0].plot(e, e ** 2, color=PURPLE, lw=2.6, label='squared error: penalty = error $\\times$ error')
-    axes[0].plot(e, np.abs(e), color=TEAL, lw=2.6, label='absolute error: penalty = size of error')
+    fig, ax = plt.subplots(figsize=(10.0, 5.4), facecolor='white')
+    _plain(ax)
+    ax.plot(e, e ** 2, color=PURPLE, lw=2.8,
+            label='squared error: penalty = error $\\times$ error')
+    ax.plot(e, np.abs(e), color=TEAL, lw=2.8,
+            label='absolute error: penalty = size of error')
     for v in (1.0, 2.0, 4.0):
-        axes[0].scatter([v, v], [v * v, v], s=55, color=INK, zorder=4)
-        axes[0].text(v + 0.12, v * v + 0.4, f'{v * v:.0f}', fontsize=9.5, color=PURPLE)
-        axes[0].text(v + 0.12, v - 0.9, f'{v:.0f}', fontsize=9.5, color=TEAL)
-    axes[0].set_xlabel('error on one part (mm)', fontsize=10)
-    axes[0].set_ylabel('penalty the loss gives it', fontsize=10)
-    axes[0].set_ylim(-0.6, 26)
-    axes[0].set_title('The two penalty shapes', fontsize=11.5, weight='bold', color=INK)
-    axes[0].legend(fontsize=9.5, frameon=False, loc='upper center')
-
-    _plain(axes[1])
-    idx = np.arange(1, 9)
-    axes[1].bar(idx - 0.19, ERR_A ** 2, width=0.36, color=PURPLE, edgecolor=INK, lw=0.6,
-                label='error squared')
-    axes[1].bar(idx + 0.19, np.abs(ERR_A), width=0.36, color=TEAL, edgecolor=INK, lw=0.6,
-                label='size of error')
-    for i, v in zip(idx, ERR_A ** 2):
-        axes[1].text(i - 0.19, v + 0.35, f'{v:.0f}', ha='center', fontsize=9.5, color=PURPLE)
-    for i, v in zip(idx, np.abs(ERR_A)):
-        axes[1].text(i + 0.19, v + 0.35, f'{v:.0f}', ha='center', fontsize=9.5, color=TEAL)
-    axes[1].set_xticks(idx)
-    axes[1].set_xlabel('part on the tray', fontsize=10)
-    axes[1].set_ylabel('penalty', fontsize=10)
-    axes[1].set_ylim(0, 24.5)
-    axes[1].set_title("Model A's eight errors under both penalties", fontsize=11.5,
-                      weight='bold', color=INK)
-    axes[1].legend(fontsize=9.5, frameon=False, loc='upper left')
-    fig.suptitle('Squaring an error of 4 mm gives it four times the weight that its '
-                 'size alone would\nPart 7, the one 4 mm miss, is 16 of the squared '
-                 'total of 36 but only 4 of the absolute total of 14',
-                 fontsize=12, weight='bold', color=INK)
-    fig.tight_layout()
+        ax.scatter([v, v], [v * v, v], s=55, color=INK, zorder=4)
+        ax.text(v - 0.14, v * v + 0.8, f'{v * v:.0f}', fontsize=10.5, color=PURPLE,
+                weight='bold', ha='right')
+        ax.text(v + 0.15, v - 0.85, f'{v:.0f}', fontsize=10.5, color=TEAL,
+                weight='bold', ha='left')
+    ax.set_xlabel('error on one part (mm)', fontsize=10)
+    ax.set_ylabel('penalty the loss gives that one part', fontsize=10)
+    ax.set_ylim(-0.6, 26)
+    ax.set_title('An error of 4 mm is charged 16 by squared error and 4 by absolute error',
+                 fontsize=12.5, weight='bold', color=INK)
+    ax.legend(fontsize=10.5, frameon=False, loc='upper center')
     _save(fig, SCORE_DOC, 'penalty-shapes.svg')
+
+
+def model_a_under_both_penalties() -> None:
+    """One idea: which of model A's parts each loss cares about."""
+    print(f'[s2] part 7 supplies {ERR_A[6] ** 2:.0f} of the squared total '
+          f'{np.sum(ERR_A ** 2):.0f} and {abs(ERR_A[6]):.0f} of the absolute total '
+          f'{np.abs(ERR_A).sum():.0f}')
+
+    fig, ax = plt.subplots(figsize=(10.4, 5.2), facecolor='white')
+    _plain(ax)
+    idx = np.arange(1, 9)
+    ax.bar(idx - 0.19, ERR_A ** 2, width=0.36, color=PURPLE, edgecolor=INK, lw=0.6,
+           label='error squared (total 36)')
+    ax.bar(idx + 0.19, np.abs(ERR_A), width=0.36, color=TEAL, edgecolor=INK, lw=0.6,
+           label='size of error (total 14)')
+    for i, v in zip(idx, ERR_A ** 2):
+        ax.text(i - 0.19, v + 0.35, f'{v:.0f}', ha='center', fontsize=9.5, color=PURPLE)
+    for i, v in zip(idx, np.abs(ERR_A)):
+        ax.text(i + 0.19, v + 0.35, f'{v:.0f}', ha='center', fontsize=9.5, color=TEAL)
+    ax.annotate('part 7 is 16 of the squared total\nbut only 4 of the absolute total',
+                xy=(6.81, 16), xytext=(4.3, 20.5), fontsize=10.5, color=INK, ha='center',
+                arrowprops=dict(arrowstyle='->', color=INK, lw=1.2))
+    ax.set_xticks(idx)
+    ax.set_xlabel('part on the tray', fontsize=10)
+    ax.set_ylabel('penalty', fontsize=10)
+    ax.set_ylim(0, 24.5)
+    ax.set_title("Model A's eight errors, charged under both losses",
+                 fontsize=12.5, weight='bold', color=INK)
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    _save(fig, SCORE_DOC, 'model-a-under-both-penalties.svg')
 
 
 def three_models_two_rankings() -> None:
@@ -389,52 +437,45 @@ def three_models_two_rankings() -> None:
     print('[s2] order by absolute error: ' + ' < '.join(f'{k} ({ab[k]:.0f})' for k in order_ab))
     print('[s2] order by squared error:  ' + ' < '.join(f'{k} ({sq[k]:.0f})' for k in order_sq))
 
-    fig = plt.figure(figsize=(11.8, 6.4), facecolor='white')
-    gs = fig.add_gridspec(2, 3, height_ratios=[1.35, 1.0], hspace=0.55, wspace=0.28)
+    fig, axes = plt.subplots(1, 3, figsize=(12.0, 4.6), facecolor='white', sharey=True)
     cols = [LINK, WRIST, PURPLE]
-    for c, ((name, err), colour) in enumerate(zip(MODELS, cols)):
-        ax = fig.add_subplot(gs[0, c])
+    for ax, (name, err), colour in zip(axes, MODELS, cols):
         _plain(ax)
         ax.bar(np.arange(1, 9), err, color=colour, edgecolor=INK, lw=0.6, width=0.62)
         ax.axhline(0, color=INK, lw=1.0)
         ax.set_xticks(np.arange(1, 9))
-        ax.tick_params(labelsize=8.5)
+        ax.tick_params(labelsize=9.0)
         ax.set_ylim(-13.6, 4.6)
-        ax.set_xlabel('part', fontsize=9.5)
-        if c == 0:
-            ax.set_ylabel('error (mm)', fontsize=9.5)
-        ax.set_title(f'{name}\nabsolute total {ab[name]:.0f}   squared total {sq[name]:.0f}',
-                     fontsize=10.5, weight='bold', color=colour)
-    for r, (label, table, order, colour) in enumerate([
+        ax.set_xlabel('part on the tray', fontsize=9.5)
+        ax.set_title(name, fontsize=12, weight='bold', color=colour)
+    axes[0].set_ylabel('error (mm)', fontsize=10)
+    fig.suptitle('Three ways of being wrong about the same eight parts: '
+                 'a little on most, 2 mm on all, and 12 mm on one',
+                 fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, SCORE_DOC, 'three-models-errors.svg')
+
+    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.4), facecolor='white')
+    names = [n for n, _ in MODELS]
+    for ax, (label, table, order, colour) in zip(axes, [
             ('total of the error sizes', ab, order_ab, TEAL),
             ('total of the squared errors', sq, order_sq, PURPLE)]):
-        ax = fig.add_subplot(gs[1, r])
         _plain(ax)
-        names = [n for n, _ in MODELS]
         vals = [table[n] for n in names]
         ax.barh(names[::-1], vals[::-1], color=colour, edgecolor=INK, lw=0.6, height=0.55)
         for i, n in enumerate(names[::-1]):
             ax.text(table[n] + max(vals) * 0.02, i, f'{table[n]:.0f}', va='center',
-                    fontsize=10, color=INK)
-        ax.set_xlim(0, max(vals) * 1.22)
-        ax.set_xlabel(label, fontsize=9.5)
+                    fontsize=11, color=INK)
+        ax.set_xlim(0, max(vals) * 1.26)
+        ax.tick_params(labelsize=10.5)
+        ax.set_xlabel(label, fontsize=10.5)
         ax.set_title('best first: ' + ', '.join(k.replace('model ', '') for k in order),
-                     fontsize=10.5, weight='bold', color=colour)
-    ax = fig.add_subplot(gs[1, 2])
-    _blank(ax)
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    ax.text(0.0, 0.95, 'The two losses disagree', fontsize=11.5, weight='bold', color=INK,
-            va='top')
-    ax.text(0.0, 0.76, 'By error size:  C, then A, then B.', fontsize=10.5, color=TEAL,
-            va='top')
-    ax.text(0.0, 0.62, 'By squared error:  B, then A, then C.', fontsize=10.5,
-            color=PURPLE, va='top')
-    ax.text(0.0, 0.42, 'C is best on one and worst on the\nother, because its one 12 mm\n'
-            'miss becomes 144 when squared.', fontsize=10, color=INK, va='top')
-    fig.suptitle('Three models, eight parts each: picking the loss picks the winner',
-                 fontsize=13, weight='bold', color=INK)
-    _save(fig, SCORE_DOC, 'three-models-two-rankings.svg')
+                     fontsize=12, weight='bold', color=colour)
+    fig.suptitle('The same three models put in order by each loss: the orders disagree, '
+                 'and model C moves from first to last',
+                 fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, SCORE_DOC, 'two-rankings.svg')
 
 
 def _flat_bottom(grid: Arr, vals: Arr) -> tuple[float, float]:
@@ -490,6 +531,50 @@ def one_wild_reading() -> None:
     _save(fig, SCORE_DOC, 'one-wild-reading.svg')
 
 
+def average_and_middle() -> None:
+    """One idea: the glitch moves the average and leaves the middle value alone."""
+    print(f'[s2] seven good readings: average {FORCE7.mean():.3f} N, '
+          f'middle value {np.median(FORCE7):.3f} N')
+    print(f'[s2] with the 19 N glitch: average {FORCE8.mean():.3f} N, '
+          f'middle value {np.median(FORCE8):.3f} N')
+
+    fig, ax = plt.subplots(figsize=(10.6, 5.0), facecolor='white')
+    _plain(ax)
+    for y, data in ((1.0, FORCE7), (0.0, FORCE8)):
+        ax.axhline(y, color=GRID, lw=1.0, zorder=0)
+        ax.scatter(data, np.full(len(data), y), s=170, marker='|', color=INK,
+                   linewidths=2.4, zorder=3)
+    ax.text(4.45, 1.46, 'the seven good readings', fontsize=11, color=INK, ha='left')
+    ax.text(4.45, 0.46, 'with the 19 N glitch added', fontsize=11, color=INK, ha='left')
+
+    ax.scatter([5.0], [1.0], s=200, marker='D', color=WRIST, edgecolor=INK, lw=0.7,
+               zorder=5)
+    ax.text(5.0, 1.14, 'the average and the middle value are both 5.00',
+            fontsize=10.5, color=WRIST, ha='center', weight='bold')
+
+    ax.scatter([np.median(FORCE8)], [0.0], s=170, marker='^', color=TEAL, zorder=5)
+    ax.text(np.median(FORCE8), 0.13, f'middle {np.median(FORCE8):.2f}', fontsize=10.5,
+            color=TEAL, ha='center', weight='bold')
+    ax.scatter([FORCE8.mean()], [0.0], s=170, marker='v', color=PURPLE, zorder=5)
+    ax.text(FORCE8.mean(), 0.13, f'average {FORCE8.mean():.2f}', fontsize=10.5,
+            color=PURPLE, ha='center', weight='bold')
+    ax.annotate('', xy=(FORCE8.mean(), -0.22), xytext=(5.0, -0.22),
+                arrowprops=dict(arrowstyle='->', color=PURPLE, lw=1.8))
+    ax.text((5.0 + FORCE8.mean()) / 2, -0.42, 'the average moves 1.75 N', fontsize=10.5,
+            color=PURPLE, ha='center', va='top')
+    ax.text(7.05, 0.0, 'the glitch itself\nis at 19.0 N, off\nthe right of this\npicture',
+            fontsize=10, color=GRIP, ha='left', va='center')
+    ax.set_xlim(4.4, 7.0)
+    ax.set_ylim(-0.75, 1.7)
+    ax.set_yticks([])
+    ax.spines['left'].set_visible(False)
+    ax.set_xlabel('grip force (newtons)', fontsize=10)
+    ax.set_title('Squared error aims at the average and absolute error aims at the '
+                 'middle value,\nand only the average follows the glitch',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, SCORE_DOC, 'average-and-middle.svg')
+
+
 # ---------------- section 3: logits and softmax ----------------
 
 def softmax_arithmetic() -> None:
@@ -503,37 +588,44 @@ def softmax_arithmetic() -> None:
     print(f'[s3] the four e^logit values add to {tot:.4f}, '
           f'and the four probabilities add to {p.sum():.4f}')
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.0, 5.0), facecolor='white',
-                             gridspec_kw={'width_ratios': [1.15, 1.0]})
+    fig, ax = plt.subplots(figsize=(9.8, 5.0), facecolor='white')
     rows = [[c, f'{zi:+.1f}', f'{ei:.3f}', f'{ei:.3f} / {tot:.3f}', f'{pi:.4f}']
             for c, zi, ei, pi in zip(CLASSES, z, e, p)]
     foot = ['total', '', f'{tot:.3f}', '', f'{p.sum():.4f}']
-    _table(axes[0], ['class', 'logit', 'e raised\nto the logit', 'divided by\nthe total',
-                     'probability'],
+    _table(ax, ['class', 'logit', 'e raised\nto the logit', 'divided by\nthe total',
+                'probability'],
            rows, [1.0, 0.9, 1.45, 1.75, 1.2],
-           colours=[INK, LINK, WRIST, MUTED, SLIDE], fontsize=10.0, row_h=1.0, foot=foot)
-    axes[0].set_title('Softmax, worked out in full', fontsize=12, weight='bold', color=INK,
-                      pad=12)
-    _plain(axes[1])
-    xs = np.arange(4)
-    axes[1].bar(xs - 0.2, z, width=0.38, color=LINK, edgecolor=INK, lw=0.6,
-                label='logit (any size, either sign)')
-    axes[1].bar(xs + 0.2, p * 4.0, width=0.38, color=SLIDE, edgecolor=INK, lw=0.6,
-                label='probability (drawn at 4 times scale)')
-    for x, zi in zip(xs, z):
-        axes[1].text(x - 0.2, zi + 0.12, f'{zi:+.1f}', ha='center', fontsize=10, color=LINK)
-    for x, pi in zip(xs, p):
-        axes[1].text(x + 0.2, pi * 4.0 + 0.12, f'{pi:.3f}', ha='center', fontsize=10,
-                     color=SLIDE)
-    axes[1].set_xticks(xs)
-    axes[1].set_xticklabels(CLASSES, fontsize=10.5)
-    axes[1].axhline(0, color=INK, lw=1.0)
-    axes[1].set_ylim(-0.4, 5.0)
-    axes[1].set_ylabel('logit, and probability at 4 times scale', fontsize=9.5)
-    axes[1].set_title('Four raw scores become four numbers that add to 1',
-                      fontsize=12, weight='bold', color=INK)
-    axes[1].legend(fontsize=9.5, frameon=False, loc='upper right')
+           colours=[INK, LINK, WRIST, MUTED, SLIDE], fontsize=10.5, row_h=1.0, foot=foot)
+    ax.set_title('Softmax on one picture, worked out in full',
+                 fontsize=12.5, weight='bold', color=INK, pad=12)
     _save(fig, SCORE_DOC, 'softmax-arithmetic.svg')
+
+
+def logits_to_probabilities() -> None:
+    """One idea: the four raw scores and the four shares they become."""
+    z = CASES[0][1]
+    p = _softmax(z)
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
+    _plain(ax)
+    xs = np.arange(4)
+    ax.bar(xs - 0.2, z, width=0.38, color=LINK, edgecolor=INK, lw=0.6,
+           label='logit (any size, either sign)')
+    ax.bar(xs + 0.2, p * 4.0, width=0.38, color=SLIDE, edgecolor=INK, lw=0.6,
+           label='probability (drawn at 4 times scale)')
+    for x, zi in zip(xs, z):
+        ax.text(x - 0.2, zi + 0.12, f'{zi:+.1f}', ha='center', fontsize=10.5, color=LINK)
+    for x, pi in zip(xs, p):
+        ax.text(x + 0.2, pi * 4.0 + 0.12, f'{pi:.4f}', ha='center', fontsize=10.5,
+                color=SLIDE)
+    ax.set_xticks(xs)
+    ax.set_xticklabels(CLASSES, fontsize=11)
+    ax.axhline(0, color=INK, lw=1.0)
+    ax.set_ylim(-0.4, 5.0)
+    ax.set_ylabel('logit, and probability at 4 times scale', fontsize=10)
+    ax.set_title('Four raw scores become four numbers that add up to 1',
+                 fontsize=12.5, weight='bold', color=INK)
+    ax.legend(fontsize=10, frameon=False, loc='upper right')
+    _save(fig, SCORE_DOC, 'logits-to-probabilities.svg')
 
 
 def softmax_shift_and_spread() -> None:
@@ -550,43 +642,43 @@ def softmax_shift_and_spread() -> None:
     print(f'[s3] doubling every logit gives {", ".join(f"{v:.4f}" for v in p_wide)}')
     print(f'[s3] quartering every logit gives {", ".join(f"{v:.4f}" for v in p_flat)}')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.8, 4.8), facecolor='white')
     xs = np.arange(4)
-    _plain(axes[0])
-    axes[0].bar(xs - 0.2, p, width=0.38, color=SLIDE, edgecolor=INK, lw=0.6,
-                label='logits 4.0, 1.0, 0.5, 0.0')
-    axes[0].bar(xs + 0.2, p_shift, width=0.38, color=LINK_PALE, edgecolor=INK, lw=0.6,
-                label='the same logits plus 10')
+    fig, ax = plt.subplots(figsize=(9.8, 5.0), facecolor='white')
+    _plain(ax)
+    ax.bar(xs - 0.2, p, width=0.38, color=SLIDE, edgecolor=INK, lw=0.6,
+           label='logits 4.0, 1.0, 0.5, 0.0')
+    ax.bar(xs + 0.2, p_shift, width=0.38, color=LINK_PALE, edgecolor=INK, lw=0.6,
+           label='the same logits plus 10')
     for x, a, b in zip(xs, p, p_shift):
-        axes[0].text(x - 0.2, a + 0.02, f'{a:.3f}', ha='center', fontsize=9.5, color=INK)
-        axes[0].text(x + 0.2, b + 0.02, f'{b:.3f}', ha='center', fontsize=9.5, color=INK)
-    axes[0].set_xticks(xs)
-    axes[0].set_xticklabels(CLASSES, fontsize=10.5)
-    axes[0].set_ylim(0, 1.12)
-    axes[0].set_ylabel('probability', fontsize=10)
-    axes[0].set_title('Only the gaps between logits matter', fontsize=11.5, weight='bold',
-                      color=INK)
-    axes[0].legend(fontsize=9.5, frameon=False, loc='upper center')
-    _plain(axes[1])
-    for off, vals, colour, lab in ((-0.26, p_flat, LINK, 'logits quartered'),
-                                   (0.0, p, SLIDE, 'logits as they are'),
-                                   (0.26, p_wide, PURPLE, 'logits doubled')):
-        axes[1].bar(xs + off, vals, width=0.25, color=colour, edgecolor=INK, lw=0.6,
-                    label=lab)
+        ax.text(x - 0.2, a + 0.02, f'{a:.4f}', ha='center', fontsize=10, color=INK)
+        ax.text(x + 0.2, b + 0.02, f'{b:.4f}', ha='center', fontsize=10, color=INK)
+    ax.set_xticks(xs)
+    ax.set_xticklabels(CLASSES, fontsize=11)
+    ax.set_ylim(0, 1.14)
+    ax.set_ylabel('probability', fontsize=10)
+    ax.set_title('Adding 10 to every logit leaves all four probabilities exactly '
+                 'where they were',
+                 fontsize=12.5, weight='bold', color=INK)
+    ax.legend(fontsize=10.5, frameon=False, loc='upper center')
+    _save(fig, SCORE_DOC, 'softmax-shift.svg')
+
+    fig, ax = plt.subplots(figsize=(9.8, 5.0), facecolor='white')
+    _plain(ax)
+    for off, vals, colour, lab in ((-0.26, p_flat, LINK, 'every logit divided by 4'),
+                                   (0.0, p, SLIDE, 'the logits as they are'),
+                                   (0.26, p_wide, PURPLE, 'every logit multiplied by 2')):
+        ax.bar(xs + off, vals, width=0.25, color=colour, edgecolor=INK, lw=0.6, label=lab)
         for x, v in zip(xs, vals):
-            axes[1].text(x + off, v + 0.02, f'{v:.2f}', ha='center', fontsize=9.0,
-                         color=INK)
-    axes[1].set_xticks(xs)
-    axes[1].set_xticklabels(CLASSES, fontsize=10.5)
-    axes[1].set_ylim(0, 1.32)
-    axes[1].set_ylabel('probability', fontsize=10)
-    axes[1].set_title('Stretching the logits sharpens the probabilities',
-                      fontsize=11.5, weight='bold', color=INK)
-    axes[1].legend(fontsize=9.5, frameon=False, loc='upper center')
-    fig.suptitle('What softmax ignores, and what it reacts to',
-                 fontsize=13, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, SCORE_DOC, 'softmax-shift-and-spread.svg')
+            ax.text(x + off, v + 0.02, f'{v:.3f}', ha='center', fontsize=9.0, color=INK)
+    ax.set_xticks(xs)
+    ax.set_xticklabels(CLASSES, fontsize=11)
+    ax.set_ylim(0, 1.32)
+    ax.set_ylabel('probability', fontsize=10)
+    ax.set_title('Stretching the gaps between the logits makes the probabilities sharper,\n'
+                 'although the order of the four answers never changes',
+                 fontsize=12.5, weight='bold', color=INK)
+    ax.legend(fontsize=10.5, frameon=False, loc='upper center')
+    _save(fig, SCORE_DOC, 'softmax-spread.svg')
 
 
 def three_cases_probabilities() -> None:
@@ -616,6 +708,41 @@ def three_cases_probabilities() -> None:
 
 
 # ---------------- section 4: cross-entropy ----------------
+
+def cross_entropy_uses_one_number() -> None:
+    """One idea: of the four probabilities, cross-entropy reads only one."""
+    label, z, truth = CASES[1]
+    p = _softmax(z)
+    loss = float(-np.log(p[truth]))
+    print(f'[s4] the {label} case gives {", ".join(f"{v:.4f}" for v in p)}; '
+          f'cross-entropy reads only {p[truth]:.4f}, the one on {CLASSES[truth]}, '
+          f'and charges {loss:.4f}')
+
+    fig, ax = plt.subplots(figsize=(10.2, 5.2), facecolor='white')
+    _plain(ax)
+    xs = np.arange(4)
+    cols = [SLIDE if i == truth else LINK_PALE for i in range(4)]
+    ax.bar(xs, p, color=cols, edgecolor=INK, lw=0.8, width=0.56)
+    for x, v in zip(xs, p):
+        ax.text(x, v + 0.015, f'{v:.4f}', ha='center', fontsize=11, color=INK)
+    for x in xs:
+        if x != truth:
+            ax.text(x, 0.02, 'ignored', ha='center', fontsize=10, color=MUTED,
+                    rotation=90, va='bottom')
+    ax.annotate(f'the right answer was {CLASSES[truth]},\nso the loss is '
+                f'$-\\ln$ {p[truth]:.4f} = {loss:.4f}',
+                xy=(truth + 0.30, p[truth]), xytext=(1.5, 0.30), fontsize=11.5,
+                color=SLIDE, weight='bold', ha='left',
+                arrowprops=dict(arrowstyle='->', color=SLIDE, lw=1.4))
+    ax.set_xticks(xs)
+    ax.set_xticklabels(CLASSES, fontsize=11.5)
+    ax.set_ylim(0, 0.46)
+    ax.set_ylabel('probability the model gave', fontsize=10)
+    ax.set_title('Cross-entropy reads one of the four probabilities and throws the '
+                 'other three away',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, SCORE_DOC, 'cross-entropy-uses-one-number.svg')
+
 
 def minus_log_curve() -> None:
     p = np.linspace(0.005, 1.0, 1200)
@@ -880,38 +1007,39 @@ def cross_entropy_landscape() -> None:
     for w in (0.0, 0.5, 1.0, 2.0, 3.0):
         print(f'[s5] w = {w:.1f}: cross-entropy {_ce_hold(w)[0]:.4f}')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.8, 5.0), facecolor='white')
-    _plain(axes[0])
+    fig, ax = plt.subplots(figsize=(10.2, 5.2), facecolor='white')
+    _plain(ax)
     fs = np.linspace(1.5, 8.5, 400)
     for w, colour in ((0.5, LINK), (best, SLIDE), (3.0, GRIP)):
-        axes[0].plot(fs, _sigmoid(w * (fs - 5.0)), color=colour, lw=2.2,
-                     label=f'w = {w:.3f}, loss = {_ce_hold(w)[0]:.3f}')
-    axes[0].scatter(HOLD_F, HOLD_Y, s=110, color=INK, zorder=5)
+        ax.plot(fs, _sigmoid(w * (fs - 5.0)), color=colour, lw=2.4,
+                label=f'w = {w:.3f}, loss = {_ce_hold(w)[0]:.3f}')
+    ax.scatter(HOLD_F, HOLD_Y, s=120, color=INK, zorder=5)
     for f, y in zip(HOLD_F, HOLD_Y):
-        axes[0].text(f, y + (0.05 if y == 0 else -0.11), 'held' if y == 1 else 'dropped',
-                     fontsize=9, color=INK, ha='center')
-    axes[0].set_xlabel('closing force of the grip (newtons)', fontsize=10)
-    axes[0].set_ylabel('probability the model gives to "held"', fontsize=10)
-    axes[0].set_ylim(-0.18, 1.18)
-    axes[0].set_title('Seven grips, and three settings of the one weight',
-                      fontsize=11.5, weight='bold', color=INK)
-    axes[0].legend(fontsize=9.5, frameon=False, loc='lower right')
-    _plain(axes[1])
-    axes[1].plot(ws, ce, color=GRIP, lw=2.6)
-    axes[1].scatter([best], [ce.min()], s=110, marker='v', color=INK, zorder=5)
-    axes[1].text(best + 0.12, ce.min() + 0.04, f'bottom: w = {best:.3f},\n'
-                 f'loss = {ce.min():.4f}', fontsize=10, color=INK)
-    axes[1].axhline(float(np.log(2)), color=MUTED, ls='--', lw=1.2)
-    axes[1].text(2.05, np.log(2) + 0.025, f'w = 0 says 0.5 to everything: '
-                 f'{np.log(2):.3f}', fontsize=9.5, color=MUTED, ha='left')
-    axes[1].set_xlabel('the one weight, w', fontsize=10)
-    axes[1].set_ylabel('mean cross-entropy over the seven grips', fontsize=10)
-    axes[1].set_ylim(0.3, 1.32)
-    axes[1].set_title('A cross-entropy landscape has a bottom too',
-                      fontsize=11.5, weight='bold', color=GRIP)
-    fig.suptitle('Cross-entropy drawn against a weight: lopsided, but still a bowl',
-                 fontsize=13, weight='bold', color=INK)
-    fig.tight_layout()
+        ax.text(f, y + (0.05 if y == 0 else -0.11), 'held' if y == 1 else 'dropped',
+                fontsize=9.5, color=INK, ha='center')
+    ax.set_xlabel('closing force of the grip (newtons)', fontsize=10)
+    ax.set_ylabel('probability the model gives to "held"', fontsize=10)
+    ax.set_ylim(-0.18, 1.18)
+    ax.set_title('Seven grips, and what three settings of the one weight predict',
+                 fontsize=12.5, weight='bold', color=INK)
+    ax.legend(fontsize=10, frameon=False, loc='lower right')
+    _save(fig, SCORE_DOC, 'hold-or-drop-curves.svg')
+
+    fig, ax = plt.subplots(figsize=(10.2, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot(ws, ce, color=GRIP, lw=2.8)
+    ax.scatter([best], [ce.min()], s=120, marker='v', color=INK, zorder=5)
+    ax.text(best + 0.12, ce.min() + 0.04, f'bottom: w = {best:.3f},\n'
+            f'loss = {ce.min():.4f}', fontsize=10.5, color=INK)
+    ax.axhline(float(np.log(2)), color=MUTED, ls='--', lw=1.2)
+    ax.text(2.05, np.log(2) + 0.025, f'w = 0 says 0.5 to every grip: '
+            f'{np.log(2):.4f}', fontsize=10, color=MUTED, ha='left')
+    ax.set_xlabel('the one weight, w', fontsize=10)
+    ax.set_ylabel('mean cross-entropy over the seven grips', fontsize=10)
+    ax.set_ylim(0.3, 1.32)
+    ax.set_title('Cross-entropy drawn against one weight: not a symmetrical bowl, '
+                 'but still one bottom',
+                 fontsize=12.5, weight='bold', color=GRIP)
     _save(fig, SCORE_DOC, 'cross-entropy-landscape.svg')
 
 
@@ -926,22 +1054,23 @@ def huber_curve() -> None:
         print(f'[s6] error {v:5.1f} mm: squared {v * v:7.2f}, absolute {v:6.2f}, '
               f'Huber (switch at 1 mm) {h:6.2f}')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.8, 5.0), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(e, 0.5 * e ** 2, color=PURPLE, lw=2.4, label='half the squared error')
     ax.plot(e, np.abs(e), color=TEAL, lw=2.4, label='the error size')
-    ax.plot(e, hub, color=WRIST, lw=3.0, ls='-', label='Huber, switching at 1 mm')
+    ax.plot(e, hub, color=WRIST, lw=3.2, ls='-', label='Huber, switching at 1 mm')
     for s in (-1.0, 1.0):
         ax.axvline(s, color=GRID, lw=1.2)
     ax.set_xlabel('error on one part (mm)', fontsize=10)
     ax.set_ylabel('penalty', fontsize=10)
     ax.set_ylim(-0.3, 5.4)
-    ax.set_title('Inside 1 mm the Huber penalty follows the squared one,\n'
-                 'and outside it follows the straight one',
-                 fontsize=11, weight='bold', color=INK)
-    ax.legend(fontsize=9.5, frameon=False, loc='upper center')
-    ax = axes[1]
+    ax.set_title('Inside 1 mm the Huber penalty follows the squared one, and outside '
+                 'it follows the straight one',
+                 fontsize=12, weight='bold', color=INK)
+    ax.legend(fontsize=10.5, frameon=False, loc='upper center')
+    _save(fig, SCORE_DOC, 'huber-curve.svg')
+
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
     _plain(ax)
     sizes = [0.5, 1.0, 2.0, 4.0, 12.0]
     sq = [v * v for v in sizes]
@@ -957,17 +1086,14 @@ def huber_curve() -> None:
     ax.set_yscale('log')
     ax.set_ylim(0.08, 600)
     ax.set_xticks(xs)
-    ax.set_xticklabels([f'{v:g} mm' for v in sizes], fontsize=10)
+    ax.set_xticklabels([f'{v:g} mm' for v in sizes], fontsize=10.5)
     ax.set_xlabel('size of the error on one part', fontsize=10)
     ax.set_ylabel('penalty (log scale)', fontsize=10)
-    ax.set_title('What each loss charges for five error sizes', fontsize=11,
-                 weight='bold', color=INK)
-    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
-    fig.suptitle('A 12 mm miss costs 144 under squared error, 12 under the error size '
+    ax.set_title('A 12 mm miss costs 144 under squared error, 12 under the error size '
                  'and 11.5 under Huber',
-                 fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, SCORE_DOC, 'huber-curve.svg')
+                 fontsize=12, weight='bold', color=INK)
+    ax.legend(fontsize=10.5, frameon=False, loc='upper left')
+    _save(fig, SCORE_DOC, 'three-losses-five-sizes.svg')
 
 
 def fitted_under_three_losses() -> None:
@@ -986,47 +1112,47 @@ def fitted_under_three_losses() -> None:
           f'{abs(b_sq - W_STAR):.4f}, the absolute-error answer by '
           f'{abs(b_ab - W_STAR):.4f} and the Huber answer by {abs(b_hub - W_STAR):.4f}')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.8, 5.2), facecolor='white')
-    _plain(axes[0])
+    fig, ax = plt.subplots(figsize=(10.2, 5.4), facecolor='white')
+    _plain(ax)
     xs = np.linspace(0, 5.6, 100)
-    axes[0].plot(xs, W_STAR * xs, color=GRID, lw=2.0, ls='--',
-                 label=f'before the glitch: w = {W_STAR:.3f}')
+    ax.plot(xs, W_STAR * xs, color=GRID, lw=2.0, ls='--',
+            label=f'before the glitch: w = {W_STAR:.3f}')
     for w, colour, lab in ((b_sq, PURPLE, 'squared error'), (b_ab, TEAL, 'absolute error'),
                            (b_hub, WRIST, 'Huber')):
-        axes[0].plot(xs, w * xs, color=colour, lw=2.3, label=f'{lab}: w = {w:.3f}')
-    axes[0].scatter(X1[:4], Y1_BAD[:4], s=110, color=INK, zorder=5)
-    axes[0].scatter([X1[4]], [Y1_BAD[4]], s=150, marker='X', color=GRIP, zorder=6)
-    axes[0].annotate('the glitched reading:\n4.0 mm instead of 15.1 mm',
-                     xy=(X1[4], Y1_BAD[4]), xytext=(2.6, 1.0), fontsize=9.5, color=GRIP,
-                     arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.1))
-    axes[0].set_xlim(0, 5.6)
-    axes[0].set_ylim(0, 19)
-    axes[0].set_xlabel('height of the part in the picture (tens of pixels)', fontsize=10)
-    axes[0].set_ylabel('downward travel (mm)', fontsize=10)
-    axes[0].set_title('One bad label, three answers', fontsize=11.5, weight='bold',
-                      color=INK)
-    axes[0].legend(fontsize=9.3, frameon=False, loc='upper left')
-    _plain(axes[1])
+        ax.plot(xs, w * xs, color=colour, lw=2.4, label=f'{lab}: w = {w:.3f}')
+    ax.scatter(X1[:4], Y1_BAD[:4], s=115, color=INK, zorder=5)
+    ax.scatter([X1[4]], [Y1_BAD[4]], s=155, marker='X', color=GRIP, zorder=6)
+    ax.annotate('the glitched reading:\n4.0 mm instead of 15.1 mm',
+                xy=(X1[4], Y1_BAD[4]), xytext=(2.6, 1.0), fontsize=10, color=GRIP,
+                arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.1))
+    ax.set_xlim(0, 5.6)
+    ax.set_ylim(0, 19)
+    ax.set_xlabel('height of the part in the picture (tens of pixels)', fontsize=10)
+    ax.set_ylabel('downward travel (mm)', fontsize=10)
+    ax.set_title('One bad label out of five, and the line each loss fits through it',
+                 fontsize=12.5, weight='bold', color=INK)
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    _save(fig, SCORE_DOC, 'fitted-under-three-losses.svg')
+
+    fig, ax = plt.subplots(figsize=(10.2, 5.4), facecolor='white')
+    _plain(ax)
     for vals, colour, lab, best in ((sq / sq.min(), PURPLE, 'squared error', b_sq),
                                     (ab / ab.min(), TEAL, 'absolute error', b_ab),
                                     (hub / hub.min(), WRIST, 'Huber', b_hub)):
-        axes[1].plot(grid, vals, color=colour, lw=2.3, label=lab)
-        axes[1].axvline(best, color=colour, ls=':', lw=1.4)
-    axes[1].axvline(W_STAR, color=GRID, ls='--', lw=1.6)
-    axes[1].text(W_STAR + 0.03, 5.6, f'the honest answer, {W_STAR:.3f}', fontsize=9.5,
-                 color=MUTED, rotation=90, va='top')
-    axes[1].set_xlim(1.2, 3.6)
-    axes[1].set_ylim(0.9, 6.2)
-    axes[1].set_xlabel('the one weight, w', fontsize=10)
-    axes[1].set_ylabel('loss, divided by its own lowest value', fontsize=10)
-    axes[1].set_title('Each loss has its bottom in a different place', fontsize=11.5,
-                      weight='bold', color=INK)
-    axes[1].legend(fontsize=9.5, frameon=False, loc='upper right')
-    fig.suptitle('With one glitched label in five, squared error gives up 1.01 of the '
-                 'weight and absolute error gives up 0.03',
+        ax.plot(grid, vals, color=colour, lw=2.4, label=f'{lab}, bottom at {best:.3f}')
+        ax.axvline(best, color=colour, ls=':', lw=1.4)
+    ax.axvline(W_STAR, color=GRID, ls='--', lw=1.6)
+    ax.text(W_STAR + 0.03, 5.6, f'the honest answer, {W_STAR:.3f}', fontsize=10,
+            color=MUTED, rotation=90, va='top')
+    ax.set_xlim(1.2, 3.6)
+    ax.set_ylim(0.9, 6.2)
+    ax.set_xlabel('the one weight, w', fontsize=10)
+    ax.set_ylabel('loss, divided by its own lowest value', fontsize=10)
+    ax.set_title('The same glitched data: each loss puts the bottom of its landscape\n'
+                 'in a different place',
                  fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, SCORE_DOC, 'fitted-under-three-losses.svg')
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    _save(fig, SCORE_DOC, 'three-bottoms-after-a-glitch.svg')
 
 
 def why_not_squared_for_a_choice() -> None:
@@ -1053,48 +1179,47 @@ def why_not_squared_for_a_choice() -> None:
     print(f'[s6] at a probability of {ps[worst]:.4f} cross-entropy pushes '
           f'{abs(ce_slope[worst] / sq_slope[worst]):.1f} times harder than squared error')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.8, 5.0), facecolor='white')
-    _plain(axes[0])
-    axes[0].plot(p, ce, color=GRIP, lw=2.6, label='cross-entropy: $-\\ln p$')
-    axes[0].plot(p, sq, color=LINK, lw=2.6, label='squared error: $(1 - p)^2$')
-    axes[0].axhline(1.0, color=GRID, lw=1.2)
-    axes[0].text(0.97, 0.52, 'squared error can never charge more than 1',
-                 transform=axes[0].transAxes, fontsize=9.5, color=LINK, ha='right')
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot(p, ce, color=GRIP, lw=2.8, label='cross-entropy: $-\\ln p$')
+    ax.plot(p, sq, color=LINK, lw=2.8, label='squared error: $(1 - p)^2$')
+    ax.axhline(1.0, color=GRID, lw=1.2)
+    ax.text(0.97, 0.52, 'squared error can never charge more than 1',
+            transform=ax.transAxes, fontsize=10, color=LINK, ha='right')
     for pr in (0.01, 0.1):
-        axes[0].scatter([pr, pr], [-np.log(pr), (1 - pr) ** 2], s=60, color=INK, zorder=5)
-        axes[0].text(pr + 0.02, -np.log(pr) + 0.15, f'{-np.log(pr):.2f}', fontsize=9.5,
-                     color=GRIP)
-    axes[0].set_xlim(0, 1.02)
-    axes[0].set_ylim(0, 5.4)
-    axes[0].set_xlabel('probability given to the right class', fontsize=10)
-    axes[0].set_ylabel('penalty', fontsize=10)
-    axes[0].set_title('How much each loss charges', fontsize=11.5, weight='bold',
-                      color=INK)
-    axes[0].legend(fontsize=9.8, frameon=False, loc='upper center')
-    _plain(axes[1])
-    xpos = np.arange(len(zs))
-    axes[1].bar(xpos - 0.19, np.abs(ce_slope), width=0.36, color=GRIP, edgecolor=INK,
-                lw=0.6, label='cross-entropy')
-    axes[1].bar(xpos + 0.19, np.abs(sq_slope), width=0.36, color=LINK, edgecolor=INK,
-                lw=0.6, label='squared error')
-    for x, a, b in zip(xpos, np.abs(ce_slope), np.abs(sq_slope)):
-        axes[1].text(x - 0.19, a + 0.012, f'{a:.3f}', ha='center', fontsize=9.0,
-                     color=INK)
-        axes[1].text(x + 0.19, b + 0.012, f'{b:.3f}', ha='center', fontsize=9.0,
-                     color=INK)
-    axes[1].set_xticks(xpos)
-    axes[1].set_xticklabels([f'{pr:.3f}' for pr in ps], fontsize=9.5)
-    axes[1].set_xlabel('probability given to the right class', fontsize=10)
-    axes[1].set_ylabel('size of the push on the logit', fontsize=10)
-    axes[1].set_ylim(0, 1.12)
-    axes[1].set_title('How hard each loss pushes the logit', fontsize=11.5,
-                      weight='bold', color=INK)
-    axes[1].legend(fontsize=9.8, frameon=False, loc='upper right')
-    fig.suptitle('A sure wrong answer: cross-entropy still pushes hard, '
-                 'squared error has almost given up',
+        ax.scatter([pr, pr], [-np.log(pr), (1 - pr) ** 2], s=60, color=INK, zorder=5)
+        ax.text(pr + 0.02, -np.log(pr) + 0.15, f'{-np.log(pr):.2f}', fontsize=10,
+                color=GRIP)
+    ax.set_xlim(0, 1.02)
+    ax.set_ylim(0, 5.4)
+    ax.set_xlabel('probability given to the right class', fontsize=10)
+    ax.set_ylabel('penalty', fontsize=10)
+    ax.set_title('Cross-entropy keeps charging more as the right answer loses probability,\n'
+                 'while squared error stops at 1',
                  fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
+    ax.legend(fontsize=10.5, frameon=False, loc='upper center')
     _save(fig, SCORE_DOC, 'why-not-squared-for-a-choice.svg')
+
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
+    _plain(ax)
+    xpos = np.arange(len(zs))
+    ax.bar(xpos - 0.19, np.abs(ce_slope), width=0.36, color=GRIP, edgecolor=INK,
+           lw=0.6, label='cross-entropy')
+    ax.bar(xpos + 0.19, np.abs(sq_slope), width=0.36, color=LINK, edgecolor=INK,
+           lw=0.6, label='squared error')
+    for x, a, b in zip(xpos, np.abs(ce_slope), np.abs(sq_slope)):
+        ax.text(x - 0.19, a + 0.012, f'{a:.3f}', ha='center', fontsize=9.5, color=INK)
+        ax.text(x + 0.19, b + 0.012, f'{b:.3f}', ha='center', fontsize=9.5, color=INK)
+    ax.set_xticks(xpos)
+    ax.set_xticklabels([f'{pr:.3f}' for pr in ps], fontsize=10)
+    ax.set_xlabel('probability given to the right class', fontsize=10)
+    ax.set_ylabel('size of the push on the logit', fontsize=10)
+    ax.set_ylim(0, 1.12)
+    ax.set_title('At a probability of 0.010 cross-entropy pushes the logit about\n'
+                 '51 times harder than squared error does',
+                 fontsize=12.5, weight='bold', color=INK)
+    ax.legend(fontsize=10.5, frameon=False, loc='upper right')
+    _save(fig, SCORE_DOC, 'push-on-the-logit.svg')
 
 
 # ==========================================================================
@@ -1267,6 +1392,46 @@ def first_steps_table() -> None:
     ax.text(0.5, -10.1, f'the bottom of this curve is at w = {W_STAR:.4f} with a loss of '
             f'{L_STAR:.4f} mm$^2$', ha='center', fontsize=11, color=INK)
     _save(fig, DESC_DOC, 'first-steps-table.svg')
+
+
+def one_step_arithmetic() -> None:
+    """One idea: how the slope at one place becomes the distance w moves."""
+    w = 0.0
+    g = slope_mse(w)
+    move = -ETA_GOOD * g
+    w_new = w + move
+    lo = float(mse_w(w)[0])
+    lo_new = float(mse_w(w_new)[0])
+    print(f'[g2] one step from w = {w:.2f}: slope {g:+.4f}, move = -{ETA_GOOD} x '
+          f'{g:+.4f} = {move:+.4f}, new w = {w_new:.4f}, '
+          f'loss {lo:.4f} -> {lo_new:.4f}')
+
+    fig, ax = plt.subplots(figsize=(10.4, 5.8), facecolor='white')
+    _plain(ax)
+    grid = np.linspace(-0.4, 4.2, 700)
+    ax.plot(grid, mse_w(grid), color=SLIDE, lw=2.8, zorder=2)
+    seg = np.linspace(w - 0.35, w + 0.9, 10)
+    ax.plot(seg, lo + g * (seg - w), color=GRIP, lw=2.2, zorder=3)
+    ax.scatter([w], [lo], s=110, color=GRIP, edgecolor=INK, lw=0.7, zorder=5)
+    ax.scatter([w_new], [lo_new], s=110, color=LINK, edgecolor=INK, lw=0.7, zorder=5)
+    ax.text(w + 0.06, lo + 3.0, f'start: w = {w:.2f},\nslope = {g:+.2f}', fontsize=10.5,
+            color=GRIP, ha='left')
+    ax.text(w_new + 0.12, lo_new + 3.0, f'after one step:\nw = {w_new:.4f}',
+            fontsize=10.5, color=LINK, ha='left')
+    ax.annotate('', xy=(w_new, 8.0), xytext=(w, 8.0),
+                arrowprops=dict(arrowstyle='->', color=PURPLE, lw=2.4))
+    ax.text(0.08, 26.0, f'move = $-$0.03 $\\times$ ({g:+.2f})\n          = {move:+.4f}',
+            fontsize=11.0, color=PURPLE, weight='bold', ha='left', va='center')
+    ax.plot([w, w], [0, lo], color=GRIP, lw=1.0, ls=':')
+    ax.plot([w_new, w_new], [0, lo_new], color=LINK, lw=1.0, ls=':')
+    ax.set_xlim(-0.4, 4.2)
+    ax.set_ylim(0, 112)
+    ax.set_xlabel('the one weight, w', fontsize=10)
+    ax.set_ylabel('mean squared error (mm$^2$)', fontsize=10)
+    ax.set_title('One step: read the slope, multiply it by the learning rate, '
+                 'subtract the answer from w',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, DESC_DOC, 'one-step-arithmetic.svg')
 
 
 def steps_on_the_curve() -> None:
@@ -1531,6 +1696,51 @@ def _hessian_eigs(x: Arr) -> tuple[float, float, float]:
     return float(ev[1]), float(ev[0]), float(ev[1] / ev[0])
 
 
+def what_a_contour_ring_is() -> None:
+    """One idea: every setting on one ring gives the same loss."""
+    b1, b0, bl = _best2(X1, Y1)
+    target = bl + 1.0
+    # three settings of the two weights that all sit on the ring where the loss is
+    # bl + 1. For a fixed offset the loss is a quadratic in the slope, so solve it.
+    def on_ring(w0: float, branch: int) -> tuple[float, float]:
+        a = float(np.mean(X1 ** 2))
+        b = 2.0 * float(np.mean(X1 * (w0 - Y1)))
+        c = float(np.mean((w0 - Y1) ** 2)) - target
+        root = np.sqrt(b * b - 4.0 * a * c)
+        return float((-b + branch * root) / (2.0 * a)), w0
+
+    picks = [on_ring(-0.8, +1), on_ring(b0, -1), on_ring(0.8, +1)]
+    for w1, w0 in picks:
+        print(f'[g4] slope {w1:.4f}, offset {w0:+.4f} gives a loss of '
+              f'{float(_loss2(np.array([w1]), np.array([w0]), X1, Y1)[0]):.4f}')
+
+    fig, ax = plt.subplots(figsize=(10.0, 5.6), facecolor='white')
+    _plain(ax)
+    g1 = np.linspace(b1 - 1.0, b1 + 1.0, 400)
+    g0 = np.linspace(b0 - 2.4, b0 + 2.4, 400)
+    M1, M0 = np.meshgrid(g1, g0)
+    Z = np.mean((M1[..., None] * X1 + M0[..., None] - Y1) ** 2, axis=-1)
+    ax.contour(M1, M0, Z, levels=bl + np.array([0.1, 0.4, 3.0, 6.0]),
+               colors=LINK_PALE, linewidths=1.1)
+    cs = ax.contour(M1, M0, Z, levels=[target], colors=[GRIP], linewidths=2.6)
+    ax.clabel(cs, fmt='loss = %.2f', fontsize=10, colors=GRIP)
+    for (w1, w0), align, dx in zip(picks, ('left', 'right', 'left'), (0.04, -0.04, 0.04)):
+        ax.scatter([w1], [w0], s=110, color=GRIP, edgecolor=INK, lw=0.7, zorder=5)
+        ax.text(w1 + dx, w0, f'slope {w1:.2f}, offset {w0:+.2f}', fontsize=10.5,
+                color=INK, ha=align, va='center')
+    ax.scatter([b1], [b0], s=190, marker='*', color=SLIDE, edgecolor=INK, lw=0.7,
+               zorder=6)
+    ax.text(b1 + 0.08, b0 + 0.25, 'the bottom', fontsize=10.5, color=SLIDE)
+    ax.set_xlim(g1.min(), g1.max())
+    ax.set_ylim(g0.min(), g0.max())
+    ax.set_xlabel('the slope weight, w$_1$', fontsize=10)
+    ax.set_ylabel('the offset weight, w$_0$', fontsize=10)
+    ax.set_title('Every setting of the two weights on one ring gives the same loss,\n'
+                 'so the rings say how the loss is shaped without drawing a surface',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, DESC_DOC, 'what-a-contour-ring-is.svg')
+
+
 def two_weight_contours() -> None:
     b1, b0, bl = _best2(X1, Y1)
     hi, lo, cond = _hessian_eigs(X1)
@@ -1731,40 +1941,39 @@ def one_epoch() -> None:
     steps = [N_BIG // b for b in sizes]
     print(f'[g5] {N_BIG} simulated examples; one epoch gives '
           + ', '.join(f'{s} steps at a batch of {b}' for b, s in zip(sizes, steps)))
-    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.8), facecolor='white',
-                             gridspec_kw={'width_ratios': [1.35, 1.0]})
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.4, 4.8), facecolor='white')
     _blank(ax)
-    rng = np.random.default_rng(11)
-    order = rng.permutation(N_BIG)
     cols = [LINK, SLIDE, WRIST, PURPLE, TEAL]
-    for k, pos in enumerate(range(0, N_BIG, 8)):
+    for k in range(0, N_BIG // 8):
         row, col = divmod(k, 5)
         for j in range(8):
             ax.add_patch(Rectangle((col * 1.9 + j * 0.2, -row * 1.0), 0.17, 0.6,
                                    facecolor=cols[k % 5], edgecolor='none'))
-        ax.text(col * 1.9 + 0.8, -row * 1.0 + 0.72, f'batch {k + 1}', fontsize=7.5,
+        ax.text(col * 1.9 + 0.8, -row * 1.0 + 0.72, f'batch {k + 1}', fontsize=8.5,
                 ha='center', color=INK)
     ax.set_xlim(-0.3, 9.4)
     ax.set_ylim(-5.0, 1.3)
-    ax.set_title('One epoch: 200 shuffled examples cut into 25 batches of 8,\n'
+    ax.set_title('One epoch: 200 shuffled examples cut into 25 batches of 8, '
                  'which is 25 steps of gradient descent',
-                 fontsize=11.5, weight='bold', color=INK)
-    ax.text(0.0, -4.5, 'each small block is one example; each colour is one batch',
-            fontsize=9.5, color=MUTED)
-    _plain(axes[1])
-    axes[1].bar([str(b) for b in sizes], steps, color=[LINK, SLIDE, WRIST, PURPLE],
-                edgecolor=INK, lw=0.6, width=0.55)
-    for i, s in enumerate(steps):
-        axes[1].text(i, s + 4, f'{s}', ha='center', fontsize=10.5, color=INK)
-    axes[1].set_yscale('log')
-    axes[1].set_xlabel('batch size', fontsize=10)
-    axes[1].set_ylabel('steps in one epoch (log scale)', fontsize=10)
-    axes[1].set_ylim(0.6, 500)
-    axes[1].set_title('Smaller batches buy more steps per epoch', fontsize=11.5,
-                      weight='bold', color=INK)
-    fig.tight_layout()
+                 fontsize=12, weight='bold', color=INK)
+    ax.text(0.0, -4.5, 'each small block is one example, and each colour is one batch',
+            fontsize=10, color=MUTED)
     _save(fig, DESC_DOC, 'one-epoch.svg')
+
+    fig, ax = plt.subplots(figsize=(9.4, 5.0), facecolor='white')
+    _plain(ax)
+    ax.bar([str(b) for b in sizes], steps, color=[LINK, SLIDE, WRIST, PURPLE],
+           edgecolor=INK, lw=0.6, width=0.55)
+    for i, s in enumerate(steps):
+        ax.text(i, s * 1.18, f'{s}', ha='center', fontsize=11.5, color=INK)
+    ax.set_yscale('log')
+    ax.set_xlabel('batch size', fontsize=10.5)
+    ax.set_ylabel('steps in one epoch (log scale)', fontsize=10.5)
+    ax.set_ylim(0.6, 700)
+    ax.set_title('The same one pass over the same 200 examples buys 200 steps or 1,\n'
+                 'depending only on how the pass is cut up',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, DESC_DOC, 'steps-per-epoch.svg')
 
 
 def full_batch_versus_mini_batch() -> None:
@@ -1854,44 +2063,46 @@ def gradient_noise() -> None:
           f'{spreads_arr[-1]:.4f} at a batch of 128, and is exactly 0 at a batch of '
           f'200 because that batch is the whole dataset')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.8, 4.8), facecolor='white')
-    _plain(axes[0])
+    fig, ax = plt.subplots(figsize=(10.2, 5.2), facecolor='white')
+    _plain(ax)
     for b, colour in ((1, PURPLE), (8, GRIP), (64, LINK)):
         vals = [_grad2(w1, w0, X_STD[i], Y_BIG[i])[0]
                 for i in [rng.choice(N_BIG, size=b, replace=False) for _ in range(1500)]]
-        axes[0].hist(vals, bins=40, histtype='step', lw=2.0, color=colour,
-                     label=f'batch of {b}')
-    axes[0].axvline(full1, color=INK, ls='--', lw=1.6)
-    axes[0].set_ylim(0, 185)
-    axes[0].text(0.5, 0.98, f'all 200 examples give {full1:+.2f}',
-                 transform=axes[0].transAxes, fontsize=10, color=INK, ha='center',
-                 va='top')
-    axes[0].set_xlabel('the slope part of the gradient, measured on one batch',
-                       fontsize=10)
-    axes[0].set_ylabel('how many batches gave that value', fontsize=10)
-    axes[0].set_title('A small batch gives a noisy reading of the same gradient',
-                      fontsize=11.5, weight='bold', color=INK)
-    axes[0].legend(fontsize=9.5, frameon=False, loc='upper left')
-    _plain(axes[1])
-    axes[1].loglog(sizes, spreads_arr, marker='o', color=GRIP, lw=2.2,
-                   label='measured spread')
-    axes[1].loglog(sizes, ref, ls='--', color=MUTED, lw=1.8,
-                   label='the batch-of-1 spread divided by\nthe square root of the batch size')
+        ax.hist(vals, bins=40, histtype='step', lw=2.0, color=colour,
+                label=f'batch of {b}')
+        print(f'[g5] over 1,500 drawn batches of {b:3d}, the slope part of the gradient '
+              f'ran from {min(vals):+.1f} to {max(vals):+.1f}')
+    ax.axvline(full1, color=INK, ls='--', lw=1.6)
+    ax.set_ylim(0, 185)
+    ax.text(0.80, 0.98, f'all 200 examples give {full1:+.2f}',
+            transform=ax.transAxes, fontsize=10.5, color=INK, ha='center', va='top',
+            bbox=dict(facecolor='white', edgecolor='none', pad=1.5))
+    ax.set_xlabel('the slope part of the gradient, measured on one batch', fontsize=10)
+    ax.set_ylabel('how many batches gave that value', fontsize=10)
+    ax.set_title('Measured at slope 1.50 and offset 5.00: a small batch gives a noisy\n'
+                 'reading of the same gradient, and a larger batch a tighter one',
+                 fontsize=12.5, weight='bold', color=INK)
+    ax.legend(fontsize=10.5, frameon=False, loc='upper left')
+    _save(fig, DESC_DOC, 'gradient-noise.svg')
+
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
+    _plain(ax)
+    ax.loglog(sizes, spreads_arr, marker='o', color=GRIP, lw=2.4,
+              label='measured spread, over 4,000 batches of each size')
+    ax.loglog(sizes, ref, ls='--', color=MUTED, lw=1.8,
+              label='the batch-of-1 spread divided by\nthe square root of the batch size')
     for b, s in zip(sizes, spreads_arr):
         if b in (1, 8, 128):
-            axes[1].text(b * 1.15, s * 1.15, f'{s:.3f}', fontsize=9.5, color=INK)
-    axes[1].set_ylim(0.3, 20)
-    axes[1].set_xlabel('batch size (log scale)', fontsize=10)
-    axes[1].set_ylabel('spread of the measured gradient (log scale)', fontsize=10)
-    axes[1].set_title('Four times the batch halves the noise', fontsize=11.5,
-                      weight='bold', color=INK)
-    axes[1].legend(fontsize=9.0, frameon=False, loc='lower left')
-    axes[1].grid(True, which='major', color=GRID, lw=0.5)
-    fig.suptitle('Measured at slope 1.50 and offset 5.00, over 4,000 random batches '
-                 'of each size',
+            ax.text(b * 1.15, s * 1.15, f'{s:.3f}', fontsize=10, color=INK)
+    ax.set_ylim(0.3, 20)
+    ax.set_xlabel('batch size (log scale)', fontsize=10)
+    ax.set_ylabel('spread of the measured gradient (log scale)', fontsize=10)
+    ax.set_title('Four times the batch costs four times the arithmetic per step\n'
+                 'and buys only half the noise',
                  fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, DESC_DOC, 'gradient-noise.svg')
+    ax.legend(fontsize=10, frameon=False, loc='lower left')
+    ax.grid(True, which='major', color=GRID, lw=0.5)
+    _save(fig, DESC_DOC, 'noise-against-batch-size.svg')
 
 
 # ---------------- section 6: local minima and saddle points ----------------
@@ -1928,44 +2139,90 @@ def two_valleys() -> None:
         print(f'[g6] a run started at w = {start:.1f} settles at w = {w:.4f} with a '
               f'loss of {_wavy(w)[0]:.4f}')
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.0, 5.0), facecolor='white')
-    _plain(axes[0])
     print(f'[g6] the wavy loss rises to {curve.max():.4f} at w = '
           f'{ws[int(np.argmax(curve))]:.3f}')
-    axes[0].plot(ws, curve, color=INK, lw=2.4)
+    fig, ax = plt.subplots(figsize=(10.4, 5.4), facecolor='white')
+    _plain(ax)
+    ax.plot(ws, curve, color=INK, lw=2.6)
     for start, hist, colour in runs:
-        axes[0].plot(hist, _wavy(hist), color=colour, lw=1.3, ls='--')
-        axes[0].scatter(hist[::6], _wavy(hist[::6]), s=28, color=colour, zorder=4)
-        axes[0].scatter([start], [_wavy(start)[0]], s=130, marker='s', color=colour,
-                        edgecolor=INK, lw=0.7, zorder=5)
-        axes[0].text(start + 0.12, _wavy(start)[0], f'start at {start:.1f}', fontsize=9.5,
-                     color=colour, ha='left', va='center')
+        ax.plot(hist, _wavy(hist), color=colour, lw=1.3, ls='--')
+        ax.scatter(hist[::6], _wavy(hist[::6]), s=30, color=colour, zorder=4)
+        ax.scatter([start], [_wavy(start)[0]], s=140, marker='s', color=colour,
+                   edgecolor=INK, lw=0.7, zorder=5)
+        ax.text(start + 0.12, _wavy(start)[0], f'start at {start:.1f}', fontsize=10,
+                color=colour, ha='left', va='center')
     for i in mins:
-        axes[0].text(ws[i], curve[i] - 0.04, f'{curve[i]:.3f}', fontsize=9.5, color=SLIDE,
-                     ha='center', va='top', weight='bold')
-    axes[0].set_xlabel('the one weight, w', fontsize=10)
-    axes[0].set_ylabel('mean squared error', fontsize=10)
-    axes[0].set_xlim(0, 7)
-    axes[0].set_ylim(-0.16, float(curve.max()) * 1.12)
-    axes[0].set_title('Four bottoms, with their losses, and two runs',
-                      fontsize=11, weight='bold', color=INK)
-    _plain(axes[1])
-    for start, hist, colour in runs:
-        axes[1].semilogy(np.maximum(_wavy(hist), 1e-7), color=colour, lw=2.0,
-                         label=f'started at w = {start:.1f}, ends at w = {hist[-1]:.3f}')
-    axes[1].set_xlim(0, 60)
-    axes[1].set_ylim(1e-7, 3)
-    axes[1].set_xlabel('step number', fontsize=10)
-    axes[1].set_ylabel('mean squared error (log scale)', fontsize=10)
-    axes[1].set_title('One run ends near zero, the other well above it',
-                      fontsize=11, weight='bold', color=INK)
-    axes[1].legend(fontsize=9.5, frameon=False, loc='center right')
-    axes[1].grid(True, which='major', color=GRID, lw=0.5)
-    fig.suptitle('A one-weight model whose prediction is sin(w x): '
-                 'where you start decides where you stop',
+        ax.text(ws[i], curve[i] - 0.04, f'{curve[i]:.3f}', fontsize=10, color=SLIDE,
+                ha='center', va='top', weight='bold')
+    ax.set_xlabel('the one weight, w', fontsize=10)
+    ax.set_ylabel('mean squared error', fontsize=10)
+    ax.set_xlim(0, 7)
+    ax.set_ylim(-0.16, float(curve.max()) * 1.12)
+    ax.set_title('A one-weight model whose prediction is sin(w x) has four bottoms,\n'
+                 'and where a run starts decides which one it reaches',
                  fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
     _save(fig, DESC_DOC, 'two-valleys.svg')
+    for start, hist, _colour in runs:
+        print(f'[g6] the run started at w = {start:.1f} stops moving after '
+              f'{int(np.argmax(np.abs(np.diff(hist)) < 1e-6)) + 1} steps')
+
+
+def noise_escapes_a_bad_bottom() -> None:
+    """One idea: a noisy gradient can leave a bottom a plain run cannot leave."""
+    def batch_slope(w: float, idx: Arr) -> float:
+        x, y = XW[idx], YW[idx]
+        e = np.sin(w * x) - y
+        return float(np.mean(2.0 * e * x * np.cos(w * x)))
+
+    plain = [4.6]
+    w = 4.6
+    for _ in range(400):
+        w -= 0.25 * _wavy_slope(w)
+        plain.append(w)
+    plain_arr = np.array(plain)
+
+    escaped = 0
+    noisy_arr = None
+    for seed in range(12):
+        rng = np.random.default_rng(seed)
+        w = 4.6
+        hist = [w]
+        for _ in range(400):
+            w -= 0.25 * batch_slope(w, rng.integers(0, len(XW), size=1))
+            hist.append(w)
+        if abs(w - 1.300) < 0.3:
+            escaped += 1
+            if seed == 5:
+                noisy_arr = np.array(hist)
+    assert noisy_arr is not None
+    print(f'[g6] the plain run from w = 4.6 ends at {plain_arr[-1]:.4f} with a loss of '
+          f'{_wavy(plain_arr[-1])[0]:.4f}')
+    print(f'[g6] a one-example-per-step run from the same start ends at '
+          f'{noisy_arr[-1]:.4f} with a loss of {_wavy(noisy_arr[-1])[0]:.4f}')
+    print(f'[g6] of 12 such noisy runs, {escaped} left the bottom at 4.142 and reached '
+          f'the real one at 1.300')
+
+    fig, ax = plt.subplots(figsize=(10.4, 5.4), facecolor='white')
+    _plain(ax)
+    ws = np.linspace(0.0, 7.0, 7001)
+    ax.plot(ws, _wavy(ws), color=INK, lw=2.6, zorder=2)
+    ax.scatter(noisy_arr[::4], _wavy(noisy_arr[::4]), s=22, color=GRIP, zorder=4,
+               alpha=0.75,
+               label='one example per step: leaves 4.142 and reaches 1.300')
+    ax.scatter(plain_arr[::6], _wavy(plain_arr[::6]), s=52, color=LINK, zorder=5,
+               label='all five examples per step: stays at 4.142')
+    ax.scatter([4.6], [_wavy(4.6)[0]], s=150, marker='s', color=INK, zorder=6)
+    ax.text(4.48, 1.62, 'both runs start here, at w = 4.6', fontsize=10.5, color=INK,
+            ha='right', va='center')
+    ax.set_xlim(0, 7)
+    ax.set_ylim(-0.16, 2.2)
+    ax.set_xlabel('the one weight, w', fontsize=10)
+    ax.set_ylabel('mean squared error', fontsize=10)
+    ax.set_title('Noise in the gradient lets a run leave a bottom that a noise-free '
+                 'run cannot leave',
+                 fontsize=12.5, weight='bold', color=INK)
+    ax.legend(fontsize=10.5, frameon=False, loc='upper left')
+    _save(fig, DESC_DOC, 'noise-escapes-a-bad-bottom.svg')
 
 
 def _saddle(a: Arr | float, b: Arr | float) -> Arr:
@@ -1996,43 +2253,51 @@ def a_saddle() -> None:
     print('[g6] loss at steps 0, 10, 30, 50, 70, 90, 120: '
           + ', '.join(f'{vals[k]:.4f}' for k in (0, 10, 30, 50, 70, 90, 120)))
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.8, 5.0), facecolor='white')
-    _plain(axes[0])
+    near = np.where(np.abs(vals) < 0.05)[0]
+    print(f'[g6] the loss stays within 0.05 of the height of the saddle from step '
+          f'{near.min()} to step {near.max()}, which is {len(near)} steps')
+
+    fig, ax = plt.subplots(figsize=(10.0, 5.4), facecolor='white')
+    _plain(ax)
     ga = np.linspace(-1.2, 1.2, 300)
     gb = np.linspace(-1.5, 1.5, 300)
     A, B = np.meshgrid(ga, gb)
     Z = _saddle(A, B)
-    cs = axes[0].contour(A, B, Z, levels=np.array([-0.24, -0.2, -0.1, 0.0, 0.1, 0.3, 0.6,
-                                                   1.0]),
-                         colors=LINK, linewidths=1.1)
-    axes[0].clabel(cs, fmt='%.2f', fontsize=8, colors=INK)
-    axes[0].plot(p[:, 0], p[:, 1], color=GRIP, lw=1.8)
-    axes[0].scatter(p[::4, 0], p[::4, 1], s=20, color=GRIP, zorder=4)
-    axes[0].scatter([0.0], [0.0], s=140, marker='X', color=INK, zorder=6)
-    axes[0].text(-0.08, -0.1, 'the saddle', fontsize=9.5, color=INK, ha='right',
-                 va='top')
-    axes[0].scatter([0.0, 0.0], [1.0, -1.0], s=170, marker='*', color=SLIDE,
-                    edgecolor=INK, lw=0.7, zorder=6)
-    axes[0].text(0.10, 1.20, 'a real bottom', fontsize=9.5, color=SLIDE, ha='left')
-    axes[0].set_xlabel('first weight, a', fontsize=10)
-    axes[0].set_ylabel('second weight, b', fontsize=10)
-    axes[0].set_title('A saddle point: uphill along a, downhill along b', fontsize=11.5,
-                      weight='bold', color=INK)
-    _plain(axes[1])
-    axes[1].plot(vals, color=GRIP, lw=2.2)
-    axes[1].axhline(float(_saddle(0.0, 0.0)), color=INK, ls='--', lw=1.3)
-    axes[1].text(55, 0.03, 'the height of the saddle', fontsize=10, color=INK)
-    axes[1].axhline(float(_saddle(0.0, 1.0)), color=SLIDE, ls='--', lw=1.3)
-    axes[1].text(55, -0.22, 'the height of the bottom', fontsize=10, color=SLIDE)
-    axes[1].set_xlabel('step number', fontsize=10)
-    axes[1].set_ylabel('loss', fontsize=10)
-    axes[1].set_title('The loss sits almost still for about 40 steps, then falls again',
-                      fontsize=11.5, weight='bold', color=INK)
-    fig.suptitle('A made-up two-weight loss with a saddle at the origin, '
-                 'and 120 real steps across it',
+    cs = ax.contour(A, B, Z, levels=np.array([-0.24, -0.2, -0.1, 0.0, 0.1, 0.3, 0.6, 1.0]),
+                    colors=LINK, linewidths=1.1)
+    ax.clabel(cs, fmt='%.2f', fontsize=8, colors=INK)
+    ax.plot(p[:, 0], p[:, 1], color=GRIP, lw=1.8)
+    ax.scatter(p[::4, 0], p[::4, 1], s=22, color=GRIP, zorder=4)
+    ax.scatter([0.0], [0.0], s=150, marker='X', color=INK, zorder=6)
+    ax.text(-0.08, -0.1, 'the saddle', fontsize=10.5, color=INK, ha='right', va='top',
+            zorder=7, bbox=dict(facecolor='white', edgecolor='none', pad=1.5))
+    ax.scatter([0.0, 0.0], [1.0, -1.0], s=180, marker='*', color=SLIDE, edgecolor=INK,
+               lw=0.7, zorder=6)
+    ax.text(0.12, 1.24, 'a real bottom', fontsize=10.5, color=SLIDE, ha='left', zorder=7,
+            bbox=dict(facecolor='white', edgecolor='none', pad=1.5))
+    ax.set_xlabel('first weight, a', fontsize=10)
+    ax.set_ylabel('second weight, b', fontsize=10)
+    ax.set_title('A saddle point is uphill along one weight and downhill along the other,\n'
+                 'so a run drops towards it and then slides off sideways',
                  fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
     _save(fig, DESC_DOC, 'a-saddle.svg')
+
+    fig, ax = plt.subplots(figsize=(10.0, 5.0), facecolor='white')
+    _plain(ax)
+    ax.plot(vals, color=GRIP, lw=2.4)
+    ax.axhline(float(_saddle(0.0, 0.0)), color=INK, ls='--', lw=1.3)
+    ax.text(62, 0.03, 'the height of the saddle', fontsize=10.5, color=INK)
+    ax.axhline(float(_saddle(0.0, 1.0)), color=SLIDE, ls='--', lw=1.3)
+    ax.text(62, -0.22, 'the height of the real bottom', fontsize=10.5, color=SLIDE)
+    ax.axvspan(near.min(), near.max(), color=JOINT, alpha=0.18, zorder=0)
+    ax.text((near.min() + near.max()) / 2, 0.30,
+            f'steps {near.min()} to {near.max()}', fontsize=10.5, color=INK, ha='center')
+    ax.set_xlabel('step number', fontsize=10)
+    ax.set_ylabel('loss', fontsize=10)
+    ax.set_title('The same run seen against the step number: the loss barely moves for\n'
+                 'about fifteen steps, and then falls again',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, DESC_DOC, 'saddle-flat-stretch.svg')
 
 
 def all_directions_up() -> None:
@@ -2053,50 +2318,50 @@ def all_directions_up() -> None:
     coin = 0.5 ** np.array(dims, dtype=float)
 
     shown = [(d, f) for d, f in zip(dims, frac_arr) if f > 0]
-    fig, axes = plt.subplots(1, 2, figsize=(11.8, 4.8), facecolor='white')
-    _plain(axes[0])
-    axes[0].semilogy([d for d, _ in shown], [f for _, f in shown], marker='o', color=GRIP,
-                     lw=2.2, label='measured on 200,000 random flat points')
-    axes[0].semilogy(dims, coin, marker='s', ls='--', color=MUTED, lw=1.8,
-                     label='one half, multiplied by itself once per weight')
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
+    _plain(ax)
+    ax.semilogy([d for d, _ in shown], [f for _, f in shown], marker='o', color=GRIP,
+                lw=2.4, label='measured on 200,000 random flat points')
+    ax.semilogy(dims, coin, marker='s', ls='--', color=MUTED, lw=1.8,
+                label='one half, multiplied by itself once per weight')
     for d, f in shown:
         if d in (1, 2, 3, 4):
-            axes[0].text(d + 0.12, f * 1.5, f'{f:.4f}', fontsize=9.5, color=INK)
-    axes[0].text(0.97, 0.21, 'at 7 and 8 weights not one\nof the 200,000 was a bottom',
-                 transform=axes[0].transAxes, fontsize=9.0, color=GRIP, ha='right',
-                 va='top')
-    axes[0].set_xlabel('number of weights', fontsize=10)
-    axes[0].set_ylabel('share of flat points that are bottoms (log scale)', fontsize=10)
-    axes[0].set_ylim(1e-7, 4.0)
-    axes[0].set_title('A flat point is a bottom only if the loss\ncurves up in every '
-                      'direction',
-                      fontsize=11, weight='bold', color=INK)
-    axes[0].legend(fontsize=9.0, frameon=False, loc='lower left')
-    axes[0].grid(True, which='major', color=GRID, lw=0.5)
-    _plain(axes[1])
+            ax.text(d + 0.12, f * 1.5, f'{f:.4f}', fontsize=10, color=INK)
+    ax.text(0.97, 0.21, 'at 7 and 8 weights not one\nof the 200,000 was a bottom',
+            transform=ax.transAxes, fontsize=10, color=GRIP, ha='right', va='top')
+    ax.set_xlabel('number of weights', fontsize=10)
+    ax.set_ylabel('share of flat points that are bottoms (log scale)', fontsize=10)
+    ax.set_ylim(1e-7, 4.0)
+    ax.set_title('The more weights a model has, the rarer a flat point that is a real\n'
+                 'bottom becomes, because every direction has to curve upwards',
+                 fontsize=12.5, weight='bold', color=INK)
+    ax.legend(fontsize=10, frameon=False, loc='lower left')
+    ax.grid(True, which='major', color=GRID, lw=0.5)
+    _save(fig, DESC_DOC, 'all-directions-up.svg')
+
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
+    _plain(ax)
     d_show = 8
     m = rng.normal(size=(1, d_show, d_show))
     m = (m + np.transpose(m, (0, 2, 1))) / np.sqrt(2.0)
     ev = np.linalg.eigvalsh(m)[0]
+    print(f'[g6] one random flat point in 8 weights curves by '
+          + ', '.join(f'{v:+.2f}' for v in ev)
+          + f'; {int(np.sum(ev < 0))} of the 8 directions go downhill')
     cols = [SLIDE if v > 0 else GRIP for v in ev]
-    axes[1].bar(np.arange(1, d_show + 1), ev, color=cols, edgecolor=INK, lw=0.6,
-                width=0.6)
-    axes[1].axhline(0, color=INK, lw=1.2)
+    ax.bar(np.arange(1, d_show + 1), ev, color=cols, edgecolor=INK, lw=0.6, width=0.6)
+    ax.axhline(0, color=INK, lw=1.2)
     for i, v in enumerate(ev, start=1):
-        axes[1].text(i, v + (0.12 if v > 0 else -0.28), f'{v:+.2f}', ha='center',
-                     fontsize=9.0, color=INK)
-    axes[1].set_xticks(np.arange(1, d_show + 1))
-    axes[1].set_xlabel('direction through the eight-weight space', fontsize=10)
-    axes[1].set_ylabel('how the loss curves in that direction', fontsize=10)
-    axes[1].set_ylim(-7.0, 4.2)
-    axes[1].set_title(f'One random flat point in eight weights:\n'
-                      f'{int(np.sum(ev < 0))} of the 8 directions go downhill',
-                      fontsize=11, weight='bold', color=INK)
-    fig.suptitle('Why a network with millions of weights almost never gets stuck: '
-                 'nearly every flat point still has a way down',
+        ax.text(i, v + (0.12 if v > 0 else -0.30), f'{v:+.2f}', ha='center',
+                fontsize=10, color=INK)
+    ax.set_xticks(np.arange(1, d_show + 1))
+    ax.set_xlabel('direction through the eight-weight space', fontsize=10)
+    ax.set_ylabel('how the loss curves in that direction', fontsize=10)
+    ax.set_ylim(-7.0, 4.2)
+    ax.set_title(f'One random flat point in eight weights: {int(np.sum(ev < 0))} of the '
+                 f'8 directions curve\ndownwards, so the run still has a way out',
                  fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, DESC_DOC, 'all-directions-up.svg')
+    _save(fig, DESC_DOC, 'one-flat-point-in-eight.svg')
 
 
 def _train_small_net(seed: int, steps: int = 3000, hidden: int = 8,
@@ -2146,31 +2411,32 @@ def many_starts_same_loss() -> None:
           f'the best one, while the starting losses ranged from '
           f'{min(r[0][0] for r in runs):.4f} to {max(r[0][0] for r in runs):.4f}')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.8, 5.0), facecolor='white')
-    _plain(axes[0])
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
+    _plain(ax)
     for hist, _ in runs:
-        axes[0].semilogy(hist, color=LINK, lw=1.1, alpha=0.8)
-    axes[0].set_xlabel('step number', fontsize=10)
-    axes[0].set_ylabel('mean squared error (log scale)', fontsize=10)
-    axes[0].set_title('Twelve runs, twelve random starts, 3,000 steps each',
-                      fontsize=11.5, weight='bold', color=INK)
-    axes[0].grid(True, which='major', color=GRID, lw=0.5)
-    _plain(axes[1])
-    axes[1].hist(finals, bins=np.linspace(finals.min() * 0.9, finals.max() * 1.1, 14),
-                 color=SLIDE, edgecolor=INK, lw=0.6)
-    axes[1].axvline(float(finals.mean()), color=GRIP, lw=1.8, ls='--')
-    axes[1].text(finals.mean(), 3.4, f' average {finals.mean():.5f}', fontsize=10,
-                 color=GRIP)
-    axes[1].set_xlabel('loss at the end of the run', fontsize=10)
-    axes[1].set_ylabel('how many of the twelve runs', fontsize=10)
-    axes[1].set_title(f'All twelve end between {finals.min():.4f} and '
-                      f'{finals.max():.4f}',
-                      fontsize=11.5, weight='bold', color=INK)
-    fig.suptitle('A network with 25 weights, trained twelve times on the same 25 '
-                 'simulated examples',
+        ax.semilogy(hist, color=LINK, lw=1.2, alpha=0.85)
+    ax.set_xlabel('step number', fontsize=10)
+    ax.set_ylabel('mean squared error (log scale)', fontsize=10)
+    ax.set_title('A network with 25 weights, trained twelve times from twelve random\n'
+                 'starting points: the twelve curves fall onto each other',
                  fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
+    ax.grid(True, which='major', color=GRID, lw=0.5)
     _save(fig, DESC_DOC, 'many-starts-same-loss.svg')
+
+    fig, ax = plt.subplots(figsize=(10.0, 5.0), facecolor='white')
+    _plain(ax)
+    ax.hist(finals, bins=np.linspace(finals.min() * 0.9, finals.max() * 1.1, 14),
+            color=SLIDE, edgecolor=INK, lw=0.6)
+    ax.axvline(float(finals.mean()), color=GRIP, lw=1.8, ls='--')
+    ax.text(finals.mean(), 3.4, f' average {finals.mean():.5f}', fontsize=10.5,
+            color=GRIP)
+    ax.set_xlabel('loss at the end of the run', fontsize=10)
+    ax.set_ylabel('how many of the twelve runs', fontsize=10)
+    ax.set_title(f'The twelve runs end between {finals.min():.5f} and '
+                 f'{finals.max():.5f},\nwhich is a factor of '
+                 f'{finals.max() / finals.min():.2f} between worst and best',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, DESC_DOC, 'twelve-final-losses.svg')
 
 
 def main() -> None:
@@ -2184,12 +2450,17 @@ def main() -> None:
     two_models_no_winner()
     counting_versus_measuring()
     the_error_table()
+    signed_errors_cancel()
     penalty_shapes()
+    model_a_under_both_penalties()
     three_models_two_rankings()
     one_wild_reading()
+    average_and_middle()
     softmax_arithmetic()
+    logits_to_probabilities()
     softmax_shift_and_spread()
     three_cases_probabilities()
+    cross_entropy_uses_one_number()
     minus_log_curve()
     three_cases_loss()
     batch_average()
@@ -2205,12 +2476,14 @@ def main() -> None:
     slope_at_three_places()
     nudge_gets_smaller()
     first_steps_table()
+    one_step_arithmetic()
     steps_on_the_curve()
     loss_against_step()
     step_shrinks_as_it_arrives()
     three_rates_on_the_curve()
     three_rates_loss()
     rate_sweep()
+    what_a_contour_ring_is()
     two_weight_contours()
     downhill_arrows()
     valley_shape()
@@ -2220,6 +2493,7 @@ def main() -> None:
     cost_in_examples()
     gradient_noise()
     two_valleys()
+    noise_escapes_a_bad_bottom()
     a_saddle()
     all_directions_up()
     many_starts_same_loss()

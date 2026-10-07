@@ -400,8 +400,7 @@ def what_a_predictor_gives() -> None:
           f'{p.curve[mid].max():+.3f} m, and {inside * 100:.1f}% of its path '
           f'lies inside the obstacle')
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 6.2), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(7.4, 7.0), facecolor='white')
     _arena(ax, lim=2.0)
     sh = _show(d.train, 1000, 3)
     ax.scatter(sh[:, 0], sh[:, 1], s=6, color=MUTED, alpha=0.4,
@@ -412,22 +411,28 @@ def what_a_predictor_gives() -> None:
     ax.set_title('A network trained on squared error answers\n'
                  'with the average, straight through the obstacle',
                  fontsize=11.5, weight='bold', color=INK)
-    ax = axes[1]
+    _save(fig, DIFF_DOC, 'what-a-predictor-gives.svg')
+
+
+def average_scores_better() -> None:
+    """The one number behind the last picture: the average scores lower."""
+    p = _pred()
+    fig, ax = plt.subplots(figsize=(7.6, 5.4), facecolor='white')
     _plain(ax)
     names = ['answer the average\n(what training finds)',
              'always answer\nthe upper arc']
     vals = [p.loss, p.loss_arc]
-    bars = ax.bar(names, vals, color=[PURPLE, LINK], width=0.55, edgecolor=INK, lw=0.6)
+    bars = ax.bar(names, vals, color=[PURPLE, LINK], width=0.5, edgecolor=INK, lw=0.6)
     for b, v in zip(bars, vals):
-        ax.text(b.get_x() + b.get_width() / 2, v + 0.02, f'{v:.3f}', ha='center',
-                fontsize=11, weight='bold', color=INK)
+        ax.text(b.get_x() + b.get_width() / 2, v + 0.03, f'{v:.3f}', ha='center',
+                fontsize=12, weight='bold', color=INK)
     ax.set_ylim(0, max(vals) * 1.25)
     ax.set_ylabel('average squared error on the training data (m$^2$)', fontsize=9.5)
     ax.set_title('Squared error prefers the useless answer,\n'
                  'because it scores lower than either real answer',
                  fontsize=11.5, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, DIFF_DOC, 'what-a-predictor-gives.svg')
+    _save(fig, DIFF_DOC, 'average-scores-better.svg')
 
 
 def many_right_answers() -> None:
@@ -444,34 +449,38 @@ def many_right_answers() -> None:
           f'{curve.min():.4f} m^2, while answering y = {AMP:+.2f} m scores '
           f'{at_arc:.4f} m^2')
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.4), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.6, 5.2), facecolor='white')
     _plain(ax)
     ax.hist(ys, bins=40, color=LINK, alpha=0.75, edgecolor=INK, lw=0.4)
     ax.axvline(float(p.net.run(np.zeros((1, 1)))[0, 0]), color=PURPLE, lw=2.5)
-    ax.text(0.06, ax.get_ylim()[1] * 0.80, 'the predictor\'s\nsingle answer',
+    ax.text(0.26, ax.get_ylim()[1] * 0.78, 'the predictor\'s\nsingle answer',
             fontsize=9.5, color=PURPLE, weight='bold')
     ax.set_xlabel('sideways position y of the real waypoints at x = 0 (m)', fontsize=9.5)
     ax.set_ylabel('how many waypoints', fontsize=9.5)
-    ax.set_title(f'The {len(ys)} real answers at x = 0 have two peaks',
+    ax.set_title(f'The {len(ys)} real answers at x = 0 have two peaks,\n'
+                 'and the predictor answers the empty gap between them',
                  fontsize=11.5, weight='bold', color=INK)
-    ax = axes[1]
+    _save(fig, DIFF_DOC, 'two-peaks-at-x-zero.svg')
+
+    fig, ax = plt.subplots(figsize=(8.6, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(guesses, curve, color=GRIP, lw=2.4)
     ax.plot([best], [curve.min()], marker='o', ms=9, color=PURPLE)
     ax.annotate(f'lowest at y = {best:+.3f} m', xy=(best, curve.min()),
                 xytext=(-1.95, curve.max() * 0.45), fontsize=10, color=PURPLE,
+                bbox=dict(facecolor='white', edgecolor='none', pad=1.2),
                 arrowprops=dict(arrowstyle='->', color=PURPLE, lw=1.4))
-    for g, lab in ((AMP, 'the upper arc'), (-AMP, 'the lower arc')):
+    for g, lab, ha, dx in ((AMP, 'the upper arc', 'left', 0.10),
+                           (-AMP, 'the lower arc', 'right', -0.10)):
         ax.plot([g], [float(np.mean((ys - g) ** 2))], marker='o', ms=8, color=LINK)
-        ax.text(g, float(np.mean((ys - g) ** 2)) + 0.12, lab, ha='center',
-                fontsize=9.5, color=LINK)
+        ax.text(g + dx, float(np.mean((ys - g) ** 2)) - 0.45, lab, ha=ha,
+                fontsize=9.5, color=LINK,
+                bbox=dict(facecolor='white', edgecolor='none', pad=1.2))
     ax.set_xlabel('the one number the predictor could answer at x = 0 (m)', fontsize=9.5)
     ax.set_ylabel('its average squared error (m$^2$)', fontsize=9.5)
     ax.set_title('The score is lowest exactly between the two\n'
                  'right answers, so that is the answer training picks',
                  fontsize=11.5, weight='bold', color=INK)
-    fig.tight_layout()
     _save(fig, DIFF_DOC, 'many-right-answers.svg')
 
 
@@ -538,10 +547,10 @@ def noise_schedule() -> None:
     print(f'[s2] the two halves are equal at t = {half}, where each is '
           f'{np.sqrt(ab[half]):.3f}')
     print(f'[s2] the biggest single-step beta is {SCHED["beta"].max():.4f} at '
-          f't = {int(np.argmax(SCHED["beta"]))}')
+          f't = {int(np.argmax(SCHED["beta"]))}, against {SCHED["beta"][10]:.4f} '
+          f'at t = 10 and {SCHED["beta"][50]:.4f} at t = 50')
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.2), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.8, 5.4), facecolor='white')
     _plain(ax)
     ax.plot(ts, np.sqrt(ab), color=LINK, lw=2.6, label='how much data is kept')
     ax.plot(ts, np.sqrt(1.0 - ab), color=GRIP, lw=2.6, label='how much noise is added')
@@ -557,15 +566,28 @@ def noise_schedule() -> None:
     ax.legend(fontsize=9.5, frameon=False, loc='lower left')
     ax.set_title('The cosine schedule: the two multipliers at every step',
                  fontsize=11.5, weight='bold', color=INK)
-    ax = axes[1]
+    _save(fig, DIFF_DOC, 'noise-schedule.svg')
+
+    fig, ax = plt.subplots(figsize=(8.8, 5.4), facecolor='white')
     _plain(ax)
     ax.plot(ts[1:], SCHED['beta'][1:], color=PURPLE, lw=2.6)
+    worst = int(np.argmax(SCHED['beta']))
+    ax.plot([worst], [SCHED['beta'][worst]], marker='o', ms=8, color=PURPLE)
+    ax.annotate(f'at step {worst} one step replaces\n'
+                f'{SCHED["beta"][worst]:.3f} of the point',
+                xy=(worst, SCHED['beta'][worst]), xytext=(42, 0.74), fontsize=9.5,
+                color=PURPLE,
+                arrowprops=dict(arrowstyle='->', color=PURPLE, lw=1.4))
+    for m in (10, 50):
+        ax.plot([m], [SCHED['beta'][m]], marker='o', ms=6, color=MUTED)
+        ax.text(m, SCHED['beta'][m] + 0.04, f'{SCHED["beta"][m]:.3f}', ha='center',
+                fontsize=9, color=MUTED)
+    ax.set_ylim(0, 1.08)
     ax.set_xlabel('step t', fontsize=9.5)
     ax.set_ylabel('share of the point replaced at step t', fontsize=9.5)
     ax.set_title('How much one single step changes:\nalmost nothing early, almost'
                  ' everything late', fontsize=11.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, DIFF_DOC, 'noise-schedule.svg')
+    _save(fig, DIFF_DOC, 'one-step-at-a-time.svg')
 
 
 def one_point_walk() -> None:
@@ -587,8 +609,7 @@ def one_point_walk() -> None:
     print(f'[s2] at t = 100 they have mean y {cloud[:, 100, 1].mean():+.3f} and '
           f'spread {cloud[:, 100, 1].std():.3f}')
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.4), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.8, 5.4), facecolor='white')
     _plain(ax)
     for k, p in enumerate(paths):
         ax.plot(ts, p[:, 1], lw=1.8, alpha=0.9,
@@ -602,7 +623,9 @@ def one_point_walk() -> None:
     ax.set_title(f'Six noisy copies of the single waypoint (0.00, {x0[1]:.2f}),\n'
                  'each with its own fixed noise', fontsize=11.5, weight='bold',
                  color=INK)
-    ax = axes[1]
+    _save(fig, DIFF_DOC, 'one-point-walk.svg')
+
+    fig, ax = plt.subplots(figsize=(8.8, 5.4), facecolor='white')
     _plain(ax)
     edges = np.linspace(-3.4, 3.8, 50)
     for t, col in ((25, LINK), (50, SLIDE), (100, PURPLE)):
@@ -616,8 +639,7 @@ def one_point_walk() -> None:
     ax.legend(fontsize=9, frameon=False)
     ax.set_title('The same waypoint, spread wider at every step',
                  fontsize=11.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, DIFF_DOC, 'one-point-walk.svg')
+    _save(fig, DIFF_DOC, 'one-point-spreads.svg')
 
 
 def blob_is_round() -> None:
@@ -636,7 +658,7 @@ def blob_is_round() -> None:
     print(f'[s2] mismatch score between the two {_mismatch(xT, pure):.4f}, '
           f'against a floor of {d.floor:.4f}')
 
-    fig, axes = plt.subplots(1, 3, figsize=(14.4, 5.0), facecolor='white')
+    fig, axes = plt.subplots(1, 2, figsize=(10.4, 5.4), facecolor='white')
     for ax, pts, name in ((axes[0], xT, 'the data after 100 noise steps'),
                           (axes[1], pure, 'plain round noise, drawn from scratch')):
         _arena(ax, lim=3.6, obstacle=False, labels=False)
@@ -648,7 +670,10 @@ def blob_is_round() -> None:
         ax.set_title(f'{name}\nspread {pts[:, 0].std():.2f} across, '
                      f'{pts[:, 1].std():.2f} up', fontsize=10.5, weight='bold',
                      color=INK)
-    ax = axes[2]
+    fig.tight_layout()
+    _save(fig, DIFF_DOC, 'blob-is-round.svg')
+
+    fig, ax = plt.subplots(figsize=(8.8, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(spreads[:, 0], color=LINK, lw=2.4, label='spread across (x)')
     ax.plot(spreads[:, 1], color=SLIDE, lw=2.4, label='spread up (y)')
@@ -659,10 +684,70 @@ def blob_is_round() -> None:
     ax.set_ylim(0, 1.25)
     ax.legend(fontsize=9.5, frameon=False, loc='lower right')
     ax.set_title('Both directions end at the same spread,\n'
-                 'which is why the end is a round blob', fontsize=10.5,
+                 'which is why the end is a round blob', fontsize=11.5,
                  weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, DIFF_DOC, 'blob-is-round.svg')
+    _save(fig, DIFF_DOC, 'spread-reaches-one.svg')
+
+
+def mismatch_shift() -> None:
+    """What the mismatch score measures: it grows as two clouds move apart."""
+    d = _data()
+    shifts = np.linspace(0.0, 1.0, 21)
+    vals = [_mismatch(d.test + np.array([0.0, s]), d.ref) for s in shifts]
+    print(f'[s2] mismatch score with the copy shifted by 0.00 m: {vals[0]:.4f}, '
+          f'by 0.10 m: {vals[2]:.4f}, by 0.25 m: {vals[5]:.4f}, by 0.50 m: '
+          f'{vals[10]:.4f}, by 1.00 m: {vals[20]:.4f}')
+
+    fig, ax = plt.subplots(figsize=(9.0, 5.4), facecolor='white')
+    _plain(ax)
+    ax.plot(shifts, vals, color=TEAL, lw=2.6, marker='o', ms=5)
+    ax.axhline(d.floor, color=MUTED, ls='--', lw=1.3)
+    ax.text(0.33, d.floor * 1.6, f'two halves of the real data: {d.floor:.4f}',
+            fontsize=9.5, color=MUTED)
+    for s_i in (0, 2, 5, 10, 20):
+        ax.text(shifts[s_i], vals[s_i] * 1.7, f'{vals[s_i]:.4f}', ha='center',
+                fontsize=9, color=TEAL)
+    ax.set_yscale('log')
+    ax.set_ylim(5e-4, 2.0)
+    ax.set_xlabel('how far the copy of the data was moved sideways (m)', fontsize=9.5)
+    ax.set_ylabel('mismatch score (0 is a perfect match)', fontsize=9.5)
+    ax.set_title('What the mismatch score measures: move one copy of the real\n'
+                 'data away from the other, and the score grows with the move',
+                 fontsize=11.5, weight='bold', color=INK)
+    _save(fig, DIFF_DOC, 'mismatch-shift.svg')
+
+
+def mismatch_kinds_of_wrong() -> None:
+    """The score catches wrong shape as well as wrong average."""
+    d = _data()
+    rng = np.random.default_rng(321)
+    ref = d.ref
+    collapsed = np.stack([d.test[:, 0], rng.normal(0.0, 0.07, len(d.test))], axis=1)
+    one_arc = d.test[d.test_side == ABOVE]
+    narrow = np.stack([d.test[:, 0] * 0.5, d.test[:, 1]], axis=1)
+    cases = [('another sample of\nthe real data', d.test, MUTED),
+             ('only the upper arc,\nnever the lower one', one_arc, LINK),
+             ('the right average,\nbut squeezed flat', collapsed, PURPLE),
+             ('the right shape,\nbut too short', narrow, GRIP)]
+    vals = [_mismatch(p, ref) for _n, p, _c in cases]
+    for (name, _p, _c), v in zip(cases, vals):
+        print(f'[s2] mismatch of "{name.replace(chr(10), " ")}": {v:.4f}')
+
+    fig, ax = plt.subplots(figsize=(9.6, 5.4), facecolor='white')
+    _plain(ax)
+    bars = ax.bar([c[0] for c in cases], vals, color=[c[2] for c in cases],
+                  width=0.55, edgecolor=INK, lw=0.6)
+    for b, v in zip(bars, vals):
+        ax.text(b.get_x() + b.get_width() / 2, v * 1.3, f'{v:.4f}', ha='center',
+                fontsize=11, weight='bold', color=INK)
+    ax.set_yscale('log')
+    ax.set_ylim(5e-4, max(vals) * 6)
+    ax.tick_params(labelsize=9)
+    ax.set_ylabel('mismatch score against the real data', fontsize=9.5)
+    ax.set_title('Every way of being wrong raises the score, so a cloud cannot\n'
+                 'score well by getting only the average right',
+                 fontsize=11.5, weight='bold', color=INK)
+    _save(fig, DIFF_DOC, 'mismatch-kinds-of-wrong.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1022,7 +1107,7 @@ def generated_vs_real() -> None:
           f'inside the obstacle {_in_obstacle(gen) * 100:.2f}%, real data '
           f'{_in_obstacle(d.ref) * 100:.2f}%')
 
-    fig, axes = plt.subplots(1, 3, figsize=(14.4, 5.4), facecolor='white')
+    fig, axes = plt.subplots(1, 2, figsize=(10.4, 5.6), facecolor='white')
     for ax, pts, name, col in (
             (axes[0], d.ref, 'real demonstrations', LINK),
             (axes[1], gen, 'generated by the reverse walk', SLIDE)):
@@ -1034,20 +1119,24 @@ def generated_vs_real() -> None:
         ax.set_title(f'{name}\ninside the obstacle: '
                      f'{_in_obstacle(pts) * 100:.2f}%',
                      fontsize=10.5, weight='bold', color=INK)
-    ax = axes[2]
+    fig.tight_layout()
+    _save(fig, DIFF_DOC, 'generated-vs-real.svg')
+
+    fig, ax = plt.subplots(figsize=(7.6, 5.2), facecolor='white')
     _plain(ax)
     names = ['real against real\n(the best possible)', 'generated against real']
     vals = [d.floor, mis]
-    bars = ax.bar(names, vals, color=[MUTED, SLIDE], width=0.5, edgecolor=INK, lw=0.6)
+    bars = ax.bar(names, vals, color=[MUTED, SLIDE], width=0.45, edgecolor=INK, lw=0.6)
     for b, v in zip(bars, vals):
-        ax.text(b.get_x() + b.get_width() / 2, v + max(vals) * 0.03, f'{v:.4f}',
-                ha='center', fontsize=11, weight='bold', color=INK)
+        ax.text(b.get_x() + b.get_width() / 2, v + max(vals) * 0.04, f'{v:.4f}',
+                ha='center', fontsize=12, weight='bold', color=INK)
     ax.set_ylim(0, max(vals) * 1.25)
     ax.set_ylabel('mismatch score (0 is a perfect match)', fontsize=9.5)
-    ax.set_title('How far the generated cloud is\nfrom the real one',
-                 fontsize=10.5, weight='bold', color=INK)
+    ax.set_title('How far the generated cloud is from the real one,\n'
+                 'against the best score two real samples reach',
+                 fontsize=11.5, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, DIFF_DOC, 'generated-vs-real.svg')
+    _save(fig, DIFF_DOC, 'generated-cloud-mismatch.svg')
 
 
 def the_step_rule() -> None:
@@ -1066,8 +1155,7 @@ def the_step_rule() -> None:
           f'beta {beta:.4f}, the new middle ({mean[0, 0]:.3f}, {mean[0, 1]:.3f}), '
           f'and the noise put back has spread {sig:.4f}')
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.2, 6.0), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.4, 6.6), facecolor='white')
     _plain(ax)
     ax.set_xlim(0.3, 1.0)
     ax.set_ylim(0.75, 1.3)
@@ -1078,41 +1166,26 @@ def the_step_rule() -> None:
     ax.text(x[0, 0] + 0.02, x[0, 1] + 0.055, f'the point at t = {t}',
             fontsize=9.5, color=PURPLE)
     ax.plot(mean[0, 0], mean[0, 1], marker='o', ms=11, color=GRIP, zorder=5)
-    ax.text(mean[0, 0] - 0.025, mean[0, 1] - 0.085,
-            f'the middle of the next point\n({mean[0, 0]:.3f}, {mean[0, 1]:.3f})',
-            fontsize=9.5, color=GRIP, ha='right')
+    ax.annotate(f'the middle of the next point\n({mean[0, 0]:.3f}, {mean[0, 1]:.3f})',
+                xy=(mean[0, 0] - 0.008, mean[0, 1] - 0.006), xytext=(0.40, 0.955),
+                fontsize=9.5, color=GRIP, ha='left',
+                arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.4))
     ax.annotate('', xy=(mean[0, 0], mean[0, 1]), xytext=(x[0, 0], x[0, 1]),
                 arrowprops=dict(arrowstyle='->', color=INK, lw=2.0))
     ax.set_xlabel('x (m)', fontsize=9.5)
     ax.set_ylabel('y (m)', fontsize=9.5)
     ax.legend(fontsize=9, frameon=False, loc='upper left')
-    ax.set_title(f'One step back, from t = {t} to t = {t - 1}',
+    ax.set_title(f'One step back, from t = {t} to t = {t - 1}: the middle barely\n'
+                 f'moves, and the fresh noise is far larger than the move',
                  fontsize=11.5, weight='bold', color=INK)
-    ax = axes[1]
-    ax.axis('off')
-    lines = [
-        f'the point now        x = ({x[0, 0]:.3f}, {x[0, 1]:.3f}),  t = {t}',
-        f'the named noise      e = ({eps[0, 0]:.3f}, {eps[0, 1]:.3f})',
-        '',
-        f'share removed        beta = {beta:.4f}',
-        f'noise still in       sqrt(1 - kept) = {np.sqrt(1 - ab):.4f}',
-        f'take out             beta / {np.sqrt(1 - ab):.4f} = {beta / np.sqrt(1 - ab):.4f}',
-        '',
-        f'x - {beta / np.sqrt(1 - ab):.4f} e = '
-        f'({x[0, 0] - beta / np.sqrt(1 - ab) * eps[0, 0]:.3f}, '
-        f'{x[0, 1] - beta / np.sqrt(1 - ab) * eps[0, 1]:.3f})',
-        f'divide by {np.sqrt(1 - beta):.4f} = ({mean[0, 0]:.3f}, {mean[0, 1]:.3f})',
-        '',
-        f'put noise back       spread {sig:.4f}',
-        f'so the new point is  ({mean[0, 0]:.3f}, {mean[0, 1]:.3f}) '
-        f'+ {sig:.3f} x noise',
-    ]
-    ax.text(0.0, 0.97, '\n'.join(lines), fontsize=11.0, family='monospace',
-            va='top', color=INK)
-    ax.set_title('The same step written out', fontsize=11.5, weight='bold',
-                 color=INK, loc='left')
-    fig.tight_layout()
     _save(fig, DIFF_DOC, 'the-step-rule.svg')
+    print(f'[s4] the written-out arithmetic of that step: noise still in the '
+          f'point sqrt(1 - kept) = {np.sqrt(1 - ab):.4f}; the share of the named '
+          f'noise taken out is beta / {np.sqrt(1 - ab):.4f} = '
+          f'{beta / np.sqrt(1 - ab):.4f}; subtracting it gives '
+          f'({x[0, 0] - beta / np.sqrt(1 - ab) * eps[0, 0]:.3f}, '
+          f'{x[0, 1] - beta / np.sqrt(1 - ab) * eps[0, 1]:.3f}); dividing by '
+          f'{np.sqrt(1 - beta):.4f} gives ({mean[0, 0]:.3f}, {mean[0, 1]:.3f})')
 
 
 # --------------------------------------------------------------------------
@@ -1216,8 +1289,7 @@ def condition_accuracy() -> None:
         f'{name} {v:.2f}%' for name, v in inside.items())
         + f'; the squared-error predictor of section 1 spends {pred_inside:.1f}% '
           'of its path in there')
-    fig, axes = plt.subplots(1, 2, figsize=(13.2, 5.2), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.0, 5.4), facecolor='white')
     _plain(ax)
     names = list(out)
     goes_up = [out[n][1] * 100 for n in names]
@@ -1243,7 +1315,9 @@ def condition_accuracy() -> None:
     ax.set_title('What the condition buys: the side is chosen\n'
                  'by the asker rather than by chance',
                  fontsize=11.5, weight='bold', color=INK)
-    ax = axes[1]
+    _save(fig, DIFF_DOC, 'condition-accuracy.svg')
+
+    fig, ax = plt.subplots(figsize=(8.4, 5.4), facecolor='white')
     _plain(ax)
     labels = ['the predictor\nof section 1'] + [n.replace(' ', '\n') for n in names]
     vals = [pred_inside] + [inside[n] for n in names]
@@ -1255,11 +1329,11 @@ def condition_accuracy() -> None:
                 fontsize=10.5, weight='bold', color=INK)
     ax.set_ylim(0, max(vals) * 1.2)
     ax.set_ylabel('share that lands inside the obstacle (%)', fontsize=9.5)
-    ax.set_title('And what it keeps: every version of the\n'
-                 'generator stays out of the obstacle',
+    ax.set_title('And what it keeps: every version of the generator\n'
+                 'stays out of the obstacle, which the predictor did not',
                  fontsize=11.5, weight='bold', color=INK)
     fig.tight_layout()
-    _save(fig, DIFF_DOC, 'condition-accuracy.svg')
+    _save(fig, DIFF_DOC, 'obstacle-share-by-method.svg')
 
 
 def guidance_arrows() -> None:
@@ -1366,8 +1440,7 @@ def guidance_tradeoff() -> None:
           f'strength 1 to {alongs[-1]:.3f} m at strength 4, while the real data '
           f'has {real_x:.3f} m')
 
-    fig, axes = plt.subplots(1, 3, figsize=(15.4, 5.0), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.4, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(ws, fracs * 100, color=LINK, lw=2.6, marker='o', ms=5)
     ax.axhline(50, color=MUTED, ls='--', lw=1.2)
@@ -1375,9 +1448,12 @@ def guidance_tradeoff() -> None:
     ax.set_xlabel('guidance strength', fontsize=9.5)
     ax.set_ylabel('waypoints that went above (%)', fontsize=9.5)
     ax.set_ylim(40, 105)
-    ax.set_title('The condition is obeyed more',
-                 fontsize=11, weight='bold', color=INK)
-    ax = axes[1]
+    ax.set_title('Turning the strength up makes the condition\n'
+                 'more reliably obeyed, which is what it is for',
+                 fontsize=11.5, weight='bold', color=INK)
+    _save(fig, DIFF_DOC, 'guidance-obedience.svg')
+
+    fig, ax = plt.subplots(figsize=(8.4, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(ws, alongs, color=GRIP, lw=2.6, marker='o', ms=5,
             label='spread along the arc')
@@ -1392,21 +1468,23 @@ def guidance_tradeoff() -> None:
     ax.set_ylabel('spread of the generated waypoints (m)', fontsize=9.5)
     ax.set_ylim(0, max(alongs.max(), real_x) * 1.3)
     ax.legend(fontsize=9, frameon=False, loc='lower left')
-    ax.set_title('But the variety goes with it',
-                 fontsize=11, weight='bold', color=INK)
-    ax = axes[2]
+    ax.set_title('But the variety goes with it: both spreads fall\n'
+                 'below the spread the real demonstrations have',
+                 fontsize=11.5, weight='bold', color=INK)
+    _save(fig, DIFF_DOC, 'guidance-variety.svg')
+
+    fig, ax = plt.subplots(figsize=(8.4, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(ws, miss, color=SLIDE, lw=2.6, marker='o', ms=5)
     ax.plot([best], [miss.min()], marker='o', ms=11, color=INK)
-    ax.text(best + 0.35, miss.min() * 2.6,
+    ax.text(best + 0.65, miss.min() * 2.2,
             f'best at strength {best:.1f}\nmismatch {miss.min():.4f}',
             fontsize=9.5, color=INK)
     ax.set_yscale('log')
     ax.set_xlabel('guidance strength', fontsize=9.5)
     ax.set_ylabel('mismatch against the real upper arc', fontsize=9.5)
-    ax.set_title('So there is one best setting,\nand it is not the largest one',
-                 fontsize=11, weight='bold', color=INK)
-    fig.tight_layout()
+    ax.set_title('So there is one best setting, and it is neither\n'
+                 'end of the dial', fontsize=11.5, weight='bold', color=INK)
     _save(fig, DIFF_DOC, 'guidance-tradeoff.svg')
 
 
@@ -1439,8 +1517,15 @@ def _dq() -> dict[int, tuple[float, float, float]]:
 PASS_TIME: dict[int, float] = {}
 
 
-def _pass_time(batch: int, repeats: int = 200) -> float:
+def _pass_time(batch: int, repeats: int = 6000) -> float:
     """Measured seconds for one pass of the denoiser over a batch of points.
+
+    The fastest of many repeats is taken rather than the average or the middle
+    one. Every repeat does exactly the same arithmetic, so any repeat that took
+    longer than the fastest was delayed by something else running on the
+    machine, and the fastest one is therefore the closest measurement of what
+    the pass itself costs. Taking the fastest also makes the number steady from
+    run to run, which the average is not.
 
     Measured once per batch size and then kept, so that every picture and every
     printed figure in one run quotes the same timing.
@@ -1449,14 +1534,14 @@ def _pass_time(batch: int, repeats: int = 200) -> float:
         return PASS_TIME[batch]
     den = _den()
     x = np.zeros((batch, 2))
-    for _ in range(20):
+    for _ in range(50):
         den.eps(x, 50, UNTOLD)
     best = []
     for _ in range(repeats):
         start = time.perf_counter()
         den.eps(x, 50, UNTOLD)
         best.append(time.perf_counter() - start)
-    PASS_TIME[batch] = float(np.median(best))
+    PASS_TIME[batch] = float(np.min(best))
     return PASS_TIME[batch]
 
 
@@ -1466,8 +1551,7 @@ def steps_vs_error() -> None:
     for n in STEP_COUNTS:
         print(f'[s7] {n:3d} steps: mismatch {q[n][0]:.4f}, nearest real point '
               f'{q[n][1]:.4f} m, inside the obstacle {q[n][2] * 100:.2f}%')
-    fig, axes = plt.subplots(1, 2, figsize=(13.2, 5.2), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.6, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(STEP_COUNTS, [q[n][0] for n in STEP_COUNTS], color=LINK, lw=2.6,
             marker='o', ms=6)
@@ -1475,7 +1559,7 @@ def steps_vs_error() -> None:
     ax.text(2.2, d.floor * 1.25, f'real against real: {d.floor:.4f}', fontsize=9.5,
             color=MUTED)
     for n in STEP_COUNTS:
-        ax.text(n, q[n][0] * 1.45, f'{q[n][0]:.3f}', ha='center', fontsize=9,
+        ax.text(n * 1.09, q[n][0] * 1.5, f'{q[n][0]:.3f}', ha='left', fontsize=9,
                 color=LINK)
     ax.set_xscale('log')
     ax.set_yscale('log')
@@ -1483,8 +1567,12 @@ def steps_vs_error() -> None:
     ax.set_xticklabels([str(n) for n in STEP_COUNTS])
     ax.set_xlabel('number of steps used to generate', fontsize=9.5)
     ax.set_ylabel('mismatch score (lower is better)', fontsize=9.5)
-    ax.set_title('Fewer steps, worse points', fontsize=11.5, weight='bold', color=INK)
-    ax = axes[1]
+    ax.set_title('Fewer steps, worse points: two steps is useless and after\n'
+                 'about twenty-five the improvement is small',
+                 fontsize=11.5, weight='bold', color=INK)
+    _save(fig, DIFF_DOC, 'steps-vs-error.svg')
+
+    fig, ax = plt.subplots(figsize=(8.6, 5.2), facecolor='white')
     _plain(ax)
     vals = [q[n][2] * 100 for n in STEP_COUNTS]
     bars = ax.bar([str(n) for n in STEP_COUNTS], vals, color=GRIP, width=0.6,
@@ -1495,10 +1583,10 @@ def steps_vs_error() -> None:
     ax.set_ylim(0, max(vals) * 1.25 + 0.01)
     ax.set_xlabel('number of steps used to generate', fontsize=9.5)
     ax.set_ylabel('generated waypoints inside the obstacle (%)', fontsize=9.5)
-    ax.set_title('And the mistakes land where they matter',
+    ax.set_title('And the mistakes land where they matter: these are rare\n'
+                 'events, so the figures move about more',
                  fontsize=11.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, DIFF_DOC, 'steps-vs-error.svg')
+    _save(fig, DIFF_DOC, 'steps-vs-obstacle.svg')
 
 
 def samples_at_few_steps() -> None:
@@ -1531,8 +1619,7 @@ def steps_vs_time() -> None:
         print(f'[s7] {n:3d} steps: {n * one * 1e3:.3f} ms for one point, '
               f'{n * many * 1e3:.3f} ms for 64 points')
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.2, 5.2), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.6, 5.2), facecolor='white')
     _plain(ax)
     ax.plot([r[0] for r in rows], [r[1] for r in rows], color=LINK, lw=2.4,
             marker='o', ms=6, label='one point at a time')
@@ -1544,26 +1631,29 @@ def steps_vs_time() -> None:
     ax.set_title('Time grows in a straight line with the number of steps,\n'
                  'because each step is one full pass of the network',
                  fontsize=11.5, weight='bold', color=INK)
-    ax = axes[1]
+    _save(fig, DIFF_DOC, 'steps-vs-time.svg')
+
+    fig, ax = plt.subplots(figsize=(8.8, 5.6), facecolor='white')
     _plain(ax)
     steps = np.arange(1, 101)
     for per, col in ((0.5, TEAL), (1.0, LINK), (2.0, WRIST), (5.0, GRIP)):
         ax.plot(steps, steps * per, color=col, lw=2.2,
                 label=f'{per:.1f} ms for one pass')
+    box = dict(facecolor='white', edgecolor='none', pad=1.6)
     ax.axhline(100.0, color=INK, ls='--', lw=1.6)
     ax.text(99, 104, 'the whole budget at 10 commands a second: 100 ms',
-            fontsize=9.5, color=INK, ha='right')
+            fontsize=9.5, color=INK, ha='right', bbox=box, zorder=5)
     ax.axhline(33.3, color=MUTED, ls='--', lw=1.6)
-    ax.text(99, 22, 'the whole budget at 30 commands a second: 33 ms',
-            fontsize=9.5, color=MUTED, ha='right')
+    ax.text(99, 23, 'the whole budget at 30 commands a second: 33 ms',
+            fontsize=9.5, color=MUTED, ha='right', bbox=box, zorder=5)
     ax.set_ylim(0, 160)
     ax.set_xlabel('number of steps', fontsize=9.5)
     ax.set_ylabel('time to generate one action (ms)', fontsize=9.5)
     ax.legend(fontsize=9, frameon=False, loc='upper left')
-    ax.set_title('The same arithmetic for networks of four different speeds',
+    ax.set_title('The same arithmetic for networks of four plausible speeds:\n'
+                 'where a line crosses a dashed budget, the steps stop fitting',
                  fontsize=11.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, DIFF_DOC, 'steps-vs-time.svg')
+    _save(fig, DIFF_DOC, 'steps-vs-budget.svg')
 
 
 # ==========================================================================
@@ -1787,6 +1877,121 @@ def flow_paths() -> None:
     _save(fig, FLOW_DOC, 'flow-paths.svg')
 
 
+def _crossings(a: Arr, b: Arr) -> int:
+    """How many of the straight segments from a[i] to b[i] cross one another."""
+    def side(p: Arr, q: Arr, r: Arr) -> Arr:
+        return ((q[:, 0] - p[:, 0]) * (r[:, 1] - p[:, 1])
+                - (q[:, 1] - p[:, 1]) * (r[:, 0] - p[:, 0]))
+
+    n = len(a)
+    i, j = np.triu_indices(n, 1)
+    d1 = side(a[i], b[i], a[j])
+    d2 = side(a[i], b[i], b[j])
+    d3 = side(a[j], b[j], a[i])
+    d4 = side(a[j], b[j], b[i])
+    return int((((d1 > 0) != (d2 > 0)) & ((d3 > 0) != (d4 > 0))).sum())
+
+
+def _on_arc(x: float, above: bool) -> Arr:
+    """The point on the upper or lower arc at that forward position."""
+    y = AMP * np.exp(-(x / WID) ** 2)
+    return np.array([x, y if above else -y])
+
+
+def crossing_training_lines() -> None:
+    """Why the first flow model's paths bend: training lines cross."""
+    d = _data()
+    # Two training lines whose middles are the same place, so that at the same
+    # moment in the journey both of them ask for a direction there. The two
+    # waypoints are genuinely on the arcs and the two noise points follow from
+    # them, so nothing here is drawn by hand.
+    hit = np.array([0.0, 0.0])
+    a1 = _on_arc(0.90, True)
+    b1 = _on_arc(-0.30, False)
+    a0 = 2.0 * hit - a1
+    b0 = 2.0 * hit - b1
+    va = a1 - a0
+    vb = b1 - b0
+    avg = (va + vb) / 2.0
+    print(f'[p2s1] two training lines both pass through ({hit[0]:.2f}, '
+          f'{hit[1]:.2f}) halfway along themselves; one asks for '
+          f'({va[0]:+.2f}, {va[1]:+.2f}) there and the other for '
+          f'({vb[0]:+.2f}, {vb[1]:+.2f}), and the only answer that scores best '
+          f'against both is their average ({avg[0]:+.2f}, {avg[1]:+.2f})')
+
+    fig, ax = plt.subplots(figsize=(8.2, 7.6), facecolor='white')
+    _arena(ax, lim=2.4, obstacle=False)
+    sh = _show(d.train, 500, 23)
+    ax.scatter(sh[:, 0], sh[:, 1], s=4, color=GRID, alpha=0.9)
+    for p0, p1, v, col, name, lab in (
+            (a0, a1, va, LINK, 'training line 1', (1.05, 0.12)),
+            (b0, b1, vb, GRIP, 'training line 2', (0.12, -1.12))):
+        ax.plot([p0[0], p1[0]], [p0[1], p1[1]], color=col, lw=1.8, alpha=0.9,
+                zorder=2)
+        ax.plot(p0[0], p0[1], marker='o', ms=9, color=col, zorder=4)
+        ax.plot(p1[0], p1[1], marker='*', ms=17, color=col, zorder=4)
+        ax.annotate('', xy=(hit[0] + v[0] * 0.42, hit[1] + v[1] * 0.42),
+                    xytext=(hit[0], hit[1]), zorder=5,
+                    arrowprops=dict(arrowstyle='->', color=col, lw=2.8))
+        ax.text(p0[0], p0[1] - 0.28, name, fontsize=9.5, color=col, ha='center')
+        ax.text(lab[0], lab[1], f'({v[0]:+.2f}, {v[1]:+.2f})', fontsize=9.5,
+                color=col, va='center', ha='left')
+    ax.annotate('', xy=(hit[0] + avg[0] * 0.42, hit[1] + avg[1] * 0.42),
+                xytext=(hit[0], hit[1]), zorder=6,
+                arrowprops=dict(arrowstyle='->', color=PURPLE, lw=3.2))
+    ax.plot(hit[0], hit[1], marker='X', ms=14, color=INK, zorder=7)
+    ax.text(-0.12, 0.22, 'both lines pass here', fontsize=9.5, color=INK,
+            ha='right')
+    ax.text(0.34, -0.42, f'their average ({avg[0]:+.2f}, {avg[1]:+.2f})',
+            fontsize=9.5, color=PURPLE, va='center')
+    ax.text(-2.3, -2.2, 'circle: the noise point      star: the real waypoint',
+            fontsize=9.5, color=INK)
+    ax.set_title('Why the first flow model bends: two training lines cross, and\n'
+                 'they ask for two different directions at the same place',
+                 fontsize=11.5, weight='bold', color=INK)
+    _save(fig, FLOW_DOC, 'crossing-training-lines.svg')
+
+
+def matched_pairs() -> None:
+    """Straightening: the same noise points, paired two different ways."""
+    d = _data()
+    s = _st()
+    z, made = s.pairs
+    n = 30
+    z30 = z[:n]
+    random_partner = d.train[np.random.default_rng(777).integers(0, len(d.train), n)]
+    own_partner = made[:n]
+    cr_rand = _crossings(z30, random_partner)
+    cr_own = _crossings(z30, own_partner)
+    print(f'[p2s1] among {n} lines there are {n * (n - 1) // 2} pairs of lines: '
+          f'random pairing has {cr_rand} crossing pairs, while pairing each noise '
+          f'point with the waypoint it actually produced has {cr_own}')
+
+    fig, axes = plt.subplots(1, 2, figsize=(11.6, 6.4), facecolor='white')
+    for ax, partner, name, col, cr in (
+            (axes[0], random_partner, 'paired with a waypoint picked at random:\n'
+             'what the first training does', GRIP, cr_rand),
+            (axes[1], own_partner, 'paired with the waypoint it produced itself:\n'
+             'what straightening does', SLIDE, cr_own)):
+        _arena(ax, lim=2.9, labels=False)
+        sh = _show(d.train, 400, 24)
+        ax.scatter(sh[:, 0], sh[:, 1], s=4, color=GRID, alpha=0.9)
+        for k in range(n):
+            ax.plot([z30[k, 0], partner[k, 0]], [z30[k, 1], partner[k, 1]],
+                    color=col, lw=1.0, alpha=0.75)
+            ax.plot(z30[k, 0], z30[k, 1], marker='o', ms=3.5, color=INK)
+        ax.set_xlabel('x (m)', fontsize=9)
+        ax.set_ylabel('y (m)', fontsize=9)
+        ax.set_title(f'{name}\n{cr} pair{"" if cr == 1 else "s"} of lines '
+                     f'cross{"es" if cr == 1 else ""}',
+                     fontsize=10.5, weight='bold', color=INK)
+    fig.tight_layout()
+    fig.subplots_adjust(top=0.80)
+    fig.suptitle('The same 30 noise points, paired two different ways',
+                 fontsize=12.5, weight='bold', color=INK, y=0.99)
+    _save(fig, FLOW_DOC, 'matched-pairs.svg')
+
+
 def straightness_compare() -> None:
     d = _data()
     _, fpath = _flow_sample(300, UNTOLD, seed=1414, steps=50)
@@ -1795,7 +2000,7 @@ def straightness_compare() -> None:
     fs, ds, ss = (_straightness(fpath), _straightness(dpath), _straightness(spath))
     print(f'[p2s1] over 300 paths: diffusion {ds:.3f}, flow matching {fs:.3f}, '
           f'the straightened flow {ss:.3f} times the straight-line distance')
-    fig, axes = plt.subplots(1, 4, figsize=(17.4, 5.0), facecolor='white')
+    fig, axes = plt.subplots(1, 3, figsize=(14.0, 5.2), facecolor='white')
     for ax, path, name, col, val in (
             (axes[0], dpath, 'diffusion, walking the noise back', PURPLE, ds),
             (axes[1], fpath, 'flow matching, first training', LINK, fs),
@@ -1810,7 +2015,12 @@ def straightness_compare() -> None:
         ax.set_ylabel('y (m)', fontsize=8.5)
         ax.set_title(f'{name}\npath is {val:.2f} times the straight line',
                      fontsize=10, weight='bold', color=INK)
-    ax = axes[3]
+    fig.suptitle('The paths the three models actually walk, from the same 12 '
+                 'noise points', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, FLOW_DOC, 'straightness-compare.svg')
+
+    fig, ax = plt.subplots(figsize=(7.8, 5.2), facecolor='white')
     _plain(ax)
     names = ['diffusion', 'flow,\nfirst training', 'flow,\nstraightened']
     vals = [ds, fs, ss]
@@ -1819,13 +2029,13 @@ def straightness_compare() -> None:
     ax.axhline(1.0, color=MUTED, ls='--', lw=1.4)
     for b_, v in zip(bars, vals):
         ax.text(b_.get_x() + b_.get_width() / 2, v + 0.05, f'{v:.2f}', ha='center',
-                fontsize=11.5, weight='bold', color=INK)
+                fontsize=12, weight='bold', color=INK)
     ax.set_ylim(0.9, max(vals) * 1.15)
     ax.set_ylabel('distance travelled, divided by the straight line', fontsize=9)
-    ax.set_title('How bent each path is\n(1.00 is perfectly straight)',
-                 fontsize=10, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, FLOW_DOC, 'straightness-compare.svg')
+    ax.set_title('How bent each path is, measured over 300 paths\n'
+                 '(1.00 is perfectly straight)',
+                 fontsize=11.5, weight='bold', color=INK)
+    _save(fig, FLOW_DOC, 'how-bent-each-path-is.svg')
 
 
 # --------------------------------------------------------------------------
@@ -2039,8 +2249,7 @@ def autoregressive_pieces() -> None:
     print(f'[p2s3] the first piece is a list of {NBIN} chances; the busiest '
           f'band is x around {mids[int(np.argmax(a.px))]:+.2f} m with '
           f'{a.px.max() * 100:.1f}% of the waypoints')
-    fig, axes = plt.subplots(1, 2, figsize=(13.4, 5.2), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.6, 5.2), facecolor='white')
     _plain(ax)
     ax.bar(mids, a.px * 100, width=(a.xe[1] - a.xe[0]) * 0.9, color=LINK,
            edgecolor=INK, lw=0.5)
@@ -2049,7 +2258,9 @@ def autoregressive_pieces() -> None:
     ax.set_title('Piece one: the chance of each band of x,\n'
                  'counted from the 6,000 training waypoints',
                  fontsize=11.5, weight='bold', color=INK)
-    ax = axes[1]
+    _save(fig, FLOW_DOC, 'autoregressive-first-piece.svg')
+
+    fig, ax = plt.subplots(figsize=(8.8, 5.2), facecolor='white')
     _plain(ax)
     ymids = (a.ye[:-1] + a.ye[1:]) / 2
     for k, col in ((NBIN // 2, LINK), (NBIN // 2 + 5, SLIDE), (1, GRIP)):
@@ -2061,11 +2272,10 @@ def autoregressive_pieces() -> None:
     ax.set_xlabel('sideways position y of the waypoint (m)', fontsize=9.5)
     ax.set_ylabel('chance given the x already chosen (%)', fontsize=9.5)
     ax.legend(fontsize=9, frameon=False)
-    ax.set_title('Piece two: the chance of each band of y,\n'
-                 'once the x has been chosen',
+    ax.set_title('Piece two: the chance of each band of y, once the x has been\n'
+                 'chosen, which is where the two right answers survive',
                  fontsize=11.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, FLOW_DOC, 'autoregressive-pieces.svg')
+    _save(fig, FLOW_DOC, 'autoregressive-second-piece.svg')
 
 
 def autoregressive_samples() -> None:
@@ -2108,8 +2318,7 @@ def autoregressive_samples() -> None:
 def autoregressive_cost() -> None:
     one = _pass_time(1)
     pieces = np.arange(1, 65)
-    fig, axes = plt.subplots(1, 2, figsize=(13.4, 5.2), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.0, 5.4), facecolor='white')
     _plain(ax)
     ax.plot(pieces, pieces * one * 1e3, color=WRIST, lw=2.6,
             label='one piece at a time: one pass per piece')
@@ -2127,19 +2336,6 @@ def autoregressive_cost() -> None:
           f'time, a 16-piece answer {16 * one * 1e3:.3f} ms and a 64-piece answer '
           f'{64 * one * 1e3:.3f} ms, while 2 straightened flow steps cost '
           f'{2 * one * 1e3:.3f} ms whatever the size')
-    ax = axes[1]
-    _plain(ax)
-    ax.axis('off')
-    order = ['choose x from the 20 chances', 'now fix x, and look up the 20',
-             'chances for y that go with it', 'choose y from those',
-             '', 'two pieces, so two passes', '',
-             'a 16-number arm trajectory would', 'need 16 passes, in order,',
-             'and none of them can be started', 'before the one before it is done']
-    ax.text(0.02, 0.95, '\n'.join(order), fontsize=12, va='top', color=INK,
-            family='monospace')
-    ax.set_title('Why the pieces cannot be done at the same time',
-                 fontsize=11.5, weight='bold', color=INK, loc='left')
-    fig.tight_layout()
     _save(fig, FLOW_DOC, 'autoregressive-cost.svg')
 
 
@@ -2205,8 +2401,11 @@ def trajectory_dataset() -> None:
           f'{NT} numbers long, so one demonstration is a point in {NT} dimensions')
     print(f'[p2s4] each one is really made from 3 choices: which side, how far '
           f'out, how wide')
-    fig, axes = plt.subplots(1, 2, figsize=(13.4, 5.4), facecolor='white')
-    ax = axes[0]
+    print(f'[p2s4] of the 40 drawn, {int((s.side[:40] == 0).sum())} swerve above '
+          f'and {int((s.side[:40] == 1).sum())} below; the one written out as 16 '
+          f'numbers runs {s.train[0][0]:+.2f}, {s.train[0][7]:+.2f}, '
+          f'{s.train[0][15]:+.2f} at readings 1, 8 and 16')
+    fig, ax = plt.subplots(figsize=(8.6, 5.4), facecolor='white')
     _plain(ax)
     for k in range(40):
         ax.plot(XS, s.train[k], color=LINK if s.side[k] == 0 else SLIDE, lw=1.0,
@@ -2216,7 +2415,9 @@ def trajectory_dataset() -> None:
     ax.set_ylabel('sideways position y (m)', fontsize=9.5)
     ax.set_title(f'40 whole demonstrations, each {NT} numbers long',
                  fontsize=11.5, weight='bold', color=INK)
-    ax = axes[1]
+    _save(fig, FLOW_DOC, 'trajectory-dataset.svg')
+
+    fig, ax = plt.subplots(figsize=(8.6, 5.0), facecolor='white')
     _plain(ax)
     one = s.train[0]
     ax.bar(np.arange(NT), one, color=LINK, edgecolor=INK, lw=0.5)
@@ -2227,10 +2428,10 @@ def trajectory_dataset() -> None:
     ax.set_xticklabels([f'{i + 1}' for i in range(NT)], fontsize=8)
     ax.set_xlabel('which of the 16 readings', fontsize=9.5)
     ax.set_ylabel('sideways position y (m)', fontsize=9.5)
-    ax.set_title('One of them written out as its 16 numbers',
+    ax.set_title('One of those demonstrations written out as its 16 numbers,\n'
+                 'which is what the autoencoder is handed',
                  fontsize=11.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, FLOW_DOC, 'trajectory-dataset.svg')
+    _save(fig, FLOW_DOC, 'one-demonstration-as-numbers.svg')
 
 
 def autoencoder_reconstruction() -> None:
@@ -2349,7 +2550,7 @@ def latent_codes() -> None:
     print(f'[p2s4] their middle reading has spread {built[:, NT // 2].std():.3f} m '
           f'against {s.test[:, NT // 2].std():.3f} m for real ones')
 
-    fig, axes = plt.subplots(1, 3, figsize=(15.0, 5.2), facecolor='white')
+    fig, axes = plt.subplots(1, 2, figsize=(11.0, 5.4), facecolor='white')
     ax = axes[0]
     _plain(ax)
     up = s.side == 0
@@ -2370,17 +2571,22 @@ def latent_codes() -> None:
     ax.set_ylabel('second number of the code', fontsize=9.5)
     ax.set_title('600 new codes made by a flow model\nthat never saw the 16 numbers',
                  fontsize=10.5, weight='bold', color=INK)
-    ax = axes[2]
+    fig.suptitle('The 2-number code space, with the real codes and the generated '
+                 'ones in it', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, FLOW_DOC, 'latent-codes.svg')
+
+    fig, ax = plt.subplots(figsize=(8.6, 5.2), facecolor='white')
     _plain(ax)
     for k in range(40):
         ax.plot(XS, built[k], color=GRIP, lw=1.0, alpha=0.8)
     ax.axhline(0, color=MUTED, lw=1.0)
     ax.set_xlabel('forward position x (m)', fontsize=9.5)
     ax.set_ylabel('sideways position y (m)', fontsize=9.5)
-    ax.set_title('40 of those codes built back up into\nwhole demonstrations',
-                 fontsize=10.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, FLOW_DOC, 'latent-codes.svg')
+    ax.set_title('40 of those generated codes built back up by the autoencoder\n'
+                 'into whole 16-number demonstrations',
+                 fontsize=11.5, weight='bold', color=INK)
+    _save(fig, FLOW_DOC, 'decoded-demonstrations.svg')
 
 
 def pixels_vs_latent_cost() -> None:
@@ -2393,8 +2599,9 @@ def pixels_vs_latent_cost() -> None:
     code = 2
     print(f'[p2s4] the demonstration here goes from {traj} numbers to {code}, '
           f'which is {traj / code:.0f} times fewer')
-    fig, axes = plt.subplots(1, 2, figsize=(13.4, 5.2), facecolor='white')
-    ax = axes[0]
+    print(f'[p2s4] over 50 generating steps that is {50 * pic / 1e6:.1f} million '
+          f'numbers against {50 * small / 1e6:.1f} million')
+    fig, ax = plt.subplots(figsize=(7.8, 5.2), facecolor='white')
     _plain(ax)
     bars = ax.bar(['every pixel\n512 x 512 x 3', 'the small code\n64 x 64 x 4'],
                   [pic, small], color=[GRIP, SLIDE], width=0.5, edgecolor=INK,
@@ -2408,7 +2615,9 @@ def pixels_vs_latent_cost() -> None:
     ax.set_title(f'A picture generator: {pic / small:.0f} times fewer numbers\n'
                  'once the picture is squeezed first',
                  fontsize=11.5, weight='bold', color=INK)
-    ax = axes[1]
+    _save(fig, FLOW_DOC, 'pixels-vs-latent-size.svg')
+
+    fig, ax = plt.subplots(figsize=(8.6, 5.2), facecolor='white')
     _plain(ax)
     steps = np.arange(1, 51)
     ax.plot(steps, steps * pic / 1e6, color=GRIP, lw=2.6,
@@ -2421,7 +2630,6 @@ def pixels_vs_latent_cost() -> None:
     ax.set_title('And every step pays the saving again,\n'
                  'which is what makes 50 steps affordable',
                  fontsize=11.5, weight='bold', color=INK)
-    fig.tight_layout()
     _save(fig, FLOW_DOC, 'pixels-vs-latent-cost.svg')
 
 
@@ -2478,8 +2686,7 @@ def control_rate_budget() -> None:
         table.append(row)
         print(f'[p2s5]   {hz} commands a second ({ms:.0f} ms): ' + ', '.join(
             f'{n} passes at {per:.1f} ms each' for n, per in zip(row, pers)))
-    fig, axes = plt.subplots(1, 2, figsize=(13.4, 5.4), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.2, 5.4), facecolor='white')
     _plain(ax)
     idx = np.arange(len(pers))
     for k, (hz, _ms) in enumerate(rates):
@@ -2494,25 +2701,9 @@ def control_rate_budget() -> None:
     ax.set_xticklabels([f'{p:.1f} ms\nper pass' for p in pers])
     ax.set_ylabel('passes that fit in one period', fontsize=9.5)
     ax.legend(fontsize=9, frameon=False)
-    ax.set_title('How many passes a control rate pays for',
+    ax.set_title('How many passes a control rate pays for: the faster the arm\n'
+                 'wants commands, the fewer passes one answer may use',
                  fontsize=11.5, weight='bold', color=INK)
-    ax = axes[1]
-    _plain(ax)
-    ax.axis('off')
-    lines = ['at 2.0 ms for one pass:', '',
-             '  50 denoising steps = 100.0 ms -> 10 Hz at best, nothing to spare',
-             '  16 denoising steps =  32.0 ms -> fits 30 Hz',
-             '   8 flow steps      =  16.0 ms -> fits 50 Hz',
-             '   2 straightened    =   4.0 ms -> fits anything',
-             '',
-             'and a 16-piece answer made one piece',
-             'at a time needs 16 passes = 32.0 ms,',
-             'which already misses 50 Hz']
-    ax.text(0.0, 0.95, '\n'.join(lines), fontsize=11.5, family='monospace',
-            va='top', color=INK)
-    ax.set_title('The same arithmetic written out', fontsize=11.5, weight='bold',
-                 color=INK, loc='left')
-    fig.tight_layout()
     _save(fig, FLOW_DOC, 'control-rate-budget.svg')
 
 
@@ -2595,11 +2786,14 @@ def main() -> None:
     two_ways_round()
     average_is_wrong()
     what_a_predictor_gives()
+    average_scores_better()
     many_right_answers()
     forward_noise_steps()
     noise_schedule()
     one_point_walk()
     blob_is_round()
+    mismatch_shift()
+    mismatch_kinds_of_wrong()
     noise_prediction_target()
     training_curve()
     predicted_vs_true_noise()
@@ -2620,12 +2814,14 @@ def main() -> None:
     flow_pairing()
     vector_field_arrows()
     flow_paths()
+    crossing_training_lines()
+    matched_pairs()
     straightness_compare()
     steps_vs_error_both()
     few_step_panels()
     error_at_fixed_steps()
     time_to_quality()
-    autoregressive_pieces()
+    autoregressive_pieces()           # writes the two single-piece pictures
     autoregressive_samples()
     autoregressive_cost()
     trajectory_dataset()

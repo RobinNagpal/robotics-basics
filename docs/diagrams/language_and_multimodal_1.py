@@ -29,7 +29,7 @@ and which is measured:
   * The timing and memory numbers are illustrative. They come from one stated
     rate for reading a prompt, one stated rate for writing an answer, and one
     stated set of model shapes, and the pages say so.
-  * On the second page, the six candidate answers, their qualities and the
+  * On the second page, the seven candidate answers, their qualities and the
     preference pairs are simulated with the same generator. Everything run on
     them is real arithmetic: a Bradley-Terry reward model fitted by gradient
     descent, a softmax policy improved by gradient ascent against that reward
@@ -730,49 +730,74 @@ def one_stream_of_tokens() -> None:
     _save(fig, LLM_DOC, 'one-stream-of-tokens.svg')
 
 
-def the_stream_grows() -> None:
+def _twelve_turns() -> tuple[int, list[int], list[int], list[int], list[int]]:
+    """The one simulated twelve-turn conversation that both pictures below use."""
     sys_n = TOK.count(SYSTEM_TEXT) + 2
     rng = np.random.default_rng(4242)
     user_n = [int(x) for x in rng.integers(18, 34, size=12)]
     asst_n = [int(x) for x in rng.integers(70, 140, size=12)]
-    cum, read = [], []
-    running = sys_n
-    read_total = 0
+    cum: list[int] = []
+    read: list[int] = []
+    running, read_total = sys_n, 0
     for i in range(12):
         running += user_n[i]
         read_total += running
         running += asst_n[i]
         cum.append(running)
         read.append(read_total)
-    print(f'[s3] after 12 turns the stream is {cum[-1]} tokens long; '
-          f'the model has read {read[-1]} prompt tokens in total')
+    return sys_n, user_n, asst_n, cum, read
 
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.0, 4.8), facecolor='white')
+
+def the_stream_grows() -> None:
+    sys_n, user_n, asst_n, cum, _ = _twelve_turns()
+    print(f'[s3] after 12 turns the stream is {cum[-1]} tokens long, '
+          f'{sys_n} of them the system prompt')
+
+    fig, ax = plt.subplots(figsize=(10.2, 5.0), facecolor='white')
     _plain(ax)
     turns = np.arange(1, 13)
-    ax.bar(turns, [sys_n] * 12, color=PURPLE, label='system prompt')
+    ax.bar(turns, [sys_n] * 12, color=PURPLE, label='the system prompt')
     ax.bar(turns, np.cumsum(user_n), bottom=[sys_n] * 12, color=LINK,
-           label='all the user turns so far')
+           label='all the questions so far')
     ax.bar(turns, np.cumsum(asst_n), bottom=sys_n + np.cumsum(user_n), color=SLIDE,
            label='all the answers so far')
+    ax.annotate(f'{cum[-1]:,} tokens', xy=(12, cum[-1]), xytext=(0, 10),
+                textcoords='offset points', ha='center', fontsize=10, color=INK)
     ax.set_xticks(turns)
     ax.set_xlabel('turn of the conversation', fontsize=10)
     ax.set_ylabel('tokens in the stream', fontsize=10)
-    ax.legend(fontsize=9, frameon=False, loc='upper left')
+    ax.legend(fontsize=9.4, frameon=False, loc='upper left')
     ax.set_ylim(0, cum[-1] * 1.30)
-    ax.set_title(f'{cum[-1]} tokens by turn 12', fontsize=11.5, weight='bold')
-    _plain(ax2)
-    ax2.plot(turns, read, marker='o', color=GRIP, lw=2, label='tokens read, added up')
-    ax2.plot(turns, cum, marker='s', color=LINK, lw=2, label='length of the stream')
-    ax2.set_xticks(turns)
-    ax2.set_xlabel('turn of the conversation', fontsize=10)
-    ax2.set_ylabel('tokens', fontsize=10)
-    ax2.legend(fontsize=9, frameon=False, loc='upper left')
-    ax2.grid(True, axis='y', color=GRID, lw=0.5)
-    ax2.set_title(f'{read[-1]:,} tokens read in all', fontsize=11.5, weight='bold')
-    fig.suptitle('The stream only grows, and every turn reads all of it again',
-                 fontsize=12.6, weight='bold', y=1.03)
+    ax.set_title(f'The stream only grows: twelve turns make it {cum[-1]:,} tokens long',
+                 fontsize=12.4, weight='bold')
     _save(fig, LLM_DOC, 'the-stream-grows.svg')
+
+
+def tokens_read_again() -> None:
+    _, _, _, cum, read = _twelve_turns()
+    print(f'[s3] by turn 12 the model has read {read[-1]} prompt tokens in all, '
+          f'{read[-1] / cum[-1]:.1f} times the {cum[-1]} tokens the stream holds')
+
+    fig, ax = plt.subplots(figsize=(10.2, 5.0), facecolor='white')
+    _plain(ax)
+    turns = np.arange(1, 13)
+    ax.plot(turns, read, marker='o', color=GRIP, lw=2.2,
+            label='prompt tokens read, added up over all the turns')
+    ax.plot(turns, cum, marker='s', color=LINK, lw=2.2,
+            label='tokens the stream holds at that turn')
+    ax.annotate(f'{read[-1]:,}', xy=(12, read[-1]), xytext=(-34, 2),
+                textcoords='offset points', fontsize=10, color=GRIP)
+    ax.annotate(f'{cum[-1]:,}', xy=(12, cum[-1]), xytext=(-34, 8),
+                textcoords='offset points', fontsize=10, color=LINK)
+    ax.set_xticks(turns)
+    ax.set_xlabel('turn of the conversation', fontsize=10)
+    ax.set_ylabel('tokens', fontsize=10)
+    ax.legend(fontsize=9.4, frameon=False, loc='upper left')
+    ax.grid(True, axis='y', color=GRID, lw=0.5)
+    ax.set_ylim(0, read[-1] * 1.25)
+    ax.set_title('Every turn reads the whole stream again, so the reading adds up',
+                 fontsize=12.4, weight='bold')
+    _save(fig, LLM_DOC, 'tokens-read-again.svg')
 
 
 def the_window_fills() -> None:
@@ -1105,10 +1130,12 @@ def before_and_after_retrieval() -> None:
     _save(fig, LLM_DOC, 'before-and-after-retrieval.svg')
 
 
-def retrieval_accuracy_and_cost() -> None:
+def _retrieval_numbers() -> tuple[int, int, float, float, float, float]:
+    """Accuracy and prompt size over all 40 drawer questions, with and without
+    retrieval. Both section 5 pictures below are drawn from these numbers."""
     plain_right = with_right = 0
-    base_tokens = []
-    rag_tokens = []
+    base_tokens: list[int] = []
+    rag_tokens: list[int] = []
     for t in TOOLS:
         question = f'which drawer holds the {t} ?'
         idx, _ = _retrieve(question)
@@ -1121,32 +1148,85 @@ def retrieval_accuracy_and_cost() -> None:
         rag_tokens.append(TOK.count(question) + TOK.count(SYSTEM_TEXT)
                           + TOK.count(' '.join(prompt)))
     b, rg = float(np.mean(base_tokens)), float(np.mean(rag_tokens))
-    t_b, t_r = b / PREFILL_RATE * 1000, rg / PREFILL_RATE * 1000
+    return (plain_right, with_right, b, rg,
+            b / PREFILL_RATE * 1000, rg / PREFILL_RATE * 1000)
+
+
+def retrieval_accuracy() -> None:
+    plain_right, with_right, _, _, _, _ = _retrieval_numbers()
     print(f'[s5] accuracy over {len(TOOLS)} questions: {plain_right} right without '
           f'retrieval, {with_right} right with it')
+
+    fig, ax = plt.subplots(figsize=(8.6, 4.8), facecolor='white')
+    _plain(ax)
+    vals = [plain_right, with_right]
+    bars = ax.bar([0, 1], vals, color=[LINK, JOINT], width=0.46)
+    for bb, v in zip(bars, vals):
+        ax.text(bb.get_x() + bb.get_width() / 2, v + 0.8, f'{v} of {len(TOOLS)}',
+                ha='center', fontsize=11)
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(['the question on its own',
+                        'the question with three notes in front of it'], fontsize=10)
+    ax.set_ylim(0, len(TOOLS) * 1.18)
+    ax.set_ylabel(f'drawer questions answered right, of {len(TOOLS)}', fontsize=10)
+    ax.set_title('Putting the text in the prompt answers every drawer question',
+                 fontsize=12.4, weight='bold')
+    _save(fig, LLM_DOC, 'retrieval-accuracy.svg')
+
+
+def retrieval_prompt_cost() -> None:
+    _, _, b, rg, t_b, t_r = _retrieval_numbers()
     print(f'[s5] prompt grows from {b:.0f} to {rg:.0f} tokens, '
           f'prefill time {t_b:.1f} ms to {t_r:.1f} ms')
 
-    fig, axes = plt.subplots(1, 3, figsize=(12.4, 4.4), facecolor='white')
-    titles = ['questions answered right', 'tokens in the prompt',
-              'time spent reading the prompt']
-    datas = [[plain_right, with_right], [b, rg], [t_b, t_r]]
-    fmts = ['{:.0f}', '{:.0f}', '{:.1f} ms']
-    ylabels = [f'of {len(TOOLS)} questions', 'tokens', 'milliseconds (illustrative)']
-    for ax, title, data, fmt, yl in zip(axes, titles, datas, fmts, ylabels):
-        _plain(ax)
-        bars = ax.bar([0, 1], data, color=[LINK, JOINT], width=0.5)
-        for bb, v in zip(bars, data):
-            ax.text(bb.get_x() + bb.get_width() / 2, v * 1.02, fmt.format(v),
-                    ha='center', fontsize=10)
-        ax.set_xticks([0, 1])
-        ax.set_xticklabels(['on its own', 'with retrieval'], fontsize=9.6)
-        ax.set_ylim(0, max(data) * 1.22)
-        ax.set_ylabel(yl, fontsize=9.6)
-        ax.set_title(title, fontsize=11.0, weight='bold')
-    fig.suptitle('Retrieval buys accuracy and pays for it in prompt tokens and reading time',
-                 fontsize=12.6, weight='bold', y=1.02)
-    _save(fig, LLM_DOC, 'retrieval-accuracy-and-cost.svg')
+    fig, ax = plt.subplots(figsize=(8.6, 4.8), facecolor='white')
+    _plain(ax)
+    vals = [b, rg]
+    bars = ax.bar([0, 1], vals, color=[LINK, JOINT], width=0.46)
+    for bb, v, t in zip(bars, vals, [t_b, t_r]):
+        ax.text(bb.get_x() + bb.get_width() / 2, v + rg * 0.02,
+                f'{v:.0f} tokens\n{t:.1f} ms to read', ha='center', fontsize=10.4)
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(['the question on its own',
+                        'the question with three notes in front of it'], fontsize=10)
+    ax.set_ylim(0, rg * 1.3)
+    ax.set_ylabel('tokens in the prompt, on average', fontsize=10)
+    ax.set_title(f'What the accuracy cost: three times the prompt, at '
+                 f'{PREFILL_RATE:,.0f} tokens read a second',
+                 fontsize=12.0, weight='bold')
+    _save(fig, LLM_DOC, 'retrieval-prompt-cost.svg')
+
+
+def the_prompt_the_model_reads() -> None:
+    question = f'which drawer holds the {UNSEEN_TOOL} ?'
+    idx, _ = _retrieve(question)
+    parts: list[tuple[str, str, str, str]] = [
+        ('the system prompt', SYSTEM_TEXT, PURPLE, '#ede7f8')]
+    for k, i in enumerate(idx):
+        parts.append((CHUNK_LABELS[i], ' '.join(CHUNKS[i]),
+                      JOINT if k == 0 else MUTED,
+                      '#fdf0d5' if k == 0 else '#f4f4f4'))
+    parts.append(('the question', question, LINK, LINK_PALE))
+    counts = [TOK.count(t) for _, t, _, _ in parts]
+    total = sum(counts)
+    print(f'[s5] the retrieved prompt for "{question}" holds {total} tokens: '
+          + ', '.join(f'{n} for {lab}' for (lab, _, _, _), n in zip(parts, counts)))
+
+    fig, ax = plt.subplots(figsize=(11.4, 5.6), facecolor='white')
+    _blank(ax)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(-0.3, len(parts) + 0.6)
+    for r, ((label, text, edge, face), n) in enumerate(zip(parts, counts)):
+        y = len(parts) - 1 - r
+        ax.text(0.004, y + 0.5, label, fontsize=9.4, va='center', color=edge,
+                weight='bold')
+        _box(ax, 0.20, y + 0.10, 0.68, 0.80, textwrap.fill(text, 62), face=face,
+             edge=edge, size=8.8)
+        ax.text(0.90, y + 0.5, f'{n} tokens', fontsize=9.4, va='center', color=INK)
+    ax.set_title(f'The prompt that answers the question: {total} tokens, with '
+                 f'drawer {CORP.drawer[UNSEEN_TOOL]} written in the top note',
+                 fontsize=12.0, weight='bold', loc='left')
+    _save(fig, LLM_DOC, 'the-prompt-the-model-reads.svg')
 
 
 # ==========================================================================
@@ -1199,43 +1279,50 @@ def first_token_is_slower() -> None:
     print(f'[s6] with a {prompt_tokens}-token prompt the first token takes '
           f'{ttft * 1000:.0f} ms and each one after it {per * 1000:.1f} ms, '
           f'which is {ttft / per:.1f} times as long')
-    for L in (50, 200, 500, 1000, 2000, 4000, 8000, 16000, 32000):
-        print(f'[s6]   prompt of {L:6,d} tokens -> first token after '
-              f'{L / PREFILL_RATE * 1000 + 1 / DECODE_RATE * 1000:7.0f} ms')
 
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.0, 4.6), facecolor='white')
+    fig, ax = plt.subplots(figsize=(10.2, 4.9), facecolor='white')
     _plain(ax)
     ax.bar(range(1, n + 1), [t * 1000 for t in times],
            color=[GRIP] + [JOINT] * (n - 1))
     ax.annotate(f'first token {ttft * 1000:.0f} ms:\nthe whole prompt is read first',
-                xy=(1, ttft * 1000), xytext=(6, ttft * 1000 * 0.85), fontsize=9.6,
+                xy=(1, ttft * 1000), xytext=(6, ttft * 1000 * 0.85), fontsize=9.8,
                 color=GRIP, arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.1))
     ax.annotate(f'every token after it {per * 1000:.1f} ms',
-                xy=(20, per * 1000), xytext=(13, ttft * 1000 * 0.45), fontsize=9.6,
+                xy=(20, per * 1000), xytext=(13, ttft * 1000 * 0.45), fontsize=9.8,
                 color=INK, arrowprops=dict(arrowstyle='-|>', color=INK, lw=1.1))
     ax.set_xlabel('token of the answer', fontsize=10)
     ax.set_ylabel('milliseconds (illustrative)', fontsize=10)
-    ax.set_title('The first token carries the whole prompt', fontsize=11.4, weight='bold')
-    _plain(ax2)
+    ax.set_title(f'The first token carries the whole {prompt_tokens}-token prompt',
+                 fontsize=12.4, weight='bold')
+    _save(fig, LLM_DOC, 'first-token-is-slower.svg')
+
+
+def first_token_and_prompt_length() -> None:
     lens = np.array([50, 200, 500, 1000, 2000, 4000, 8000, 16000, 32000])
     ttfts = lens / PREFILL_RATE * 1000 + 1 / DECODE_RATE * 1000
-    ax2.plot(lens, ttfts, marker='o', color=GRIP, lw=2)
+    for L, t in zip(lens, ttfts):
+        print(f'[s6]   prompt of {L:6,d} tokens -> first token after {t:7.0f} ms')
+
+    fig, ax = plt.subplots(figsize=(10.2, 4.9), facecolor='white')
+    _plain(ax)
+    ax.plot(lens, ttfts, marker='o', color=GRIP, lw=2.2)
     for L, t in zip(lens, ttfts):
         if L in (50, 1000, 8000):
-            ax2.annotate(f'{t:.0f} ms', xy=(L, t), xytext=(0, 10),
-                         textcoords='offset points', ha='center', fontsize=9)
-    ax2.annotate(f'{ttfts[-1]:.0f} ms', xy=(lens[-1], ttfts[-1]), xytext=(-46, -14),
-                 textcoords='offset points', ha='center', fontsize=9)
-    ax2.set_ylim(0, ttfts[-1] * 1.18)
-    ax2.set_xscale('log')
-    ax2.set_xticks(lens)
-    ax2.set_xticklabels([f'{int(L):,}' for L in lens], rotation=40, ha='right', fontsize=8.6)
-    ax2.set_xlabel('tokens in the prompt (log scale)', fontsize=10)
-    ax2.set_ylabel('time to the first token, ms', fontsize=10)
-    ax2.grid(True, axis='y', color=GRID, lw=0.5)
-    ax2.set_title('A longer prompt pushes the first token further out',
-                  fontsize=11.4, weight='bold')
-    _save(fig, LLM_DOC, 'first-token-is-slower.svg')
+            ax.annotate(f'{t:.0f} ms', xy=(L, t), xytext=(0, 11),
+                        textcoords='offset points', ha='center', fontsize=9.4)
+    ax.annotate(f'{ttfts[-1]:.0f} ms', xy=(lens[-1], ttfts[-1]), xytext=(-52, -14),
+                textcoords='offset points', ha='center', fontsize=9.4)
+    ax.set_ylim(0, ttfts[-1] * 1.18)
+    ax.set_xscale('log')
+    ax.set_xticks(lens)
+    ax.set_xticklabels([f'{int(L):,}' for L in lens], rotation=40, ha='right',
+                       fontsize=9.0)
+    ax.set_xlabel('tokens in the prompt (log scale)', fontsize=10)
+    ax.set_ylabel('time until the first token appears, ms', fontsize=10)
+    ax.grid(True, axis='y', color=GRID, lw=0.5)
+    ax.set_title('A longer prompt pushes the first token further away',
+                 fontsize=12.4, weight='bold')
+    _save(fig, LLM_DOC, 'first-token-and-prompt-length.svg')
 
 
 def memory_grows_with_the_talk() -> None:
@@ -1328,6 +1415,14 @@ def too_many_sums_to_memorise() -> None:
     _save(fig, LLM_DOC, 'too-many-sums-to-memorise.svg')
 
 
+def _sum_accuracy() -> tuple[int, int]:
+    seen_right = sum(int(MODEL.vocab[int(np.argmax(MODEL.dist(f'{x} plus {y} is'.split())))]
+                         == str(x + y)) for x, y in CORP.sum_seen)
+    unseen_right = sum(int(MODEL.vocab[int(np.argmax(MODEL.dist(f'{x} plus {y} is'.split())))]
+                           == str(x + y)) for x, y in CORP.sum_unseen)
+    return seen_right, unseen_right
+
+
 def the_model_guesses_the_total() -> None:
     a, b = CORP.sum_unseen[0]
     ctx = f'{a} plus {b} is'.split()
@@ -1335,44 +1430,50 @@ def the_model_guesses_the_total() -> None:
     nums = [str(i) for i in range(2, 19)]
     vals = [float(d[MODEL.ix[n]]) for n in nums]
     top = nums[int(np.argmax(vals))]
-    seen_right = sum(int(MODEL.vocab[int(np.argmax(MODEL.dist(f'{x} plus {y} is'.split())))]
-                         == str(x + y)) for x, y in CORP.sum_seen)
-    unseen_right = sum(int(MODEL.vocab[int(np.argmax(MODEL.dist(f'{x} plus {y} is'.split())))]
-                           == str(x + y)) for x, y in CORP.sum_unseen)
     shown = f'{vals[a + b - 2]:.3f}' if vals[a + b - 2] >= 0.001 else 'below 0.001'
     print(f'[s7] "{a} plus {b} is" -> top answer {top} at {max(vals):.3f}, '
           f'truth {a + b} at {shown}')
-    print(f'[s7] sums the corpus stated: {seen_right} of {len(CORP.sum_seen)} right; '
-          f'sums it never stated: {unseen_right} of {len(CORP.sum_unseen)} right')
 
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.2, 4.7), facecolor='white',
-                                  gridspec_kw={'width_ratios': [1.55, 1]})
+    fig, ax = plt.subplots(figsize=(10.4, 4.9), facecolor='white')
     _plain(ax)
     colours = [SLIDE if n == str(a + b) else (GRIP if n == top else LINK) for n in nums]
     bars = ax.bar(range(len(nums)), vals, color=colours, width=0.64)
     for bb, v, n in zip(bars, vals, nums):
         if v > 0.02:
             ax.text(bb.get_x() + bb.get_width() / 2, v + 0.004, f'{v:.2f}', ha='center',
-                    fontsize=8.6)
+                    fontsize=8.8)
     ax.set_xticks(range(len(nums)))
-    ax.set_xticklabels(nums, fontsize=9)
+    ax.set_xticklabels(nums, fontsize=9.4)
     ax.set_xlabel('total the model would say', fontsize=10)
     ax.set_ylabel('probability', fontsize=10)
-    ax.set_title(f'"{a} plus {b} is ..." was never in the corpus: it says {top} at '
-                 f'{max(vals):.2f},\nand gives the right total {a + b} {shown}',
-                 fontsize=11.2, weight='bold')
-    _plain(ax2)
-    accs = [100 * seen_right / len(CORP.sum_seen), 100 * unseen_right / len(CORP.sum_unseen)]
-    bars = ax2.bar([0, 1], accs, color=[SLIDE, GRIP], width=0.5)
-    for bb, v in zip(bars, accs):
-        ax2.text(bb.get_x() + bb.get_width() / 2, v + 2, f'{v:.0f}%', ha='center', fontsize=10)
-    ax2.set_xticks([0, 1])
-    ax2.set_xticklabels([f'the {len(CORP.sum_seen)} sums\nthe corpus stated',
-                         f'the {len(CORP.sum_unseen)} sums\nit never stated'], fontsize=9.6)
-    ax2.set_ylim(0, 112)
-    ax2.set_ylabel('totals given right, per cent', fontsize=10)
-    ax2.set_title('It knows the sums it saw\nand guesses the rest', fontsize=11.2, weight='bold')
+    ax.set_ylim(0, max(vals) * 1.22)
+    ax.set_title(f'"{a} plus {b} is ..." was never in the corpus: the model says {top} '
+                 f'at {max(vals):.2f} and gives the true total {a + b} {shown}',
+                 fontsize=11.8, weight='bold')
     _save(fig, LLM_DOC, 'the-model-guesses-the-total.svg')
+
+
+def sums_seen_and_unseen() -> None:
+    seen_right, unseen_right = _sum_accuracy()
+    print(f'[s7] sums the corpus stated: {seen_right} of {len(CORP.sum_seen)} right; '
+          f'sums it never stated: {unseen_right} of {len(CORP.sum_unseen)} right')
+
+    fig, ax = plt.subplots(figsize=(8.6, 4.8), facecolor='white')
+    _plain(ax)
+    accs = [100 * seen_right / len(CORP.sum_seen),
+            100 * unseen_right / len(CORP.sum_unseen)]
+    bars = ax.bar([0, 1], accs, color=[SLIDE, GRIP], width=0.46)
+    for bb, v, n in zip(bars, accs, [seen_right, unseen_right]):
+        ax.text(bb.get_x() + bb.get_width() / 2, v + 2.4, f'{v:.0f}%', ha='center',
+                fontsize=11)
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels([f'the {len(CORP.sum_seen)} sums the corpus stated',
+                        f'the {len(CORP.sum_unseen)} sums it never stated'], fontsize=10)
+    ax.set_ylim(0, 115)
+    ax.set_ylabel('sums given the right total, per cent', fontsize=10)
+    ax.set_title('It repeats the sums it read and gets none of the others right',
+                 fontsize=12.4, weight='bold')
+    _save(fig, LLM_DOC, 'sums-seen-and-unseen.svg')
 
 
 def counting_is_not_visible() -> None:
@@ -1402,6 +1503,81 @@ def counting_is_not_visible() -> None:
     _save(fig, LLM_DOC, 'counting-is-not-visible.svg')
 
 
+
+def text_labels_itself() -> None:
+    sent = 'pick up the red block and place it on the tray .'.split()
+    rows = [(sent[:i], sent[i]) for i in range(1, len(sent))]
+    print(f'[s2] one sentence of {len(sent)} words gives {len(rows)} training '
+          f'examples, and nobody wrote a single label')
+
+    fig, ax = plt.subplots(figsize=(10.6, 5.8), facecolor='white')
+    _blank(ax)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(-0.4, len(rows) + 0.9)
+    ax.text(0.03, len(rows) + 0.30, 'the words the model is shown', fontsize=10,
+            weight='bold')
+    ax.text(0.70, len(rows) + 0.30, 'the word it has to guess', fontsize=10,
+            weight='bold')
+    for r, (ctx, target) in enumerate(rows):
+        y = len(rows) - 1 - r
+        ax.text(0.03, y + 0.5, ' '.join(ctx), fontsize=9.4, va='center',
+                family='DejaVu Sans Mono')
+        _box(ax, 0.70, y + 0.12, 0.15, 0.74, target, face='#dff0e2', edge=SLIDE,
+             size=9.6)
+    ax.set_title(f'The text labels itself: one sentence of {len(sent)} words is '
+                 f'{len(rows)} training examples',
+                 fontsize=12.4, weight='bold', loc='left')
+    _save(fig, LLM_DOC, 'text-labels-itself.svg')
+
+
+def _phrase_count(phrase: tuple[str, ...]) -> int:
+    n = len(phrase)
+    total = 0
+    for s in CORP.sentences:
+        for i in range(len(s) - n + 1):
+            if tuple(s[i:i + n]) == phrase:
+                total += 1
+    return total
+
+
+def falling_back_to_a_shorter_phrase() -> None:
+    long_phrase = ('the', UNSEEN_TOOL, 'is', 'in', 'drawer')
+    n_long = _phrase_count(long_phrase)
+    after: Counter[str] = Counter()
+    for s in CORP.sentences:
+        for i in range(len(s) - 3):
+            if tuple(s[i:i + 3]) == ('is', 'in', 'drawer'):
+                after[s[i + 3]] += 1
+    n_short = sum(after.values())
+    truth = str(CORP.drawer[UNSEEN_TOOL])
+    top = after.most_common(1)[0][0]
+    print(f'[s4] "{" ".join(long_phrase)}" appears {n_long} times in the corpus and '
+          f'"is in drawer" appears {n_short} times')
+    print(f'[s4] after "is in drawer" the commonest next word is {top} '
+          f'({after[top]} times); the true answer {truth} follows {after[truth]} times')
+
+    nums = [str(i) for i in range(1, 10)]
+    vals = [after[n] for n in nums]
+    fig, ax = plt.subplots(figsize=(10.2, 5.0), facecolor='white')
+    _plain(ax)
+    colours = [GRIP if n == top else (SLIDE if n == truth else LINK) for n in nums]
+    bars = ax.bar(range(9), vals, color=colours, width=0.62)
+    for b, v in zip(bars, vals):
+        ax.text(b.get_x() + b.get_width() / 2, v + max(vals) * 0.02, str(v),
+                ha='center', fontsize=9.2)
+    ax.set_xticks(range(9))
+    ax.set_xticklabels(nums, fontsize=10)
+    ax.set_xlabel('the word that came after "is in drawer"', fontsize=10)
+    ax.set_ylabel('times it came after it, in the whole corpus', fontsize=10)
+    ax.set_ylim(0, max(vals) * 1.34)
+    ax.text(0.34, 0.80, f'"the {UNSEEN_TOOL} is in drawer" appears {n_long} times\n'
+                        f'"is in drawer" appears {n_short} times',
+            transform=ax.transAxes, fontsize=10.4, color=INK)
+    ax.set_title('With the exact phrase missing, the model answers from a shorter one',
+                 fontsize=12.4, weight='bold')
+    _save(fig, LLM_DOC, 'falling-back-to-a-shorter-phrase.svg')
+
+
 # ==========================================================================
 def main() -> None:
     """Draw every picture. Pass --png <folder> to also write PNG copies."""
@@ -1412,25 +1588,32 @@ def main() -> None:
     next_token_distribution()
     whole_vocabulary()
     one_token_at_a_time()
+    text_labels_itself()
     more_text_lower_surprise()
     what_the_corpus_is_made_of()
     easy_and_hard_words()
     one_stream_of_tokens()
     the_stream_grows()
+    tokens_read_again()
     the_window_fills()
     seen_and_unseen_facts()
+    falling_back_to_a_shorter_phrase()
     rarer_facts_worse_answers()
     cost_of_saying_i_do_not_know()
     what_reduces_it()
     finding_the_right_text()
     before_and_after_retrieval()
-    retrieval_accuracy_and_cost()
+    the_prompt_the_model_reads()
+    retrieval_accuracy()
+    retrieval_prompt_cost()
     reading_and_writing_time()
     first_token_is_slower()
+    first_token_and_prompt_length()
     memory_grows_with_the_talk()
     inside_a_control_cycle()
     too_many_sums_to_memorise()
     the_model_guesses_the_total()
+    sums_seen_and_unseen()
     counting_is_not_visible()
     page_two()
     print(f'wrote the diagrams under {IMAGES}')
@@ -1725,40 +1908,29 @@ TRAIN_PAIRS, TEST_PAIRS = CAREFUL[:240], CAREFUL[240:]
 HURRIED_TRAIN, HURRIED_TEST = HURRIED[:240], HURRIED[240:]
 
 
-def seven_answers_and_their_qualities() -> None:
+def what_each_answer_is_worth() -> None:
     print('[p2s3] the seven candidate answers:')
     for i, (txt, c, h, lk, p, w) in enumerate(CAND):
         print(f'[p2s3]   {i}: right={c:.0f} really helps={h:.2f} looks={lk:.2f} '
               f'polite={p:.0f} words={w:2d} -> true value {U_TRUE[i]:.2f}, the model '
               f'before preferences gives it {PI_REF[i]:.3f}')
 
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(14.4, 7.6), facecolor='white',
-                                  gridspec_kw={'width_ratios': [2.5, 1]})
-    fig.subplots_adjust(wspace=0.34)
-    _blank(ax)
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, N_CAND + 0.4)
-    for i, (txt, c, h, lk, p, w) in enumerate(CAND):
-        y = N_CAND - 1 - i
-        ax.text(0.004, y + 0.45, f'{i}', fontsize=10, color=MUTED, va='center')
-        ax.text(0.040, y + 0.45, textwrap.fill(txt, 58), fontsize=8.4, va='center')
-        ax.text(0.700, y + 0.45, f'a judge sees:  looks {lk:.2f},  polite {p:.0f},\n'
-                f'                       {w} words\n'
-                f'really true:   right {c:.0f},  helps {h:.2f}',
-                fontsize=8.2, va='center', color=INK)
-    ax.set_title('The seven answers the model could give',
-                 fontsize=11.4, weight='bold', loc='left')
-    _plain(ax2)
+    fig, ax = plt.subplots(figsize=(9.6, 4.9), facecolor='white')
+    _plain(ax)
     ys = np.arange(N_CAND)[::-1]
-    ax2.barh(ys, U_TRUE, color=[SLIDE if u > 2 else GRIP for u in U_TRUE], height=0.6)
+    ax.barh(ys, U_TRUE, color=[SLIDE if c[1] > 0 else GRIP for c in CAND], height=0.6)
     for y, u in zip(ys, U_TRUE):
-        ax2.text(u + 0.07, y, f'{u:.2f}', va='center', fontsize=9.4)
-    ax2.set_yticks(ys)
-    ax2.set_yticklabels([f'answer {i}' for i in range(N_CAND)], fontsize=9.6)
-    ax2.set_xlim(0, max(U_TRUE) * 1.24)
-    ax2.set_xlabel('true value to the person (made-up weights)', fontsize=9.8)
-    ax2.set_title('What each one is really worth', fontsize=11.4, weight='bold')
-    _save(fig, POST_DOC, 'seven-answers-and-their-qualities.svg')
+        ax.text(u + 0.07, y, f'{u:.2f}', va='center', fontsize=9.8)
+    ax.set_yticks(ys)
+    ax.set_yticklabels([f'answer {i}\n{CAND[i][5]} words' for i in range(N_CAND)],
+                       fontsize=9.2)
+    ax.set_xlim(0, max(U_TRUE) * 1.20)
+    ax.set_xlabel('what the answer is worth to the person (made-up weights)',
+                  fontsize=10)
+    ax.set_title('Green: the three answers that give the right action. '
+                 'Red: the four that do not.',
+                 fontsize=11.8, weight='bold')
+    _save(fig, POST_DOC, 'what-each-answer-is-worth.svg')
 
 
 def a_preference_pair() -> None:
@@ -1795,9 +1967,6 @@ def a_preference_pair() -> None:
 def where_the_pairs_disagree() -> None:
     gaps = np.array([abs(U_TRUE[a] - U_TRUE[b]) for a, b in TRAIN_PAIRS])
     wrong = np.array([U_TRUE[a] < U_TRUE[b] for a, b in TRAIN_PAIRS])
-    longer_c = np.array([CAND[a][5] > CAND[b][5] for a, b in TRAIN_PAIRS])
-    longer_h = np.array([CAND[a][5] > CAND[b][5] for a, b in HURRIED_TRAIN])
-    wrong_h = np.array([U_TRUE[a] < U_TRUE[b] for a, b in HURRIED_TRAIN])
     edges = [0.0, 0.4, 1.0, 3.0, 4.0]
     labels, fr, counts = [], [], []
     for lo, hi in zip(edges[:-1], edges[1:]):
@@ -1808,43 +1977,55 @@ def where_the_pairs_disagree() -> None:
         fr.append(float(wrong[m].mean()))
         counts.append(int(m.sum()))
     print(f'[p2s3] of the {len(TRAIN_PAIRS)} careful training pairs, '
-          f'{100 * wrong.mean():.1f}% picked the answer with the lower true value and '
-          f'{100 * longer_c.mean():.1f}% picked the longer answer')
-    print(f'[p2s3] hurried pairs: {100 * wrong_h.mean():.1f}% picked the answer with the '
-          f'lower true value, {100 * longer_h.mean():.1f}% picked the longer answer')
+          f'{100 * wrong.mean():.1f}% picked the answer with the lower true value')
     for la, f, c in zip(labels, fr, counts):
         print(f'[p2s3]   gap {la}: {c:3d} pairs, {100 * f:.0f}% picked the worse answer')
 
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.2, 4.7), facecolor='white')
+    fig, ax = plt.subplots(figsize=(9.8, 4.9), facecolor='white')
     _plain(ax)
     bars = ax.bar(range(len(labels)), [100 * f for f in fr], color=GRIP, width=0.58)
     for b, f, c in zip(bars, fr, counts):
-        ax.text(b.get_x() + b.get_width() / 2, 100 * f + 1.5, f'{100 * f:.0f}%\n{c} pairs',
-                ha='center', fontsize=9.2)
+        ax.text(b.get_x() + b.get_width() / 2, 100 * f + 1.5,
+                f'{100 * f:.0f}%\n{c} pairs', ha='center', fontsize=9.4)
     ax.set_xticks(range(len(labels)))
-    ax.set_xticklabels(labels, fontsize=9.4)
-    ax.set_xlabel('gap in true value between the two answers', fontsize=10)
+    ax.set_xticklabels(labels, fontsize=9.6)
+    ax.set_xlabel('gap in true value between the two answers of the pair', fontsize=10)
     ax.set_ylabel('pairs where the worse answer was chosen, %', fontsize=10)
     ax.set_ylim(0, 72)
-    ax.set_title('Close calls are noisy, clear ones are not', fontsize=11.4, weight='bold')
-    _plain(ax2)
-    x = np.arange(2)
-    ax2.bar(x - 0.18, [100 * longer_c.mean(), 100 * longer_h.mean()], width=0.34,
-            color=JOINT, label='chose the longer answer')
-    ax2.bar(x + 0.18, [100 * wrong.mean(), 100 * wrong_h.mean()], width=0.34,
-            color=GRIP, label='chose the worse answer')
-    for i, (a, b) in enumerate([(longer_c.mean(), wrong.mean()),
-                                (longer_h.mean(), wrong_h.mean())]):
-        ax2.text(i - 0.18, 100 * a + 1.4, f'{100 * a:.0f}%', ha='center', fontsize=9.4)
-        ax2.text(i + 0.18, 100 * b + 1.4, f'{100 * b:.0f}%', ha='center', fontsize=9.4)
-    ax2.set_xticks(x)
-    ax2.set_xticklabels(['a careful annotator', 'a hurried annotator'], fontsize=9.6)
-    ax2.set_ylim(0, 92)
-    ax2.set_ylabel('per cent of 240 pairs', fontsize=10)
-    ax2.legend(fontsize=9.2, frameon=False, loc='upper left')
-    ax2.set_title('Two simulated annotators on the same answers',
-                  fontsize=11.4, weight='bold')
+    ax.set_title('The careful annotator is noisy on close calls and reliable on clear ones',
+                 fontsize=12.0, weight='bold')
     _save(fig, POST_DOC, 'where-the-pairs-disagree.svg')
+
+
+def two_annotators() -> None:
+    wrong_c = np.array([U_TRUE[a] < U_TRUE[b] for a, b in TRAIN_PAIRS])
+    wrong_h = np.array([U_TRUE[a] < U_TRUE[b] for a, b in HURRIED_TRAIN])
+    longer_c = np.array([CAND[a][5] > CAND[b][5] for a, b in TRAIN_PAIRS])
+    longer_h = np.array([CAND[a][5] > CAND[b][5] for a, b in HURRIED_TRAIN])
+    print(f'[p2s3] careful pairs: {100 * longer_c.mean():.1f}% picked the longer '
+          f'answer, {100 * wrong_c.mean():.1f}% picked the worse one')
+    print(f'[p2s3] hurried pairs: {100 * longer_h.mean():.1f}% picked the longer '
+          f'answer, {100 * wrong_h.mean():.1f}% picked the worse one')
+
+    fig, ax = plt.subplots(figsize=(9.8, 4.9), facecolor='white')
+    _plain(ax)
+    x = np.arange(2)
+    ax.bar(x - 0.18, [100 * longer_c.mean(), 100 * longer_h.mean()], width=0.34,
+           color=JOINT, label='chose the longer answer')
+    ax.bar(x + 0.18, [100 * wrong_c.mean(), 100 * wrong_h.mean()], width=0.34,
+           color=GRIP, label='chose the answer that is worth less')
+    for i, (a, b) in enumerate([(longer_c.mean(), wrong_c.mean()),
+                                (longer_h.mean(), wrong_h.mean())]):
+        ax.text(i - 0.18, 100 * a + 1.6, f'{100 * a:.0f}%', ha='center', fontsize=9.6)
+        ax.text(i + 0.18, 100 * b + 1.6, f'{100 * b:.0f}%', ha='center', fontsize=9.6)
+    ax.set_xticks(x)
+    ax.set_xticklabels(['a careful annotator', 'a hurried annotator'], fontsize=10)
+    ax.set_ylim(0, 96)
+    ax.set_ylabel(f'per cent of {len(TRAIN_PAIRS)} pairs', fontsize=10)
+    ax.legend(fontsize=9.4, frameon=False, loc='upper left')
+    ax.set_title('The same answers, judged by two people: the hurried one picks by length',
+                 fontsize=12.0, weight='bold')
+    _save(fig, POST_DOC, 'two-annotators.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1905,16 +2086,12 @@ def the_reward_model_learns(loss_hist: list[float], acc_hist: list[float]) -> No
     _save(fig, POST_DOC, 'the-reward-model-learns.svg')
 
 
-def what_the_judge_can_see(w_careful: Arr, w_hurried: Arr) -> None:
+def what_the_judge_learned(w_careful: Arr, w_hurried: Arr) -> None:
     print('[p2s4] the weights the two reward models learned on what they can see:')
     for n, b, c in zip(SEEN_NAMES, w_careful, w_hurried):
         print(f'[p2s4]   {n:24s} from careful pairs {b:+.3f}   from hurried pairs {c:+.3f}')
-    r_c, r_h = FEAT_R @ w_careful, FEAT_R @ w_hurried
-    print(f'[p2s4] the careful reward model likes answer {int(np.argmax(r_c))} best '
-          f'(true value {U_TRUE[int(np.argmax(r_c))]:.2f}), the hurried one likes answer '
-          f'{int(np.argmax(r_h))} best (true value {U_TRUE[int(np.argmax(r_h))]:.2f})')
 
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.6, 4.9), facecolor='white')
+    fig, ax = plt.subplots(figsize=(9.8, 4.9), facecolor='white')
     _plain(ax)
     x = np.arange(len(SEEN_NAMES))
     ax.bar(x - 0.19, w_careful, width=0.36, color=LINK,
@@ -1923,33 +2100,68 @@ def what_the_judge_can_see(w_careful: Arr, w_hurried: Arr) -> None:
            label='learned from the hurried pairs')
     for i in range(len(SEEN_NAMES)):
         for off, v in [(-0.19, w_careful[i]), (0.19, w_hurried[i])]:
-            ax.text(i + off, v + (0.06 if v >= 0 else -0.18), f'{v:+.2f}', ha='center',
-                    fontsize=9.0)
+            ax.text(i + off, v + (0.08 if v >= 0 else -0.24), f'{v:+.2f}', ha='center',
+                    fontsize=9.4)
     ax.axhline(0, color=INK, lw=0.9)
     ax.set_xticks(x)
-    ax.set_xticklabels([n.replace(' it ', ' it\n') for n in SEEN_NAMES], fontsize=9.2)
-    ax.set_ylabel('weight in the score', fontsize=10)
-    ax.set_ylim(min(-0.6, w_careful.min() - 0.4), max(w_careful.max(), w_hurried.max()) + 0.7)
-    ax.legend(fontsize=9.2, frameon=False, loc='upper right')
+    ax.set_xticklabels([n.replace(' it ', ' it\n') for n in SEEN_NAMES], fontsize=9.6)
+    ax.set_ylabel('weight the reward model gives that quality', fontsize=10)
+    ax.set_ylim(min(-0.8, w_careful.min() - 0.5),
+                max(w_careful.max(), w_hurried.max()) + 0.8)
+    ax.legend(fontsize=9.4, frameon=False, loc='upper right')
     ax.set_title('A reward model copies its annotator, liking for length included',
-                 fontsize=11.2, weight='bold')
-    _plain(ax2)
-    ax2.scatter(U_TRUE, r_h, s=90, color=LINK, zorder=3)
+                 fontsize=12.0, weight='bold')
+    _save(fig, POST_DOC, 'what-the-judge-learned.svg')
+
+
+def what_the_judge_thinks_of_each_answer(w_careful: Arr) -> None:
+    r_c = FEAT_R @ w_careful
+    best = int(np.argmax(r_c))
+    print(f'[p2s4] the careful reward model scores the seven answers '
+          + ', '.join(f'{v:.2f}' for v in r_c)
+          + f'; its highest is answer {best}, whose true value is {U_TRUE[best]:.2f}')
+
+    fig, ax = plt.subplots(figsize=(9.8, 4.9), facecolor='white')
+    _plain(ax)
+    ys = np.arange(N_CAND)[::-1]
+    ax.barh(ys, r_c, color=[SLIDE if c[1] > 0 else GRIP for c in CAND], height=0.6)
+    for y, v in zip(ys, r_c):
+        ax.text(v + (0.05 if v >= 0 else -0.05), y, f'{v:.2f}', va='center',
+                ha='left' if v >= 0 else 'right', fontsize=9.8)
+    ax.axvline(0, color=INK, lw=0.9)
+    ax.set_yticks(ys)
+    ax.set_yticklabels([f'answer {i}' for i in range(N_CAND)], fontsize=9.8)
+    ax.set_xlim(min(r_c) - 0.5, max(r_c) + 0.6)
+    ax.set_xlabel('score the reward model trained on careful pairs gives', fontsize=10)
+    ax.set_title(f'The careful judge puts answer {best} on top, and answer {best} is '
+                 f'the best answer',
+                 fontsize=12.0, weight='bold')
+    _save(fig, POST_DOC, 'what-the-judge-thinks-of-each-answer.svg')
+
+
+def the_judge_cannot_see_the_action(w_hurried: Arr) -> None:
+    r_h = FEAT_R @ w_hurried
+    print(f'[p2s4] the hurried reward model likes answer {int(np.argmax(r_h))} best, '
+          f'whose true value is {U_TRUE[int(np.argmax(r_h))]:.2f}')
+
+    fig, ax = plt.subplots(figsize=(9.8, 4.9), facecolor='white')
+    _plain(ax)
+    ax.scatter(U_TRUE, r_h, s=95, color=LINK, zorder=3)
     for i in range(N_CAND):
-        ax2.annotate(f'{i}', xy=(U_TRUE[i], r_h[i]), xytext=(7, 5),
-                     textcoords='offset points', fontsize=10)
-    ax2.scatter([U_TRUE[HACK_I]], [r_h[HACK_I]], s=260, facecolor='none',
-                edgecolor=GRIP, lw=2, zorder=4)
-    ax2.annotate(f'answer {HACK_I}: the judge scores it highest\nand it is worth almost nothing',
-                 xy=(U_TRUE[HACK_I], r_h[HACK_I]), xytext=(0.55, 0.80),
-                 textcoords='axes fraction', fontsize=9.4, color=GRIP,
-                 arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.1))
-    ax2.set_xlabel('what the answer is really worth', fontsize=10)
-    ax2.set_ylabel('score the hurried reward model gives', fontsize=10)
-    ax2.grid(True, color=GRID, lw=0.5)
-    ax2.set_title('The judge cannot see whether the action is right',
-                  fontsize=11.2, weight='bold')
-    _save(fig, POST_DOC, 'what-the-judge-can-see.svg')
+        ax.annotate(f'{i}', xy=(U_TRUE[i], r_h[i]), xytext=(8, 5),
+                    textcoords='offset points', fontsize=10)
+    ax.scatter([U_TRUE[HACK_I]], [r_h[HACK_I]], s=280, facecolor='none',
+               edgecolor=GRIP, lw=2, zorder=4)
+    ax.annotate(f'answer {HACK_I}: highest score,\nlowest real worth',
+                xy=(U_TRUE[HACK_I], r_h[HACK_I]), xytext=(0.46, 0.74),
+                textcoords='axes fraction', fontsize=9.8, color=GRIP,
+                arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.1))
+    ax.set_xlabel('what the answer is really worth', fontsize=10)
+    ax.set_ylabel('score the hurried reward model gives', fontsize=10)
+    ax.grid(True, color=GRID, lw=0.5)
+    ax.set_title('The hurried judge scores the answers almost backwards',
+                 fontsize=12.0, weight='bold')
+    _save(fig, POST_DOC, 'the-judge-cannot-see-the-action.svg')
 
 
 def run_rl(reward: Arr, beta: float, theta0: Arr | None = None,
@@ -2004,35 +2216,42 @@ def the_policy_moves(pis: list[Arr]) -> None:
     _save(fig, POST_DOC, 'the-policy-moves.svg')
 
 
-def reward_up_and_kl_up(score: list[float], kl: list[float], true_u: list[float]) -> None:
-    print(f'[p2s4] the careful reward score rose from {score[0]:.3f} to {score[-1]:.3f}, '
-          f'the distance from the starting model from {kl[0]:.3f} to {kl[-1]:.3f}, '
+def reward_and_true_value_rise(score: list[float], true_u: list[float]) -> None:
+    print(f'[p2s4] the careful reward score rose from {score[0]:.3f} to {score[-1]:.3f} '
           f'and the true value from {true_u[0]:.3f} to {true_u[-1]:.3f}')
 
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.2, 4.8), facecolor='white')
+    fig, ax = plt.subplots(figsize=(9.8, 4.9), facecolor='white')
     _plain(ax)
     ax.plot(score, color=JOINT, lw=2.4, label='score the reward model gives')
     ax.plot(true_u, color=SLIDE, lw=2.4, label='what the answer is really worth')
-    ax.annotate(f'{score[-1]:.2f}', xy=(len(score) - 1, score[-1]), xytext=(-44, 10),
-                textcoords='offset points', fontsize=9.6, color=JOINT)
-    ax.annotate(f'{true_u[-1]:.2f}', xy=(len(true_u) - 1, true_u[-1]), xytext=(-44, 10),
-                textcoords='offset points', fontsize=9.6, color=SLIDE)
-    ax.set_xlabel('steps of improving the model', fontsize=10)
+    ax.annotate(f'{score[-1]:.2f}', xy=(len(score) - 1, score[-1]), xytext=(-46, 10),
+                textcoords='offset points', fontsize=9.8, color=JOINT)
+    ax.annotate(f'{true_u[-1]:.2f}', xy=(len(true_u) - 1, true_u[-1]), xytext=(-46, 10),
+                textcoords='offset points', fontsize=9.8, color=SLIDE)
+    ax.set_xlabel('steps of improving the model against the reward model', fontsize=10)
     ax.set_ylabel('score', fontsize=10)
-    ax.legend(fontsize=9.3, frameon=False, loc='lower right')
+    ax.legend(fontsize=9.4, frameon=False, loc='lower right')
     ax.grid(True, axis='y', color=GRID, lw=0.5)
-    ax.set_title('Both go up, because the pairs were careful', fontsize=11.4,
-                 weight='bold')
-    _plain(ax2)
-    ax2.plot(kl, color=PURPLE, lw=2.4)
-    ax2.annotate(f'{kl[-1]:.2f}', xy=(len(kl) - 1, kl[-1]), xytext=(-44, -16),
-                 textcoords='offset points', fontsize=9.6, color=PURPLE)
-    ax2.set_xlabel('steps of improving the model', fontsize=10)
-    ax2.set_ylabel('how far the model has moved\nfrom where it started', fontsize=10)
-    ax2.grid(True, axis='y', color=GRID, lw=0.5)
-    ax2.set_title('And the model drifts away from the one it started as',
-                  fontsize=11.4, weight='bold')
-    _save(fig, POST_DOC, 'reward-up-and-kl-up.svg')
+    ax.set_title('Both numbers rise together, because the pairs were careful',
+                 fontsize=12.0, weight='bold')
+    _save(fig, POST_DOC, 'reward-and-true-value-rise.svg')
+
+
+def the_model_drifts(kl: list[float]) -> None:
+    print(f'[p2s4] the distance from the starting model went from {kl[0]:.3f} to '
+          f'{kl[-1]:.3f} over the {len(kl)} steps')
+
+    fig, ax = plt.subplots(figsize=(9.8, 4.9), facecolor='white')
+    _plain(ax)
+    ax.plot(kl, color=PURPLE, lw=2.4)
+    ax.annotate(f'{kl[-1]:.2f}', xy=(len(kl) - 1, kl[-1]), xytext=(-46, -16),
+                textcoords='offset points', fontsize=9.8, color=PURPLE)
+    ax.set_xlabel('steps of improving the model against the reward model', fontsize=10)
+    ax.set_ylabel('distance from the model it started as', fontsize=10)
+    ax.grid(True, axis='y', color=GRID, lw=0.5)
+    ax.set_title('The model moves away from the one instruction tuning produced',
+                 fontsize=12.0, weight='bold')
+    _save(fig, POST_DOC, 'the-model-drifts.svg')
 
 
 # --------------------------------------------------------------------------
@@ -2066,7 +2285,7 @@ def run_dpo(beta: float = DPO_BETA, steps: int = 600, lr: float = 2.0
     return pis, loss_hist, _softmax(theta)
 
 
-def dpo_log_probabilities(pis: list[Arr]) -> None:
+def dpo_preferred_and_rejected(pis: list[Arr]) -> None:
     arr = np.array(pis)
     w, l = BEST_I, HACK_I
     n_w = sum(1 for a, _ in TRAIN_PAIRS if a == w)
@@ -2077,30 +2296,41 @@ def dpo_log_probabilities(pis: list[Arr]) -> None:
           f'{arr[0, w]:.3f} -> {arr[-1, w]:.3f} and answer {l} went '
           f'{arr[0, l]:.3f} -> {arr[-1, l]:.3f}')
 
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.4, 4.8), facecolor='white')
+    fig, ax = plt.subplots(figsize=(9.8, 4.9), facecolor='white')
     _plain(ax)
     ax.plot(arr[:, w], color=SLIDE, lw=2.4, label=f'answer {w}, usually preferred')
     ax.plot(arr[:, l], color=GRIP, lw=2.4, label=f'answer {l}, usually rejected')
-    ax.annotate(f'{arr[-1, w]:.3f}', xy=(len(arr) - 1, arr[-1, w]), xytext=(-62, 8),
-                textcoords='offset points', fontsize=9.6, color=SLIDE)
-    ax.annotate(f'{arr[-1, l]:.3f}', xy=(len(arr) - 1, arr[-1, l]), xytext=(-62, 8),
-                textcoords='offset points', fontsize=9.6, color=GRIP)
+    ax.annotate(f'{arr[-1, w]:.3f}', xy=(len(arr) - 1, arr[-1, w]), xytext=(-64, 8),
+                textcoords='offset points', fontsize=9.8, color=SLIDE)
+    ax.annotate(f'{arr[-1, l]:.3f}', xy=(len(arr) - 1, arr[-1, l]), xytext=(-64, 8),
+                textcoords='offset points', fontsize=9.8, color=GRIP)
     ax.set_xlabel('steps of direct preference optimisation', fontsize=10)
     ax.set_ylabel('probability the model gives that answer', fontsize=10)
-    ax.legend(fontsize=9.3, frameon=False, loc='center right')
+    ax.legend(fontsize=9.4, frameon=False, loc='center right')
     ax.grid(True, axis='y', color=GRID, lw=0.5)
-    ax.set_title('The preferred answer rises, the rejected one falls',
-                 fontsize=11.6, weight='bold')
-    _plain(ax2)
+    ax.set_title('The preferred answer rises and the rejected one falls',
+                 fontsize=12.0, weight='bold')
+    _save(fig, POST_DOC, 'dpo-preferred-and-rejected.svg')
+
+
+def dpo_log_probabilities(pis: list[Arr]) -> None:
+    arr = np.array(pis)
+    print('[p2s5] the logs of the seven probabilities at the end of the run: '
+          + ', '.join(f'{np.log(v):.2f}' for v in arr[-1]))
+
+    fig, ax = plt.subplots(figsize=(9.8, 4.9), facecolor='white')
+    _plain(ax)
     colours = [SLIDE, PURPLE, TEAL, LINK, WRIST, GRIP, '#8c6d31']
     for i in range(N_CAND):
-        ax2.plot(np.log(arr[:, i]), color=colours[i], lw=2, label=f'answer {i}')
-    ax2.set_xlabel('steps of direct preference optimisation', fontsize=10)
-    ax2.set_ylabel('log of the probability', fontsize=10)
-    ax2.legend(fontsize=8.4, frameon=False, ncol=4, loc='lower left')
-    ax2.grid(True, axis='y', color=GRID, lw=0.5)
-    ax2.set_title('All seven, as the logs the method works with', fontsize=11.6,
-                  weight='bold')
+        ax.plot(np.log(arr[:, i]), color=colours[i], lw=2, label=f'answer {i}')
+    ax.set_xlabel('steps of direct preference optimisation', fontsize=10)
+    ax.set_ylabel('log of the probability', fontsize=10)
+    low = float(np.log(arr).min())
+    ax.set_ylim(low - 1.6, 0.6)
+    ax.legend(fontsize=8.8, frameon=False, ncol=4, loc='lower left')
+    ax.grid(True, axis='y', color=GRID, lw=0.5)
+    ax.set_title('What the method actually moves: the logs of all seven probabilities',
+                 fontsize=12.0, weight='bold')
     _save(fig, POST_DOC, 'dpo-log-probabilities.svg')
 
 
@@ -2135,7 +2365,7 @@ def dpo_margin(pis: list[Arr], beta: float = DPO_BETA) -> None:
     _save(fig, POST_DOC, 'dpo-margin.svg')
 
 
-def two_roads_same_place(pi_rl: Arr, pi_dpo: Arr) -> None:
+def two_methods_same_place(pi_rl: Arr, pi_dpo: Arr) -> None:
     print('[p2s5] final probabilities: before / reward model with RL / direct')
     for i in range(N_CAND):
         print(f'[p2s5]   answer {i}: {PI_REF[i]:.3f}  {pi_rl[i]:.3f}  {pi_dpo[i]:.3f}')
@@ -2156,13 +2386,13 @@ def two_roads_same_place(pi_rl: Arr, pi_dpo: Arr) -> None:
             ax.text(i + off, v + 0.012, f'{v:.2f}', ha='center', fontsize=8.0)
     ax.set_xticks(x)
     ax.set_xticklabels([f'answer {i}\nworth {U_TRUE[i]:.2f}' for i in range(N_CAND)],
-                       fontsize=8.6)
+                       fontsize=8.8)
     ax.set_ylabel('probability the model gives that answer', fontsize=10)
     ax.set_ylim(0, max(max(pi_rl), max(pi_dpo)) * 1.24)
     ax.legend(fontsize=9.2, frameon=False, loc='upper left')
-    ax.set_title('Two roads from the same pairs, and they end up in much the same place',
+    ax.set_title('Two methods from the same pairs, ending in much the same place',
                  fontsize=12.2, weight='bold')
-    _save(fig, POST_DOC, 'two-roads-same-place.svg')
+    _save(fig, POST_DOC, 'two-methods-same-place.svg')
 
 
 # --------------------------------------------------------------------------
@@ -2286,6 +2516,38 @@ def pass_at_k() -> None:
     _save(fig, POST_DOC, 'pass-at-k.svg')
 
 
+def attempts_that_pass() -> None:
+    """Eight tries at each of the 30 problems, before any training."""
+    rng = np.random.default_rng(606)
+    n_prob, n_cand, n_try = 30, 8, 8
+    theta = rng.normal(0, 0.7, size=(n_prob, n_cand))
+    right = rng.integers(0, n_cand, size=n_prob)
+    passes = []
+    for i in range(n_prob):
+        pi = _softmax(theta[i])
+        tries = [int(rng.choice(n_cand, p=pi)) for _ in range(n_try)]
+        passes.append(sum(1 for t in tries if t == right[i]))
+    any_pass = sum(1 for p in passes if p > 0)
+    print(f'[p2s6] before training, {n_try} tries at each of the {n_prob} problems '
+          f'produced at least one accepted answer on {any_pass} of them, '
+          f'{sum(passes)} accepted attempts in all')
+
+    fig, ax = plt.subplots(figsize=(10.4, 4.9), facecolor='white')
+    _plain(ax)
+    ax.bar(range(1, n_prob + 1), passes,
+           color=[SLIDE if p else '#dddddd' for p in passes], edgecolor=MUTED, lw=0.5)
+    ax.set_xticks([1, 5, 10, 15, 20, 25, 30])
+    ax.set_xlabel('problem, of the 30 the model was given', fontsize=10)
+    ax.set_ylabel(f'attempts the checker accepted, of {n_try}', fontsize=10)
+    ax.set_ylim(0, max(passes) + 1.4)
+    ax.text(0.03, 0.88, f'{any_pass} of the {n_prob} problems produced at least one\n'
+                        f'accepted attempt, and only those attempts are kept',
+            transform=ax.transAxes, fontsize=10.2, color=INK)
+    ax.set_title('Eight tries at each problem: the accepted ones become training data',
+                 fontsize=12.0, weight='bold')
+    _save(fig, POST_DOC, 'attempts-that-pass.svg')
+
+
 def working_out_tokens() -> None:
     q, n_steps, per_step, drift, leap = 0.93, 6, 18, 0.0004, 3.0
     ts = np.arange(0, 401, 4)
@@ -2360,51 +2622,62 @@ def pleasing_the_judge(score: list[float], true_u: list[float]) -> None:
     _save(fig, POST_DOC, 'pleasing-the-judge.svg')
 
 
-def answers_get_longer(length: list[float], pis: list[Arr]) -> None:
-    arr = np.array(pis)
+def answers_get_longer(length: list[float]) -> None:
     print(f'[p2s7] the average answer grew from {length[0]:.1f} words to '
-          f'{length[-1]:.1f} words; answer {HACK_I} went from {arr[0, HACK_I]:.3f} to '
-          f'{arr[-1, HACK_I]:.3f} and answer {BEST_I} from {arr[0, BEST_I]:.3f} to '
-          f'{arr[-1, BEST_I]:.3f}')
+          f'{length[-1]:.1f} words')
 
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.2, 4.7), facecolor='white')
+    fig, ax = plt.subplots(figsize=(9.8, 4.9), facecolor='white')
     _plain(ax)
     ax.plot(length, color=PURPLE, lw=2.4)
-    ax.set_ylim(min(length) - 3, max(length) + 5)
-    ax.annotate(f'{length[0]:.1f} words', xy=(0, length[0]), xytext=(34, 16),
-                textcoords='offset points', fontsize=9.6,
+    ax.set_ylim(min(length) - 3, max(length) + 6)
+    ax.annotate(f'{length[0]:.1f} words', xy=(0, length[0]), xytext=(36, 16),
+                textcoords='offset points', fontsize=9.8,
                 arrowprops=dict(arrowstyle='-|>', color=INK, lw=1.0))
     ax.annotate(f'{length[-1]:.1f} words', xy=(len(length) - 1, length[-1]),
-                xytext=(-130, -28), textcoords='offset points', fontsize=9.6,
+                xytext=(-132, -30), textcoords='offset points', fontsize=9.8,
                 arrowprops=dict(arrowstyle='-|>', color=INK, lw=1.0))
     ax.set_xlabel('steps against the hurried reward model', fontsize=10)
     ax.set_ylabel('average length of the answer, words', fontsize=10)
     ax.grid(True, axis='y', color=GRID, lw=0.5)
-    ax.set_title('The answers get longer because length scores well',
-                 fontsize=11.4, weight='bold')
-    _plain(ax2)
-    ax2.plot(arr[:, HACK_I], color=GRIP, lw=2.4,
-             label=f'answer {HACK_I}: longest, worth {U_TRUE[HACK_I]:.2f}')
-    ax2.plot(arr[:, BEST_I], color=SLIDE, lw=2.4,
-             label=f'answer {BEST_I}: best, worth {U_TRUE[BEST_I]:.2f}')
-    ax2.set_xlabel('steps against the hurried reward model', fontsize=10)
-    ax2.set_ylabel('probability the model gives that answer', fontsize=10)
-    ax2.set_ylim(0, 1.05)
-    ax2.legend(fontsize=9.3, frameon=False, loc='center right')
-    ax2.grid(True, axis='y', color=GRID, lw=0.5)
-    ax2.set_title('The answer that wins is the one that games the score',
-                  fontsize=11.4, weight='bold')
+    ax.set_title('The answers get longer, because length is what scored well',
+                 fontsize=12.0, weight='bold')
     _save(fig, POST_DOC, 'answers-get-longer.svg')
 
 
-def the_brake(reward: Arr, theta0: Arr, pi_good: Arr) -> None:
+def the_hack_answer_takes_over(pis: list[Arr]) -> None:
+    arr = np.array(pis)
+    print(f'[p2s7] answer {HACK_I} went from {arr[0, HACK_I]:.3f} to '
+          f'{arr[-1, HACK_I]:.3f} and answer {BEST_I} from {arr[0, BEST_I]:.3f} to '
+          f'{arr[-1, BEST_I]:.3f}')
+
+    fig, ax = plt.subplots(figsize=(9.8, 4.9), facecolor='white')
+    _plain(ax)
+    ax.plot(arr[:, HACK_I], color=GRIP, lw=2.4,
+            label=f'answer {HACK_I}: the longest, worth {U_TRUE[HACK_I]:.2f}')
+    ax.plot(arr[:, BEST_I], color=SLIDE, lw=2.4,
+            label=f'answer {BEST_I}: the best, worth {U_TRUE[BEST_I]:.2f}')
+    ax.annotate(f'{arr[-1, HACK_I]:.3f}', xy=(len(arr) - 1, arr[-1, HACK_I]),
+                xytext=(-62, -16), textcoords='offset points', fontsize=9.8, color=GRIP)
+    ax.annotate(f'{arr[-1, BEST_I]:.3f}', xy=(len(arr) - 1, arr[-1, BEST_I]),
+                xytext=(-62, 10), textcoords='offset points', fontsize=9.8, color=SLIDE)
+    ax.set_xlabel('steps against the hurried reward model', fontsize=10)
+    ax.set_ylabel('probability the model gives that answer', fontsize=10)
+    ax.set_ylim(0, 1.08)
+    ax.legend(fontsize=9.4, frameon=False, loc='center right')
+    ax.grid(True, axis='y', color=GRID, lw=0.5)
+    ax.set_title('The answer that wins is the one that scores well, not the one that helps',
+                 fontsize=11.8, weight='bold')
+    _save(fig, POST_DOC, 'the-hack-answer-takes-over.svg')
+
+
+def the_distance_penalty(reward: Arr, theta0: Arr, pi_good: Arr) -> None:
     betas = [0.0, 0.05, 0.1, 0.2, 0.4, 0.8, 1.6]
     finals_true, finals_score = [], []
     for b in betas:
         _, _, score, true_u, kl, _ = run_rl(reward, b, theta0, pi_good, steps=1200)
         finals_true.append(true_u[-1])
         finals_score.append(score[-1])
-        print(f'[p2s7] brake {b:.2f}: reward score {score[-1]:.3f}, '
+        print(f'[p2s7] penalty {b:.2f}: reward score {score[-1]:.3f}, '
               f'true value {true_u[-1]:.3f}, distance moved {kl[-1]:.3f}')
     best = int(np.argmax(finals_true))
 
@@ -2416,19 +2689,20 @@ def the_brake(reward: Arr, theta0: Arr, pi_good: Arr) -> None:
     ax.plot(x, finals_true, marker='s', color=GRIP, lw=2.2,
             label='what the answer is really worth')
     ax.axvline(best, color=SLIDE, lw=1.3, ls='--')
-    ax.annotate(f'best real answers at a brake of {betas[best]}',
-                xy=(best, finals_true[best]), xytext=(-176, -92),
-                textcoords='offset points', fontsize=9.6, color=SLIDE,
+    ax.annotate(f'best real answers at a penalty of {betas[best]}',
+                xy=(best, finals_true[best]), xytext=(0.06, 0.92),
+                textcoords='axes fraction', fontsize=9.8, color=SLIDE,
                 arrowprops=dict(arrowstyle='-|>', color=SLIDE, lw=1.0))
     ax.set_xticks(x)
-    ax.set_xticklabels([f'{b}' for b in betas], fontsize=9.6)
-    ax.set_xlabel('how hard the model is held near the one it started as', fontsize=10)
-    ax.set_ylabel('score at the end of training', fontsize=10)
+    ax.set_xticklabels([f'{b}' for b in betas], fontsize=9.8)
+    ax.set_xlabel('strength of the penalty on moving away from the starting model',
+                  fontsize=10)
+    ax.set_ylabel('score after 1,200 steps of training', fontsize=10)
     ax.legend(fontsize=9.4, frameon=False, loc='center left')
     ax.grid(True, axis='y', color=GRID, lw=0.5)
-    ax.set_title('The brake that slows the hack: hold the model near where it started',
-                 fontsize=12.2, weight='bold')
-    _save(fig, POST_DOC, 'the-brake.svg')
+    ax.set_title('A stronger penalty keeps the answers good by letting training do less',
+                 fontsize=12.0, weight='bold')
+    _save(fig, POST_DOC, 'the-distance-penalty.svg')
 
 
 # --------------------------------------------------------------------------
@@ -2466,27 +2740,33 @@ def page_two() -> None:
     what_tuning_does_not_fix((before_ans, before_q, before_drawers),
                              (after_ans, after_q, after_drawers))
 
-    seven_answers_and_their_qualities()
+    what_each_answer_is_worth()
     a_preference_pair()
     where_the_pairs_disagree()
+    two_annotators()
 
     reward, loss_hist, acc_hist = fit_reward_model(TRAIN_PAIRS, TEST_PAIRS)
     bad_reward, _, bad_acc = fit_reward_model(HURRIED_TRAIN, HURRIED_TEST)
     the_reward_model_learns(loss_hist, acc_hist)
-    what_the_judge_can_see(reward, bad_reward)
+    what_the_judge_learned(reward, bad_reward)
+    what_the_judge_thinks_of_each_answer(reward)
+    the_judge_cannot_see_the_action(bad_reward)
     pi_rl, pis_rl, score, true_u, kl, length = run_rl(reward, 0.30)
     the_policy_moves(pis_rl)
-    reward_up_and_kl_up(score, kl, true_u)
+    reward_and_true_value_rise(score, true_u)
+    the_model_drifts(kl)
 
     pis_dpo, dpo_loss, pi_dpo = run_dpo()
     print(f'[p2s5] the direct method drove its loss from {dpo_loss[0]:.3f} to '
           f'{dpo_loss[-1]:.3f}')
+    dpo_preferred_and_rejected(pis_dpo)
     dpo_log_probabilities(pis_dpo)
     dpo_margin(pis_dpo)
-    two_roads_same_place(pi_rl, pi_dpo)
+    two_methods_same_place(pi_rl, pi_dpo)
 
     who_can_check_it()
     the_verifier_trains_it()
+    attempts_that_pass()
     pass_at_k()
     working_out_tokens()
 
@@ -2494,8 +2774,9 @@ def page_two() -> None:
     _, pis_hack, score_h, true_h, _, length_h = run_rl(bad_reward, 0.0, theta_good,
                                                        pi_dpo, steps=1200)
     pleasing_the_judge(score_h, true_h)
-    answers_get_longer(length_h, pis_hack)
-    the_brake(bad_reward, theta_good, pi_dpo)
+    answers_get_longer(length_h)
+    the_hack_answer_takes_over(pis_hack)
+    the_distance_penalty(bad_reward, theta_good, pi_dpo)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 """Diagrams for solution 5 — SAM 2 with a keeper.
 
-Eleven pictures, each carrying one point of the document:
+Twelve pictures, each carrying one point of the document:
 
     08-a-fixed-list-of-classes.png   a model whose question was settled when
                                      its weights were fitted
@@ -21,8 +21,10 @@ Eleven pictures, each carrying one point of the document:
                                      from depth, which is the honest risk
     08-borrowed-against-trained.png  what SAM 2 brings against what is fitted here,
                                      and against solution 2, which fits it all
-    08-where-it-stops.png            a glass covered completely: no pixels, so
-                                     no prompt point, so no proposal
+    08-where-it-stops.png            a glass covered completely by another, so
+                                     no prompt point can land on it
+    08-why-nothing-catches-it.png    the chain from that geometry to the keeper
+                                     never being shown the glass at all
 
 Run from the project root:
 
@@ -1172,10 +1174,12 @@ def figure_where_it_stops() -> None:
     on_short = hits.count(short)
     assert on_short == 0, "a covered glass must collect no prompt points at all"
 
-    figure, (left, right) = new(14.8, 7.0, columns=2)
+    # Two pictures, not two panels. The scene is one idea and the chain of
+    # five steps is a whole argument on its own, and a flow chart beside a
+    # drawing halves the size of both.
+    figure, left = new(8.6, 5.4)
 
     plan_axis(left, extent)
-    panel_title(left, "The top view: one silhouette, two glasses", colour=WARN)
     splay_patch(left, shapes[tall], colour=GLASS, alpha=0.20, zorder=3)
     for index, (centre, radius) in enumerate(shapes[short]):
         if index % 9 == 0 or index == len(shapes[short]) - 1:
@@ -1203,10 +1207,24 @@ def figure_where_it_stops() -> None:
          f"{on_short} landed on the short glass.",
          colour=INK, va="bottom", halo=True)
 
+    figure.suptitle(
+        "A glass with no pixels of its own: the tall one's outline covers the short one entirely.",
+        fontsize=TITLE_SIZE, color=INK, y=1.01,
+    )
+    figure.tight_layout()
+    figure.text(
+        0.5, -0.02,
+        f"Both glasses are of the one kind on the table, one near the tall end of its range of sizes and one "
+        f"near the short end,\nstanding {apart:.0f} mm apart, which is further apart than the guaranteed "
+        f"gap of {MIN_APART:.0f} mm. The arrangement is an ordinary one.",
+        ha="center", va="top", fontsize=NOTE_SIZE, color=INK,
+    )
+    save(figure, "08-where-it-stops.png")
+
+    figure, right = new(8.6, 5.2)
     bare(right)
     right.set_xlim(0, 1)
     right.set_ylim(0, 1)
-    panel_title(right, "Why nothing in this solution can catch it")
 
     chain = (
         ("the geometry", f"the tall glass stands {apart:.0f} mm from the short one,\n"
@@ -1239,20 +1257,17 @@ def figure_where_it_stops() -> None:
     )
 
     figure.suptitle(
-        "Where this solution stops: a prompt is a pixel, and a glass with no pixels cannot be prompted.",
+        "Why nothing in this solution catches it: a prompt is a pixel, and this glass has none.",
         fontsize=TITLE_SIZE, color=INK, y=1.01,
     )
     figure.tight_layout()
     figure.text(
         0.5, -0.03,
-        f"Both glasses here are of the one kind on the table, one near the tall end of its range of sizes and "
-        f"one near the short end, standing {apart:.0f} mm apart, "
-        f"which is further\napart than the guaranteed gap of {MIN_APART:.0f} mm. The arrangement "
-        "is an ordinary one, and the project's own coverage test confirms that every point of the short glass's\noutline falls inside the tall one's. This is the same "
-        "limit every solution in this problem meets, and it is geometry, not a weakness of any model.",
+        "This is the same limit every solution in this problem meets, and it is geometry rather than a "
+        "weakness of any model.",
         ha="center", va="top", fontsize=NOTE_SIZE, color=INK,
     )
-    save(figure, "08-where-it-stops.png")
+    save(figure, "08-why-nothing-catches-it.png")
     print(f"  hidden pair: {apart:.0f} mm apart, tall patch {patch_mm:.0f} mm across, "
           f"{on_tall} prompt points on the tall glass, {on_short} on the short one")
 

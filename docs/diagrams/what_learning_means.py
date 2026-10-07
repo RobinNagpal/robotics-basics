@@ -17,7 +17,7 @@ at exactly 1.4 mm per kilogram plus 0.5 mm, which lets a reader check the
 arithmetic on a calculator. Everything else that looks like sensor data is
 simulated with a seeded numpy.random.default_rng: the switch trace with its
 contact bounce, the joint-angle trajectory, the picture of a glass on a table,
-the bent-spoon shapes, the 1,600 cup pictures described by four measured
+the 1,600 cup pictures described by four measured
 numbers each, the reach attempts used for the reinforcement-learning curve and
 the joint-angle trace with a hidden gap. The methods run on that data are
 real, written in NumPy: least squares for a straight line, a threshold sweep,
@@ -177,94 +177,6 @@ def switch_count() -> None:
     _save(fig, RULES_DOC, 'switch-count.svg')
 
 
-def mm_to_m() -> None:
-    """Converting millimetres to metres: one line of arithmetic, no error."""
-    rng = np.random.default_rng(2)
-    shown = np.array([0.0, 12.5, 125.0, 420.0, 700.0, 1250.0, 1830.0])
-    out = shown / 1000.0
-    probe = rng.uniform(0.0, 5000.0, 1_000_000)
-    back = (probe / 1000.0) * 1000.0
-    worst = float(np.max(np.abs(back - probe)))
-    print('[mm] pairs: ' + ', '.join(f'{a:.1f}mm->{b:.4f}m' for a, b in zip(shown, out)))
-    print(f'[mm] largest round-trip error over 1,000,000 random lengths: {worst:.2e} mm')
-
-    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.8), facecolor='white',
-                             gridspec_kw={'width_ratios': [1.35, 1.0]})
-    ax = axes[0]
-    _plain(ax)
-    grid = np.linspace(0, 2000, 400)
-    ax.plot(grid, grid / 1000.0, color=LINK, lw=2.0)
-    ax.scatter(shown, out, s=44, color=GRIP, zorder=5)
-    ax.set_xlabel('length as the sensor reports it (millimetres)', fontsize=10)
-    ax.set_ylabel('length in metres', fontsize=10)
-    ax.set_title('Every answer sits exactly on the line', fontsize=11.2,
-                 weight='bold', color=INK)
-
-    ax2 = axes[1]
-    _blank(ax2)
-    ax2.set_xlim(0, 1)
-    ax2.set_ylim(0, 1)
-    ax2.text(0.02, 0.95, 'millimetres', fontsize=10.5, weight='bold', color=INK)
-    ax2.text(0.55, 0.95, 'metres', fontsize=10.5, weight='bold', color=INK)
-    for i, (a, b) in enumerate(zip(shown, out)):
-        yy = 0.86 - 0.105 * i
-        ax2.text(0.02, yy, f'{a:,.1f}', fontsize=10, color=INK, family='monospace')
-        _arrow(ax2, 0.34, yy + 0.015, 0.52, yy + 0.015, colour=MUTED, lw=1.0)
-        ax2.text(0.55, yy, f'{b:.4f}', fontsize=10, color=LINK, family='monospace')
-    ax2.set_title('Seven lengths and their answers', fontsize=11.2, weight='bold',
-                  color=INK)
-    ax2.text(0.02, 0.055, f'over 1,000,000 random lengths the largest\nerror '
-                          f'anywhere was {worst:.1e} mm',
-             fontsize=10, color=SLIDE)
-    fig.suptitle('metres = millimetres / 1000, and that is the whole rule',
-                 fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, RULES_DOC, 'millimetres-to-metres.svg')
-
-
-def joint_limit() -> None:
-    """Checking a commanded joint angle against its two limits."""
-    rng = np.random.default_rng(5)
-    t = np.arange(0, 4.0, 0.004)
-    angle = (120 * np.sin(2 * np.pi * 0.35 * t)
-             + 62 * np.sin(2 * np.pi * 0.11 * t + 0.7)
-             + rng.normal(0, 0.6, len(t)))
-    lo, hi = -170.0, 170.0
-    outside = (angle > hi) | (angle < lo)
-    n_out = int(outside.sum())
-    worst = float(np.max(np.maximum(angle - hi, lo - angle)))
-    first = float(t[np.argmax(outside)]) if n_out else float('nan')
-    print(f'[limit] {len(t)} samples, {n_out} outside the band [-170, 170] degrees '
-          f'({100.0 * n_out / len(t):.2f} per cent)')
-    print(f'[limit] worst overshoot {worst:.1f} degrees, first refusal at t = {first:.3f}s')
-
-    fig, ax = plt.subplots(figsize=(11.4, 5.0), facecolor='white')
-    _plain(ax)
-    ax.axhspan(lo, hi, color='#eef4ea', zorder=0)
-    ax.axhline(hi, color=GRIP, lw=1.3, ls='--')
-    ax.axhline(lo, color=GRIP, lw=1.3, ls='--')
-    ax.plot(t, angle, color=LINK, lw=1.2, zorder=3)
-    ax.scatter(t[outside], angle[outside], s=7, color=GRIP, zorder=4)
-    ax.text(3.95, hi + 9, 'upper limit +170 deg', fontsize=9.5, color=GRIP, ha='right')
-    ax.text(3.95, lo - 24, 'lower limit -170 deg', fontsize=9.5, color=GRIP, ha='right')
-    ax.text(2.0, -128, 'the shaded band is inside the limits, where the command is sent',
-            fontsize=10, color=SLIDE, ha='center')
-    ax.annotate(f'{n_out} of {len(t)} samples refused,\nworst by {worst:.1f} deg',
-                xy=(float(t[np.argmax(angle)]), float(np.max(angle))),
-                xytext=(1.55, 232), fontsize=9.5, color=GRIP,
-                arrowprops={'arrowstyle': '-|>', 'color': GRIP, 'lw': 1.1})
-    ax.set_ylim(-250, 268)
-    ax.set_xlabel('time (seconds), one check every 4 milliseconds', fontsize=10)
-    ax.set_ylabel('commanded joint angle (degrees)', fontsize=10)
-    ax.set_title('The rule is one comparison per sample, and it is right every time',
-                 fontsize=12, weight='bold', color=INK)
-    _save(fig, RULES_DOC, 'joint-limit-check.svg')
-
-
-# ==========================================================================
-# PAGE 1, SECTION 2: three jobs where the rule cannot be written down
-# ==========================================================================
-
 def _glass_picture() -> tuple[Arr, NDArray[np.bool_]]:
     """A simulated grey picture of a glass standing on a table, and the true mask."""
     rng = np.random.default_rng(23)
@@ -363,80 +275,6 @@ def threshold_sweep() -> None:
                  '512 was tried', fontsize=12, weight='bold', color=INK)
     ax.legend(fontsize=9.5, frameon=False, loc='lower right')
     _save(fig, RULES_DOC, 'threshold-sweep.svg')
-
-
-def _spoon(bend: float) -> tuple[Arr, Arr, Arr]:
-    """Centre line and half-width of a spoon, in millimetres along its length."""
-    x = np.linspace(0, 186, 373)
-    centre = bend * np.sin(np.pi * x / 180.0)
-    bowl = 17.0 / (1.0 + np.exp(-(x - 124.0) / 5.0))
-    taper = np.clip((188.0 - x) / 22.0, 0.0, 1.0)
-    half = 4.5 + bowl * taper
-    return x, centre, half
-
-
-def spoon_finger_places() -> None:
-    """Where to put the fingers on a bent spoon: a hand rule that works, then fails."""
-    open_lo, open_hi = 4.0, 30.0
-    slope_max = 0.25
-    clear_mm = 15.0
-    bowl_start = 110.0
-    rows = []
-    for bend, name in ((6.0, 'gently bent spoon'), (26.0, 'sharply bent spoon')):
-        x, centre, half = _spoon(bend)
-        slope = np.gradient(centre, x)
-        for spot in (20.0, 60.0, 95.0, 140.0, 170.0):
-            i = int(np.argmin(np.abs(x - spot)))
-            width = 2 * float(half[i])
-            sl = float(slope[i])
-            ok_w = open_lo <= width <= open_hi
-            ok_s = abs(sl) <= slope_max
-            ok_c = spot <= bowl_start - clear_mm
-            rows.append((name, bend, spot, width, sl, ok_w, ok_s, ok_c,
-                         ok_w and ok_s and ok_c))
-    for r in rows:
-        print(f'[spoon] {r[0]:21s} at {r[2]:5.0f} mm: width {r[3]:5.1f} mm, '
-              f'slope {r[4]:+.3f}, width ok {r[5]}, flat ok {r[6]}, clear ok {r[7]} '
-              f'-> rule says {"GRIP" if r[8] else "no"}')
-    passed = {n: [r[2] for r in rows if r[0] == n and r[8]]
-              for n in ('gently bent spoon', 'sharply bent spoon')}
-    print(f'[spoon] rule accepts {passed}')
-
-    fig, axes = plt.subplots(2, 1, figsize=(11.6, 6.6), facecolor='white')
-    for ax, (bend, name) in zip(axes, ((6.0, 'gently bent spoon'),
-                                      (26.0, 'sharply bent spoon'))):
-        _plain(ax)
-        x, centre, half = _spoon(bend)
-        ax.fill_between(x, centre - half, centre + half, color=LINK_PALE,
-                        edgecolor=LINK, lw=1.3)
-        mine = [r for r in rows if r[0] == name]
-        for _n, _b, spot, width, sl, ok_w, ok_s, ok_c, ok in mine:
-            colour = SLIDE if ok else GRIP
-            i = int(np.argmin(np.abs(x - spot)))
-            ax.plot([spot, spot], [centre[i] - half[i] - 7, centre[i] - half[i] - 2],
-                    color=colour, lw=3.4, solid_capstyle='butt')
-            ax.plot([spot, spot], [centre[i] + half[i] + 2, centre[i] + half[i] + 7],
-                    color=colour, lw=3.4, solid_capstyle='butt')
-            ax.text(spot, centre[i] + half[i] + 10,
-                    f'{width:.0f} mm\nslope {sl:+.2f}', fontsize=8.6, color=colour,
-                    ha='center', va='bottom')
-        ax.axvline(bowl_start, color=MUTED, ls=':', lw=1.1)
-        ax.text(bowl_start + 2, -36, 'bowl starts', fontsize=9, color=MUTED)
-        ax.set_xlim(-6, 192)
-        ax.set_ylim(-44, 58)
-        ax.set_aspect('equal')
-        ax.set_yticks([])
-        ax.set_xlabel('distance along the spoon (millimetres)', fontsize=9.5)
-        ax.set_title(f'{name[0].upper()}{name[1:]}: the rule accepts '
-                     f'{len(passed[name])} of the 5 places, at '
-                     + ', '.join(f'{p:.0f} mm' for p in passed[name]),
-                     fontsize=10.8, weight='bold', color=INK)
-    fig.suptitle(f'One hand-written grip rule: width between {open_lo:.0f} and '
-                 f'{open_hi:.0f} mm, slope under {slope_max:.2f}, at least '
-                 f'{clear_mm:.0f} mm clear of the bowl',
-                 fontsize=12, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, RULES_DOC, 'spoon-finger-places.svg')
 
 
 class Cups:
@@ -2352,11 +2190,8 @@ def main() -> None:
 
     # page 1
     switch_count()
-    mm_to_m()
-    joint_limit()
     glass_pixels()
     threshold_sweep()
-    spoon_finger_places()
     full_or_empty_cup()
     two_numbers_separate_cups()
     how_many_pictures()

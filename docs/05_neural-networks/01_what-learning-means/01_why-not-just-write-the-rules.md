@@ -1,49 +1,51 @@
 # Why not just write the rules
 
-This is the first page of a book about neural networks and the models built from
-them. The book answers three questions, and it starts from nothing. How does a
-neural network work inside, down to the arithmetic that one neuron does? How is a
-model trained, so that the numbers inside it stop being random and start being
-useful? And what does each broad family of model that robots use today actually do
-inside?
+A program is a set of rules, and a person can write rules. So why train a model at
+all? Because there are two kinds of job, and only one of them can be done by
+writing the rule down.
 
-The book is for somebody who can do arithmetic, fractions and percentages, who has
-met a little school algebra, who knows what a graph with two axes shows, and who
-can read a short program with variables, loops and functions. It assumes that you
-know **nothing** about machine learning. So if you have never met the words model,
-training, gradient, token, embedding, transformer, diffusion or policy, you are the
-reader it was written for, because each of those words is explained in ordinary
-English on the page that first needs it.
+**You can write the rule when you know the right answer for every input, and when
+that knowledge is short enough to type.** Counting how many times a gripper closes
+is a job like that. The rule fits in one sentence. When the first attempt gets the
+count wrong, you can see why it is wrong and correct it by choosing one number.
 
-The book has thirteen chapters, and each one builds on the ones before it. The
-first five chapters give you the vocabulary, take a network apart one neuron at a
-time, show how training finds the numbers inside it, and show how a picture or a
-joint angle becomes numbers at all. The middle chapters explain the one design that
-almost every large model uses today, and how such a model is trained once and then
-adapted to a new job. The later chapters go through the families of model that a
-robot arm runs. The last chapter is about getting one of them working on a real
-machine.
+**You cannot write the rule when the thing you measure does not decide the
+answer.** Telling a full cup from an empty one by how dark it looks inside is a job
+like that. Full cups and empty cups cover almost the same range of brightness, so
+there is no brightness at which you can say which one you are looking at. No rule
+of that shape exists, however long you spend looking for it.
 
-This page answers the question that comes before all of those. Why train a model at
-all, when a program is only a set of rules, and a person can write rules? The
-answer is that there are two kinds of job. For one kind, nobody can write the rule
-down, because the rule is too long to write. So this page shows three jobs of each
-kind, says what separates the two kinds, and then builds a program from examples
-using nothing more than a calculator. By the end you will be able to say, about a
-job in front of you, whether a written rule can do it, and you will have seen the
-smallest possible example of the alternative.
+For the second kind of job you still have something to work with. You have
+**examples**, which are measurements with the right answer written beside them. The
+method that turns examples into a program is called **fitting**: it chooses the
+numbers inside a formula so that the formula's answers come as close as possible to
+the answers you were given. Fitting is what the rest of this book is about.
+
+So this page shows one job of each kind, says exactly what separates them, and then
+fits a formula to six measurements using nothing more than a calculator. By the end
+you will be able to look at a job and say which of the two kinds it is.
+
+**About this book.** It explains neural networks and the models built from them,
+starting from nothing. It assumes you can do arithmetic and percentages, have met a
+little school algebra, can read a graph with two axes, and can read a short program
+with variables, loops and functions. It assumes you know **nothing** about machine
+learning, so every term, from model and gradient to transformer and policy, is
+explained in ordinary words on the page that first needs it. There are fourteen
+chapters. The early ones take a network apart one neuron at a time and show how
+training finds the numbers inside it; the middle ones explain the one design that
+almost every large model uses today; the later ones go through the families of
+model a robot arm runs, and how to get one working on a real machine.
 
 Every number on this page was worked out by
 [`docs/diagrams/what_learning_means.py`](../../diagrams/what_learning_means.py),
 which also drew every picture. Everything that looks like sensor data is simulated,
-and the simulation uses a fixed random seed, so the numbers come out the same every
-time the script runs.
+with a fixed random seed, so the numbers come out the same every time it runs.
 
 ## Contents
 
-1. [Three jobs where somebody can write the rule](#1-three-jobs-where-somebody-can-write-the-rule)
-2. [Three jobs where nobody can write the rule](#2-three-jobs-where-nobody-can-write-the-rule)
-3. [What the difference between the two lists really is](#3-what-the-difference-between-the-two-lists-really-is)
+1. [A job you can write the rule for](#1-a-job-you-can-write-the-rule-for)
+2. [Two jobs nobody can write the rule for](#2-two-jobs-nobody-can-write-the-rule-for)
+3. [What exactly separates the two](#3-what-exactly-separates-the-two)
 4. [Fitting a straight line to six measurements](#4-fitting-a-straight-line-to-six-measurements)
 5. [The words for the pieces of a fitted job](#5-the-words-for-the-pieces-of-a-fitted-job)
 6. [What fitting buys you and what it costs](#6-what-fitting-buys-you-and-what-it-costs)
@@ -52,147 +54,89 @@ time the script runs.
 
 ---
 
-## 1. Three jobs where somebody can write the rule
+## 1. A job you can write the rule for
 
-A robot arm runs hundreds of small jobs every second. A person wrote the rules for
-most of them. Three of those jobs are worth examining closely, because they share
-one property, and the jobs in the next section do not have that property.
+A **gripper** is the hand at the end of a robot arm, and it has two fingers that
+close on an object. The gripper has a switch, and the switch closes when the two
+fingers meet. The controller wants to know how many times the fingers have met. So
+the rule is to watch the switch and add one each time it goes from open to closed.
 
-The first job is counting. A **gripper** is the hand at the end of the arm, and it
-has two fingers that close on an object. The gripper has a switch, and the switch
-closes when the two fingers meet. The controller wants to know how many times the
-fingers have met. So the rule is to watch the switch and to add one each time the
-switch goes from open to closed.
-
-The picture below shows two seconds of that switch. The upper part shows the whole
-two seconds. The lower part shows the first press alone, with the time axis
-stretched, so that you can see what happens inside a few milliseconds.
+That rule is wrong, and the picture below shows why. The upper part shows two
+seconds of the switch. The lower part shows the first press alone, with the time
+axis stretched, so you can see what happens inside a few milliseconds.
 
 ![A two-second logic trace of a switch closing five times, with twenty rising edges, and below it a magnified view of the first press showing four rising edges inside eight milliseconds](../../images/what-learning-means/why-not-just-write-the-rules/switch-count.svg)
 
 A moment where the signal goes from open to closed is called a rising edge. The
-switch closed five times, but the simple rule counts 20 rising edges. The reason is
-that the two metal contacts bounce. They touch, spring apart, and touch again
-during the first few milliseconds of each press. The lower part of the picture
-shows that bouncing: there are four rising edges inside eight milliseconds. So the
-rule needs one more line, which is to ignore any edge that arrives within 20
-milliseconds of the last edge that was counted. With that extra line the rule
-counts exactly 5 closures, at 0.180, 0.470, 0.830, 1.210 and 1.640 seconds. The
-important part is not that the first attempt was wrong. The important part is that
-a person could see what was wrong, say why it was wrong, and correct it by choosing
-one number.
+switch closed five times, but the rule counts 20 rising edges. The reason is that
+the two metal contacts bounce: they touch, spring apart, and touch again during the
+first few milliseconds of each press. The lower part of the picture shows four
+rising edges inside eight milliseconds.
 
-The second job is converting units. A distance sensor reports its measurement in
-millimetres, and the motion planner wants metres. So the rule is to divide by 1000.
+So the rule needs one more line, which is to ignore any edge that arrives within 20
+milliseconds of the last edge that was counted. With that line it counts exactly 5
+closures, at 0.180, 0.470, 0.830, 1.210 and 1.640 seconds.
 
-The picture below shows that rule twice. On the left it is a line, and on the right
-it is a table of seven lengths with their answers. Read the table as pairs: the
-left column is what the sensor reports, and the right column is what the planner
-receives.
+The important part is not that the first attempt was wrong. **The important part is
+that a person could see what was wrong, say why it was wrong, and correct it by
+choosing one number.** That is what it means to be able to write the rule.
 
-![On the left, a straight line through the origin showing seven lengths in millimetres against the same lengths in metres; on the right, a table of the same seven pairs with an arrow from each millimetre value to its metre value](../../images/what-learning-means/why-not-just-write-the-rules/millimetres-to-metres.svg)
-
-Each length in millimetres has exactly one answer in metres. The script checked the
-rule on 1,000,000 random lengths by converting each one to metres and back again.
-The largest difference anywhere was 4.5e-13 millimetres, which is not an error in
-the rule but the rounding that the computer does when it stores a number.
-
-There is nothing left to get right here. The rule is one division. It is correct
-for every input that will ever arrive. You can also prove that it is correct
-without running it on a single real measurement.
-
-The third job is checking a limit. Each joint can only turn so far in each
-direction. A command outside that range would drive the joint into its hard stop
-and damage it. So the rule compares the commanded angle with the two limits, and it
-refuses any command outside them.
-
-The picture below shows four seconds of commanded angles. The shaded band is the
-range that the rule allows, and each red dot is one command that the rule refused.
-
-![A four-second trace of a commanded joint angle that rises above the plus 170 degree limit and falls below the minus 170 degree limit, with the 81 refused samples marked in red and the allowed range drawn as a shaded band](../../images/what-learning-means/why-not-just-write-the-rules/joint-limit-check.svg)
-
-The controller checks the commanded angle every four milliseconds, so there are
-1,000 commands in four seconds. Of those, 81 are outside the band from -170 to
-+170 degrees. The worst of them is 9.5 degrees beyond the limit.
-
-Those three jobs are the same kind of job. In each one, a person can say in a
-single sentence what the right answer is for every possible input, and that
-sentence is short enough to type. The next three jobs do not have that property.
+Two more jobs on the same arm are the same kind. Converting a distance from
+millimetres to metres is a division by 1000, and it is right for every number that
+will ever arrive. Refusing a joint command that lies outside the range the joint can
+turn is a comparison against two limits. In all three jobs, a person can say in one
+sentence what the right answer is for every possible input, and that sentence is
+short enough to type.
 
 ---
 
-## 2. Three jobs where nobody can write the rule
+## 2. Two jobs nobody can write the rule for
 
-Now take three more jobs. They happen in the same robot cell, on the same
-afternoon, with the same camera. Each one sounds no harder than the three jobs
-above. However, for each one, no rule that anybody has written works.
+The next two jobs happen in the same robot cell, on the same afternoon, with the
+same camera. Neither sounds harder than counting switch closures. For neither of
+them does any rule that anybody has written work.
 
-The first job is deciding which parts of a camera picture belong to a glass. A
-**pixel** is one small square of a picture. In a grey picture each pixel is one
+### Deciding which pixels belong to a glass
+
+A **pixel** is one small square of a picture. In a grey picture each pixel is one
 number, from 0 for black to 255 for white. So the obvious rule is to pick a
-brightness value and to say that every pixel brighter than that value belongs to
-the glass. That value is called the **threshold**.
+brightness value and say that every pixel brighter than that value belongs to the
+glass. That value is called the **threshold**.
 
 The picture below shows the same scene three times. The left panel is the picture
-that the camera gives. The middle panel marks the pixels that a person says are
-glass. The right panel marks the pixels that the best possible threshold rule
-picks.
+the camera gives. The middle panel marks the pixels a person says are glass. The
+right panel marks the pixels the best possible threshold rule picks.
 
 ![Three panels of the same scene: a simulated grey picture of a glass standing on a table, then the true outline of the glass filled in green, then the pixels that the best brightness rule picks, which are only the two bright side edges and the bright top rim](../../images/what-learning-means/why-not-just-write-the-rules/glass-pixels.svg)
 
 The glass is see-through. So the table behind the glass has nearly the same
 brightness as the glass in front of it, and the rule cannot separate them. The only
-parts of the glass that are clearly brighter than the table are the two edges down
-its sides and its top rim, and those are the only parts the rule finds.
+parts of the glass clearly brighter than the table are the two edges down its sides
+and its top rim, and those are the only parts the rule finds.
 
-That picture is simulated. It has 18 rows of 26 pixels, which is 468 pixels in
-total, and 117 of them are glass. The best threshold rule gets 0.816 of the pixels
-right. That number sounds acceptable at first. However, a program that says "there
-is no glass anywhere" already gets 0.750 of the pixels right, because most of the
-picture is table. The rule also misses 86 of the 117 glass pixels. Perhaps a better
-threshold exists somewhere, so the script tried every threshold.
+That picture has 18 rows of 26 pixels, which is 468 pixels, and 117 of them are
+glass. The best threshold rule gets 0.816 of the pixels right, which sounds
+acceptable until you notice that a program saying "there is no glass anywhere"
+already gets 0.750 right, because most of the picture is table. The rule also
+misses 86 of the 117 glass pixels.
 
-The picture below shows the result of that search. The horizontal axis is the
-threshold, and the vertical axis is the fraction of pixels that the rule gets
-right. There is one curve for the rule "glass where brighter than the threshold"
-and one for the rule "glass where darker than the threshold".
+Perhaps a better threshold exists somewhere. The picture below is the result of
+trying every one of them. The horizontal axis is the threshold and the vertical
+axis is the fraction of pixels the rule gets right, with one curve for "glass where
+brighter than the threshold" and one for "glass where darker".
 
 ![A curve of accuracy against threshold for all 256 thresholds in each direction, with the best point marked at 0.816 and a dashed line at the 0.750 that saying no glass anywhere already scores](../../images/what-learning-means/why-not-just-write-the-rules/threshold-sweep.svg)
 
-A grey pixel has 256 possible brightness values, and the rule can run in two
-directions, so there are 512 rules of this shape in total. Every one of them was
-tried. The best reaches 0.816, which is barely above the 0.750 that a program scores
-without looking at the picture at all.
+A grey pixel has 256 possible brightness values and the rule can run in two
+directions, so there are 512 rules of this shape in total. Every one was tried. The
+best reaches 0.816, barely above the 0.750 that a program scores without looking at
+the picture at all. **The failure is not that nobody has found the right threshold.
+It is that no threshold is right.**
 
-The second job is choosing where to put the fingers on a bent spoon. A person can
-write a rule for this, and the rule even sounds sensible. The rule is to grip the
-spoon where the metal is between 4 and 30 millimetres across, where the spoon
-slopes by less than 0.25, and at least 15 millimetres away from the bowl. The slope
-is how far the spoon rises for each millimetre along it, so a slope of 0.25 means
-that the spoon rises one millimetre for every four millimetres along.
+### Telling a full cup from an empty one
 
-The picture below applies that one rule to two spoons. The upper spoon is gently
-bent and the lower spoon is sharply bent. On each spoon, five candidate grip places
-are marked, in green where the rule accepts the place and in red where the rule
-refuses it.
-
-![Two spoon outlines, one gently bent and one sharply bent, with five candidate grip places on each marked green for accepted and red for refused, and each place labelled with the width of the metal there and the slope there](../../images/what-learning-means/why-not-just-write-the-rules/spoon-finger-places.svg)
-
-The same rule accepts three places on the gently bent spoon and only two on the
-sharply bent one. The place it loses is 20 millimetres along the sharply bent
-spoon. There the metal slopes by 0.43, which is above the limit of 0.25, so the
-rule refuses it.
-
-Both spoons are simulated. The rule works on the first spoon. On the second spoon
-it refuses a place that a person would use without any difficulty, and the reason
-is that the slope limit of 0.25 was a guess. If you raise the limit to 0.5, then
-the rule starts accepting places on other spoons where the fingers do slide off.
-So no single value of that number is right for every spoon, and the rule contains
-several more numbers of the same kind.
-
-The third job is telling a full cup from an empty one. The camera looks down into
-the cup. Coffee is darker than china, so the obvious rule is that a full cup is
-darker inside the rim than an empty cup is.
+The camera looks down into a cup. Coffee is darker than china, so the obvious rule
+is that a full cup is darker inside the rim than an empty one.
 
 The picture below counts cups. The horizontal axis is the average brightness inside
 the rim, and the height of each bar is how many cups had that brightness. The two
@@ -200,35 +144,36 @@ colours are the full cups and the empty cups.
 
 ![A histogram of the average brightness inside the rim for 1,600 simulated cups, with the full cups in red and the empty cups in blue, and the two sets of bars covering almost the same range of brightness](../../images/what-learning-means/why-not-just-write-the-rules/full-or-empty-cup.svg)
 
-Across 1,600 simulated cups, the full ones average 117.7 brightness inside the rim
+Across 1,600 simulated cups the full ones average 117.7 brightness inside the rim
 and the empty ones average 139.6. That difference is in the right direction.
-However, the full ones run from 53 to 201 and the empty ones run from 68 to 226, so
-the two ranges cover almost the same values.
+However, the full ones run from 53 to 201 and the empty ones from 68 to 226, so the
+two ranges cover almost the same values.
 
-The ranges cover the same values because every cup has its own colour and stands in
-its own lighting. Those two things change the brightness much more than the coffee
-does. The best threshold on that one number gets 0.659 of the cups right when the
-threshold is chosen on those same cups, and 0.611 on cups that it has not seen
-before. Tossing a coin gets 0.5. However, the answer is present in the data after
-all, as the next picture shows. It plots the same cups again, with the average
-brightness of the cup wall across the page and the average brightness inside the
-rim up the page.
+They overlap because every cup has its own colour and stands in its own lighting,
+and those two things change the brightness much more than the coffee does. The best
+threshold on that one number gets 0.659 of the cups right when the threshold is
+chosen on those same cups, and 0.611 on cups it has not seen before. Tossing a coin
+gets 0.5.
+
+The answer is present in the data after all, but not in that one number. The
+picture below plots the same cups twice over: the average brightness of the cup
+wall across the page, and the average brightness inside the rim up the page.
 
 ![A scatter plot of average brightness inside the rim against average brightness of the cup wall for 400 cups, with full cups in red below the dashed line where the two brightnesses are equal and empty cups in blue above it](../../images/what-learning-means/why-not-just-write-the-rules/two-numbers-separate-cups.svg)
 
 The dashed line marks the cups where the inside and the wall have the same
-brightness. Most of the full cups sit below that line, because coffee makes the
-inside darker than the wall. Most of the empty cups sit above it. The line by
-itself is already a rule, and it is right on 0.819 of all 1,600 cups, which is far
-better than any threshold on the inside brightness alone. The next section follows
-that fact further.
+brightness. Most full cups sit below that line, because coffee makes the inside
+darker than the wall. Most empty cups sit above it. That line is already a rule,
+and it is right on 0.819 of all 1,600 cups, far better than any threshold on the
+inside brightness alone. The next section follows that fact further.
 
 ---
 
-## 3. What the difference between the two lists really is
+## 3. What exactly separates the two
 
-The six jobs fall into two groups. Being exact about what separates the groups
-matters, because the rest of this book follows from it.
+The introduction said the difference in one sentence: you can write the rule when
+the thing you measure decides the answer. This section is exact about it, in three
+parts, because the rest of this book follows from them.
 
 The first difference is how many different inputs there are. A switch has two
 states. A joint angle recorded to a tenth of a degree over a range of 340 degrees
@@ -240,15 +185,15 @@ many inputs.
 ![A bar chart on a powers-of-ten scale comparing the number of different inputs for a switch, a joint angle, a 5 by 5 grey patch and an 18 by 26 grey picture, with a dashed line near the bottom for the number of pictures a camera sees in a year](../../images/what-learning-means/why-not-just-write-the-rules/how-many-pictures.svg)
 
 A patch of 5 pixels by 5 pixels has about 10^60 possible contents. The 18 by 26
-picture from section 2 has about 10^1127 of them. A camera running at 30 pictures a
+picture of the glass has about 10^1127 of them. A camera running at 30 pictures a
 second for a whole year sees only about 10^9 pictures, which is the dashed line
 near the bottom of the chart.
 
 So a rule for a picture can never be a table of cases, because there are far more
 cases than anybody could ever collect. The rule has to be a short formula, and that
 formula has to give an answer for inputs that nobody has ever seen. This brings us
-to the second difference. For the first three jobs such a formula exists and
-somebody knows it. For the last three jobs it does not.
+to the second difference. For the counting job such a formula exists and somebody
+knows it. For the glass job and the cup job it does not.
 
 That claim is easier to believe when you watch a person try to build such a
 formula. The cup job gives three numbers that a camera can measure. They are the
@@ -285,8 +230,8 @@ combination by itself.
 The third difference is the reason for the other two. Where a rule works, one input
 value has exactly one right answer. Where no rule works, the same input value
 happens with both answers. The two pictures below show those two situations, one
-picture each. The first is the millimetre job from section 1, drawn with the input
-across the page and the answer up the page.
+picture each. The first is the millimetre job named at the end of section 1, drawn with the
+input across the page and the answer up the page.
 
 ![A straight line of points showing length in millimetres against length in metres, with dotted guide lines showing that an input of 1,250 millimetres meets the line at exactly one answer of 1.250 metres](../../images/what-learning-means/why-not-just-write-the-rules/one-answer-per-input.svg)
 
@@ -429,7 +374,7 @@ An **input** is what the program is given, and an **output** is what the program
 asked to produce. Here the input is the mass and the output is the drop in
 millimetres. A **feature** is one number that makes up an input, and it is chosen
 because the answer depends on it. Here there is one feature, which is the mass. The
-cup job in section 2 had three features, and a camera picture has one feature per
+cup job in section 2 has three features, and a camera picture has one feature per
 pixel. A **label** is the right output for one input, written down by whoever
 collected the data. So the labels here are the six readings from the height gauge.
 
@@ -561,8 +506,9 @@ you can only have a written rule when somebody knows the rule. A fitted model ne
 no such knowledge, and it finds relationships that a person would never guess. In
 exchange, it is only as good as its examples, it can only be trusted over the range
 that those examples covered, and it is wrong without any warning when they are
-wrong. So for the jobs in section 1 the written rule wins, and you should write it.
-For the jobs in section 2 there is no written rule for a fitted model to lose to.
+wrong. So for a job of the first kind the written rule wins, and you should write
+it. For a job of the second kind there is no written rule for a fitted model to
+lose to.
 Everything else in this book is the same trade at a larger size, where the formula
 holds more numbers, the examples are counted in millions, and the search needs many
 computers in a data centre rather than one division.

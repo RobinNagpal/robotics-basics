@@ -364,21 +364,22 @@ def signals_per_thousand_tokens() -> None:
     for c, a, b in zip(corpus, by_sentence, by_token):
         print(f'[scale] {c:,.0f} tokens -> {a:,.0f} sentence labels, {b:,.0f} next-token signals')
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.6, 4.8), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.6, 5.2), facecolor='white')
     _plain(ax)
-    bars = ax.bar(['one label a person writes\nfor each sentence', 'one signal for each token,\ntaken from the text itself'],
-                  [by_sentence[0], by_token[0]], color=[WRIST, SLIDE], width=0.55)
+    bars = ax.bar(['one label a person writes\nfor each sentence',
+                   'one signal for each token,\ntaken from the text itself'],
+                  [by_sentence[0], by_token[0]], color=[WRIST, SLIDE], width=0.5)
     for b, v in zip(bars, [by_sentence[0], by_token[0]]):
-        ax.text(b.get_x() + b.get_width() / 2, v * 1.06, f'{v:,.0f}', ha='center',
-                fontsize=11, weight='bold', color=INK)
+        ax.text(b.get_x() + b.get_width() / 2, v * 1.08, f'{v:,.0f}', ha='center',
+                fontsize=12, weight='bold', color=INK)
     ax.set_yscale('log')
-    ax.set_ylim(10, 3000)
+    ax.set_ylim(10, 4000)
     ax.set_ylabel('training signals from 1,000 tokens (log scale)', fontsize=10)
-    ax.set_title(f'{by_token[0] / by_sentence[0]:.0f} times more signals from the same text',
-                 fontsize=12, weight='bold', color=INK)
+    ax.set_title(f'{by_token[0] / by_sentence[0]:.0f} times more training signals out of the '
+                 'same 1,000 tokens', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, TRAIN_DOC, 'signals-per-thousand-tokens.svg')
 
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(corpus, by_token, marker='o', color=SLIDE, lw=2, label='one signal per token')
     ax.plot(corpus, by_sentence, marker='s', color=WRIST, lw=2,
@@ -387,11 +388,10 @@ def signals_per_thousand_tokens() -> None:
     ax.set_yscale('log')
     ax.set_xlabel('tokens of text available', fontsize=10)
     ax.set_ylabel('training signals (log scale)', fontsize=10)
-    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
-    ax.set_title('The gap stays the same factor however much text there is',
-                 fontsize=12, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, TRAIN_DOC, 'signals-per-thousand-tokens.svg')
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    ax.set_title('The same factor of 20 at every size: the two lines stay the same distance '
+                 'apart', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, TRAIN_DOC, 'gap-holds-as-text-grows.svg')
 
 
 # ==========================================================================
@@ -530,9 +530,80 @@ def what_the_mask_stops() -> None:
     _save(fig, TRAIN_DOC, 'what-the-mask-stops.svg')
 
 
+def zero_is_not_a_block() -> None:
+    """One idea: a blocked score of zero is an ordinary score, so only minus infinity blocks."""
+    a = att()
+    s = sim()
+    row = 2                       # the position whose input is "arm"
+    as_zero = _softmax(np.where(a.allowed[row], a.scores[row], 0.0))
+    as_minf = a.weights[row]
+    leak = float(as_zero[row + 1:].sum())
+    print(f'[minf] row {row + 1}, blocked scores set to 0: ' +
+          ', '.join(f'{v:.3f}' for v in as_zero) +
+          f', so {leak:.3f} of the mix still comes from the {a.n - row - 1} later positions')
+    print(f'[minf] row {row + 1}, blocked scores set to minus infinity: ' +
+          ', '.join(f'{v:.3f}' for v in as_minf))
+
+    fig, ax = plt.subplots(figsize=(11.4, 5.2), facecolor='white')
+    _plain(ax)
+    x = np.arange(a.n)
+    ax.bar(x - 0.2, as_zero, width=0.38, color=GRIP,
+           label='blocked scores set to 0')
+    ax.bar(x + 0.2, as_minf, width=0.38, color=SLIDE,
+           label='blocked scores set to minus infinity')
+    for j in range(a.n):
+        ax.text(j - 0.2, as_zero[j] + 0.012, f'{as_zero[j]:.3f}', ha='center', fontsize=8.5,
+                color=GRIP)
+        ax.text(j + 0.2, as_minf[j] + 0.012, f'{as_minf[j]:.3f}', ha='center', fontsize=8.5,
+                color=SLIDE)
+    ax.axvspan(row + 0.5, a.n - 0.4, color='#fdecec', zorder=0)
+    ax.text((row + 0.5 + a.n - 0.4) / 2, 0.47,
+            f'these three positions are meant to be blocked,\nand a score of 0 still leaves '
+            f'{leak:.3f} of the mix here', ha='center', fontsize=10, color=GRIP)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f'{i + 1}\n"{w}"' for i, w in enumerate(s.inputs)], fontsize=10)
+    ax.set_ylim(0, 0.56)
+    ax.set_xlabel('position being looked at', fontsize=10)
+    ax.set_ylabel('share of the mix taken from that position', fontsize=10)
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    ax.set_title(f'Row {row + 1} of the weights, blocked two ways: zero is an ordinary score, '
+                 'minus infinity is not', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, TRAIN_DOC, 'zero-is-not-a-block.svg')
+
+
 # ==========================================================================
 # section 3: teacher forcing and what one training step costs
 # ==========================================================================
+
+
+def passes_per_sequence() -> None:
+    """One idea: teacher forcing turns one pass per token into a single pass."""
+    lengths = [6, 128, 512, 2048]
+    fig, ax = plt.subplots(figsize=(11.0, 5.2), facecolor='white')
+    _plain(ax)
+    x = np.arange(len(lengths))
+    forced = [1 for _ in lengths]
+    fed_back = list(lengths)
+    for n in lengths:
+        print(f'[passes] a sequence of {n:,} tokens: teacher forcing needs 1 pass, '
+              f'feeding the model its own guesses needs {n:,} passes, one after another')
+    ax.bar(x - 0.19, fed_back, width=0.36, color=GRIP,
+           label='feeding the model its own guess: one pass for each token, in order')
+    ax.bar(x + 0.19, forced, width=0.36, color=SLIDE,
+           label='teacher forcing: one pass that scores every position')
+    for i, n in enumerate(lengths):
+        ax.text(i - 0.19, n * 1.15, f'{n:,}', ha='center', fontsize=10, color=INK)
+        ax.text(i + 0.19, 1.15, '1', ha='center', fontsize=10, color=INK)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f'{n:,}' for n in lengths])
+    ax.set_yscale('log')
+    ax.set_ylim(0.7, max(lengths) * 5)
+    ax.set_xlabel('tokens in the training sequence', fontsize=10)
+    ax.set_ylabel('passes through the model to score it (log scale)', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.set_title('What teacher forcing buys: every position can be scored in the same pass',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, TRAIN_DOC, 'passes-per-sequence.svg')
 
 def teacher_forcing() -> None:
     s = sim()
@@ -703,6 +774,52 @@ def generation_steps() -> None:
     _save(fig, TRAIN_DOC, 'generation-steps.svg')
 
 
+def what_the_cache_holds() -> None:
+    """One idea: the new token works out one column of keys and values and reads the rest."""
+    tokens = ['the', 'arm', 'lifts', 'the', 'red', 'block']
+    new_at = len(tokens) - 1
+    print(f'[cache-holds] at the step that writes token {len(tokens)}, '
+          f'{new_at} columns of keys and values are read from the store and 1 is worked out; '
+          f'the new column costs {CACHE_PER_TOKEN:,} bytes over all '
+          f'{LAYERS} layers and {HEADS} heads')
+
+    fig, ax = plt.subplots(figsize=(11.8, 5.6), facecolor='white')
+    _bare(ax)
+    w, h = 1.3, 0.62
+    for j, token in enumerate(tokens):
+        x = 1.6 + j * 1.55
+        fresh = (j == new_at)
+        _box(ax, x, 3.3, w, h, token, face='#fdf0d8' if fresh else '#eef3f9',
+             edge=JOINT if fresh else LINK, fontsize=10.5,
+             weight='bold' if fresh else 'normal')
+        _box(ax, x, 2.1, w, h, 'key\nvalue', face='#fdf0d8' if fresh else '#ececec',
+             edge=JOINT if fresh else '#aaaaaa', fontsize=8.5,
+             colour=INK if fresh else '#666666')
+        _arrow(ax, x + w / 2, 3.25, x + w / 2, 2.78, colour=JOINT if fresh else '#cccccc',
+               head=0.1)
+        _arrow(ax, x + w / 2, 2.05, x + w / 2, 1.35, colour=MUTED, head=0.1)
+    _box(ax, 1.6, 0.55, 1.55 * len(tokens) - 0.25, 0.7,
+         'the new position mixes all six, and writes one token',
+         face='#eaf4ec', edge=SLIDE, fontsize=10.5)
+    ax.text(1.45, 3.61, 'tokens so far', ha='right', va='center', fontsize=10, color=INK,
+            weight='bold')
+    ax.text(1.45, 2.41, 'keys and values', ha='right', va='center', fontsize=10, color=INK,
+            weight='bold')
+    ax.text(1.6 + 2.5 * 1.55, 4.35, f'{new_at} columns read from the store',
+            ha='center', fontsize=10.5, color='#666666')
+    ax.text(1.6 + new_at * 1.55 + w / 2, 4.35, '1 column\ncalculated now', ha='center',
+            va='center', fontsize=10.5, color=JOINT, weight='bold')
+    ax.text(1.6 + 1.55 * len(tokens) / 2 - 0.2, -0.25,
+            f'the one new column costs {CACHE_PER_TOKEN / 1024:.0f} KiB over all {LAYERS} '
+            f'layers and {HEADS} heads, and is then stored too',
+            ha='center', fontsize=10.5, color=INK)
+    ax.set_xlim(-2.6, 1.6 + 1.55 * len(tokens) + 0.4)
+    ax.set_ylim(-0.7, 4.9)
+    ax.set_title('What the key-value cache holds: every column but the newest one',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, TRAIN_DOC, 'what-the-cache-holds.svg')
+
+
 def cache_saves_work() -> None:
     n = np.arange(1, 1025)
     without = n * (n + 1) / 2.0
@@ -753,9 +870,7 @@ def cache_size_arithmetic() -> None:
         print(f'[cache-size] {n:,} tokens: {b:,} bytes = {b / MIB:.0f} MiB '
               f'({b / WEIGHT_BYTES:.2f} times the weights)')
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.4, 5.0), facecolor='white',
-                             gridspec_kw={'width_ratios': [1.15, 1.0]})
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.4, 5.4), facecolor='white')
     _bare(ax)
     lines = [
         ('keys and values, so two of them', '2'),
@@ -779,10 +894,11 @@ def cache_size_arithmetic() -> None:
             fontsize=10.5, color=INK, va='top')
     ax.set_xlim(-0.4, 6.8)
     ax.set_ylim(-1.6, 5.9)
-    ax.set_title('The cache for one token, worked out factor by factor', fontsize=12,
+    ax.set_title('The cache for one token, worked out factor by factor', fontsize=12.5,
                  weight='bold', color=INK)
+    _save(fig, TRAIN_DOC, 'cache-size-arithmetic.svg')
 
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(9.6, 5.2), facecolor='white')
     _plain(ax)
     vals = [b / MIB for b in sizes]
     ax.bar([f'{n:,}' for n in lengths], vals, color=TEAL, width=0.55)
@@ -796,9 +912,8 @@ def cache_size_arithmetic() -> None:
     ax.set_xlabel('tokens held in the cache', fontsize=10)
     ax.set_ylabel('cache for one sequence (MiB, log scale)', fontsize=10)
     ax.set_title('Past a few thousand tokens the cache is the bigger thing in memory',
-                 fontsize=12, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, TRAIN_DOC, 'cache-size-arithmetic.svg')
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, TRAIN_DOC, 'cache-passes-the-weights.svg')
 
 
 def cache_versus_weights() -> None:
@@ -964,6 +1079,42 @@ def top_p_cut() -> None:
     _save(fig, TRAIN_DOC, 'top-p-cut.svg')
 
 
+def top_p_moves_with_certainty() -> None:
+    """One idea: the same cut keeps one word where the model is sure and many where it is not."""
+    s = sim()
+    cutoff = 0.9
+    kept: list[int] = []
+    for i in range(len(s.targets)):
+        sp = np.sort(s.probs[i])[::-1]
+        kept.append(int(np.searchsorted(np.cumsum(sp), cutoff) + 1))
+        print(f'[top-p-moves] position {i + 1}: top word "{s.guess[i]}" at '
+              f'{s.probs[i].max():.3f}, so the {cutoff} cut keeps {kept[-1]} '
+              f'of {len(WORDS)} words')
+
+    fig, ax = plt.subplots(figsize=(11.2, 5.2), facecolor='white')
+    _plain(ax)
+    x = np.arange(len(kept))
+    colours = [SLIDE if k <= 2 else (WRIST if k <= 5 else GRIP) for k in kept]
+    ax.bar(x, kept, color=colours, width=0.55)
+    for i, k in enumerate(kept):
+        ax.text(i, k + 0.18, f'{k} word' + ('' if k == 1 else 's'), ha='center', fontsize=10,
+                color=INK)
+        ax.text(i, -1.05, f'top word\n{s.probs[i].max():.3f}', ha='center', va='center',
+                fontsize=9, color=MUTED)
+    ax.axhline(len(WORDS), color=MUTED, ls=':', lw=1.0)
+    ax.text(len(kept) - 0.6, len(WORDS) + 0.25, f'all {len(WORDS)} words', fontsize=9.5,
+            color=MUTED, ha='right')
+    ax.set_xticks(x)
+    ax.set_xticklabels([f'position {i + 1}\n"{t}" is right' for i, t in enumerate(s.targets)],
+                       fontsize=9.5)
+    ax.set_ylim(0, len(WORDS) + 1.4)
+    ax.set_ylabel(f'words that survive the {cutoff} cut', fontsize=10)
+    ax.tick_params(axis='x', pad=34)
+    ax.set_title(f'The same cut at {cutoff} keeps a different number of words at every '
+                 'position', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, TRAIN_DOC, 'top-p-moves-with-certainty.svg')
+
+
 def greedy_loses() -> None:
     s = sim()
     first = s.probs[SAMPLE_POS]
@@ -1052,8 +1203,7 @@ def context_cost() -> None:
         print(f'[context] {n:,} tokens: {pr:,.0f} allowed pairs in every head of every layer, '
               f'cache {cb / GIB:.2f} GiB for one sequence')
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.4, 5.2), facecolor='white')
     _plain(ax)
     nn = np.arange(256, 131073, 256, dtype=float)
     ax.plot(nn, nn * (nn + 1) / 2, color=GRIP, lw=2, label='pairs of positions to score')
@@ -1064,13 +1214,15 @@ def context_cost() -> None:
                 ha='right')
     ax.set_xscale('log')
     ax.set_yscale('log')
+    ax.set_ylim(1e2, 2e11)
     ax.set_xlabel('tokens in the context', fontsize=10)
     ax.set_ylabel('things to work out, per head per layer (log scale)', fontsize=10)
-    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
-    ax.set_title('Doubling the context quadruples the pairs', fontsize=12, weight='bold',
-                 color=INK)
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    ax.set_title(f'Doubling the context multiplies the pairs by four (example model, trained '
+                 f'at {TRAINED_LEN:,} tokens)', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, TRAIN_DOC, 'context-pairs.svg')
 
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(9.8, 5.2), facecolor='white')
     _plain(ax)
     ax.bar([f'{n:,}' for n in lengths], cache / GIB, color=TEAL, width=0.55)
     for i, v in enumerate(cache / GIB):
@@ -1082,12 +1234,9 @@ def context_cost() -> None:
     ax.set_ylim(0.03, max(cache / GIB) * 4)
     ax.set_xlabel('tokens in the context', fontsize=10)
     ax.set_ylabel('cache for one sequence (GiB, log scale)', fontsize=10)
-    ax.set_title('And it doubles the memory one conversation holds', fontsize=12,
-                 weight='bold', color=INK)
-    fig.suptitle(f'The example model, trained on {TRAINED_LEN:,} tokens of context',
+    ax.set_title('Doubling the context also doubles the memory one conversation holds',
                  fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, TRAIN_DOC, 'context-cost.svg')
+    _save(fig, TRAIN_DOC, 'context-cache.svg')
 
 
 def past_the_window() -> None:
@@ -1140,9 +1289,7 @@ def memory_bound() -> None:
           f'{t_ar * 1e6:,.1f} microseconds, so reading takes {t_mem / t_ar:.0f} times longer')
     print(f'[bound] that is {1 / t_mem:,.0f} tokens a second at best')
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white',
-                             gridspec_kw={'width_ratios': [1.0, 1.1]})
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.6, 5.2), facecolor='white')
     _plain(ax)
     ax.bar(['waiting for memory', 'doing the arithmetic'], [t_mem * 1e6, t_ar * 1e6],
            color=[GRIP, SLIDE], width=0.5)
@@ -1153,10 +1300,11 @@ def memory_bound() -> None:
     ax.set_yscale('log')
     ax.set_ylim(1, t_mem * 1e6 * 4)
     ax.set_ylabel('time for one token (microseconds, log scale)', fontsize=10)
-    ax.set_title(f'One token, one sequence: reading takes {t_mem / t_ar:.0f} times as long '
-                 'as the sums', fontsize=11.5, weight='bold', color=INK)
+    ax.set_title(f'One token, one sequence: reading memory takes {t_mem / t_ar:.0f} times as '
+                 'long as the arithmetic', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, TRAIN_DOC, 'memory-bound.svg')
 
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(8.0, 5.2), facecolor='white')
     _plain(ax)
     ax.bar(['bytes that must be read for one token'], [WEIGHT_BYTES / MIB], color=LINK,
            width=0.4, label=f'every weight, once: {WEIGHT_BYTES / MIB:.0f} MiB')
@@ -1169,11 +1317,9 @@ def memory_bound() -> None:
     ax.set_xlim(-1.1, 1.1)
     ax.set_ylabel('memory read (MiB)', fontsize=10)
     ax.legend(fontsize=10, frameon=False, loc='upper left')
-    ax.set_title('Where the reading goes', fontsize=11.5, weight='bold', color=INK)
-    fig.suptitle('Generation is held up by memory reading, not by arithmetic',
+    ax.set_title('What has to be read out of memory to write one token',
                  fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, TRAIN_DOC, 'memory-bound.svg')
+    _save(fig, TRAIN_DOC, 'bytes-for-one-token.svg')
 
 
 def batch_helps() -> None:
@@ -1189,8 +1335,7 @@ def batch_helps() -> None:
               f'{per_token[i] * 1e6:,.0f} microseconds a token, '
               f'{throughput[i]:,.0f} tokens a second in all')
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 4.8), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.8, 5.0), facecolor='white')
     _plain(ax)
     ax.plot(batches, throughput, color=LINK, lw=2)
     for b in (1, 8, 32, 64):
@@ -1200,10 +1345,11 @@ def batch_helps() -> None:
     ax.set_xlabel('sequences answered at the same time', fontsize=10)
     ax.set_ylabel('tokens a second, all sequences together', fontsize=10)
     ax.set_ylim(0, throughput.max() * 1.2)
-    ax.set_title('Answering several at once gets more out of the same reading',
-                 fontsize=11.5, weight='bold', color=INK)
+    ax.set_title(f'Answering several at once gets more out of the same reading '
+                 f'({length:,} tokens of context)', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, TRAIN_DOC, 'batch-helps.svg')
 
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(9.8, 5.0), facecolor='white')
     _plain(ax)
     ax.plot(batches, per_token * 1e6, color=GRIP, lw=2)
     ax.axhline(per_token[0] * 1e6, color=MUTED, ls=':', lw=1.0)
@@ -1212,12 +1358,10 @@ def batch_helps() -> None:
     ax.set_xlabel('sequences answered at the same time', fontsize=10)
     ax.set_ylabel('microseconds for each token', fontsize=10)
     ax.set_ylim(0, per_token[0] * 1e6 * 1.2)
-    ax.set_title('But each conversation does not get faster than a floor',
-                 fontsize=11.5, weight='bold', color=INK)
-    fig.suptitle(f'The example model at {length:,} tokens of context, on the example '
-                 'accelerator', fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, TRAIN_DOC, 'batch-helps.svg')
+    ax.set_title('But one conversation never waits less than about '
+                 f'{per_token[-1] * 1e6:,.0f} microseconds a token',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, TRAIN_DOC, 'wait-does-not-fall.svg')
 
 
 # ==========================================================================
@@ -1315,6 +1459,47 @@ def dilation_helps() -> None:
     ax.set_title('Spreading the filter out helps, but the view is still a shape chosen '
                  'in advance', fontsize=12.5, weight='bold', color=INK)
     _save(fig, WHY_DOC, 'dilation-helps.svg')
+
+
+def fixed_versus_chosen() -> None:
+    """One idea: a filter's pattern is fixed in advance, attention's comes from the words."""
+    a = att()
+    s = sim()
+    row = a.n - 1                 # the last position, which may look at all six
+    k = 3
+    filt = np.array([1.0 / k if row - j < k else 0.0 for j in range(a.n)])
+    chosen = a.weights[row]
+    print(f'[fixed] a filter {k} wide at position {row + 1} reads ' +
+          ', '.join(f'{v:.3f}' for v in filt))
+    print(f'[fixed] attention at position {row + 1} reads ' +
+          ', '.join(f'{v:.3f}' for v in chosen))
+    print(f'[fixed] the filter gives position 1 a weight of {filt[0]:.3f} whatever the words, '
+          f'and attention gives it {chosen[0]:.3f} because of the words')
+
+    fig, ax = plt.subplots(figsize=(11.4, 5.2), facecolor='white')
+    _plain(ax)
+    x = np.arange(a.n)
+    ax.bar(x - 0.2, filt, width=0.38, color=WRIST,
+           label=f'a filter {k} wide: the same weights for every input')
+    ax.bar(x + 0.2, chosen, width=0.38, color=SLIDE,
+           label='attention: weights worked out from the words themselves')
+    for j in range(a.n):
+        ax.text(j - 0.2, filt[j] + 0.012, f'{filt[j]:.2f}', ha='center', fontsize=9,
+                color=WRIST)
+        ax.text(j + 0.2, chosen[j] + 0.012, f'{chosen[j]:.2f}', ha='center', fontsize=9,
+                color=SLIDE)
+    ax.annotate(f'the filter cannot reach here at all;\nattention puts {chosen[0]:.2f} on it',
+                xy=(0.2, chosen[0] + 0.02), xytext=(0.9, 0.3), fontsize=10, color=INK,
+                arrowprops={'arrowstyle': '->', 'color': INK, 'lw': 1.1})
+    ax.set_xticks(x)
+    ax.set_xticklabels([f'{i + 1}\n"{w}"' for i, w in enumerate(s.inputs)], fontsize=10)
+    ax.set_ylim(0, 0.52)
+    ax.set_xlabel('position being read', fontsize=10)
+    ax.set_ylabel(f'weight position {row + 1} puts on it', fontsize=10)
+    ax.legend(fontsize=10, frameon=False, loc='upper center')
+    ax.set_title(f'What position {row + 1} reads: a pattern fixed by the designer, or one '
+                 'chosen from the content', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'fixed-versus-chosen.svg')
 
 
 # ==========================================================================
@@ -1691,6 +1876,76 @@ def fewer_kv_heads() -> None:
     _save(fig, WHY_DOC, 'fewer-kv-heads.svg')
 
 
+def window_caps_the_cache() -> None:
+    """One idea: with a window the cache stops growing once the window is full."""
+    window = 1024
+    lengths = np.arange(0, 32769, 128, dtype=float)
+    full = lengths * CACHE_PER_TOKEN / MIB
+    capped = np.minimum(lengths, window) * CACHE_PER_TOKEN / MIB
+    for k in (1024, 8192, 32768):
+        print(f'[window-cache] {k:,} tokens: every earlier position kept '
+              f'{k * CACHE_PER_TOKEN / MIB:,.0f} MiB, a window of {window:,} kept '
+              f'{min(k, window) * CACHE_PER_TOKEN / MIB:,.0f} MiB')
+
+    fig, ax = plt.subplots(figsize=(11.0, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot(lengths, full, color=GRIP, lw=2.2, label='keep every earlier position')
+    ax.plot(lengths, capped, color=TEAL, lw=2.2,
+            label=f'keep only the last {window:,} positions')
+    ax.axvline(window, color=MUTED, ls=':', lw=1.0)
+    ax.text(window + 700, 2400, f'the window fills up\nafter {window:,} tokens', fontsize=10,
+            color=MUTED)
+    for k in (8192, 32768):
+        ax.scatter([k], [k * CACHE_PER_TOKEN / MIB], color=GRIP, s=30, zorder=5)
+        ax.text(k - 600, k * CACHE_PER_TOKEN / MIB,
+                f'{k * CACHE_PER_TOKEN / MIB:,.0f} MiB', fontsize=10, color=GRIP, ha='right',
+                va='center')
+    ax.text(32768, window * CACHE_PER_TOKEN / MIB + 180,
+            f'{window * CACHE_PER_TOKEN / MIB:,.0f} MiB, however long the conversation gets',
+            fontsize=10, color=TEAL, ha='right')
+    ax.set_xlabel('tokens in the conversation', fontsize=10)
+    ax.set_ylabel('cache for one conversation (MiB)', fontsize=10)
+    ax.set_xlim(0, 33500)
+    ax.set_ylim(0, 3500)
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    ax.set_title('A window also caps the cache, because nothing outside it is ever needed '
+                 'again', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'window-caps-the-cache.svg')
+
+
+def score_grid_memory() -> None:
+    """One idea: the memory a careful implementation removes is the grid of scores itself."""
+    block = 128
+    lengths = [1024, 8192, 32768]
+    grid = [n * n * NBYTES / MIB for n in lengths]
+    blk = block * block * NBYTES / 1024
+    for n, g in zip(lengths, grid):
+        print(f'[grid] {n:,} tokens: the whole score grid for one head is '
+              f'{n * n:,} numbers = {g:,.0f} MiB, while a {block} by {block} block is '
+              f'{blk:.0f} KiB')
+
+    fig, ax = plt.subplots(figsize=(11.0, 5.2), facecolor='white')
+    _plain(ax)
+    labels = [f'{n:,}' for n in lengths]
+    ax.bar(labels, grid, color=GRIP, width=0.45,
+           label='the whole grid of scores for one head, written to memory')
+    ax.axhline(blk / 1024, color=SLIDE, lw=2.2,
+               label=f'one {block} by {block} block of it, kept close to the arithmetic')
+    for i, g in enumerate(grid):
+        ax.text(i, g * 1.4, f'{g:,.0f} MiB', ha='center', fontsize=10.5, color=INK)
+    ax.text(2.32, blk / 1024, f'{blk:.0f} KiB,\nwhatever the length',
+            ha='left', va='center', fontsize=10, color=SLIDE)
+    ax.set_xlim(-0.6, 3.5)
+    ax.set_yscale('log')
+    ax.set_ylim(blk / 1024 / 4, max(grid) * 8)
+    ax.set_xlabel('tokens in the sequence', fontsize=10)
+    ax.set_ylabel('memory the scores need (MiB, log scale)', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.set_title('The same pairs, worked out a block at a time: the number of pairs is '
+                 'unchanged, the memory is not', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'score-grid-memory.svg')
+
+
 # ==========================================================================
 # section 5: carrying a running summary instead
 # ==========================================================================
@@ -1733,6 +1988,51 @@ def running_summary() -> None:
     _save(fig, WHY_DOC, 'running-summary.svg')
 
 
+def input_chosen_forgetting() -> None:
+    """One idea: when the content sets the forgetting rate, one token can be held through filler."""
+    steps = np.arange(0, 21)
+    filler = [(6 <= t <= 15) for t in steps]
+    fixed_keep = 0.90
+    held_keep = 0.999
+    fixed = np.zeros_like(steps, dtype=float)
+    chosen = np.zeros_like(steps, dtype=float)
+    fixed[2] = chosen[2] = 1.0
+    for t in range(3, len(steps)):
+        fixed[t] = fixed[t - 1] * fixed_keep
+        chosen[t] = chosen[t - 1] * (held_keep if filler[t] else fixed_keep)
+    print(f'[chosen-forget] a fixed rate of {fixed_keep} leaves the step-2 token at '
+          f'{fixed[-1]:.3f} by step {steps[-1]}')
+    print(f'[chosen-forget] a rate the content raises to {held_keep} while the ten filler '
+          f'words arrive leaves it at {chosen[-1]:.3f}, which is '
+          f'{chosen[-1] / fixed[-1]:.1f} times more')
+
+    fig, ax = plt.subplots(figsize=(11.4, 5.2), facecolor='white')
+    _plain(ax)
+    ax.axvspan(5.5, 15.5, color='#f3f0fa', zorder=0)
+    ax.text(10.5, 0.93, 'ten filler words arrive here', ha='center', fontsize=10,
+            color=PURPLE)
+    ax.plot(steps[2:], fixed[2:], marker='o', ms=4, color=GRIP, lw=2,
+            label=f'the same rate at every step, keeping {fixed_keep}')
+    ax.plot(steps[2:], chosen[2:], marker='s', ms=4, color=PURPLE, lw=2,
+            label=f'a rate the content raises to {held_keep} while the filler arrives')
+    ax.scatter([2], [1.0], color=INK, s=45, zorder=6)
+    ax.text(2.0, 1.05, 'the one token worth keeping arrives at step 2', fontsize=10,
+            color=INK)
+    ax.text(20.3, fixed[-1], f'{fixed[-1]:.3f}\nleft', fontsize=10, color=GRIP, ha='left',
+            va='center')
+    ax.text(20.3, chosen[-1], f'{chosen[-1]:.3f}\nleft', fontsize=10, color=PURPLE, ha='left',
+            va='center')
+    ax.set_xticks(steps[::2])
+    ax.set_xlim(1.5, 22.0)
+    ax.set_ylim(0, 1.22)
+    ax.set_xlabel('position in the sentence', fontsize=10)
+    ax.set_ylabel('weight the step-2 token still has in the summary', fontsize=10)
+    ax.legend(fontsize=10, frameon=False, loc='lower left')
+    ax.set_title('Letting the content set the forgetting rate: the same summary can hold one '
+                 'token through filler', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'input-chosen-forgetting.svg')
+
+
 def cost_per_token_flat() -> None:
     pos = np.arange(1, 32769)
     attn = 4.0 * LAYERS * WIDTH * pos                 # reading every earlier key and value
@@ -1745,8 +2045,7 @@ def cost_per_token_flat() -> None:
               f'holds {cache[k - 1]:,.1f} MiB; the state-space layer does {ssm[0]:,.0f} and '
               f'holds {state[0]:.2f} MiB')
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(pos, attn / 1e6, color=GRIP, lw=2, label='attention: reads every earlier position')
     ax.plot(pos, ssm / 1e6, color=PURPLE, lw=2, label='state-space: reads one running summary')
@@ -1754,10 +2053,12 @@ def cost_per_token_flat() -> None:
     ax.set_yscale('log')
     ax.set_xlabel('how many tokens have gone before (log scale)', fontsize=10)
     ax.set_ylabel('millions of operations for the next token (log scale)', fontsize=10)
-    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
-    ax.set_title('Work for one more token', fontsize=12, weight='bold', color=INK)
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    ax.set_title('Work for one more token: the summary pays the same at every position',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'summary-work-is-flat.svg')
 
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(pos, cache, color=GRIP, lw=2, label='the key-value cache')
     ax.plot(pos, state, color=PURPLE, lw=2,
@@ -1766,20 +2067,17 @@ def cost_per_token_flat() -> None:
     ax.set_yscale('log')
     ax.set_xlabel('tokens in the conversation (log scale)', fontsize=10)
     ax.set_ylabel('memory for one conversation (MiB, log scale)', fontsize=10)
-    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
-    ax.set_title('Memory for the conversation so far', fontsize=12, weight='bold', color=INK)
-    fig.suptitle('The whole trade: the state-space layer pays the same for its ten thousandth '
-                 'token as for its first', fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, WHY_DOC, 'what-the-summary-buys.svg')
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    ax.set_title('Memory for the conversation so far: the summary never grows',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'summary-memory-is-flat.svg')
 
 
 def what_it_gives_up() -> None:
     k = np.arange(1, 1001)
     factors = [0.90, 0.98, 0.999]
     colours = [GRIP, WRIST, PURPLE]
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.2, 5.2), facecolor='white')
     _plain(ax)
     for f, colour in zip(factors, colours):
         ax.plot(k, f ** k, color=colour, lw=2, label=f'keeps {f} of the summary each step')
@@ -1792,10 +2090,12 @@ def what_it_gives_up() -> None:
     ax.set_ylim(1e-12, 30)
     ax.set_xlabel('how many tokens back', fontsize=10)
     ax.set_ylabel('weight that token still has (log scale)', fontsize=10)
-    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
-    ax.set_title('How much of an old token is left', fontsize=12, weight='bold', color=INK)
+    ax.legend(fontsize=10, frameon=False, loc='lower right')
+    ax.set_title('How much of an old token is left in the summary', fontsize=12.5,
+                 weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'what-it-gives-up.svg')
 
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
     _plain(ax)
     far = [f ** 1000 for f in factors]
     sep = [1.0 - f for f in factors]
@@ -1816,13 +2116,10 @@ def what_it_gives_up() -> None:
     ax.set_yscale('log')
     ax.set_ylim(floor, 200)
     ax.set_ylabel('log scale', fontsize=10)
-    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
     ax.set_title('Forget slowly and two tokens look alike; forget fast and the old ones go',
-                 fontsize=11.5, weight='bold', color=INK)
-    fig.suptitle('What the running summary gives up: it cannot reach back and pick out one '
-                 'token', fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, WHY_DOC, 'what-it-gives-up.svg')
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'two-tokens-look-alike.svg')
 
 
 def hybrid_memory() -> None:
@@ -1955,8 +2252,7 @@ def three_designs() -> None:
     print(f'[designs] weight one layer can put on the token 4,000 back: attention up to 1, '
           f'a window of {window:,} exactly 0, a summary keeping {keep} a step {far:.1e}')
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.2, 5.2), facecolor='white')
     _plain(ax)
     ax.bar(names, mems, color=[GRIP, WRIST, PURPLE], width=0.55)
     for i, m in enumerate(mems):
@@ -1965,9 +2261,11 @@ def three_designs() -> None:
     ax.set_ylim(0.2, full_mem * 8)
     ax.tick_params(axis='x', labelsize=9.5)
     ax.set_ylabel(f'memory for a {length:,}-token conversation (MiB, log scale)', fontsize=10)
-    ax.set_title('What each design holds', fontsize=12, weight='bold', color=INK)
+    ax.set_title(f'What each design holds for a {length:,}-token conversation', fontsize=12.5,
+                 weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'three-designs-memory.svg')
 
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(10.4, 5.2), facecolor='white')
     _plain(ax)
     k = np.arange(1, 4001)
     ax.plot(k, np.ones_like(k, dtype=float), color=GRIP, lw=2.5,
@@ -1983,12 +2281,10 @@ def three_designs() -> None:
     ax.set_ylim(1e-12, 30)
     ax.set_xlabel('how many tokens back', fontsize=10)
     ax.set_ylabel('weight one layer can put on that token (log scale)', fontsize=10)
-    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
-    ax.set_title('What each design can still reach', fontsize=12, weight='bold', color=INK)
-    fig.suptitle('Nobody has a design that is cheap in memory and can still pick out one '
-                 'token from far back', fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, WHY_DOC, 'three-designs.svg')
+    ax.legend(fontsize=10, frameon=False, loc='lower right')
+    ax.set_title('How far back each design can still put weight on one single token',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'three-designs-reach.svg')
 
 
 # --------------------------------------------------------------------------
@@ -2008,16 +2304,20 @@ def main() -> None:
     causal_mask_grid()
     scores_before_after_mask()
     what_the_mask_stops()
+    zero_is_not_a_block()
     teacher_forcing()
     errors_compound()
+    passes_per_sequence()
     training_memory()
     generation_steps()
+    what_the_cache_holds()
     cache_saves_work()
     cache_size_arithmetic()
     cache_versus_weights()
     logits_to_probabilities()
     three_temperatures()
     top_p_cut()
+    top_p_moves_with_certainty()
     greedy_loses()
     context_cost()
     past_the_window()
@@ -2027,6 +2327,7 @@ def main() -> None:
     layers_to_reach()
     receptive_cone()
     dilation_helps()
+    fixed_versus_chosen()
     sequential_steps()
     hardware_busy()
     signal_decay()
@@ -2038,7 +2339,10 @@ def main() -> None:
     window_reach()
     sparse_mask()
     fewer_kv_heads()
+    window_caps_the_cache()
+    score_grid_memory()
     running_summary()
+    input_chosen_forgetting()
     cost_per_token_flat()
     what_it_gives_up()
     hybrid_memory()

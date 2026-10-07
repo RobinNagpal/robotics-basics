@@ -350,8 +350,8 @@ N_TASKS: int = 12
 DEMOS_PER_TASK: int = 150
 
 
-def one_model_many_tasks() -> None:
-    """How many episodes each trained model gets to learn from."""
+def episodes_per_model() -> None:
+    """How many episodes one trained model gets to learn from."""
     total = N_TASKS * DEMOS_PER_TASK
     frames_single = DEMOS_PER_TASK * EP.horizon
     frames_shared = total * EP.horizon
@@ -360,34 +360,39 @@ def one_model_many_tasks() -> None:
           f'{frames_single} frames; one shared policy sees {total} episodes = {frames_shared} frames')
     print(f'[many-tasks] the shared policy sees {frames_shared / frames_single:.0f} times as many frames')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.3), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(7.6, 4.5), facecolor='white')
     _plain(ax)
-    bars = ax.bar(['one policy\nper task', 'one shared\npolicy'], [1, N_TASKS],
-                  color=[GRIP, SLIDE], width=0.55)
-    ax.bar_label(bars, labels=[f'{DEMOS_PER_TASK} episodes', f'{total} episodes'],
+    bars = ax.bar(['one policy\nper task', 'one shared\npolicy'],
+                  [frames_single, frames_shared], color=[GRIP, SLIDE], width=0.5)
+    ax.bar_label(bars, labels=[f'{DEMOS_PER_TASK} episodes\n{frames_single:,} frames',
+                               f'{total:,} episodes\n{frames_shared:,} frames'],
                  fontsize=10, padding=4)
-    ax.set_ylabel(f'episodes one trained model learns from\n(as multiples of {DEMOS_PER_TASK})',
-                  fontsize=10)
-    ax.set_ylim(0, N_TASKS * 1.25)
-    ax.set_title(f'With {N_TASKS} tasks and {DEMOS_PER_TASK} demonstrations each',
-                 fontsize=11, weight='bold')
+    ax.set_ylabel('frames the trained model learns from', fontsize=10)
+    ax.set_ylim(0, frames_shared * 1.3)
+    ax.set_title(f'With {N_TASKS} tasks and {DEMOS_PER_TASK} demonstrations each,\n'
+                 'one shared policy learns from every task\'s data',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, VLA_DOC, 'episodes-per-model.svg')
 
-    ax = axes[1]
+
+def models_to_keep() -> None:
+    """How many trained models have to be kept working as tasks are added."""
+    fig, ax = plt.subplots(figsize=(7.6, 4.5), facecolor='white')
     _plain(ax)
     tasks = np.arange(1, N_TASKS + 1)
-    ax.plot(tasks, tasks, marker='o', color=GRIP, lw=2, label='separate policies to train and keep')
+    ax.plot(tasks, tasks, marker='o', color=GRIP, lw=2, label='one policy for each task')
     ax.plot(tasks, np.ones_like(tasks), marker='s', color=SLIDE, lw=2,
-            label='one instruction-conditioned policy')
+            label='one policy told the task in words')
     ax.set_xlabel('number of tasks the arm must do', fontsize=10)
-    ax.set_ylabel('number of trained models to keep working', fontsize=10)
+    ax.set_ylabel('trained models to keep working', fontsize=10)
     ax.set_xticks(tasks)
     ax.set_yticks(range(0, N_TASKS + 1, 2))
     ax.legend(fontsize=9.5, frameon=False, loc='upper left')
     ax.set_title('Every new task adds a model, or it adds a sentence',
-                 fontsize=11, weight='bold')
+                 fontsize=11.5, weight='bold')
     fig.tight_layout()
-    _save(fig, VLA_DOC, 'one-model-many-tasks.svg')
+    _save(fig, VLA_DOC, 'models-to-keep.svg')
 
 
 # ==========================================================================
@@ -442,7 +447,7 @@ def vla_body_shapes() -> None:
     ax.text(0.5, 0.975, 'The real shapes inside one call, for a model whose token width is '
             f'{WIDTH}', ha='center', va='center', fontsize=12.5, weight='bold', color=INK)
     n = len(stages)
-    top, bottom = 0.915, 0.115
+    top, bottom = 0.915, 0.045
     h = (top - bottom) / n - 0.018
     for i, (title, body, colour) in enumerate(stages):
         y = top - (i + 1) * (h + 0.018) + 0.018
@@ -451,9 +456,6 @@ def vla_body_shapes() -> None:
         _box(ax, 0.245, y, 0.74, h, body, fc='white', ec=GRID, fs=9.0)
         if i < n - 1:
             _arrow(ax, 0.1225, y - 0.001, 0.1225, y - 0.017, colour=MUTED)
-    ax.text(0.5, 0.055, 'Every number here follows from three choices only: the picture size '
-            f'({IMG_SIDE} pixels), the patch size ({PATCH} pixels) and the token width '
-            f'({WIDTH}).', ha='center', va='center', fontsize=9.8, color=INK)
     _save(fig, VLA_DOC, 'vla-body-shapes.svg')
 
 
@@ -523,12 +525,8 @@ def two_ways_to_get_an_action() -> None:
          f'{HEAD_LAYERS} layers of width {HEAD_WIDTH}\n= {cont_head:,} weights\n\n'
          f'in: {WIDTH} numbers from the model,\n{ACTION_TOKENS} noise numbers, 1 time number\n'
          f'out: all {ACTION_TOKENS} action numbers at once\n\n'
-         'a handful of passes through the small head only',
+         'a few passes through the small head only',
          fc='#eaf7ee', ec=SLIDE, fs=9.2)
-    ax.text(0.5, 0.085, f'The big output layer holds {token_head / cont_head:.0f} times as many '
-            'weights as the small head, but the small head has to be trained to generate, '
-            'which is what the next section is about.',
-            ha='center', va='center', fontsize=9.6, color=INK)
     _save(fig, VLA_DOC, 'two-ways-to-get-an-action.svg')
 
 
@@ -709,31 +707,34 @@ def percentile_range_matters() -> None:
     _save(fig, VLA_DOC, 'percentile-range-matters.svg')
 
 
-def tokens_per_chunk() -> None:
-    """How many tokens a chunk costs, and how a frequency transform cuts the count."""
+DCT_KEEPS: list[int] = [2, 4, 6, 8, 12, 16, 25]
+
+
+def _dct_errors() -> tuple[list[float], int]:
+    """Rebuilding error of a long chunk from its first few frequencies, in degrees."""
     long_chunks = EP.a_test[:, :LONG_CHUNK, :N_JOINTS]
-    n = LONG_CHUNK
-    dmat = dct_matrix(n)
+    dmat = dct_matrix(LONG_CHUNK)
     coeffs = np.einsum('kt,etj->ekj', dmat, long_chunks)
-    keeps = [2, 4, 6, 8, 12, 16, 25]
     errs = []
-    for k in keeps:
+    for k in DCT_KEEPS:
         cut = np.zeros_like(coeffs)
         cut[:, :k, :] = coeffs[:, :k, :]
         back = np.einsum('kt,ekj->etj', dmat, cut)
-        e = float(np.degrees(np.sqrt(np.mean((back - long_chunks) ** 2))))
-        errs.append(e)
-        print(f'[dct] keeping {k:2d} of {n} frequencies: {k * N_JOINTS:3d} tokens a chunk, '
-              f'error {e:.4f} deg a joint a step')
+        errs.append(float(np.degrees(np.sqrt(np.mean((back - long_chunks) ** 2)))))
+    best = DCT_KEEPS[int(np.argmin([abs(e - 0.05) for e in errs]))]
+    return errs, best
+
+
+def tokens_per_chunk() -> None:
+    """How many tokens a chunk costs if every action number is produced one at a time."""
+    errs, best = _dct_errors()
     plain_tokens = LONG_CHUNK * N_JOINTS
     print(f'[dct] writing the {N_JOINTS} joint rows of the long chunk straight out costs '
           f'{plain_tokens} tokens')
-    best = keeps[int(np.argmin([abs(e - 0.05) for e in errs]))]
     print(f'[dct] {best * N_JOINTS} tokens already gets the error near '
-          f'{errs[keeps.index(best)]:.3f} deg')
+          f'{errs[DCT_KEEPS.index(best)]:.3f} deg')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.4), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(7.8, 4.6), facecolor='white')
     _plain(ax)
     labels = [f'chunk of {CHUNK} steps\nwritten straight out',
               f'chunk of {LONG_CHUNK} steps\nwritten straight out',
@@ -741,28 +742,37 @@ def tokens_per_chunk() -> None:
     vals = [CHUNK * N_JOINTS, plain_tokens, best * N_JOINTS]
     bars = ax.bar(labels, vals, color=[LINK, GRIP, SLIDE], width=0.55)
     ax.bar_label(bars, fmt='%d tokens', fontsize=10, padding=3)
+    ax.tick_params(axis='x', labelsize=9)
     ax.set_ylabel('action tokens the model must produce one by one', fontsize=10)
     ax.set_ylim(0, max(vals) * 1.2)
-    ax.set_title(f'Tokens for the {N_JOINTS} joint rows: every one is\na separate pass through the model',
-                 fontsize=11, weight='bold')
+    ax.set_title(f'Every action token for the {N_JOINTS} joints is\na separate pass through the '
+                 'whole model', fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, VLA_DOC, 'tokens-per-chunk.svg')
 
-    ax = axes[1]
+
+def frequency_compression() -> None:
+    """How well a long chunk is rebuilt from its first few frequency terms."""
+    errs, _best = _dct_errors()
+    for k, e in zip(DCT_KEEPS, errs):
+        print(f'[dct] keeping {k:2d} of {LONG_CHUNK} frequencies: {k * N_JOINTS:3d} tokens a '
+              f'chunk, error {e:.4f} deg a joint a step')
+    fig, ax = plt.subplots(figsize=(7.8, 4.6), facecolor='white')
     _plain(ax)
-    ax.plot([k * N_JOINTS for k in keeps], errs, marker='o', color=TEAL, lw=2)
-    ax.axhline(0.0, color=GRID, lw=1)
+    ax.plot([k * N_JOINTS for k in DCT_KEEPS], errs, marker='o', color=TEAL, lw=2)
     ax.set_xlabel(f'tokens used for a {LONG_CHUNK}-step chunk of {N_JOINTS} joints', fontsize=10)
     ax.set_ylabel('error of the rebuilt chunk (degrees a joint a step)', fontsize=10)
     ax.set_yscale('log')
     ax.set_title('A smooth movement needs few frequencies to describe it',
-                 fontsize=11, weight='bold')
-    for k, dx, dy in ((4, 14, 16), (16, -8, 20)):
-        e = errs[keeps.index(k)]
+                 fontsize=11.5, weight='bold')
+    for k, dx, dy in ((4, 18, 10), (16, -6, 20)):
+        e = errs[DCT_KEEPS.index(k)]
         ax.annotate(f'{k * N_JOINTS} tokens, {e:.3f} deg', (k * N_JOINTS, e),
                     textcoords='offset points', xytext=(dx, dy), fontsize=9, color=INK,
                     arrowprops=dict(arrowstyle='-', color=MUTED, lw=0.9))
     ax.set_ylim(min(errs) * 0.45, max(errs) * 3.0)
     fig.tight_layout()
-    _save(fig, VLA_DOC, 'tokens-per-chunk.svg')
+    _save(fig, VLA_DOC, 'frequency-compression.svg')
 
 
 # ==========================================================================
@@ -902,8 +912,10 @@ def _flow() -> FlowHead:
 
 
 def flow_head_path() -> None:
-    """The walk from noise to a chunk, drawn for a coarse and a fine number of steps."""
+    """The walk from noise to a chunk, drawn for several counts of equal steps."""
     f = _flow()
+    print(f'[flow] the trained head holds '
+          f'{sum(w.size for w in f.net.w) + sum(b.size for b in f.net.b):,} weights')
     rng = np.random.default_rng(21)
     c = f.cs[500:501]
     x0 = rng.normal(0.0, 1.0, (1, CHUNK * ACTION_DIM))
@@ -915,35 +927,48 @@ def flow_head_path() -> None:
         print(f'[flow-path] with {k:2d} steps joint 1 lands on {ends[k]:+.3f} deg, '
               f'{abs(ends[k] - ends[32]):.3f} deg from where 32 steps land it')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.4), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.0, 4.8), facecolor='white')
     _plain(ax)
-    for k, colour, style in zip(shown, [GRIP, WRIST, TEAL, SLIDE], ['-', '-', '-', '-']):
+    for k, colour in zip(shown, [GRIP, WRIST, TEAL, SLIDE]):
         v = np.degrees(paths[k][:, 0, d] * f.scale[d] + f.mean[d])
-        ax.plot(np.linspace(0, 1, k + 1), v, color=colour, lw=1.9, ls=style,
+        ax.plot(np.linspace(0, 1, k + 1), v, color=colour, lw=1.9,
                 marker='o', ms=4.5, label=f'{k} step' + ('' if k == 1 else 's'))
     ax.set_xlabel('how far along the walk, from pure noise (0) to an action (1)', fontsize=10)
     ax.set_ylabel('the value of joint 1 at the first step\nof the chunk (degrees)', fontsize=10)
     ax.legend(fontsize=9.5, frameon=False)
-    ax.set_title('One noise sample, walked in different step counts',
-                 fontsize=10.8, weight='bold')
-
-    ax = axes[1]
-    _plain(ax)
-    many = rng.normal(0.0, 1.0, (24, CHUNK * ACTION_DIM))
-    cc = np.repeat(c, 24, axis=0)
-    paths = f.path(cc, many, 32)
-    vals = np.degrees(paths[:, :, d] * f.scale[d] + f.mean[d])
-    for i in range(24):
-        ax.plot(np.linspace(0, 1, 33), vals[:, i], color=LINK, lw=1.0, alpha=0.6)
-    ax.set_xlabel('how far along the walk', fontsize=10)
-    ax.set_ylabel('the value of joint 1 (degrees)', fontsize=10)
-    ax.set_title('24 noise samples, one instruction and picture',
-                 fontsize=10.8, weight='bold')
-    fig.suptitle('A flow head turns noise into a chunk by following a learned direction',
-                 fontsize=12.5, weight='bold')
-    fig.tight_layout(rect=(0, 0, 1, 0.93))
+    ax.set_title('One list of random numbers, walked into an action\nin different numbers '
+                 'of equal steps', fontsize=11.5, weight='bold')
+    fig.tight_layout()
     _save(fig, VLA_DOC, 'flow-head-path.svg')
+
+
+def flow_head_agreement() -> None:
+    """Many different noise samples, one situation: the head agrees with itself."""
+    f = _flow()
+    rng = np.random.default_rng(22)
+    c = f.cs[500:501]
+    d = 0
+    n_show = 24
+    many = rng.normal(0.0, 1.0, (n_show, CHUNK * ACTION_DIM))
+    paths = f.path(np.repeat(c, n_show, axis=0), many, 32)
+    vals = np.degrees(paths[:, :, d] * f.scale[d] + f.mean[d])
+    spread_start = float(vals[0].max() - vals[0].min())
+    spread_end = float(vals[-1].max() - vals[-1].min())
+    print(f'[flow-spread] {n_show} noise samples start {spread_start:.2f} degrees apart and '
+          f'end {spread_end:.2f} degrees apart')
+    fig, ax = plt.subplots(figsize=(8.0, 4.8), facecolor='white')
+    _plain(ax)
+    for i in range(n_show):
+        ax.plot(np.linspace(0, 1, 33), vals[:, i], color=LINK, lw=1.0, alpha=0.6)
+    ax.set_xlabel('how far along the walk, from pure noise (0) to an action (1)', fontsize=10)
+    ax.set_ylabel('the value of joint 1 at the first step\nof the chunk (degrees)', fontsize=10)
+    ax.annotate(f'{spread_end:.2f} degrees apart\nat the end', xy=(1.0, float(vals[-1].mean())),
+                xytext=(0.62, float(vals[0].max()) * 0.75), fontsize=9, color=INK,
+                arrowprops=dict(arrowstyle='->', color=MUTED, lw=0.9))
+    ax.set_title(f'{n_show} different lists of random numbers, one situation:\n'
+                 'they all end up close together', fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, VLA_DOC, 'flow-head-agreement.svg')
 
 
 def flow_steps_vs_error() -> None:
@@ -1006,7 +1031,8 @@ def head_vs_tokens_latency() -> None:
     fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.6), facecolor='white')
     ax = axes[0]
     _plain(ax)
-    names = [f'{ACTION_TOKENS} action tokens'] + [f'head, {k} steps' for k in STEP_LIST]
+    names = ([f'{ACTION_TOKENS} action tokens']
+             + [f'head, {k} step' + ('' if k == 1 else 's') for k in STEP_LIST])
     vals = [tok_time] + head_times
     cols = [GRIP] + [SLIDE] * len(head_times)
     bars = ax.barh(names[::-1], vals[::-1], color=cols[::-1])
@@ -1270,27 +1296,37 @@ def data_sizes() -> None:
     print(f'[sizes] poured together, robot data would be {share_natural:.4f}% of the batches')
     print(f'[sizes] to make robot data {(1 - p) * 100:.0f}% of the batches, every robot frame '
           f'is seen about {repeats:,.0f} times for each pass through the web set')
-    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.4), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(7.8, 4.6), facecolor='white')
     _plain(ax)
     bars = ax.bar(['robot frames\nfrom demonstrations', 'picture-and-text pairs\nfrom the web'],
-                  [robot_frames, WEB_PAIRS], color=[SLIDE, PURPLE], width=0.55)
+                  [robot_frames, WEB_PAIRS], color=[SLIDE, PURPLE], width=0.5)
     ax.bar_label(bars, labels=[f'{robot_frames:,}', f'{WEB_PAIRS:,}'], fontsize=10, padding=3)
     ax.set_yscale('log')
     ax.set_ylabel('number of training examples', fontsize=10)
     ax.set_ylim(1e4, WEB_PAIRS * 12)
-    ax.set_title(f'The web set is about {ratio:,.0f} times larger', fontsize=11, weight='bold')
-    ax = axes[1]
+    ax.set_title(f'The web set is about {ratio:,.0f} times larger than\nthe robot recording',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, VLA_DOC, 'data-sizes.svg')
+
+
+def mixture_chosen() -> None:
+    """The share of robot data in a batch has to be set on purpose, not left to the sizes."""
+    robot_frames = N_TASKS * DEMOS_PER_TASK * EP.horizon
+    share_natural = robot_frames / (robot_frames + WEB_PAIRS) * 100
+    fig, ax = plt.subplots(figsize=(7.8, 4.6), facecolor='white')
     _plain(ax)
     shares = [share_natural, 25.0, 75.0]
-    bars = ax.bar(['poured together\nas they are', 'one quarter\nrobot data',
-                   'three quarters\nrobot data'], shares, color=[GRIP, WRIST, SLIDE], width=0.55)
+    bars = ax.bar(['mixed in their\nnatural sizes', 'one quarter\nrobot data',
+                   'three quarters\nrobot data'], shares, color=[GRIP, WRIST, SLIDE], width=0.5)
     ax.bar_label(bars, labels=[f'{share_natural:.4f}%', '25%', '75%'], fontsize=10, padding=3)
     ax.set_ylabel('share of the batches that are robot frames (per cent)', fontsize=10)
     ax.set_ylim(0, 92)
-    ax.set_title('So the share has to be chosen on purpose', fontsize=11, weight='bold')
+    ax.set_title('Mixed in their natural sizes, robot frames are almost none\n'
+                 'of the batch, so the share is chosen and enforced',
+                 fontsize=11.5, weight='bold')
     fig.tight_layout()
-    _save(fig, VLA_DOC, 'data-sizes.svg')
+    _save(fig, VLA_DOC, 'mixture-chosen.svg')
 
 
 # ==========================================================================
@@ -1545,13 +1581,35 @@ COVERAGE: dict[str, float] = {}
 
 
 def position_coverage() -> None:
-    """The same task with the object moved: inside the seen area it works, outside it does not."""
+    """Where the training objects sat in the camera view."""
     rng = np.random.default_rng(77)
     seen = rng.uniform(-TRAIN_HALF, TRAIN_HALF, (400, 2))
     covered = (2 * TRAIN_HALF) ** 2 / 4.0 * 100
     print(f'[coverage] training objects sat inside a square {2 * TRAIN_HALF:.1f} wide out of '
           f'2, which is {covered:.0f}% of the camera view')
+    fig, ax = plt.subplots(figsize=(6.6, 5.4), facecolor='white')
+    _plain(ax)
+    ax.scatter(seen[:, 0], seen[:, 1], s=11, color=LINK, alpha=0.55, label='seen in training')
+    ax.add_patch(Rectangle((-TRAIN_HALF, -TRAIN_HALF), 2 * TRAIN_HALF, 2 * TRAIN_HALF,
+                           facecolor='none', edgecolor=LINK, lw=2))
+    ax.add_patch(Rectangle((-1, -1), 2, 2, facecolor='none', edgecolor=GRIP, lw=2, ls='--',
+                           label='the whole camera view'))
+    ax.set_xlim(-1.16, 1.16)
+    ax.set_ylim(-1.16, 1.34)
+    ax.set_aspect('equal')
+    ax.set_xlabel('across the camera view', fontsize=10)
+    ax.set_ylabel('up the camera view', fontsize=10)
+    ax.legend(fontsize=9, frameon=False, loc='upper center', ncol=2,
+              bbox_to_anchor=(0.5, 1.02))
+    ax.set_title(f'The objects in training covered {covered:.0f}% of the view',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, VLA_DOC, 'position-coverage.svg')
 
+
+def error_by_distance() -> None:
+    """How the error grows once the object sits outside the area the training covered."""
+    covered = (2 * TRAIN_HALF) ** 2 / 4.0 * 100
     xa, ya = _reach_data(ARM_A, POSE_A, 2400, 0, 101)
     keep = np.all(np.abs(xa[:, :2]) <= TRAIN_HALF, axis=1)
     xtr, ytr = xa[keep], ya[keep]
@@ -1574,38 +1632,22 @@ def position_coverage() -> None:
           f'inside the seen area is {COVERAGE["inside"]:.2f} degrees and at the edge of the '
           f'view it is {COVERAGE["edge"]:.2f} degrees')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.7), facecolor='white')
-    ax = axes[0]
-    _plain(ax)
-    ax.scatter(seen[:, 0], seen[:, 1], s=9, color=LINK, alpha=0.55, label='seen in training')
-    ax.add_patch(Rectangle((-TRAIN_HALF, -TRAIN_HALF), 2 * TRAIN_HALF, 2 * TRAIN_HALF,
-                           facecolor='none', edgecolor=LINK, lw=2))
-    ax.add_patch(Rectangle((-1, -1), 2, 2, facecolor='none', edgecolor=GRIP, lw=2, ls='--',
-                           label='the whole camera view'))
-    ax.set_xlim(-1.14, 1.14)
-    ax.set_ylim(-1.14, 1.3)
-    ax.set_aspect('equal')
-    ax.set_xlabel('across the camera view', fontsize=10)
-    ax.set_ylabel('up the camera view', fontsize=10)
-    ax.legend(fontsize=9, frameon=False, loc='upper center', ncol=2,
-              bbox_to_anchor=(0.5, 1.02))
-    ax.set_title(f'The objects in training covered {covered:.0f}% of the view',
-                 fontsize=11, weight='bold')
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(8.0, 4.8), facecolor='white')
     _plain(ax)
     cols = [SLIDE if m < TRAIN_HALF else GRIP for m in mids]
     bars = ax.bar([f'{edges[i]:.1f}-{edges[i + 1]:.1f}' for i in range(len(edges) - 1)],
                   vals, color=cols, width=0.62)
-    ax.bar_label(bars, labels=[f'{v:.2f}' for v in vals], fontsize=9, padding=3)
+    ax.bar_label(bars, labels=[f'{v:.2f}' for v in vals], fontsize=9.5, padding=3)
     ax.axvline(2.5, color=INK, lw=1.2, ls=':')
-    ax.text(2.55, max(vals) * 0.9, 'edge of what\nwas seen', fontsize=9, color=INK)
+    ax.text(2.6, max(vals) * 0.88, 'edge of what\nwas seen', fontsize=9.5, color=INK)
     ax.set_xlabel('how far the object is from the middle of the view', fontsize=10)
     ax.set_ylabel('error in the movement asked for (degrees)', fontsize=10)
     ax.set_ylim(0, max(vals) * 1.2)
-    ax.set_title('Moving the object inside the seen area is fine;\noutside it is not',
-                 fontsize=11, weight='bold')
+    ax.set_title(f'Inside the {covered:.0f}% of the view the training covered the error '
+                 'stays small;\noutside it the error is thirty times larger',
+                 fontsize=11.5, weight='bold')
     fig.tight_layout()
-    _save(fig, VLA_DOC, 'position-coverage.svg')
+    _save(fig, VLA_DOC, 'error-by-distance.svg')
 
 
 def _grasp_height(w: Arr, h: Arr) -> Arr:
@@ -1615,6 +1657,27 @@ def _grasp_height(w: Arr, h: Arr) -> Arr:
 
 def _poly2(w: Arr, h: Arr) -> Arr:
     return np.stack([np.ones_like(w), w, h, w ** 2, h ** 2, w * h], axis=1)
+
+
+def object_kinds() -> None:
+    """Where the two kinds of object sit when an object is described by width and height."""
+    rng = np.random.default_rng(88)
+    mw = rng.uniform(6.0, 9.0, 300)
+    mh = rng.uniform(8.0, 11.0, 300)
+    bw = rng.uniform(13.0, 18.0, 300)
+    bh = rng.uniform(4.5, 7.0, 300)
+    fig, ax = plt.subplots(figsize=(7.4, 4.8), facecolor='white')
+    _plain(ax)
+    ax.scatter(mw, mh, s=13, color=LINK, alpha=0.6, label='tall narrow objects (trained on)')
+    ax.scatter(bw, bh, s=13, color=GRIP, alpha=0.6, label='wide flat objects (never seen)')
+    ax.set_xlabel('width of the object (cm)', fontsize=10)
+    ax.set_ylabel('height of the object (cm)', fontsize=10)
+    ax.set_ylim(3.0, 13.5)
+    ax.legend(fontsize=9, frameon=False, loc='upper right')
+    ax.set_title('Described by width and height, the two kinds sit in\n'
+                 'separate parts of the picture', fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, VLA_DOC, 'object-kinds.svg')
 
 
 def new_object_kind() -> None:
@@ -1643,28 +1706,18 @@ def new_object_kind() -> None:
     print(f'[kinds] the second number is {e_new / e_same:.0f} times the first, and '
           f'{len(both)} objects were used in the mixed fit')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.7), facecolor='white')
-    ax = axes[0]
-    _plain(ax)
-    ax.scatter(mw, mh, s=12, color=LINK, alpha=0.6, label='tall narrow objects (trained on)')
-    ax.scatter(bw, bh, s=12, color=GRIP, alpha=0.6, label='wide flat objects (never seen)')
-    ax.set_xlabel('width of the object (cm)', fontsize=10)
-    ax.set_ylabel('height of the object (cm)', fontsize=10)
-    ax.legend(fontsize=9, frameon=False, loc='upper right')
-    ax.set_title('The two kinds sit in different parts of the picture',
-                 fontsize=11, weight='bold')
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(8.0, 4.8), facecolor='white')
     _plain(ax)
     bars = ax.bar(['a new object of\nthe kind it saw', 'an object of a\nkind it never saw',
                    'the new kind, after\n150 of them are added'],
-                  [e_same, e_new, e_both], color=[SLIDE, GRIP, WRIST], width=0.55)
+                  [e_same, e_new, e_both], color=[SLIDE, GRIP, WRIST], width=0.5)
     ax.bar_label(bars, labels=[f'{v:.2f} cm' for v in [e_same, e_new, e_both]],
                  fontsize=10, padding=3)
     ax.tick_params(axis='x', labelsize=9)
     ax.set_ylabel('error in where to close the fingers (cm)', fontsize=10)
     ax.set_ylim(0, e_new * 1.2)
-    ax.set_title('The rule it learned does not reach the other kind',
-                 fontsize=11, weight='bold')
+    ax.set_title(f'The same rule is {e_new / e_same:.0f} times worse on the kind of object\n'
+                 'it never saw', fontsize=11.5, weight='bold')
     fig.tight_layout()
     _save(fig, VLA_DOC, 'new-object-kind.svg')
 
@@ -1718,61 +1771,8 @@ def instruction_overlap() -> None:
     _save(fig, VLA_DOC, 'instruction-overlap.svg')
 
 
-def four_cases() -> None:
-    """The four kinds of change, and what each one costs, using the numbers measured above."""
-    rng = np.random.default_rng(88)
-    mw, mh = rng.uniform(6, 9, 300), rng.uniform(8, 11, 300)
-    bw, bh = rng.uniform(13, 18, 300), rng.uniform(4.5, 7, 300)
-    y_m = _grasp_height(mw, mh) + rng.normal(0, 0.08, 300)
-    y_b = _grasp_height(bw, bh) + rng.normal(0, 0.08, 300)
-    coef, *_ = np.linalg.lstsq(_poly2(mw[:200], mh[:200]), y_m[:200], rcond=None)
-    e_same = _rmse(_poly2(mw[200:], mh[200:]) @ coef, y_m[200:])
-    e_new = _rmse(_poly2(bw, bh) @ coef, y_b)
-
-    if not COVERAGE:
-        position_coverage()
-    known: set[str] = set()
-    for line in TRAIN_INSTRUCTIONS:
-        known.update(line.split())
-    same = [sum(w in known for w in t.split()) / len(t.split()) * 100
-            for t, k in TEST_INSTRUCTIONS if k.startswith('the same')]
-    lo_w, hi_w = min(same), max(same)
-    rows = [
-        ('the same task, object moved\ninside the area seen before',
-         'works', f'the error stays near {COVERAGE["inside"]:.1f} degrees everywhere\n'
-         'inside the area the training objects covered', SLIDE),
-        ('the same task, said in\ndifferent words',
-         'usually works', f'{lo_w:.0f} to {hi_w:.0f} per cent of the words in the reworded '
-         'sentences\nalready appear in the training instructions', SLIDE),
-        ('the same task, object moved\noutside the area seen before',
-         'does not work', f'the error grows to about {COVERAGE["edge"]:.0f} degrees at the '
-         'edge of the camera view', GRIP),
-        ('a new object of a kind\nthe model never saw',
-         'does not work', f'the error on the unseen kind is {e_new / e_same:.0f} times\n'
-         'the error on a new object of a seen kind', GRIP),
-        ('a task the model was\nnever shown',
-         'does not work', 'nothing in the training data says what the new words mean '
-         'for the arm', GRIP),
-    ]
-    print(f'[cases] unseen-kind error {e_new:.3f} cm against seen-kind error {e_same:.3f} cm, '
-          f'a factor of {e_new / e_same:.0f}')
-    fig, ax = plt.subplots(figsize=(11.6, 5.4), facecolor='white')
-    _blank(ax, (0, 1), (0, 1))
-    ax.text(0.5, 0.965, 'What a vision-language-action model actually carries over, '
-            'measured on this page',
-            ha='center', va='center', fontsize=12.5, weight='bold', color=INK)
-    top, h, gap = 0.875, 0.145, 0.022
-    for i, (change, verdict, why, colour) in enumerate(rows):
-        y = top - (i + 1) * (h + gap) + gap
-        _box(ax, 0.015, y, 0.28, h, change, fc='white', ec=colour, fs=9.0)
-        _box(ax, 0.305, y, 0.155, h, verdict, fc='white', ec=colour, fs=9.6,
-             tc=colour, weight='bold')
-        _box(ax, 0.47, y, 0.515, h, why, fc='#fafafa', ec=GRID, fs=8.8)
-    _save(fig, VLA_DOC, 'four-cases.svg')
-
-
 def cost_of_running() -> None:
-    """How a slow model still drives a fast arm."""
+    """The shortest chunk that still covers one call of the model, at four arm speeds."""
     prefill_ms, per_token_ms, head_ms = 30.0, 4.0, 0.4
     tok_ms = prefill_ms + ACTION_TOKENS * per_token_ms
     head8_ms = prefill_ms + 8 * head_ms
@@ -1786,8 +1786,7 @@ def cost_of_running() -> None:
     for r, a, b, c in zip(rates, need_tok, need_head, need_small):
         print(f'[cost] at {r:3d} commands a second the chunk must cover at least '
               f'{a:.1f} steps (tokens), {b:.1f} (head) or {c:.1f} (distilled)')
-    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.6), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.2, 4.8), facecolor='white')
     _plain(ax)
     ax.plot(rates, need_tok, marker='o', color=GRIP, lw=2, label=f'{ACTION_TOKENS} action tokens')
     ax.plot(rates, need_head, marker='s', color=SLIDE, lw=2, label='continuous head, 8 steps')
@@ -1802,29 +1801,135 @@ def cost_of_running() -> None:
     ax.set_ylabel('shortest chunk that still covers\none call of the model (steps)', fontsize=10)
     ax.legend(fontsize=8.8, frameon=False, loc='upper left')
     ax.set_title('A faster arm needs a longer chunk, or a faster model',
-                 fontsize=11, weight='bold')
-
-    ax = axes[1]
-    _blank(ax, (0, 1), (0, 1))
-    ax.text(0.5, 0.95, 'The third way: two models, at two speeds',
-            ha='center', va='center', fontsize=11.5, weight='bold', color=INK)
-    span = tok_ms
-    ax.text(0.02, 0.80, f'the big model, every {span:.0f} ms', fontsize=9.5, color=GRIP)
-    for i in range(3):
-        _box(ax, 0.03 + i * 0.32, 0.62, 0.30, 0.13, 'looks, then sets\nthe next goal',
-             fc='#fdeeee', ec=GRIP, fs=8.6)
-    ax.text(0.02, 0.45, f'a small fast policy, every {1000 / 100:.0f} ms', fontsize=9.5,
-            color=SLIDE)
-    n_fast = int(round(span / 10.0))
-    for i in range(3 * 10):
-        ax.add_patch(Rectangle((0.03 + i * 0.0315, 0.28), 0.026, 0.13,
-                               facecolor='#eaf7ee', edgecolor=SLIDE, linewidth=0.9))
-    print(f'[cost] the big model fires once for about every {n_fast} steps of the fast policy')
-    ax.text(0.5, 0.13, f'the big model looks {1000 / span:.1f} times a second, while the small '
-            'one\nkeeps the arm moving 100 times a second towards its goal',
-            ha='center', va='center', fontsize=9.6, color=INK)
+                 fontsize=11.5, weight='bold')
     fig.tight_layout()
     _save(fig, VLA_DOC, 'cost-of-running.svg')
+
+
+def two_models_two_speeds() -> None:
+    """One call of the big model, with the fast policy's steps counted underneath it."""
+    prefill_ms, per_token_ms = 30.0, 4.0
+    span = prefill_ms + ACTION_TOKENS * per_token_ms
+    fast_hz = 100.0
+    fast_ms = 1000.0 / fast_hz
+    n_fast = int(round(span / fast_ms))
+    print(f'[cost] the big model takes {span:.0f} ms, during which a policy running at '
+          f'{fast_hz:.0f} commands a second takes {n_fast} steps')
+    fig, ax = plt.subplots(figsize=(10.4, 3.9), facecolor='white')
+    _blank(ax, (0, 1), (0, 1))
+    ax.text(0.5, 0.94, f'One call of the big model lasts {span:.0f} ms, and the fast policy '
+            f'acts {n_fast} times inside it', ha='center', va='center',
+            fontsize=12, weight='bold', color=INK)
+    left, right = 0.055, 0.985
+    _box(ax, left, 0.56, right - left, 0.20,
+         f'the big model: one look, one goal, {span:.0f} ms', fc='#fdeeee', ec=GRIP, fs=10)
+    ax.text(left - 0.005, 0.80, 'the big model, once', fontsize=9.5, color=GRIP, ha='left')
+    ax.text(left - 0.005, 0.44, f'the small fast policy, {n_fast} times', fontsize=9.5,
+            color=SLIDE, ha='left')
+    w = (right - left) / n_fast
+    for i in range(n_fast):
+        ax.add_patch(Rectangle((left + i * w, 0.22), w * 0.78, 0.18,
+                               facecolor='#eaf7ee', edgecolor=SLIDE, linewidth=0.9))
+    ax.annotate('', xy=(left, 0.14), xytext=(right, 0.14),
+                arrowprops=dict(arrowstyle='<->', color=MUTED, lw=1.1))
+    ax.text((left + right) / 2, 0.075, f'{span:.0f} milliseconds', ha='center', va='center',
+            fontsize=9.6, color=INK)
+    fig.tight_layout()
+    _save(fig, VLA_DOC, 'two-models-two-speeds.svg')
+
+
+# ==========================================================================
+# PART H2 -- page 3, section 8: the task given as words, or as an example
+# ==========================================================================
+
+PROMPT_MINUTES: float = 10.0        # the longest prompt video Skild reports for S1
+PROMPT_FPS: float = 1.0             # frames a second kept from that video
+SKILD_ICL_PCT: float = 66.0         # reported success when prompted with one video
+SKILD_WORDS_PCT: float = 9.0        # reported success when prompted with words
+
+
+def prompt_size_in_tokens() -> None:
+    """A sentence, the current pictures and an example video, counted in tokens."""
+    frames = int(PROMPT_MINUTES * 60 * PROMPT_FPS)
+    video = frames * PATCHES
+    now = N_CAMERAS * PATCHES
+    pairs_words = PREFIX_TOKENS ** 2
+    pairs_video = (PREFIX_TOKENS + video) ** 2
+    print(f'[prompt] the instruction is {TEXT_TOKENS} tokens and the two pictures of this '
+          f'moment are {now} tokens')
+    print(f'[prompt] a {PROMPT_MINUTES:.0f}-minute example video at {PROMPT_FPS:.0f} frame a '
+          f'second is {frames} frames = {video:,} tokens, which is {video / TEXT_TOKENS:,.0f} '
+          'times the instruction')
+    print(f'[prompt] attention then compares {pairs_video:,} pairs instead of '
+          f'{pairs_words:,}, which is {pairs_video / pairs_words:,.0f} times as many')
+    fig, ax = plt.subplots(figsize=(8.2, 4.6), facecolor='white')
+    _plain(ax)
+    names = ['the instruction\nin words', 'the two pictures\nof this moment',
+             f'a {PROMPT_MINUTES:.0f}-minute example video\n'
+             f'at {PROMPT_FPS:.0f} frame a second']
+    vals = [TEXT_TOKENS, now, video]
+    bars = ax.bar(names, vals, color=[PURPLE, LINK, GRIP], width=0.5)
+    ax.bar_label(bars, labels=[f'{v:,} tokens' for v in vals], fontsize=10, padding=3)
+    ax.set_yscale('log')
+    ax.set_ylim(1, video * 30)
+    ax.tick_params(axis='x', labelsize=9)
+    ax.set_ylabel('tokens the model has to read', fontsize=10)
+    ax.set_title(f'Showing the task costs about {video / TEXT_TOKENS:,.0f} times as many '
+                 'tokens as naming it', fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, VLA_DOC, 'prompt-size-in-tokens.svg')
+
+
+def a_name_against_an_example() -> None:
+    """How much the chunk is pinned down by the task alone against by an example movement."""
+    f = _flow()
+    rng = np.random.default_rng(51)
+    n = 200
+    idx = rng.integers(0, f.cs.shape[0], n)
+    real = f.tgt[idx].reshape(-1, CHUNK, ACTION_DIM)[:, :, :N_JOINTS]
+    mean_chunk = np.broadcast_to(f.mean.reshape(1, CHUNK, ACTION_DIM)[:, :, :N_JOINTS],
+                                 real.shape)
+    e_name = float(np.degrees(_rmse(mean_chunk, real)))
+    got = f.to_actions(f.sample(f.cs[idx], rng.normal(0.0, 1.0, (n, CHUNK * ACTION_DIM)),
+                                16))[:, :, :N_JOINTS]
+    e_example = float(np.degrees(_rmse(got, real)))
+    print(f'[name-or-example] knowing only which task it is, the best single answer is '
+          f'{e_name:.3f} degrees a joint a step from what was demonstrated')
+    print(f'[name-or-example] shown the ten actions just before, the head lands '
+          f'{e_example:.3f} degrees away, which is {e_name / e_example:.1f} times closer')
+    fig, ax = plt.subplots(figsize=(7.6, 4.6), facecolor='white')
+    _plain(ax)
+    bars = ax.bar(['told only which\ntask this is', 'shown the ten actions\njust before'],
+                  [e_name, e_example], color=[GRIP, SLIDE], width=0.45)
+    ax.bar_label(bars, labels=[f'{e_name:.3f} deg', f'{e_example:.3f} deg'],
+                 fontsize=10, padding=3)
+    ax.set_ylabel('distance from the demonstrated chunk\n(degrees a joint a step)', fontsize=10)
+    ax.set_ylim(0, e_name * 1.25)
+    ax.set_title('An example of the movement describes the chunk\n'
+                 f'{e_name / e_example:.1f} times more closely than the task name does',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, VLA_DOC, 'a-name-against-an-example.svg')
+
+
+def prompted_with_a_video() -> None:
+    """The success rates Skild reports for S1, which are the company's own figures."""
+    print(f'[skild] Skild reports {SKILD_ICL_PCT:.0f}% against {SKILD_WORDS_PCT:.0f}% '
+          f'({SKILD_ICL_PCT / SKILD_WORDS_PCT:.1f} times), as an average of cumulative '
+          'per-step success')
+    fig, ax = plt.subplots(figsize=(7.6, 4.6), facecolor='white')
+    _plain(ax)
+    bars = ax.bar(['shown one\nexample video', 'told the task\nin words'],
+                  [SKILD_ICL_PCT, SKILD_WORDS_PCT], color=[SLIDE, GRIP], width=0.45)
+    ax.bar_label(bars, labels=[f'{SKILD_ICL_PCT:.0f}%', f'{SKILD_WORDS_PCT:.0f}%'],
+                 fontsize=11, padding=3)
+    ax.set_ylim(0, 100)
+    ax.set_ylabel('average cumulative per-step success on tasks\n'
+                  'the model was never trained on (per cent)', fontsize=10)
+    ax.set_title('Reported by Skild for S1, August 2026.\nThese are the company\'s own '
+                 'figures, not checked by anyone else', fontsize=11.2, weight='bold')
+    fig.tight_layout()
+    _save(fig, VLA_DOC, 'prompted-with-a-video.svg')
 
 
 # ==========================================================================
@@ -1978,12 +2083,12 @@ def one_step_job() -> None:
     _arrow(ax, 0.555, 0.69, 0.625, 0.69, colour=MUTED)
     _box(ax, 0.63, 0.56, 0.345, 0.26,
          'what the model says comes next\n\n'
-         f'angle {np.degrees(p1[0]):+.3f} degrees, '
+         f'angle {np.degrees(p1[0]):+.3f} degrees\n'
          f'speed {p1[1]:+.3f} radians a second',
          fc='#eaf7ee', ec=SLIDE, fs=9.4)
     _box(ax, 0.63, 0.17, 0.345, 0.26,
          'what really comes next\n\n'
-         f'angle {np.degrees(s1[0]):+.3f} degrees, '
+         f'angle {np.degrees(s1[0]):+.3f} degrees\n'
          f'speed {s1[1]:+.3f} radians a second',
          fc='white', ec=INK, fs=9.4)
     ax.plot([0.60, 0.60], [0.30, 0.82], color=MUTED, lw=1.1, ls=':')
@@ -1991,7 +2096,7 @@ def one_step_job() -> None:
     ax.plot([0.60, 0.625], [0.30, 0.30], color=MUTED, lw=1.1, ls=':')
     ax.text(0.592, 0.49, 'compare', ha='right', va='center', fontsize=9, color=MUTED,
             rotation=90)
-    ax.text(0.80, 0.09, f'over fresh data the gap is {w.one_step_angle:.4f} degrees of angle',
+    ax.text(0.8025, 0.09, f'over fresh data the gap is {w.one_step_angle:.4f} degrees',
             ha='center', va='center', fontsize=9.6, color=INK)
     _save(fig, WM_DOC, 'one-step-job.svg')
 
@@ -2190,8 +2295,7 @@ def variance_vs_latent_size() -> None:
     vals = [lat.explained[k - 1] for k in K_LIST]
     for k, v in zip(K_LIST, vals):
         print(f'[latent] {k:3d} numbers hold {v:.2f}% of what changes between pictures')
-    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.3), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(7.8, 4.6), facecolor='white')
     _plain(ax)
     ax.plot(K_LIST, vals, marker='o', color=TEAL, lw=2)
     ax.set_xscale('log', base=2)
@@ -2202,28 +2306,35 @@ def variance_vs_latent_size() -> None:
     ax.set_xlabel('numbers kept for each picture', fontsize=10)
     ax.set_ylabel('share of what changes between pictures\nthat is kept (per cent)',
                   fontsize=10)
-    ax.set_title(f'{K_LIST[2]} numbers already hold {vals[2]:.1f}% of it',
-                 fontsize=11, weight='bold')
+    ax.set_title(f'{K_LIST[2]} numbers already hold {vals[2]:.1f}% of what changes\n'
+                 'between these pictures', fontsize=11.5, weight='bold')
     for k, v in zip(K_LIST, vals):
         ax.annotate(f'{v:.1f}', (k, v), textcoords='offset points', xytext=(0, -16),
                     ha='center', fontsize=8.6, color=INK)
-    ax = axes[1]
-    _plain(ax)
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'variance-vs-latent-size.svg')
+
+
+def weights_in_the_predictor() -> None:
+    """What predicting in the squeezed space saves in the size of the predictor."""
     sizes = [IMG * IMG, 64, 32, 8]
     names = [f'the picture\n({IMG * IMG} numbers)', '64 numbers', '32 numbers', '8 numbers']
     weights = [n ** 2 for n in sizes]
-    bars = ax.bar(names, weights, color=[GRIP, WRIST, JOINT, SLIDE], width=0.55)
-    ax.bar_label(bars, labels=[f'{v:,}' for v in weights], fontsize=9, padding=3)
-    ax.set_yscale('log')
-    ax.set_ylim(10, max(weights) * 40)
-    ax.set_ylabel('weights in a one-layer model that maps\none state to the next', fontsize=10)
-    ax.tick_params(axis='x', labelsize=9)
-    ax.set_title('Predicting in the squeezed space is far less work',
-                 fontsize=11, weight='bold')
     print(f'[latent] a one-layer predictor over raw pixels needs {(IMG * IMG) ** 2:,} weights, '
           f'and over 8 numbers it needs {8 ** 2}')
+    fig, ax = plt.subplots(figsize=(7.8, 4.6), facecolor='white')
+    _plain(ax)
+    bars = ax.bar(names, weights, color=[GRIP, WRIST, JOINT, SLIDE], width=0.5)
+    ax.bar_label(bars, labels=[f'{v:,}' for v in weights], fontsize=9.5, padding=3)
+    ax.set_yscale('log')
+    ax.set_ylim(10, max(weights) * 60)
+    ax.set_ylabel('weights in a one-layer model that maps\none state to the next', fontsize=10)
+    ax.tick_params(axis='x', labelsize=9)
+    ax.set_title('The predictor shrinks with the square of the state,\n'
+                 f'from {(IMG * IMG) ** 2:,} weights to {8 ** 2}',
+                 fontsize=11.5, weight='bold')
     fig.tight_layout()
-    _save(fig, WM_DOC, 'variance-vs-latent-size.svg')
+    _save(fig, WM_DOC, 'weights-in-the-predictor.svg')
 
 
 def what_is_lost() -> None:
@@ -2387,6 +2498,8 @@ def phase_path() -> None:
     print(f'[phase] the real path ends at angle {np.degrees(tru[-1, 0]):.2f} degrees and speed '
           f'{tru[-1, 1]:.2f} rad/s; the model ends at {np.degrees(pre[-1, 0]):.2f} degrees and '
           f'{pre[-1, 1]:.2f} rad/s')
+    print(f'[phase] by step {ROLL} the two paths are '
+          f'{np.degrees(abs(pre[-1, 0] - tru[-1, 0])):.3f} degrees apart')
     fig, ax = plt.subplots(figsize=(7.8, 5.0), facecolor='white')
     _plain(ax)
     ax.plot(np.degrees(tru[:, 0]), tru[:, 1], color=INK, lw=2.2, label='the real system')
@@ -2468,6 +2581,33 @@ def step_cost(state: Arr, u: Arr) -> Arr:
     return (state[..., 0] - GOAL) ** 2 + 0.05 * state[..., 1] ** 2 + 0.01 * u ** 2
 
 
+def what_the_planner_scores() -> None:
+    """The score a planner gives one step, drawn against the joint angle."""
+    th = np.linspace(-1.0, 0.9, 400)
+    state = np.stack([th, np.zeros_like(th)], axis=1)
+    cost = step_cost(state, np.zeros_like(th))
+    for a in (-0.80, 0.0, STOP, GOAL):
+        c = float(step_cost(np.array([a, 0.0]), np.array(0.0)))
+        print(f'[cost-shape] at {np.degrees(a):+.1f} degrees and standing still, one step '
+              f'scores {c:.4f}')
+    fig, ax = plt.subplots(figsize=(8.2, 4.6), facecolor='white')
+    _plain(ax)
+    ax.plot(np.degrees(th), cost, color=PURPLE, lw=2.4)
+    ax.axvline(np.degrees(GOAL), color=JOINT, lw=1.8, ls=':')
+    ax.text(np.degrees(GOAL) - 1.0, max(cost) * 0.8, 'the angle it is\nasked to reach',
+            color=JOINT, fontsize=9.5, ha='right')
+    ax.axvline(np.degrees(STOP), color=GRIP, lw=1.8)
+    ax.text(np.degrees(STOP) - 1.0, max(cost) * 0.45, 'the hard stop', color=GRIP,
+            fontsize=9.5, ha='right', rotation=90, va='center')
+    ax.set_xlabel('joint angle (degrees), standing still and with no torque', fontsize=10)
+    ax.set_ylabel('score of one step (lower is better)', fontsize=10)
+    ax.set_title('The score says how bad one step is, and here the angle\n'
+                 'it is asked to reach sits past the hard stop',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'what-the-planner-scores.svg')
+
+
 def plan_and_run(stepper, n_cand: int, horizon: int, steps: int = 50, seed: int = 0
                  ) -> tuple[float, float, Arr]:
     """Try n_cand torque sequences inside `stepper`, run the first torque of the best one."""
@@ -2546,19 +2686,24 @@ def arithmetic_of_planning() -> None:
         print(f'[arith] at {c} microseconds a step, {a:,.0f} model steps fit in the '
               f'{period_ms:.0f} ms between commands, which is {a / 20:,.0f} candidates '
               '20 steps long')
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.5), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.2, 4.8), facecolor='white')
     _plain(ax)
     bars = ax.bar(names, [a / 20 for a in allowed],
-                  color=[SLIDE, TEAL, JOINT, GRIP], width=0.55)
+                  color=[SLIDE, TEAL, JOINT, GRIP], width=0.5)
     ax.bar_label(bars, labels=[f'{a / 20:,.0f}' for a in allowed], fontsize=9.5, padding=3)
     ax.set_yscale('log')
-    ax.set_ylim(0.1, max(allowed) / 20 * 40)
-    ax.tick_params(axis='x', labelsize=8.4)
+    ax.set_ylim(0.1, max(allowed) / 20 * 60)
+    ax.tick_params(axis='x', labelsize=8.8)
     ax.set_ylabel('candidate futures of 20 steps that fit\nin one control period', fontsize=10)
-    ax.set_title(f'{period_ms:.0f} ms between commands at {1 / DT:.0f} Hz',
-                 fontsize=11, weight='bold')
-    ax = axes[1]
+    ax.set_title(f'How many futures fit in the {period_ms:.0f} ms between commands\n'
+                 f'at {1 / DT:.0f} commands a second', fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'arithmetic-of-planning.svg')
+
+
+def candidates_times_horizon() -> None:
+    """Every step of every candidate is one call of the model."""
+    fig, ax = plt.subplots(figsize=(8.2, 4.8), facecolor='white')
     _plain(ax)
     cands = np.array([16, 64, 256, 1024])
     for h, colour in zip([5, 10, 20, 40], [SLIDE, TEAL, JOINT, GRIP]):
@@ -2571,10 +2716,10 @@ def arithmetic_of_planning() -> None:
     ax.set_xlabel('candidate torque sequences tried', fontsize=10)
     ax.set_ylabel('model steps for one decision', fontsize=10)
     ax.legend(fontsize=9, frameon=False, loc='upper left')
-    ax.set_title('Candidates times horizon is the whole bill',
-                 fontsize=11, weight='bold')
+    ax.set_title('The candidates multiplied by the steps ahead is\n'
+                 'the whole cost of one decision', fontsize=11.5, weight='bold')
     fig.tight_layout()
-    _save(fig, WM_DOC, 'arithmetic-of-planning.svg')
+    _save(fig, WM_DOC, 'candidates-times-horizon.svg')
 
 
 CAND_LIST: list[int] = [4, 16, 64, 256]
@@ -2615,6 +2760,53 @@ EXTRA_PULL: float = -0.45     # a steady pull the model knows nothing about, in 
 
 def _hold_cost(state: Arr, u: Arr) -> Arr:
     return (state[..., 0] - HOLD_GOAL) ** 2 + 0.05 * state[..., 1] ** 2 + 0.01 * u ** 2
+
+
+def plans_thrown_away() -> None:
+    """Every step a fresh plan is made, and all but its first torque is discarded."""
+    w = _w()
+    horizon, k, steps = 15, 64, 40
+    rng = np.random.default_rng(777)
+    s = np.array([-0.80, 0.0])
+    done = [s.copy()]
+    plans = []
+    for _t in range(steps):
+        cands = _smooth_torque(k, horizon, rng, tmax=TORQUE_PLAN)
+        batch = np.repeat(s[None, :], k, axis=0)
+        cost = np.zeros(k)
+        path = [batch.copy()]
+        for j in range(horizon):
+            batch = w.model.step(batch, cands[:, j])
+            cost += _hold_cost(batch, cands[:, j])
+            path.append(batch.copy())
+        stack = np.stack(path, axis=1)
+        best = int(np.argmin(cost))
+        plans.append(stack[best])
+        s = true_step(s, np.array(cands[best, 0]))
+        done.append(s.copy())
+    real = np.stack(done)
+    planned_steps = steps * horizon
+    print(f'[thrown] {steps} decisions of {horizon} steps each work out {planned_steps} '
+          f'predicted steps, of which {steps} are ever run, which is '
+          f'{steps / planned_steps * 100:.1f}%')
+    fig, ax = plt.subplots(figsize=(8.6, 4.8), facecolor='white')
+    _plain(ax)
+    for t, plan in enumerate(plans):
+        tt = (t + np.arange(horizon + 1)) * DT
+        ax.plot(tt, np.degrees(plan[:, 0]), color=PURPLE, lw=0.9, alpha=0.4)
+    ax.plot(np.arange(steps + 1) * DT, np.degrees(real[:, 0]), color=INK, lw=2.6,
+            label='what the arm really did')
+    ax.plot([], [], color=PURPLE, lw=1.2, alpha=0.6, label='the plans, remade at every step')
+    ax.axhline(np.degrees(HOLD_GOAL), color=JOINT, lw=1.6, ls=':',
+               label='the angle it is asked to hold')
+    ax.set_xlabel('seconds', fontsize=10)
+    ax.set_ylabel('joint angle (degrees)', fontsize=10)
+    ax.legend(fontsize=9.2, frameon=False, loc='lower right')
+    ax.set_title(f'{planned_steps} predicted steps were worked out and only {steps} were run,\n'
+                 'because each plan is thrown away at the next measurement',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'plans-thrown-away.svg')
 
 
 def replanning_rate() -> None:
@@ -2683,31 +2875,17 @@ def labelled_against_unlabelled() -> None:
     print(f'[video] {VIDEO_HOURS:,} hours of ordinary video at {VIDEO_FPS} frames a second is '
           f'{video_frames:,} frames with no action at all')
     print(f'[video] that is {video_frames / robot_frames:,.0f} times as many frames')
-    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.4), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(7.8, 4.6), facecolor='white')
     _plain(ax)
-    bars = ax.bar(['frames with a\nrecorded action', 'frames of ordinary\nvideo'],
+    bars = ax.bar(['frames with a\nrecorded action beside them', 'frames of ordinary\nvideo'],
                   [robot_frames, video_frames], color=[SLIDE, PURPLE], width=0.5)
     ax.bar_label(bars, labels=[f'{robot_frames:,}', f'{video_frames:,}'], fontsize=10, padding=3)
     ax.set_yscale('log')
     ax.set_ylim(1e4, video_frames * 25)
+    ax.tick_params(axis='x', labelsize=9)
     ax.set_ylabel('number of frames', fontsize=10)
-    ax.set_title(f'About {video_frames / robot_frames:,.0f} times as much video exists',
-                 fontsize=11, weight='bold')
-    ax = axes[1]
-    _blank(ax, (0, 1), (0, 1))
-    ax.text(0.5, 0.93, 'What each kind of frame can teach', ha='center', va='center',
-            fontsize=11.5, weight='bold', color=INK)
-    _box(ax, 0.03, 0.52, 0.44, 0.33,
-         'a frame with its action\n\nwhat I see, what I did,\nwhat happened next\n\n'
-         'enough to plan with', fc='#eaf7ee', ec=SLIDE, fs=9.4)
-    _box(ax, 0.53, 0.52, 0.44, 0.33,
-         'a frame of ordinary video\n\nwhat I see and what\nhappened next\n\n'
-         'no record of what caused it', fc='#eee9f7', ec=PURPLE, fs=9.4)
-    ax.text(0.5, 0.30, 'A world model trained on video learns how the world usually carries on.\n'
-            'To plan with it, the model still has to be told what the arm did, which is why\n'
-            'video pretraining is almost always followed by training on recorded episodes.',
-            ha='center', va='center', fontsize=9.6, color=INK)
+    ax.set_title(f'About {video_frames / robot_frames:,.0f} times as many frames exist with '
+                 'no record\nof what the robot did', fontsize=11.5, weight='bold')
     fig.tight_layout()
     _save(fig, WM_DOC, 'labelled-against-unlabelled.svg')
 
@@ -2816,29 +2994,36 @@ def through_the_stop() -> None:
     first = int(np.argmax(tru[:, 0] >= STOP - 1e-9))
     over = float(np.degrees(pre[:, 0].max() - STOP))
     print(f'[stop] the real arm reaches the stop at step {first} ({first * DT:.2f} s); the '
-          f'model sails {over:.1f} degrees past it, up to '
+          f'model carries it {over:.1f} degrees past it, up to '
           f'{np.degrees(pre[:, 0].max()):.1f} degrees')
-    tru_all, pre_all, _u, share = test_rollouts(600, 31, free_only=False)
-    free = ~np.any(tru_all[:, :, 0] >= STOP - 1e-9, axis=1)
-    gap_free = np.degrees(np.mean(np.abs(pre_all[free, :, 0] - tru_all[free, :, 0]), axis=0))
-    gap_hit = np.degrees(np.mean(np.abs(pre_all[~free, :, 0] - tru_all[~free, :, 0]), axis=0))
-    print(f'[stop] averaged over runs that touch the stop the gap reaches {gap_hit[-1]:.1f} '
-          f'degrees by step {ROLL}, against {gap_free[-1]:.2f} degrees for runs that do not')
     t = np.arange(ROLL + 1) * DT
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.5), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.2, 4.7), facecolor='white')
     _plain(ax)
     ax.plot(t, np.degrees(tru[:, 0]), color=INK, lw=2.4, label='the real arm')
     ax.plot(t, np.degrees(pre[:, 0]), color=PURPLE, lw=2, ls='--', label='the learned model')
     ax.axhline(np.degrees(STOP), color=GRIP, lw=1.8)
-    ax.text(t[-1], np.degrees(STOP) + 2.2, 'the hard stop', color=GRIP, fontsize=9.5,
+    ax.text(t[-1], np.degrees(STOP) + 3.6, 'the hard stop', color=GRIP, fontsize=9.5,
             ha='right')
     ax.set_xlabel('seconds', fontsize=10)
     ax.set_ylabel('joint angle (degrees)', fontsize=10)
     ax.legend(fontsize=9.2, frameon=False, loc='lower left')
-    ax.set_title(f'The model takes the arm {over:.0f} degrees through solid metal',
-                 fontsize=11, weight='bold')
-    ax = axes[1]
+    ax.set_title(f'The real arm stops dead at the hard stop and the model\n'
+                 f'carries it {over:.1f} degrees past it, through solid metal',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'through-the-stop.svg')
+
+
+def contact_against_drift() -> None:
+    """The gap for runs that reach the hard stop, against the gap for runs that do not."""
+    tru_all, pre_all, _u, _share = test_rollouts(600, 31, free_only=False)
+    free = ~np.any(tru_all[:, :, 0] >= STOP - 1e-9, axis=1)
+    gap_free = np.degrees(np.mean(np.abs(pre_all[free, :, 0] - tru_all[free, :, 0]), axis=0))
+    gap_hit = np.degrees(np.mean(np.abs(pre_all[~free, :, 0] - tru_all[~free, :, 0]), axis=0))
+    print(f'[stop] averaged over the {int((~free).sum())} runs that touch the stop the gap '
+          f'reaches {gap_hit[-1]:.1f} degrees by step {ROLL}, against {gap_free[-1]:.2f} '
+          f'degrees for the {int(free.sum())} runs that do not')
+    fig, ax = plt.subplots(figsize=(8.2, 4.7), facecolor='white')
     _plain(ax)
     ax.plot(np.arange(ROLL + 1), gap_free, color=SLIDE, lw=2.2,
             label='runs that never touch the stop')
@@ -2847,10 +3032,11 @@ def through_the_stop() -> None:
     ax.set_xlabel('steps predicted ahead', fontsize=10)
     ax.set_ylabel('average gap in the angle (degrees)', fontsize=10)
     ax.legend(fontsize=9.2, frameon=False, loc='lower right')
-    ax.set_title('One rare event the model never learned costs more\n'
-                 'than all the ordinary drift put together', fontsize=11, weight='bold')
+    ax.set_title(f'By step {ROLL} the runs that reach the stop are {gap_hit[-1]:.1f} degrees '
+                 f'out\nand the runs that do not are {gap_free[-1]:.2f} degrees out',
+                 fontsize=11.5, weight='bold')
     fig.tight_layout()
-    _save(fig, WM_DOC, 'through-the-stop.svg')
+    _save(fig, WM_DOC, 'contact-against-drift.svg')
 
 
 def energy_drift() -> None:
@@ -2932,8 +3118,8 @@ def plan_that_exploits_the_error() -> None:
               f'cost {best[-1]:.4f}')
     flat = [r - b for r, b in zip(really, believed)]
     lost = [r - g for r, g in zip(really, best)]
-    print(f'[exploit] the model flatters itself by between {min(flat):.4f} and {max(flat):.4f} '
-          'a step, however many candidates are tried')
+    print(f'[exploit] the model expects to pay between {min(flat):.4f} and {max(flat):.4f} '
+          'a step less than it really pays, however many candidates are tried')
     print(f'[exploit] choosing by the model rather than by the truth costs between '
           f'{min(lost):.4f} and {max(lost):.4f} a step, and that never goes away')
     fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.6), facecolor='white')
@@ -2955,7 +3141,7 @@ def plan_that_exploits_the_error() -> None:
     ax = axes[1]
     _plain(ax)
     ax.plot(OPEN_K, flat, marker='o', color=GRIP, lw=2,
-            label='how much the model flatters itself')
+            label='how much less the model expects to pay')
     ax.plot(OPEN_K, lost, marker='^', color=WRIST, lw=2,
             label='how much is lost by choosing with the model')
     ax.set_ylim(0, max(flat) * 1.35)
@@ -2973,63 +3159,93 @@ def plan_that_exploits_the_error() -> None:
 
 
 def main() -> None:
-    """Draw every picture. Pass --png <folder> to also write PNG copies for checking."""
+    """Draw every picture.
+
+    Pass --png <folder> to also write PNG copies for checking by eye, and
+    --only <part of a name>[,<part of a name>...] to draw only some of them
+    while working on one picture.
+    """
     global PNG_DIR
-    if len(sys.argv) == 3 and sys.argv[1] == '--png':
-        PNG_DIR = pathlib.Path(sys.argv[2])
-        PNG_DIR.mkdir(parents=True, exist_ok=True)
+    args = sys.argv[1:]
+    only: list[str] = []
+    while args:
+        flag = args.pop(0)
+        if flag == '--png' and args:
+            PNG_DIR = pathlib.Path(args.pop(0))
+            PNG_DIR.mkdir(parents=True, exist_ok=True)
+        elif flag == '--only' and args:
+            only = [part for part in args.pop(0).split(',') if part]
 
-    # 03_vision-language-action-models.md
-    vla_input_output()
-    same_picture_two_sentences()
-    one_model_many_tasks()
-    vla_body_shapes()
-    resolution_and_tokens()
-    two_ways_to_get_an_action()
-    binning_one_dimension()
-    quantisation_error_vs_bins()
-    percentile_range_matters()
-    tokens_per_chunk()
-    flow_head_path()
-    flow_steps_vs_error()
-    head_vs_tokens_latency()
-    continuous_vs_binned()
-    forgetting_curve()
-    mixture_sweep()
-    data_sizes()
-    action_spaces_do_not_match()
-    normalising_per_robot()
-    pooling_helps()
-    pooling_vs_data()
-    position_coverage()
-    new_object_kind()
-    instruction_overlap()
-    four_cases()
-    cost_of_running()
-
-    # 04_world-models.md
-    one_step_job()
-    training_transitions()
-    one_step_error()
-    learned_against_true_physics()
-    pixels_to_latent()
-    variance_vs_latent_size()
-    what_is_lost()
-    reading_the_gripper()
-    rollout_vs_truth()
-    error_vs_horizon()
-    phase_path()
-    more_data_does_not_fix_it()
-    candidate_sequences()
-    arithmetic_of_planning()
-    more_candidates()
-    replanning_rate()
-    labelled_against_unlabelled()
-    cost_of_predicting_pixels()
-    simulator_against_learned()
-    through_the_stop()
-    energy_drift()
-    plan_that_exploits_the_error()
+    figures = [
+        # 03_vision-language-action-models.md
+        vla_input_output,
+        same_picture_two_sentences,
+        episodes_per_model,
+        models_to_keep,
+        vla_body_shapes,
+        resolution_and_tokens,
+        two_ways_to_get_an_action,
+        binning_one_dimension,
+        quantisation_error_vs_bins,
+        percentile_range_matters,
+        tokens_per_chunk,
+        frequency_compression,
+        flow_head_path,
+        flow_head_agreement,
+        flow_steps_vs_error,
+        head_vs_tokens_latency,
+        continuous_vs_binned,
+        forgetting_curve,
+        mixture_sweep,
+        data_sizes,
+        mixture_chosen,
+        action_spaces_do_not_match,
+        normalising_per_robot,
+        pooling_helps,
+        pooling_vs_data,
+        position_coverage,
+        error_by_distance,
+        object_kinds,
+        new_object_kind,
+        instruction_overlap,
+        cost_of_running,
+        two_models_two_speeds,
+        prompt_size_in_tokens,
+        a_name_against_an_example,
+        prompted_with_a_video,
+        # 04_world-models.md
+        one_step_job,
+        training_transitions,
+        one_step_error,
+        learned_against_true_physics,
+        pixels_to_latent,
+        variance_vs_latent_size,
+        weights_in_the_predictor,
+        what_is_lost,
+        reading_the_gripper,
+        rollout_vs_truth,
+        error_vs_horizon,
+        phase_path,
+        more_data_does_not_fix_it,
+        what_the_planner_scores,
+        candidate_sequences,
+        arithmetic_of_planning,
+        candidates_times_horizon,
+        more_candidates,
+        plans_thrown_away,
+        replanning_rate,
+        labelled_against_unlabelled,
+        cost_of_predicting_pixels,
+        simulator_against_learned,
+        through_the_stop,
+        contact_against_drift,
+        energy_drift,
+        plan_that_exploits_the_error,
+    ]
+    for figure in figures:
+        if only and not any(part in figure.__name__ for part in only):
+            continue
+        figure()
 
     print(f'wrote the diagrams under {IMAGES}')
 

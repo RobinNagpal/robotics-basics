@@ -188,7 +188,7 @@ def _stage_two(g: Arr) -> Arr:
 
 
 def chain_curved_stages() -> None:
-    """The same two stages when the second one bends, so the slope depends on where you are."""
+    """One bending stage with its slope marked at two places, because the slope moves."""
     a0 = 2.0
     g0 = float(_stage_one(np.array([a0]))[0])
     lift0 = float(_stage_two(np.array([g0]))[0])
@@ -197,53 +197,71 @@ def chain_curved_stages() -> None:
     whole = slope1 * slope2
     a1 = 1.0
     g1 = float(_stage_one(np.array([a1]))[0])
-    whole1 = GEAR * 0.8 * g1
+    lift1 = float(_stage_two(np.array([g1]))[0])
+    slope2_at_g1 = 0.8 * g1
+    whole1 = GEAR * slope2_at_g1
     print(f'[curved] at {a0} handle turns: drum {g0:.0f} turns, hook {lift0:.1f} cm')
     print(f'[curved] slopes {slope1:.0f} and {slope2:.1f} multiply to {whole:.1f} cm '
           f'per handle turn')
-    print(f'[curved] at {a1} handle turn the same product is {GEAR:.0f} x {0.8 * g1:.1f} '
+    print(f'[curved] at {a1} handle turn the same product is {GEAR:.0f} x {slope2_at_g1:.1f} '
           f'= {whole1:.1f} cm per handle turn')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.4), facecolor='white')
-    a = np.linspace(0, 3.2, 200)
-    g = _stage_one(a)
-    ax = axes[0]
-    _plot_style(ax)
-    ax.plot(a, g, color=LINK, lw=2.4)
-    ax.plot([a0], [g0], 'o', color=GRIP, ms=8, zorder=5)
-    ax.plot([0, a0, a0], [g0, g0, 0], color=GRIP, lw=1.0, ls=':')
-    ax.set_xlabel('handle turns', fontsize=10)
-    ax.set_ylabel('drum turns', fontsize=10)
-    ax.set_title(f'Stage one is straight: slope {slope1:.0f} drum turns per handle turn',
-                 fontsize=11.5, weight='bold')
-    ax.text(0.35, 8.2, f'at {a0:.0f} handle turns\nthe drum is at {g0:.0f} turns',
-            fontsize=10, color=INK)
-
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(9.8, 5.0), facecolor='white')
     _plot_style(ax)
     gg = np.linspace(0, 9.6, 300)
-    ax.plot(gg, _stage_two(gg), color=SLIDE, lw=2.4)
-    ax.plot([g0], [lift0], 'o', color=GRIP, ms=8, zorder=5)
+    ax.plot(gg, _stage_two(gg), color=SLIDE, lw=2.6)
+    ax.plot([g0], [lift0], 'o', color=GRIP, ms=9, zorder=5)
     tan = lift0 + slope2 * (gg - g0)
-    keep = (gg > g0 - 2.6) & (gg < g0 + 2.6)
-    ax.plot(gg[keep], tan[keep], color=GRIP, lw=1.8, ls='--')
-    ax.plot([g1], [_stage_two(np.array([g1]))[0]], 'o', color=PURPLE, ms=8, zorder=5)
-    tan1 = _stage_two(np.array([g1]))[0] + 0.8 * g1 * (gg - g1)
-    keep1 = (gg > g1 - 1.6) & (gg < g1 + 1.6)
-    ax.plot(gg[keep1], tan1[keep1], color=PURPLE, lw=1.8, ls='--')
+    keep = (gg > g0 - 2.8) & (gg < g0 + 2.6)
+    ax.plot(gg[keep], tan[keep], color=GRIP, lw=1.9, ls='--')
+    ax.plot([g1], [lift1], 'o', color=PURPLE, ms=9, zorder=5)
+    tan1 = lift1 + slope2_at_g1 * (gg - g1)
+    keep1 = (gg > g1 - 2.0) & (gg < g1 + 2.2)
+    ax.plot(gg[keep1], tan1[keep1], color=PURPLE, lw=1.9, ls='--')
+    ax.annotate(f'{slope2:.1f} cm per drum turn\nat {g0:.0f} drum turns',
+                xy=(g0, lift0), xytext=(g0 - 4.4, lift0 + 7.0), fontsize=10.5,
+                color=GRIP, weight='bold',
+                arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.2))
+    ax.annotate(f'{slope2_at_g1:.1f} cm per drum turn\nat {g1:.0f} drum turns',
+                xy=(g1, lift1), xytext=(g1 - 2.8, lift1 + 5.6), fontsize=10.5,
+                color=PURPLE, weight='bold',
+                arrowprops=dict(arrowstyle='-|>', color=PURPLE, lw=1.2))
     ax.set_xlabel('drum turns', fontsize=10)
-    ax.set_ylabel('centimetres lifted', fontsize=10)
-    ax.set_title(f'Stage two bends: its slope at {g0:.0f} turns is {slope2:.1f} cm per turn',
-                 fontsize=11.5, weight='bold')
-    ax.text(g0 + 1.9, lift0 + slope2 * 1.9 - 1.0, f'slope {slope2:.1f}', fontsize=10.5,
-            color=GRIP, weight='bold')
-    ax.text(g1 - 2.4, _stage_two(np.array([g1]))[0] + 3.2, f'slope {0.8 * g1:.1f}',
-            fontsize=10.5, color=PURPLE, weight='bold')
-    fig.suptitle(f'Where you are matters: the whole winch lifts {whole:.1f} cm per handle turn '
-                 f'at {a0:.0f} turns, {whole1:.1f} cm at {a1:.0f}',
-                 fontsize=12.5, weight='bold', y=1.02)
-    fig.tight_layout()
+    ax.set_ylabel('centimetres the hook has risen', fontsize=10)
+    ax.set_ylim(-2, 40)
+    ax.set_title('A stage that bends has a different slope at every point along it',
+                 fontsize=12, weight='bold')
     _save(fig, BP_DOC, 'chain-curved-stages.svg')
+
+
+def cost_of_measuring() -> None:
+    """Measuring one weight at a time costs a run each; the chain rule costs one sweep."""
+    sizes = np.array([9, 100, 10_000, 1_000_000, 12_595_200])
+    runs_measured = 2 * sizes          # one run above and one below each weight
+    big = LAYERS * (WIDTH * WIDTH + WIDTH)
+    print(f'[cost] measuring needs 2 runs per weight: {2 * 9} runs for the 9-weight '
+          f'network and {2 * big:,} for a {big:,}-weight one')
+    print(f'[cost] the chain rule needs 1 backward sweep whatever the number of weights')
+
+    fig, ax = plt.subplots(figsize=(9.8, 4.8), facecolor='white')
+    _plot_style(ax)
+    ax.plot(sizes, runs_measured, color=GRIP, lw=2.4, marker='o', ms=7)
+    ax.axhline(1.0, color=SLIDE, lw=2.4, ls='--')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel('weights in the network (log scale)', fontsize=10)
+    ax.set_ylabel('runs of the network needed (log scale)', fontsize=10)
+    ax.set_ylim(0.3, 1e8)
+    ax.text(2.2e4, 1.2e2, 'measure each weight:\n2 runs of the network each',
+            fontsize=10.5, color=GRIP, weight='bold')
+    ax.text(1.2e1, 2.2, 'the chain rule: 1 backward sweep, whatever the size',
+            fontsize=10.5, color=SLIDE, weight='bold')
+    ax.annotate(f'{2 * big:,} runs', xy=(big, 2 * big),
+                xytext=(1.2e3, 3e7), fontsize=10.5, color=GRIP, weight='bold',
+                arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.2))
+    ax.set_title('Measuring costs one pair of runs for every weight; the chain rule costs one sweep',
+                 fontsize=12, weight='bold')
+    _save(fig, BP_DOC, 'cost-of-measuring.svg')
 
 
 def chain_finite_difference() -> None:
@@ -298,6 +316,12 @@ C: float = 0.3
 LR: float = 0.05
 
 NAMES: list[str] = ['w11', 'w21', 'b1', 'w12', 'w22', 'b2', 'v1', 'v2', 'c']
+
+# How much arithmetic each pass of the tiny network is. Both counts are read off
+# the arithmetic in tiny_forward and tiny_backward below, one operation at a time.
+FWD_MULTS: int = 7         # six input-times-weight products, and the error squared
+FWD_ADDS: int = 6          # two per weighted sum, for three weighted sums
+BWD_MULTS: int = 11        # du, dv1, dv2, dh1, dh2, dz1, dz2, dw11, dw21, dw12, dw22
 
 
 def tiny_forward(p: dict[str, float], x1: float = X1, x2: float = X2,
@@ -409,13 +433,19 @@ def forward_arithmetic() -> None:
         ]),
         ('the output, and the loss', [
             f'h1 x v1    =  {f["h1"]:>5.2f} x {V1:>5.2f}  =  {f["h1"] * V1:>6.2f}',
-            f'h2 x v2    =  {f["h2"]:>5.2f} x {V2:>5.2f}  =  {f["h2"] * V2:>6.2f}',
+            f'h2 x v2    =  {f["h2"]:>5.2f} x {V2:>5.2f}  =  {f["h2"] * V2 + 0.0:>6.2f}',
             f'bias c                       =  {C:>6.2f}',
             f'                        u    =  {f["u"]:>6.2f}',
             f'u - target =  {f["u"]:>5.2f} - {TARGET:>5.2f}  =  {f["err"]:>6.2f}',
             f'loss = (u - target) squared  =  {f["loss"]:>6.4f}',
         ]),
     ]
+    # Counted off the five lines above: six products of an input with a weight
+    # (x1w11, x2w21, x1w12, x2w22, h1v1, h2v2) and one squaring of the error make
+    # FWD_MULTS; the three biases are added on to two products each, which is
+    # FWD_ADDS; and the target is taken away once, which is the subtraction.
+    print(f'[count] the forward pass is {FWD_MULTS} multiplications, {FWD_ADDS} additions '
+          f'and 1 subtraction')
     fig, ax = plt.subplots(figsize=(10.4, 6.6), facecolor='white')
     _blank(ax, (0, 10.4), (0, 6.6))
     y = 5.55
@@ -426,7 +456,8 @@ def forward_arithmetic() -> None:
             ax.text(0.55, y, row, fontsize=11, family='monospace', color=INK)
             y -= 0.30
         y -= 0.22
-    ax.text(5.2, 6.25, 'The whole forward pass is nine multiplications and six additions',
+    ax.text(5.2, 6.25, f'The whole forward pass is {FWD_MULTS} multiplications, '
+                       f'{FWD_ADDS} additions and 1 subtraction',
             ha='center', fontsize=12.5, weight='bold', color=INK)
     _save(fig, BP_DOC, 'forward-arithmetic.svg')
 
@@ -472,6 +503,8 @@ def tiny_network_backward() -> None:
     print(f'[backward] dz1 = {b["dz1"]:.3f} (gate open), dz2 = {b["dz2"]:.3f} (gate shut)')
     print(f'[backward] dw11 = {b["dw11"]:.3f}, dw21 = {b["dw21"]:.3f}, db1 = {b["db1"]:.3f}')
     print(f'[backward] dw12 = {b["dw12"]:.3f}, dw22 = {b["dw22"]:.3f}, db2 = {b["db2"]:.3f}')
+    print(f'[count] the backward pass is {BWD_MULTS} multiplications, against '
+          f'{FWD_MULTS} in the forward pass')
 
     fig, ax = plt.subplots(figsize=(11.2, 5.8), facecolor='white')
     _blank(ax, (0, 11.2), (0, 5.8))
@@ -553,37 +586,43 @@ def blame_bars() -> None:
     _save(fig, BP_DOC, 'blame-bars.svg')
 
 
-def relu_gate() -> None:
-    """The rectified linear unit as a gate that is either open with slope 1 or shut with slope 0."""
-    f, b = FWD, BWD
+def relu_two_slopes() -> None:
+    """The rectified linear unit has one slope above zero and another below it."""
+    f = FWD
     z = np.linspace(-1.6, 1.6, 400)
     h = np.maximum(z, 0.0)
-    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.4), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.4, 4.8), facecolor='white')
     _plot_style(ax)
-    ax.plot(z, h, color=LINK, lw=2.6)
-    ax.plot([f['z1']], [f['h1']], 'o', color=SLIDE, ms=9, zorder=5)
-    ax.plot([f['z2']], [f['h2']], 'o', color=GRIP, ms=9, zorder=5)
-    ax.annotate(f'z1 = {f["z1"]:.2f}\nslope 1, gate open', xy=(f['z1'], f['h1']),
-                xytext=(f['z1'] - 1.5, 1.05), fontsize=10, color=SLIDE,
-                arrowprops=dict(arrowstyle='-|>', color=SLIDE, lw=1.2))
-    ax.annotate(f'z2 = {f["z2"]:.2f}\nslope 0, gate shut', xy=(f['z2'], f['h2']),
-                xytext=(f['z2'] - 0.95, 0.72), fontsize=10, color=GRIP,
-                arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.2))
+    ax.plot(z, h, color=LINK, lw=2.8)
+    ax.plot([f['z1']], [f['h1']], 'o', color=SLIDE, ms=10, zorder=5)
+    ax.plot([f['z2']], [f['h2']], 'o', color=GRIP, ms=10, zorder=5)
+    ax.annotate(f'z1 = {f["z1"]:.2f}, slope 1', xy=(f['z1'], f['h1']),
+                xytext=(f['z1'] - 1.45, 1.18), fontsize=11, color=SLIDE, weight='bold',
+                arrowprops=dict(arrowstyle='-|>', color=SLIDE, lw=1.3))
+    ax.annotate(f'z2 = {f["z2"]:.2f}, slope 0', xy=(f['z2'], f['h2']),
+                xytext=(f['z2'] - 0.05, 0.75), fontsize=11, color=GRIP, weight='bold',
+                arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.3))
+    ax.set_ylim(-0.12, 1.62)
     ax.set_xlabel('the weighted sum, z', fontsize=10)
     ax.set_ylabel('the neuron output, h', fontsize=10)
-    ax.set_title('The rectified linear unit has only two slopes', fontsize=11.5, weight='bold')
+    ax.set_title('The rectified linear unit has only two slopes, 1 above zero and 0 below it',
+                 fontsize=12, weight='bold')
+    _save(fig, BP_DOC, 'relu-two-slopes.svg')
 
-    ax = axes[1]
+
+def relu_gate_blame() -> None:
+    """The blame before and after the gate, for the open neuron and the shut one."""
+    b = BWD
+    fig, ax = plt.subplots(figsize=(9.8, 4.6), facecolor='white')
     _plot_style(ax)
-    rows = ['dloss/dh', 'slope of the gate', 'dloss/dz']
+    rows = ['blame arriving,\ndloss/dh', 'slope of\nthe gate', 'blame passed on,\ndloss/dz']
     n1 = [b['dh1'], 1.0, b['dz1']]
     n2 = [b['dh2'], 0.0, b['dz2']]
     ys = np.arange(3)
     ax.barh(ys + 0.18, n1, height=0.32, color=LINK_PALE, edgecolor=LINK, lw=1.3,
-            label='hidden neuron 1')
+            label='hidden neuron 1, gate open')
     ax.barh(ys - 0.18, n2, height=0.32, color='#fde3e3', edgecolor=GRIP, lw=1.3,
-            label='hidden neuron 2')
+            label='hidden neuron 2, gate shut')
     for y, v in zip(ys + 0.18, n1):
         ax.text(v + (0.07 if v >= 0 else -0.07), y, f'{v:+.3f}', fontsize=10,
                 va='center', ha='left' if v >= 0 else 'right', color=INK)
@@ -595,15 +634,26 @@ def relu_gate() -> None:
     ax.axvline(0, color=INK, lw=1.0)
     ax.set_xlim(-2.9, 2.2)
     ax.set_xlabel('value in the backward pass', fontsize=10)
-    ax.set_title('Multiplying by the gate slope stops the blame at neuron 2',
-                 fontsize=11.5, weight='bold')
+    ax.set_title('Multiplying by the gate slope stops the blame at hidden neuron 2',
+                 fontsize=12, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='upper right')
-    fig.tight_layout()
-    _save(fig, BP_DOC, 'relu-gate.svg')
+    _save(fig, BP_DOC, 'relu-gate-blame.svg')
 
 
-def one_step() -> None:
-    """One step of gradient descent on the tiny network: the weights move, the loss falls."""
+def _one_step_losses() -> list[float]:
+    """The loss of the tiny network after each of twelve steps at learning rate LR."""
+    losses = [FWD['loss']]
+    p = dict(PARAMS)
+    for _ in range(12):
+        f = tiny_forward(p)
+        g = tiny_backward(p, f)
+        p = {k: p[k] - LR * g['d' + k] for k in NAMES}
+        losses.append(tiny_forward(p)['loss'])
+    return losses
+
+
+def one_step_weights() -> None:
+    """Where each of the nine weights stands before and after a single step."""
     after = {k: PARAMS[k] - LR * BWD['d' + k] for k in NAMES}
     f2 = tiny_forward(after)
     print(f'[step] learning rate {LR}')
@@ -614,19 +664,7 @@ def one_step() -> None:
     drop = 100.0 * (1.0 - f2['loss'] / FWD['loss'])
     print(f'[step] that is a fall of {drop:.1f} per cent of the loss in one step')
 
-    losses = [FWD['loss']]
-    p = dict(PARAMS)
-    for _ in range(12):
-        f = tiny_forward(p)
-        g = tiny_backward(p, f)
-        p = {k: p[k] - LR * g['d' + k] for k in NAMES}
-        losses.append(tiny_forward(p)['loss'])
-    print('[step] twelve more steps give losses ' +
-          ', '.join(f'{v:.4f}' for v in losses[:6]) + ' ...')
-    print(f'[step] after 12 steps the loss is {losses[-1]:.6f}')
-
-    fig, axes = plt.subplots(1, 2, figsize=(11.4, 4.6), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.8, 4.6), facecolor='white')
     _plot_style(ax)
     xs = np.arange(9)
     before_vals = [PARAMS[k] for k in NAMES]
@@ -636,30 +674,44 @@ def one_step() -> None:
     ax.bar(xs + 0.19, after_vals, width=0.36, color=LINK_PALE, edgecolor=LINK, lw=1.2,
            label='after one step')
     ax.axhline(0, color=INK, lw=1.0)
+    for i in (3, 4, 5):
+        ax.annotate('', xy=(i, 0.62), xytext=(i, 0.92),
+                    arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.2))
+    ax.text(4, 0.99, 'these three had a gradient of 0,\nso they did not move',
+            ha='center', va='bottom', fontsize=10, color=GRIP)
     ax.set_xticks(xs)
     ax.set_xticklabels(NAMES, fontsize=10)
     ax.set_ylabel('weight value', fontsize=10)
     ax.set_title(f'One step at learning rate {LR}: only the blamed weights move',
-                 fontsize=11.5, weight='bold')
+                 fontsize=12, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='upper left')
-    ax.set_ylim(-0.75, 1.5)
+    ax.set_ylim(-0.75, 1.55)
+    _save(fig, BP_DOC, 'one-step-weights.svg')
 
-    ax = axes[1]
+
+def one_step_loss() -> None:
+    """The loss of the tiny network over twelve steps of the same size."""
+    losses = _one_step_losses()
+    print('[step] twelve more steps give losses ' +
+          ', '.join(f'{v:.4f}' for v in losses[:6]) + ' ...')
+    print(f'[step] after 12 steps the loss is {losses[-1]:.6f}')
+
+    fig, ax = plt.subplots(figsize=(9.4, 4.6), facecolor='white')
     _plot_style(ax)
     ax.plot(np.arange(len(losses)), losses, marker='o', color=LINK, lw=2.0, ms=5)
     ax.plot([0], [losses[0]], 'o', color=GRIP, ms=9)
     ax.plot([1], [losses[1]], 'o', color=SLIDE, ms=9)
-    ax.annotate(f'{losses[0]:.4f}', xy=(0, losses[0]), xytext=(0.5, losses[0] + 0.03),
-                fontsize=10, color=GRIP)
+    ax.annotate(f'{losses[0]:.4f} to start', xy=(0, losses[0]),
+                xytext=(0.45, losses[0] + 0.02), fontsize=10.5, color=GRIP)
     ax.annotate(f'{losses[1]:.4f} after one step', xy=(1, losses[1]),
-                xytext=(1.7, losses[1] + 0.06), fontsize=10, color=SLIDE,
+                xytext=(1.9, losses[1] + 0.10), fontsize=10.5, color=SLIDE,
                 arrowprops=dict(arrowstyle='-|>', color=SLIDE, lw=1.0))
     ax.set_xlabel('steps taken', fontsize=10)
     ax.set_ylabel('loss on this one example', fontsize=10)
-    ax.set_title(f'Repeating it drives the loss to {losses[-1]:.4f}',
-                 fontsize=11.5, weight='bold')
-    fig.tight_layout()
-    _save(fig, BP_DOC, 'one-step.svg')
+    ax.set_ylim(-0.04, 0.88)
+    ax.set_title(f'Twelve steps of the same kind drive the loss to {losses[-1]:.4f}',
+                 fontsize=12, weight='bold')
+    _save(fig, BP_DOC, 'one-step-loss.svg')
 
 
 # ==========================================================================
@@ -839,6 +891,55 @@ def memory_vs_batch() -> None:
     _save(fig, BP_DOC, 'memory-vs-batch.svg')
 
 
+def checkpointing_trade() -> None:
+    """Throwing activations away and working them out again, and what it saves.
+
+    One kept array of the batch costs UNIT bytes. Keeping everything means two
+    arrays for each of the LAYERS layers. Keeping only one array every s layers
+    means ceil(LAYERS / s) kept arrays, plus the 2s arrays that exist while one
+    group of s layers is worked out again during the backward pass.
+    """
+    unit = BATCH * POSITIONS * WIDTH * BYTES
+    plain = 2 * LAYERS * unit
+    groups = [1, 2, 3, 4, 6]
+    kept = [((LAYERS + s - 1) // s + 2 * s) * unit for s in groups]
+    best = int(np.argmin(kept))
+    print(f'[checkpointing] one kept array of a batch of {BATCH} costs '
+          f'{unit / 1e6:.1f} MB, and keeping everything costs '
+          f'{plain / 1e9:.2f} GB')
+    for s, k in zip(groups, kept):
+        every = 'every layer' if s == 1 else f'every {s} layers'
+        print(f'[checkpointing] one kept array {every}: {k / 1e9:.2f} GB, '
+              f'which is {100 * k / plain:.0f} per cent of keeping everything')
+    print(f'[checkpointing] the best of those, one every {groups[best]} layers, saves '
+          f'{100 * (1 - kept[best] / plain):.0f} per cent of the activation memory')
+
+    fig, ax = plt.subplots(figsize=(9.8, 4.8), facecolor='white')
+    _plot_style(ax)
+    xs = np.arange(len(groups))
+    ax.bar(xs, [k / 1e9 for k in kept], color=LINK_PALE, edgecolor=LINK, lw=1.5,
+           width=0.6)
+    ax.bar([best], [kept[best] / 1e9], color='#d9efdc', edgecolor=SLIDE, lw=1.8,
+           width=0.6)
+    for x, k in zip(xs, kept):
+        ax.text(x, k / 1e9 + 0.03, f'{k / 1e9:.2f} GB', ha='center', fontsize=10.5,
+                color=INK)
+    ax.axhline(plain / 1e9, color=GRIP, lw=2.0, ls='--')
+    ax.text(len(groups) - 1, plain / 1e9 + 0.05,
+            f'keeping everything: {plain / 1e9:.2f} GB', ha='right', fontsize=10.5,
+            color=GRIP, weight='bold')
+    ax.set_xticks(xs)
+    ax.set_xticklabels(['every layer' if s == 1 else f'every {s} layers'
+                        for s in groups], fontsize=10.5)
+    ax.set_ylim(0, plain / 1e9 * 1.2)
+    ax.set_ylabel('activation memory in gigabytes', fontsize=10)
+    ax.set_xlabel('how often an activation is kept instead of worked out again', fontsize=10)
+    ax.set_title(f'Keeping one activation every {groups[best]} layers needs '
+                 f'{100 * kept[best] / plain:.0f} per cent of the memory',
+                 fontsize=12, weight='bold')
+    _save(fig, BP_DOC, 'checkpointing-trade.svg')
+
+
 # ==========================================================================
 # PAGE 3, SECTIONS 5 and 6: vanishing and exploding gradients, and the fixes
 #
@@ -929,49 +1030,63 @@ def _sigmoid(z: Arr) -> Arr:
     return 1.0 / (1.0 + np.exp(-z))
 
 
-def sigmoid_slope() -> None:
-    """The old smooth activation function and the reason it stopped being used."""
+def _sigmoid_facts() -> tuple[float, float]:
+    """The steepest slope of the S-shaped rule, and its average on ordinary inputs."""
     z = np.linspace(-6, 6, 600)
     s = _sigmoid(z)
-    slope = s * (1 - s)
-    top = float(slope.max())
+    top = float((s * (1 - s)).max())
     rng = np.random.default_rng(3)
     sample = rng.normal(0.0, 1.0, size=200_000)
     mean_slope = float(np.mean(_sigmoid(sample) * (1 - _sigmoid(sample))))
+    return top, mean_slope
+
+
+def sigmoid_slope() -> None:
+    """The old smooth activation function, drawn with the slope it hands back."""
+    z = np.linspace(-6, 6, 600)
+    s = _sigmoid(z)
+    slope = s * (1 - s)
+    top, mean_slope = _sigmoid_facts()
     print(f'[sigmoid] the steepest the slope ever gets is {top:.4f}, at z = 0')
     print(f'[sigmoid] for inputs drawn from a standard bell curve the average slope '
           f'is {mean_slope:.4f}')
+    fig, ax = plt.subplots(figsize=(9.6, 4.8), facecolor='white')
+    _plot_style(ax)
+    ax.plot(z, s, color=LINK, lw=2.6, label='the activation function')
+    ax.plot(z, slope, color=GRIP, lw=2.6, label='the slope it hands back')
+    ax.axhline(top, color=GRIP, lw=1.0, ls='--')
+    ax.text(-5.8, top + 0.05, f'the slope never passes {top:.2f}', fontsize=10.5,
+            color=GRIP, weight='bold')
+    ax.plot([0], [top], 'o', color=GRIP, ms=8)
+    ax.set_ylim(-0.05, 1.12)
+    ax.set_xlabel('the weighted sum, z', fontsize=10)
+    ax.set_ylabel('value', fontsize=10)
+    ax.set_title('The smooth S-shaped rule hands back a slope of 0.25 at the very most',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='center left')
+    _save(fig, BP_DOC, 'sigmoid-slope.svg')
+
+
+def sigmoid_depth() -> None:
+    """What a stack of S-shaped layers does to the blame, layer after layer."""
+    top, mean_slope = _sigmoid_facts()
     for depth in (5, 10, 30):
         print(f'[sigmoid] {depth} layers of the steepest slope give {top ** depth:.3g}, '
               f'and of the average slope {mean_slope ** depth:.3g}')
-    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.4), facecolor='white')
-    ax = axes[0]
-    _plot_style(ax)
-    ax.plot(z, s, color=LINK, lw=2.4, label='the activation function')
-    ax.plot(z, slope, color=GRIP, lw=2.4, label='its slope')
-    ax.axhline(top, color=GRIP, lw=1.0, ls='--')
-    ax.text(-5.8, top + 0.06, f'the slope never passes {top:.2f}', fontsize=10, color=GRIP)
-    ax.plot([0], [top], 'o', color=GRIP, ms=7)
-    ax.set_xlabel('the weighted sum, z', fontsize=10)
-    ax.set_ylabel('value', fontsize=10)
-    ax.set_title('The smooth S-shaped activation and its slope', fontsize=11.5, weight='bold')
-    ax.legend(fontsize=9.5, frameon=False, loc='center left')
-
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(9.6, 4.8), facecolor='white')
     _plot_style(ax)
     depths = np.arange(1, 31)
-    ax.plot(depths, top ** depths, color=GRIP, lw=2.2, marker='o', ms=4,
-            label=f'the best case, {top:.2f} each layer')
-    ax.plot(depths, mean_slope ** depths, color=PURPLE, lw=2.2, marker='s', ms=4,
+    ax.plot(depths, top ** depths, color=GRIP, lw=2.4, marker='o', ms=4,
+            label=f'the best the rule can do, {top:.2f} each layer')
+    ax.plot(depths, mean_slope ** depths, color=PURPLE, lw=2.4, marker='s', ms=4,
             label=f'the usual case, {mean_slope:.2f} each layer')
     ax.set_yscale('log')
-    ax.set_xlabel('layers', fontsize=10)
-    ax.set_ylabel('what the blame is multiplied by (log scale)', fontsize=10)
-    ax.set_title(f'Thirty such layers shrink the blame to {top ** 30:.0e} at best',
-                 fontsize=11.5, weight='bold')
+    ax.set_xlabel('layers the blame has passed through', fontsize=10)
+    ax.set_ylabel('what the blame has been multiplied by (log scale)', fontsize=10)
+    ax.set_title(f'Thirty S-shaped layers shrink the blame to {top ** 30:.0e} of its size '
+                 f'at best', fontsize=12, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='lower left')
-    fig.tight_layout()
-    _save(fig, BP_DOC, 'sigmoid-slope.svg')
+    _save(fig, BP_DOC, 'sigmoid-depth.svg')
 
 
 VANISH: float = 0.7        # starting weights too small: the blame dies out
@@ -1011,12 +1126,25 @@ def gradient_by_layer() -> None:
     _save(fig, BP_DOC, 'gradient-by-layer.svg')
 
 
-def residual_gradient() -> None:
-    """A plain deep stack against the same stack with residual connections added."""
-    depth = 50
-    plain = deep_stack(depth, VANISH)
-    res = deep_stack(depth, VANISH, residual=True)
-    both = deep_stack(depth, VANISH, residual=True, renormalise=True)
+RES_DEPTH: int = 50
+_RES_CACHE: dict[str, dict[str, list[float]]] = {}
+
+
+def _residual_runs() -> dict[str, dict[str, list[float]]]:
+    """Three stacks of RES_DEPTH layers: plain, residual, and residual with rescaling."""
+    if not _RES_CACHE:
+        _RES_CACHE['plain'] = deep_stack(RES_DEPTH, VANISH)
+        _RES_CACHE['res'] = deep_stack(RES_DEPTH, VANISH, residual=True)
+        _RES_CACHE['both'] = deep_stack(RES_DEPTH, VANISH, residual=True,
+                                        renormalise=True)
+    return _RES_CACHE
+
+
+def residual_blame() -> None:
+    """The blame by layer in a plain stack, a residual stack and a rescaled one."""
+    runs = _residual_runs()
+    depth = RES_DEPTH
+    plain, res, both = runs['plain'], runs['res'], runs['both']
     print(f'[residual] plain stack of {depth} layers: the blame falls from '
           f'{plain["blame"][-1]:.3e} at the output to {plain["blame"][0]:.3e} at the input')
     print(f'[residual] with residual connections it goes from {res["blame"][-1]:.3e} '
@@ -1025,91 +1153,116 @@ def residual_gradient() -> None:
           f'{res["blame"][0] / plain["blame"][0]:.3g} times the blame the plain one does')
     print(f'[residual] residual plus rescaling: {both["blame"][-1]:.3e} at the output, '
           f'{both["blame"][0]:.3e} at the input')
+    fig, ax = plt.subplots(figsize=(10.0, 4.8), facecolor='white')
+    xs = np.arange(depth + 1)
+    _plot_style(ax)
+    ax.plot(xs, plain['blame'], color=GRIP, lw=2.4, label='plain: h = gate(h x W)')
+    ax.plot(xs, res['blame'], color=PURPLE, lw=2.4, label='residual: h = h + gate(h x W)')
+    ax.plot(xs, both['blame'], color=SLIDE, lw=2.4, label='residual, each layer rescaled')
+    ax.set_yscale('log')
+    ax.set_xlabel('layer the blame has reached', fontsize=10)
+    ax.set_ylabel('size of the blame arriving there (log scale)', fontsize=10)
+    ax.set_title(f'{depth} layers and the same starting weights: the add carries the blame '
+                 f'back past every layer', fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    _save(fig, BP_DOC, 'residual-blame.svg')
+
+
+def residual_forward_growth() -> None:
+    """What the residual add costs: the forward numbers grow layer by layer."""
+    runs = _residual_runs()
+    depth = RES_DEPTH
+    plain, res, both = runs['plain'], runs['res'], runs['both']
     print(f'[residual] plain activations fall from {plain["acts"][0]:.3f} to '
           f'{plain["acts"][-1]:.3e}; residual ones grow to {res["acts"][-1]:.3e}; '
           f'rescaled they stay at {both["acts"][-1]:.3f}')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.5), facecolor='white')
+    fig, ax = plt.subplots(figsize=(10.0, 4.8), facecolor='white')
     xs = np.arange(depth + 1)
-    ax = axes[0]
     _plot_style(ax)
-    ax.plot(xs, plain['blame'], color=GRIP, lw=2.2, label='plain: h = gate(h x W)')
-    ax.plot(xs, res['blame'], color=PURPLE, lw=2.2, label='residual: h = h + gate(h x W)')
-    ax.plot(xs, both['blame'], color=SLIDE, lw=2.2, label='residual, each layer rescaled')
-    ax.set_yscale('log')
-    ax.set_xlabel('layer the blame has reached', fontsize=10)
-    ax.set_ylabel('size of the blame arriving there (log scale)', fontsize=10)
-    ax.set_title(f'{depth} layers, the same starting weights in all three',
-                 fontsize=11.5, weight='bold')
-    ax.legend(fontsize=9, frameon=False, loc='lower right')
-
-    ax = axes[1]
-    _plot_style(ax)
-    ax.plot(xs, plain['acts'], color=GRIP, lw=2.2, label='plain')
-    ax.plot(xs, res['acts'], color=PURPLE, lw=2.2, label='residual')
-    ax.plot(xs, both['acts'], color=SLIDE, lw=2.2, label='residual, each layer rescaled')
+    ax.plot(xs, plain['acts'], color=GRIP, lw=2.4, label='plain')
+    ax.plot(xs, res['acts'], color=PURPLE, lw=2.4, label='residual')
+    ax.plot(xs, both['acts'], color=SLIDE, lw=2.4, label='residual, each layer rescaled')
     ax.set_yscale('log')
     ax.set_xlabel('layer, counting from the input', fontsize=10)
     ax.set_ylabel('size of the numbers coming out (log scale)', fontsize=10)
-    ax.set_title('The residual path keeps the forward numbers alive, then grows them',
-                 fontsize=11.5, weight='bold')
-    ax.legend(fontsize=9, frameon=False, loc='lower left')
-    fig.tight_layout()
-    _save(fig, BP_DOC, 'residual-gradient.svg')
+    ax.set_title(f'What the add costs: by layer {depth} the forward numbers have grown to '
+                 f'{res["acts"][-1]:.1e}', fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='lower left')
+    _save(fig, BP_DOC, 'residual-forward-growth.svg')
 
 
-def normalisation_rescue() -> None:
-    """Rescaling each layer's output keeps the numbers, and the blame, in range."""
-    depth = 40
-    runs = {
-        f'scale {EXPLODE:.1f}, as it is': (deep_stack(depth, EXPLODE), PURPLE, '-'),
-        f'scale {EXPLODE:.1f}, rescaled': (deep_stack(depth, EXPLODE, renormalise=True),
-                                           PURPLE, '--'),
-        f'scale {VANISH}, as it is': (deep_stack(depth, VANISH), GRIP, '-'),
-        f'scale {VANISH}, rescaled': (deep_stack(depth, VANISH, renormalise=True),
-                                      GRIP, '--'),
-    }
-    for name, (out, _c, _ls) in runs.items():
+NORM_DEPTH: int = 40
+_NORM_CACHE: dict[str, dict[str, list[float]]] = {}
+
+
+def _norm_runs() -> dict[str, dict[str, list[float]]]:
+    """Four stacks of NORM_DEPTH layers: two starting scales, with and without rescaling."""
+    if not _NORM_CACHE:
+        _NORM_CACHE[f'scale {EXPLODE:.1f}, as it is'] = deep_stack(NORM_DEPTH, EXPLODE)
+        _NORM_CACHE[f'scale {EXPLODE:.1f}, rescaled'] = deep_stack(
+            NORM_DEPTH, EXPLODE, renormalise=True)
+        _NORM_CACHE[f'scale {VANISH}, as it is'] = deep_stack(NORM_DEPTH, VANISH)
+        _NORM_CACHE[f'scale {VANISH}, rescaled'] = deep_stack(
+            NORM_DEPTH, VANISH, renormalise=True)
+    return _NORM_CACHE
+
+
+def _norm_style(name: str) -> tuple[str, str]:
+    return (PURPLE if name.startswith(f'scale {EXPLODE:.1f}') else GRIP,
+            '--' if 'rescaled' in name else '-')
+
+
+def normalisation_forward() -> None:
+    """Rescaling each layer's output holds the forward numbers at one."""
+    runs = _norm_runs()
+    for name, out in runs.items():
         print(f'[norm] {name:24s} activations end at {out["acts"][-1]:.3e}, '
               f'blame at the input {out["blame"][0]:.3e}')
-
-    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.5), facecolor='white')
-    xs = np.arange(depth + 1)
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.0, 4.8), facecolor='white')
+    xs = np.arange(NORM_DEPTH + 1)
     _plot_style(ax)
-    for name, (out, colour, ls) in runs.items():
-        ax.plot(xs, out['acts'], color=colour, lw=2.2, ls=ls, label=name)
+    for name, out in runs.items():
+        colour, ls = _norm_style(name)
+        ax.plot(xs, out['acts'], color=colour, lw=2.4, ls=ls, label=name)
     ax.set_yscale('log')
     ax.set_ylim(1e-16, 1e9)
     ax.set_xlabel('layer, counting from the input', fontsize=10)
     ax.set_ylabel('size of the numbers coming out (log scale)', fontsize=10)
-    ax.set_title('Rescaling every layer holds the forward numbers at 1',
-                 fontsize=11.5, weight='bold')
-    ax.legend(fontsize=9, frameon=False, loc='lower left')
+    ax.set_title(f'{NORM_DEPTH} layers: rescaling every layer holds the forward numbers '
+                 f'at 1 from either start', fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='lower left')
+    _save(fig, BP_DOC, 'normalisation-forward.svg')
 
-    ax = axes[1]
+
+def normalisation_blame() -> None:
+    """The same four stacks, measured by the blame that reaches each layer."""
+    runs = _norm_runs()
+    fig, ax = plt.subplots(figsize=(10.0, 4.8), facecolor='white')
+    xs = np.arange(NORM_DEPTH + 1)
     _plot_style(ax)
-    for name, (out, colour, ls) in runs.items():
-        ax.plot(xs, out['blame'], color=colour, lw=2.2, ls=ls, label=name)
+    for name, out in runs.items():
+        colour, ls = _norm_style(name)
+        ax.plot(xs, out['blame'], color=colour, lw=2.4, ls=ls, label=name)
     ax.set_yscale('log')
     ax.set_xlabel('layer the blame has reached', fontsize=10)
     ax.set_ylabel('size of the blame arriving there (log scale)', fontsize=10)
-    ax.set_title('And it holds the blame level all the way back',
-                 fontsize=11.5, weight='bold')
-    ax.legend(fontsize=9, frameon=False, loc='lower right')
-    fig.tight_layout()
-    _save(fig, BP_DOC, 'normalisation-rescue.svg')
+    rescaled = [out['blame'][0] for name, out in runs.items() if 'rescaled' in name]
+    ax.set_title(f'Both rescaled stacks hand layer 1 the same blame, {rescaled[0]:.3e}',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    _save(fig, BP_DOC, 'normalisation-blame.svg')
 
 
 def _erf(z: Arr) -> Arr:
     return np.vectorize(__import__('math').erf)(z)
 
 
-def activation_slopes() -> None:
-    """The four activation rules and the slopes they hand back, which is what matters."""
+def _slope_curves() -> tuple[Arr, dict[str, tuple[Arr, str]], dict[str, float]]:
+    """The slope each of four activation rules hands back, and the steepest of each."""
     z = np.linspace(-4, 4, 1601)
     s = _sigmoid(z)
-    curves = {
+    curves: dict[str, tuple[Arr, str]] = {
         'S-shaped (sigmoid)': (s * (1 - s), GRIP),
         'tanh': (1.0 - np.tanh(z) ** 2, WRIST),
         'rectified linear unit': ((z > 0).astype(float), LINK),
@@ -1117,44 +1270,70 @@ def activation_slopes() -> None:
                  z * np.exp(-z ** 2 / 2) / np.sqrt(2 * np.pi), SLIDE),
     }
     tops = {name: float(np.max(slope)) for name, (slope, _c) in curves.items()}
+    return z, curves, tops
+
+
+def activation_slope_curves() -> None:
+    """The slope four activation rules hand back, drawn against the weighted sum."""
+    z, curves, tops = _slope_curves()
     for name, top in tops.items():
         print(f'[slopes] {name:22s} steepest slope {top:.3f}, '
               f'and 30 of those multiply to {top ** 30:.3g}')
-
-    fig, axes = plt.subplots(1, 2, figsize=(11.4, 4.5), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.8, 4.8), facecolor='white')
     _plot_style(ax)
     for name, (slope, colour) in curves.items():
-        ax.plot(z, slope, color=colour, lw=2.2, label=name)
+        ax.plot(z, slope, color=colour, lw=2.4, label=name)
     ax.axhline(1.0, color=MUTED, lw=1.0, ls='--')
-    ax.set_ylim(-0.25, 1.35)
+    ax.text(-3.9, 1.06, 'a slope of 1 leaves the blame the size it was', fontsize=10,
+            color=MUTED)
+    ax.set_ylim(-0.25, 1.40)
     ax.set_xlabel('the weighted sum, z', fontsize=10)
-    ax.set_ylabel('slope handed back', fontsize=10)
-    ax.set_title('What each rule multiplies the blame by', fontsize=11.5, weight='bold')
-    ax.legend(fontsize=9, frameon=False, loc='upper left')
+    ax.set_ylabel('slope handed back to the blame', fontsize=10)
+    ax.set_title('What each activation rule multiplies the blame by',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='center right')
+    _save(fig, BP_DOC, 'activation-slope-curves.svg')
 
-    ax = axes[1]
+
+def activation_slope_depth() -> None:
+    """The steepest slope each rule can hand back, and what thirty of them multiply to."""
+    _z, curves, tops = _slope_curves()
+    fig, ax = plt.subplots(figsize=(9.4, 4.8), facecolor='white')
     _plot_style(ax)
     names = list(tops)
     vals = [tops[n] for n in names]
     colours = [curves[n][1] for n in names]
     ax.bar(np.arange(4), vals, color=colours, edgecolor=INK, lw=0.8, width=0.6)
     for i, n in enumerate(names):
-        ax.text(i, tops[n] + 0.03, f'{tops[n]:.2f}', ha='center', fontsize=11, color=INK)
-        ax.text(i, 0.08, f'30 layers\nof that:\n{tops[n] ** 30:.1e}', ha='center',
-                fontsize=9, color='white')
+        ax.text(i, tops[n] + 0.04, f'{tops[n]:.2f}', ha='center', fontsize=11.5,
+                color=INK, weight='bold')
+        inside = tops[n] > 0.5          # a short bar cannot hold the three lines
+        ax.text(i, 0.10 if inside else tops[n] + 0.12,
+                f'30 layers\nof that:\n{tops[n] ** 30:.1e}', ha='center',
+                fontsize=9.5, color='white' if inside else INK)
     ax.set_xticks(np.arange(4))
     ax.set_xticklabels(['sigmoid', 'tanh', 'ReLU', 'GELU'], fontsize=10.5)
-    ax.set_ylim(0, 1.35)
+    ax.set_ylim(0, 1.40)
     ax.set_ylabel('the steepest slope the rule can hand back', fontsize=10)
     ax.set_title('Only the S-shaped rule shrinks the blame even at its steepest',
-                 fontsize=11.5, weight='bold')
-    fig.tight_layout()
-    _save(fig, BP_DOC, 'activation-slopes.svg')
+                 fontsize=12, weight='bold')
+    _save(fig, BP_DOC, 'activation-slope-depth.svg')
 
 
-def clipping_run() -> None:
-    """A real run where a few odd examples make huge gradients, with and without clipping."""
+CLIP_THRESHOLD: float = 10.0
+_CLIP_CACHE: dict[str, object] = {}
+
+
+def _clip_data() -> dict[str, object]:
+    """One run of a two-weight fit where six of the 512 targets are spoilt.
+
+    The same run is done twice, once with the gradient left alone and once with
+    its size cut back to CLIP_THRESHOLD, and everything either picture needs is
+    kept: the loss on the unspoilt examples, the gradient size at every step,
+    and the two parts of the largest gradient of the run.
+    """
+    if _CLIP_CACHE:
+        return _CLIP_CACHE
     rng = np.random.default_rng(11)
     n, batch, steps = 512, 16, 240
     x = rng.normal(0.0, 1.0, size=n)
@@ -1164,13 +1343,12 @@ def clipping_run() -> None:
     spoilt = rng.choice(n, size=6, replace=False)
     y[spoilt] += rng.normal(0.0, 120.0, size=6)
     keep = np.setdiff1d(np.arange(n), spoilt)
-    print(f'[clip] {len(spoilt)} of the {n} targets were spoilt, the worst of them '
-          f'{np.max(np.abs(y[spoilt])):.0f} instead of about '
-          f'{np.max(np.abs(clean[spoilt])):.1f}')
 
-    def run(clip: float | None) -> tuple[list[float], list[float], list[float]]:
+    def run(clip: float | None) -> tuple[list[float], list[float], list[tuple[float, float]]]:
         w, b, lr = 0.0, 0.0, 0.12
-        losses, norms, dists = [], [], []
+        losses: list[float] = []
+        norms: list[float] = []
+        grads: list[tuple[float, float]] = []
         gen = np.random.default_rng(5)
         for _ in range(steps):
             idx = gen.choice(n, size=batch, replace=False)
@@ -1179,54 +1357,111 @@ def clipping_run() -> None:
             gb = float(2.0 * np.mean(err))
             size = float(np.sqrt(gw ** 2 + gb ** 2))
             norms.append(size)
+            grads.append((gw, gb))
             if clip is not None and size > clip:
                 gw, gb = gw * clip / size, gb * clip / size
             w -= lr * gw
             b -= lr * gb
             losses.append(float(np.mean((w * x[keep] + b - clean[keep]) ** 2)))
-            dists.append(float(np.hypot(w - true_w, b - true_b)))
-        return losses, norms, dists
+        return losses, norms, grads
 
-    no_clip, norms, no_dist = run(None)
-    threshold = 10.0
-    clipped, _, clip_dist = run(threshold)
+    no_clip, norms, grads = run(None)
+    clipped, _n2, _g2 = run(CLIP_THRESHOLD)
+    worst = int(np.argmax(norms))
+    _CLIP_CACHE.update({'steps': steps, 'n': n, 'spoilt': len(spoilt),
+                        'worst_target': float(np.max(np.abs(y[spoilt]))),
+                        'clean_target': float(np.max(np.abs(clean[spoilt]))),
+                        'no_clip': no_clip, 'clipped': clipped, 'norms': norms,
+                        'worst_grad': grads[worst], 'worst_step': worst})
+    print(f'[clip] {len(spoilt)} of the {n} targets were spoilt, the worst of them '
+          f'{np.max(np.abs(y[spoilt])):.0f} instead of about '
+          f'{np.max(np.abs(clean[spoilt])):.1f}')
     print(f'[clip] the biggest gradient size in the run was {max(norms):.1f}, '
           f'against a middling {float(np.median(norms)):.2f}')
-    print(f'[clip] {sum(1 for v in norms if v > threshold)} of the {steps} steps '
-          f'had a gradient above the threshold of {threshold:.0f}')
+    print(f'[clip] {sum(1 for v in norms if v > CLIP_THRESHOLD)} of the {steps} steps '
+          f'had a gradient above the threshold of {CLIP_THRESHOLD:.0f}')
     print(f'[clip] loss on the unspoilt examples after {steps} steps: '
           f'{no_clip[-1]:.3f} without clipping, {clipped[-1]:.3f} with it')
     print(f'[clip] worst loss along the way: {max(no_clip):.1f} without clipping, '
           f'{max(clipped):.1f} with it')
+    return _CLIP_CACHE
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.5), facecolor='white')
-    ax = axes[0]
+
+def clipping_gradient_sizes() -> None:
+    """The size of the gradient at every step, with the threshold drawn across it."""
+    d = _clip_data()
+    norms = d['norms']                                      # type: ignore[index]
+    steps = int(d['steps'])                                 # type: ignore[arg-type]
+    fig, ax = plt.subplots(figsize=(9.8, 4.6), facecolor='white')
     _plot_style(ax)
-    ax.plot(np.arange(steps), norms, color=MUTED, lw=1.1)
-    ax.axhline(threshold, color=GRIP, lw=2.0, ls='--')
-    ax.text(steps * 0.42, threshold * 2.6, f'clip anything above {threshold:.0f}',
+    ax.plot(np.arange(steps), norms, color=MUTED, lw=1.2)
+    ax.axhline(CLIP_THRESHOLD, color=GRIP, lw=2.0, ls='--')
+    ax.text(steps * 0.40, CLIP_THRESHOLD * 2.4,
+            f'clip anything above {CLIP_THRESHOLD:.0f}',
             fontsize=10.5, color=GRIP, weight='bold',
             bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor='none'))
     ax.set_yscale('log')
     ax.set_xlabel('step', fontsize=10)
     ax.set_ylabel('size of the gradient (log scale)', fontsize=10)
-    ax.set_title(f'Most steps are quiet, a few are '
+    ax.set_title(f'Most steps are quiet, and a few are '
                  f'{max(norms) / float(np.median(norms)):.0f} times bigger',
-                 fontsize=11.5, weight='bold')
+                 fontsize=12, weight='bold')
+    _save(fig, BP_DOC, 'clipping-gradient-sizes.svg')
 
-    ax = axes[1]
+
+def clipping_direction() -> None:
+    """Clipping keeps the direction of the gradient and shortens it to the threshold."""
+    d = _clip_data()
+    gw, gb = d['worst_grad']                                # type: ignore[misc]
+    size = float(np.hypot(gw, gb))
+    factor = CLIP_THRESHOLD / size
+    print(f'[clipdir] the worst gradient of the run is ({gw:+.2f}, {gb:+.2f}), '
+          f'of size {size:.1f}')
+    print(f'[clipdir] clipping multiplies both parts by {factor:.3f}, giving '
+          f'({gw * factor:+.2f}, {gb * factor:+.2f}), of size {CLIP_THRESHOLD:.1f}')
+
+    fig, ax = plt.subplots(figsize=(8.6, 6.0), facecolor='white')
     _plot_style(ax)
-    ax.plot(np.arange(steps), no_clip, color=GRIP, lw=2.0, label='no clipping')
-    ax.plot(np.arange(steps), clipped, color=SLIDE, lw=2.0,
-            label=f'gradient size clipped at {threshold:.0f}')
+    ang = np.linspace(0, 2 * np.pi, 400)
+    ax.plot(CLIP_THRESHOLD * np.cos(ang), CLIP_THRESHOLD * np.sin(ang), color=GRIP,
+            lw=1.8, ls='--')
+    _arrow(ax, (0, 0), (gw, gb), colour=MUTED, lw=2.4, shrink=0.0)
+    _arrow(ax, (0, 0), (gw * factor, gb * factor), colour=SLIDE, lw=3.2, shrink=0.0)
+    ax.plot([0], [0], 'o', color=INK, ms=7)
+    ax.text(gw + 1.6, gb, f'the gradient: size {size:.1f}', fontsize=11,
+            color=INK, ha='left', va='center')
+    ax.text(-11.0, 1.2, f'after clipping: size {CLIP_THRESHOLD:.0f}', fontsize=11,
+            color=SLIDE, ha='right', va='center', weight='bold')
+    ax.text(-9.0, -12.5, f'the threshold circle, radius {CLIP_THRESHOLD:.0f}',
+            fontsize=10.5, color=GRIP)
+    ax.set_xlim(-40, 16)
+    ax.set_ylim(-16, 30)
+    ax.set_aspect('equal')
+    ax.set_xlabel('the gradient for the first weight', fontsize=10)
+    ax.set_ylabel('the gradient for the second weight', fontsize=10)
+    ax.set_title('Clipping shortens the gradient to the threshold and leaves its '
+                 'direction alone', fontsize=12, weight='bold')
+    _save(fig, BP_DOC, 'clipping-direction.svg')
+
+
+def clipping_loss() -> None:
+    """The loss on the unspoilt examples, with the gradient clipped and left alone."""
+    d = _clip_data()
+    steps = int(d['steps'])                                 # type: ignore[arg-type]
+    no_clip = d['no_clip']                                  # type: ignore[index]
+    clipped = d['clipped']                                  # type: ignore[index]
+    fig, ax = plt.subplots(figsize=(9.8, 4.6), facecolor='white')
+    _plot_style(ax)
+    ax.plot(np.arange(steps), no_clip, color=GRIP, lw=2.2, label='no clipping')
+    ax.plot(np.arange(steps), clipped, color=SLIDE, lw=2.2,
+            label=f'gradient size clipped at {CLIP_THRESHOLD:.0f}')
     ax.set_yscale('log')
     ax.set_xlabel('step', fontsize=10)
     ax.set_ylabel('loss on the unspoilt examples (log scale)', fontsize=10)
-    ax.set_title(f'Clipping holds the damage to one slow step instead of '
-                 f'{max(no_clip):.0f}', fontsize=11.5, weight='bold')
+    ax.set_title(f'The worst loss along the way is {max(clipped):.1f} with clipping '
+                 f'and {max(no_clip):.1f} without it', fontsize=12, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='upper right')
-    fig.tight_layout()
-    _save(fig, BP_DOC, 'clipping-run.svg')
+    _save(fig, BP_DOC, 'clipping-loss.svg')
 
 
 # ==========================================================================
@@ -1477,42 +1712,61 @@ def loss_per_step() -> None:
     _save(fig, TL_DOC, 'loss-per-step.svg')
 
 
-def forgetting_to_zero() -> None:
-    """What happens when line 6 is left out and every batch adds to the last one's gradient."""
-    good = train('sgd', lr=0.02, epochs=6, zero_grads=True)
-    bad = train('sgd', lr=0.02, epochs=6, zero_grads=False)
-    print(f'[zero] with the gradients zeroed each step, the loss after 6 passes is '
-          f'{good["train"][-1]:.4f}')
-    print(f'[zero] with them left to pile up it is {bad["train"][-1]:.4g}')
-    print(f'[zero] the gradient size grows from {bad["grad"][0]:.3f} to '
-          f'{bad["grad"][-1]:.3g} when they are never cleared, against '
-          f'{good["grad"][-1]:.3f} when they are')
-    fig, axes = plt.subplots(1, 2, figsize=(11.4, 4.5), facecolor='white')
-    ax = axes[0]
+_ZERO_CACHE: dict[str, dict[str, list[float]]] = {}
+
+
+def _zero_runs() -> dict[str, dict[str, list[float]]]:
+    """The same six passes with the gradients cleared each step, and with them left."""
+    if not _ZERO_CACHE:
+        _ZERO_CACHE['good'] = train('sgd', lr=0.02, epochs=6, zero_grads=True)
+        _ZERO_CACHE['bad'] = train('sgd', lr=0.02, epochs=6, zero_grads=False)
+        good, bad = _ZERO_CACHE['good'], _ZERO_CACHE['bad']
+        print(f'[zero] with the gradients zeroed each step, the loss after 6 passes is '
+              f'{good["train"][-1]:.4f}')
+        print(f'[zero] with them left to pile up it is {bad["train"][-1]:.4g}')
+        print(f'[zero] the gradient size grows from {bad["grad"][0]:.3f} to '
+              f'{bad["grad"][-1]:.3g} when they are never cleared, against '
+              f'{good["grad"][-1]:.3f} when they are')
+    return _ZERO_CACHE
+
+
+def forgetting_to_zero_loss() -> None:
+    """The loss of the same run with line 6 in place and with it left out."""
+    runs = _zero_runs()
+    good, bad = runs['good'], runs['bad']
+    fig, ax = plt.subplots(figsize=(9.8, 4.6), facecolor='white')
     _plot_style(ax)
-    ax.plot(np.arange(len(good['step_loss'])), good['step_loss'], color=SLIDE, lw=1.4,
+    ax.plot(np.arange(len(good['step_loss'])), good['step_loss'], color=SLIDE, lw=1.5,
             label='gradients zeroed every step')
-    ax.plot(np.arange(len(bad['step_loss'])), bad['step_loss'], color=GRIP, lw=1.4,
+    ax.plot(np.arange(len(bad['step_loss'])), bad['step_loss'], color=GRIP, lw=1.5,
             label='line 6 left out')
     ax.set_yscale('log')
     ax.set_xlabel('step', fontsize=10)
     ax.set_ylabel('loss on the batch (log scale)', fontsize=10)
-    ax.set_title('Leaving out one line ruins the run', fontsize=11.5, weight='bold')
+    ax.set_title(f'Leaving out one line ends six passes at {bad["train"][-1]:.3g} '
+                 f'instead of {good["train"][-1]:.4f}', fontsize=12, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    _save(fig, TL_DOC, 'forgetting-to-zero-loss.svg')
 
-    ax = axes[1]
+
+def forgetting_to_zero_gradient() -> None:
+    """The size of the gradient the step actually uses, in the same two runs."""
+    runs = _zero_runs()
+    good, bad = runs['good'], runs['bad']
+    fig, ax = plt.subplots(figsize=(9.8, 4.6), facecolor='white')
     _plot_style(ax)
-    ax.plot(np.arange(len(good['grad'])), good['grad'], color=SLIDE, lw=1.6,
+    ax.plot(np.arange(len(good['grad'])), good['grad'], color=SLIDE, lw=1.8,
             label='gradients zeroed every step')
-    ax.plot(np.arange(len(bad['grad'])), bad['grad'], color=GRIP, lw=1.6,
+    ax.plot(np.arange(len(bad['grad'])), bad['grad'], color=GRIP, lw=1.8,
             label='line 6 left out')
     ax.set_yscale('log')
     ax.set_xlabel('step', fontsize=10)
     ax.set_ylabel('size of the gradient used (log scale)', fontsize=10)
-    ax.set_title('The piled-up gradients grow without limit', fontsize=11.5, weight='bold')
+    ax.set_title(f'The piled-up gradient grows to {bad["grad"][-1]:.3g} while the '
+                 f'cleared one settles near {good["grad"][-1]:.2f}',
+                 fontsize=12, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='center right')
-    fig.tight_layout()
-    _save(fig, TL_DOC, 'forgetting-to-zero.svg')
+    _save(fig, TL_DOC, 'forgetting-to-zero-gradient.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1646,42 +1900,124 @@ def momentum_loss() -> None:
     _save(fig, TL_DOC, 'momentum-loss.svg')
 
 
-def momentum_average() -> None:
-    """The running average inside momentum: it cancels the zigzag and adds up the steady pull."""
-    mom = bowl_run('momentum', LR_PLAIN, steps=60)
-    raw_a = STEEP * mom['path'][:, 0]
-    raw_b = SHALLOW * mom['path'][:, 1]
-    vel = mom['m']
-    print(f'[average] in the shallow direction the gradient stays near '
-          f'{raw_b[0]:.2f} and the running average grows to {vel[:, 1].min():.2f}, '
-          f'{vel[:, 1].min() / raw_b[0]:.1f} times as big')
-    print(f'[average] in the steep direction the gradient swings between '
-          f'{raw_a.min():+.2f} and {raw_a.max():+.2f}, so the running average stays '
-          f'within {np.abs(vel[:, 0]).max():.2f}')
-    fig, axes = plt.subplots(1, 2, figsize=(11.4, 4.5), facecolor='white')
-    ax = axes[0]
-    _plot_style(ax)
-    ax.plot(raw_a, color=MUTED, lw=1.6, marker='o', ms=3, label='the gradient this step')
-    ax.plot(vel[:, 0], color=GRIP, lw=2.2, label='the running average')
-    ax.axhline(0, color=INK, lw=1.0)
-    ax.set_xlabel('step', fontsize=10)
-    ax.set_ylabel('value', fontsize=10)
-    ax.set_title('The steep weight: the swings cancel out', fontsize=11.5, weight='bold')
-    ax.legend(fontsize=9.5, frameon=False, loc='upper right')
+MU: float = 0.9            # how much of the running average is carried over each step
+_AVG_CACHE: dict[str, Arr] = {}
 
-    ax = axes[1]
+
+def _momentum_average_data() -> dict[str, Arr]:
+    """The gradient and its running average, for both weights, over sixty steps."""
+    if not _AVG_CACHE:
+        mom = bowl_run('momentum', LR_PLAIN, steps=60)
+        _AVG_CACHE['raw_a'] = STEEP * mom['path'][:, 0]
+        _AVG_CACHE['raw_b'] = SHALLOW * mom['path'][:, 1]
+        _AVG_CACHE['avg_a'] = mom['m'][:, 0]
+        _AVG_CACHE['avg_b'] = mom['m'][:, 1]
+        raw_a, raw_b = _AVG_CACHE['raw_a'], _AVG_CACHE['raw_b']
+        avg_a, avg_b = _AVG_CACHE['avg_a'], _AVG_CACHE['avg_b']
+        print(f'[average] in the shallow direction the gradient stays near '
+              f'{raw_b[0]:.2f} and the running average grows to {avg_b.min():.2f}, '
+              f'{avg_b.min() / raw_b[0]:.1f} times as big')
+        print(f'[average] in the steep direction the gradient swings between '
+              f'{raw_a.min():+.2f} and {raw_a.max():+.2f}, so the running average stays '
+              f'within {np.abs(avg_a).max():.2f}')
+    return _AVG_CACHE
+
+
+def momentum_average_steep() -> None:
+    """The steep weight, where the gradient changes sign and the average cancels it."""
+    d = _momentum_average_data()
+    fig, ax = plt.subplots(figsize=(9.8, 4.6), facecolor='white')
     _plot_style(ax)
-    ax.plot(raw_b, color=MUTED, lw=1.6, marker='o', ms=3, label='the gradient this step')
-    ax.plot(vel[:, 1], color=SLIDE, lw=2.2, label='the running average')
+    ax.plot(d['raw_a'], color=MUTED, lw=1.6, marker='o', ms=3,
+            label='the gradient this step')
+    ax.plot(d['avg_a'], color=GRIP, lw=2.4, label='the running average')
     ax.axhline(0, color=INK, lw=1.0)
     ax.set_xlabel('step', fontsize=10)
     ax.set_ylabel('value', fontsize=10)
-    ax.set_title(f'The shallow weight: the pulls add up to '
-                 f'{vel[:, 1].min() / raw_b[0]:.1f} times one gradient',
-                 fontsize=11.5, weight='bold')
+    ax.set_title(f'The steep weight: the gradient swings between '
+                 f'{d["raw_a"].min():+.0f} and {d["raw_a"].max():+.0f}, and the average '
+                 f'cancels it', fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper right')
+    _save(fig, TL_DOC, 'momentum-average-steep.svg')
+
+
+def momentum_average_shallow() -> None:
+    """The shallow weight, where the gradient keeps its sign and the average grows."""
+    d = _momentum_average_data()
+    grown = float(d['avg_b'].min() / d['raw_b'][0])
+    fig, ax = plt.subplots(figsize=(9.8, 4.6), facecolor='white')
+    _plot_style(ax)
+    ax.plot(d['raw_b'], color=MUTED, lw=1.6, marker='o', ms=3,
+            label='the gradient this step')
+    ax.plot(d['avg_b'], color=SLIDE, lw=2.4, label='the running average')
+    ax.axhline(0, color=INK, lw=1.0)
+    ax.set_xlabel('step', fontsize=10)
+    ax.set_ylabel('value', fontsize=10)
+    ax.set_title(f'The shallow weight: the gradient keeps its sign, so the average grows '
+                 f'to {grown:.1f} times one gradient', fontsize=12, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='lower right')
-    fig.tight_layout()
-    _save(fig, TL_DOC, 'momentum-average.svg')
+    _save(fig, TL_DOC, 'momentum-average-shallow.svg')
+
+
+def momentum_past_weights() -> None:
+    """What the setting 0.9 means: how much of each past gradient is still in the average."""
+    k = np.arange(0, 30)
+    share = MU ** k
+    total = float(share.sum())
+    forever = 1.0 / (1.0 - MU)
+    first_ten = float(share[:10].sum())
+    print(f'[past] with {MU} kept each step, the gradient from {len(k)} steps ago still '
+          f'counts {share[-1]:.3f} against 1 for the newest')
+    print(f'[past] the shares of all the past gradients add up to {forever:.1f}, and the '
+          f'last 10 of them are {100 * first_ten / forever:.0f} per cent of that')
+    fig, ax = plt.subplots(figsize=(9.8, 4.6), facecolor='white')
+    _plot_style(ax)
+    colours = [SLIDE if i < 10 else LINK_PALE for i in k]
+    ax.bar(k, share, color=colours, edgecolor=LINK, lw=0.9, width=0.72)
+    ax.axvline(9.5, color=GRIP, lw=1.4, ls='--')
+    ax.text(10.2, 0.78, f'the newest 10 gradients carry\n'
+                        f'{100 * first_ten / forever:.0f} per cent of the average',
+            fontsize=10.5, color=GRIP, weight='bold')
+    ax.set_xlabel('how many steps ago the gradient was worked out', fontsize=10)
+    ax.set_ylabel('how much of it is still in the average', fontsize=10)
+    ax.set_ylim(0, 1.12)
+    ax.set_title(f'A setting of {MU} keeps {MU} of the average each step, so an old '
+                 f'gradient fades but never leaves', fontsize=12, weight='bold')
+    _save(fig, TL_DOC, 'momentum-past-weights.svg')
+
+
+def plain_rate_cliff() -> None:
+    """Why LR_PLAIN is the largest rate plain steps survive on this bowl."""
+    rates = [0.002, 0.004, 0.006, 0.008, LR_PLAIN, 0.0098, 0.0102, 0.0104, 0.0106]
+    losses = []
+    for r in rates:
+        run = bowl_run('sgd', float(r), steps=200)
+        end = float(run['loss'][-1])
+        losses.append(end if np.isfinite(end) else np.nan)
+        print(f'[cliff] learning rate {r:<7} leaves the loss at '
+              f'{end:.4g} after 200 plain steps')
+    edge = 2.0 / STEEP
+    print(f'[cliff] the rate at which plain steps stop coming back is 2 divided by '
+          f'{STEEP:.0f}, which is {edge:.3f}')
+    fig, ax = plt.subplots(figsize=(9.8, 4.8), facecolor='white')
+    _plot_style(ax)
+    ax.plot(rates, losses, color=GRIP, lw=2.4, marker='o', ms=6)
+    ax.axvline(edge, color=INK, lw=1.6, ls='--')
+    ax.text(edge * 0.99, 1e13, f'2 divided by the\nsteepness is {edge:.3f}',
+            fontsize=10.5, color=INK, ha='right')
+    ax.plot([LR_PLAIN], [losses[rates.index(LR_PLAIN)]], 'o', color=SLIDE, ms=11,
+            zorder=5)
+    ax.annotate(f'{LR_PLAIN}, the rate used in these pictures',
+                xy=(LR_PLAIN, losses[rates.index(LR_PLAIN)]),
+                xytext=(0.0022, 1e3), fontsize=10.5, color=SLIDE, weight='bold',
+                arrowprops=dict(arrowstyle='-|>', color=SLIDE, lw=1.2))
+    ax.set_yscale('log')
+    ax.set_ylim(1e-1, 1e22)
+    ax.set_xlabel('learning rate for plain steps', fontsize=10)
+    ax.set_ylabel('loss after 200 steps (log scale)', fontsize=10)
+    ax.set_title('Just above one rate the plain run stops coming back at all',
+                 fontsize=12, weight='bold')
+    _save(fig, TL_DOC, 'plain-rate-cliff.svg')
 
 
 def adam_paths() -> None:
@@ -1714,48 +2050,108 @@ def adam_paths() -> None:
     _save(fig, TL_DOC, 'adam-paths.svg')
 
 
-def adam_inside() -> None:
-    """What Adam keeps for each weight, and the step that comes out of the two averages."""
-    adam = bowl_run('adamw', LR_ADAM, steps=120)
-    m, v, move = adam['m'], adam['v'], adam['move']
-    print(f'[inside] the steep weight starts with a gradient of '
-          f'{STEEP * START[0]:+.1f} and the shallow one with {SHALLOW * START[1]:+.1f}, '
-          f'{abs(STEEP * START[0] / (SHALLOW * START[1])):.1f} times apart')
-    print(f'[inside] at step 10 Adam divides by {v[9, 0]:.3f} for the steep weight and '
-          f'{v[9, 1]:.3f} for the shallow one')
-    print(f'[inside] so the two moves at step 10 are {move[9, 0]:+.4f} and '
-          f'{move[9, 1]:+.4f}, within a factor of '
-          f'{abs(move[9, 0] / move[9, 1]):.2f} of each other')
-    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.5), facecolor='white')
-    ax = axes[0]
-    _plot_style(ax)
+_ADAM_CACHE: dict[str, Arr] = {}
+
+
+def _adam_inside_data() -> dict[str, Arr]:
+    """The two averages Adam keeps, and the move it makes, over 120 steps of the bowl."""
+    if not _ADAM_CACHE:
+        adam = bowl_run('adamw', LR_ADAM, steps=120)
+        _ADAM_CACHE['m'] = adam['m']
+        _ADAM_CACHE['v'] = adam['v']
+        _ADAM_CACHE['move'] = adam['move']
+        m, v, move = _ADAM_CACHE['m'], _ADAM_CACHE['v'], _ADAM_CACHE['move']
+        print(f'[inside] the steep weight starts with a gradient of '
+              f'{STEEP * START[0]:+.1f} and the shallow one with '
+              f'{SHALLOW * START[1]:+.1f}, '
+              f'{abs(STEEP * START[0] / (SHALLOW * START[1])):.1f} times apart')
+        print(f'[inside] at step 10 Adam divides by {v[9, 0]:.3f} for the steep weight '
+              f'and {v[9, 1]:.3f} for the shallow one')
+        print(f'[inside] so the two moves at step 10 are {move[9, 0]:+.4f} and '
+              f'{move[9, 1]:+.4f}, within a factor of '
+              f'{abs(move[9, 0] / move[9, 1]):.2f} of each other')
+    return _ADAM_CACHE
+
+
+def adam_two_averages() -> None:
+    """The two running averages Adam keeps for each of the two weights."""
+    d = _adam_inside_data()
+    m, v = d['m'], d['v']
     steps = np.arange(len(m))
-    ax.plot(steps, np.abs(m[:, 0]), color=GRIP, lw=2.0,
+    fig, ax = plt.subplots(figsize=(9.8, 4.8), facecolor='white')
+    _plot_style(ax)
+    ax.plot(steps, np.abs(m[:, 0]), color=GRIP, lw=2.2,
             label='steep weight: average gradient')
-    ax.plot(steps, v[:, 0], color=GRIP, lw=2.0, ls='--',
+    ax.plot(steps, v[:, 0], color=GRIP, lw=2.2, ls='--',
             label='steep weight: average size')
-    ax.plot(steps, np.abs(m[:, 1]), color=SLIDE, lw=2.0,
+    ax.plot(steps, np.abs(m[:, 1]), color=SLIDE, lw=2.2,
             label='shallow weight: average gradient')
-    ax.plot(steps, v[:, 1], color=SLIDE, lw=2.0, ls='--',
+    ax.plot(steps, v[:, 1], color=SLIDE, lw=2.2, ls='--',
             label='shallow weight: average size')
     ax.set_yscale('log')
     ax.set_xlabel('step', fontsize=10)
     ax.set_ylabel('value (log scale)', fontsize=10)
-    ax.set_title('The two averages Adam keeps per weight', fontsize=11.5, weight='bold')
-    ax.legend(fontsize=8.5, frameon=False, loc='lower left')
+    ax.set_title(f'At step 10 the average size is {v[9, 0]:.1f} for the steep weight '
+                 f'and {v[9, 1]:.2f} for the shallow one',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9, frameon=False, loc='lower left')
+    _save(fig, TL_DOC, 'adam-two-averages.svg')
 
-    ax = axes[1]
+
+def adam_even_moves() -> None:
+    """How far each weight actually moves once Adam has divided by the average size."""
+    d = _adam_inside_data()
+    move = d['move']
+    steps = np.arange(len(move))
+    fig, ax = plt.subplots(figsize=(9.8, 4.8), facecolor='white')
     _plot_style(ax)
-    ax.plot(steps, np.abs(move[:, 0]), color=GRIP, lw=2.2, label='steep weight')
-    ax.plot(steps, np.abs(move[:, 1]), color=SLIDE, lw=2.2, label='shallow weight')
+    ax.plot(steps, np.abs(move[:, 0]), color=GRIP, lw=2.4, label='steep weight')
+    ax.plot(steps, np.abs(move[:, 1]), color=SLIDE, lw=2.4, label='shallow weight')
+    ax.axhline(LR_ADAM, color=MUTED, lw=1.2, ls='--')
+    ax.text(62, LR_ADAM * 0.66, f'the learning rate, {LR_ADAM}', fontsize=10,
+            color=MUTED)
     ax.set_yscale('log')
     ax.set_xlabel('step', fontsize=10)
-    ax.set_ylabel('size of the move (log scale)', fontsize=10)
-    ax.set_title('Dividing by the second one evens the moves out',
-                 fontsize=11.5, weight='bold')
+    ax.set_ylabel('how far the weight moves this step (log scale)', fontsize=10)
+    ax.set_title(f'The two moves at step 10 are {abs(move[9, 0]):.4f} and '
+                 f'{abs(move[9, 1]):.4f}, from gradients 225 times apart',
+                 fontsize=12, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='lower left')
-    fig.tight_layout()
-    _save(fig, TL_DOC, 'adam-inside.svg')
+    _save(fig, TL_DOC, 'adam-even-moves.svg')
+
+
+def optimiser_state_cost() -> None:
+    """What each optimiser rule stores for every weight, in megabytes for one model."""
+    params = LAYERS * (WIDTH * WIDTH + WIDTH)
+    one = params * BYTES / 1e6
+    rules = [('plain steps', 0), ('momentum', 1), ('Adam and AdamW', 2)]
+    for name, per in rules:
+        print(f'[optcost] {name:16s} stores {per} extra number(s) per weight, '
+              f'which is {per * one:.1f} MB for a {params:,}-weight model')
+    fig, ax = plt.subplots(figsize=(9.4, 4.8), facecolor='white')
+    _plot_style(ax)
+    xs = np.arange(3)
+    vals = [per * one for _n, per in rules]
+    ax.bar(xs, vals, color=[LINK_PALE, '#d9efdc', '#f6e3c0'],
+           edgecolor=[LINK, SLIDE, JOINT], lw=1.6, width=0.6)
+    for x, (name, per) in zip(xs, rules):
+        ax.text(x, per * one + 4, f'{per * one:.1f} MB', ha='center', fontsize=11.5,
+                color=INK, weight='bold')
+        label = f'{per} number{"" if per == 1 else "s"}\nper weight'
+        if per == 0:                     # nothing to write inside a bar of no height
+            ax.text(x, 16, label, ha='center', fontsize=10, color=INK)
+        else:
+            ax.text(x, 5, label, ha='center', fontsize=10, color=INK)
+    ax.axhline(one, color=GRIP, lw=1.8, ls='--')
+    ax.text(-0.45, one - 8, f'the weights: {one:.1f} MB', ha='left',
+            fontsize=10.5, color=GRIP, weight='bold')
+    ax.set_xticks(xs)
+    ax.set_xticklabels([n for n, _p in rules], fontsize=11)
+    ax.set_ylim(0, one * 2.5)
+    ax.set_ylabel('memory the optimiser keeps, in megabytes', fontsize=10)
+    ax.set_title(f'What each rule costs beside a model of {params / 1e6:.1f} million weights',
+                 fontsize=12, weight='bold')
+    _save(fig, TL_DOC, 'optimiser-state-cost.svg')
 
 
 def decay_rules(decay: float, lr: float = 0.02, steps: int = 3000
@@ -1783,8 +2179,8 @@ def decay_rules(decay: float, lr: float = 0.02, steps: int = 3000
     return out
 
 
-def adamw_decay() -> None:
-    """Why AdamW keeps the shrinking apart from the gradient."""
+def adamw_paths() -> None:
+    """Two weights that should both settle at 1, under the two ways of shrinking."""
     main = decay_rules(0.5)
     l2, dec = main['adam_l2'], main['adamw']
     print(f'[decay] the best answer for both weights is 1.0')
@@ -1792,57 +2188,66 @@ def adamw_decay() -> None:
           f'{l2[-1][0]:.4f} for the steep weight and {l2[-1][1]:.4f} for the shallow one')
     print(f'[decay] with the shrink kept separate, AdamW ends at {dec[-1][0]:.4f} '
           f'and {dec[-1][1]:.4f}, the same shrink for both')
+
+    fig, ax = plt.subplots(figsize=(10.0, 4.8), facecolor='white')
+    _plot_style(ax)
+    steps = np.arange(len(l2))
+    ax.plot(steps, l2[:, 0], color=GRIP, lw=2.2,
+            label='shrink in the gradient: steep weight')
+    ax.plot(steps, l2[:, 1], color=GRIP, lw=2.2, ls='--',
+            label='shrink in the gradient: shallow weight')
+    ax.plot(steps, dec[:, 0], color=SLIDE, lw=2.2,
+            label='shrink kept separate: steep weight')
+    ax.plot(steps, dec[:, 1], color=SLIDE, lw=2.2, ls='--',
+            label='shrink kept separate: shallow weight')
+    ax.axhline(1.0, color=MUTED, lw=1.0, ls=':')
+    ax.text(1400, 1.03, 'where both weights sit with no shrinking at all', fontsize=9.5,
+            color=MUTED)
+    ax.set_ylim(-0.08, 1.18)
+    ax.set_xlabel('step', fontsize=10)
+    ax.set_ylabel('weight value', fontsize=10)
+    ax.set_title(f'One shrink setting of 0.5: in the gradient it leaves {l2[-1][0]:.3f} '
+                 f'and {l2[-1][1]:.3f}, kept separate {dec[-1][0]:.3f} and '
+                 f'{dec[-1][1]:.3f}', fontsize=12, weight='bold')
+    ax.legend(fontsize=9, frameon=False, loc='lower right')
+    _save(fig, TL_DOC, 'adamw-paths.svg')
+
+
+def adamw_strength() -> None:
+    """Where each weight ends up as the shrink setting is turned up."""
     strengths = [0.1, 0.2, 0.5, 1.0, 2.0, 5.0]
-    ends = {k: [] for k in ('l2_steep', 'l2_shallow', 'w_steep', 'w_shallow')}
+    ends: dict[str, list[float]] = {k: [] for k in
+                                    ('l2_steep', 'l2_shallow', 'w_steep', 'w_shallow')}
     for st in strengths:
         r = decay_rules(st)
-        ends['l2_steep'].append(r['adam_l2'][-1][0])
-        ends['l2_shallow'].append(r['adam_l2'][-1][1])
-        ends['w_steep'].append(r['adamw'][-1][0])
-        ends['w_shallow'].append(r['adamw'][-1][1])
+        ends['l2_steep'].append(float(r['adam_l2'][-1][0]))
+        ends['l2_shallow'].append(float(r['adam_l2'][-1][1]))
+        ends['w_steep'].append(float(r['adamw'][-1][0]))
+        ends['w_shallow'].append(float(r['adamw'][-1][1]))
         print(f'[decay] shrink {st:>4}: added to the gradient gives '
               f'{r["adam_l2"][-1][0]:.3f} and {r["adam_l2"][-1][1]:.3f}; '
               f'kept separate gives {r["adamw"][-1][0]:.3f} and '
               f'{r["adamw"][-1][1]:.3f}')
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.5), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(10.0, 4.8), facecolor='white')
     _plot_style(ax)
-    steps = np.arange(len(l2))
-    ax.plot(steps, l2[:, 0], color=GRIP, lw=2.0, label='shrink in the gradient: steep weight')
-    ax.plot(steps, l2[:, 1], color=GRIP, lw=2.0, ls='--',
-            label='shrink in the gradient: shallow weight')
-    ax.plot(steps, dec[:, 0], color=SLIDE, lw=2.0, label='shrink kept separate: steep weight')
-    ax.plot(steps, dec[:, 1], color=SLIDE, lw=2.0, ls='--',
-            label='shrink kept separate: shallow weight')
-    ax.axhline(1.0, color=MUTED, lw=1.0, ls=':')
-    ax.text(1500, 1.04, 'the answer with no shrinking at all', fontsize=9.5, color=MUTED)
-    ax.set_xlabel('step', fontsize=10)
-    ax.set_ylabel('weight value', fontsize=10)
-    ax.set_title('The same shrink setting, two ways of applying it',
-                 fontsize=11.5, weight='bold')
-    ax.legend(fontsize=8.5, frameon=False, loc='lower right')
-
-    ax = axes[1]
-    _plot_style(ax)
-    ax.plot(strengths, ends['l2_steep'], color=GRIP, lw=2.0, marker='o', ms=5,
+    ax.plot(strengths, ends['l2_steep'], color=GRIP, lw=2.2, marker='o', ms=6,
             label='in the gradient: steep weight')
-    ax.plot(strengths, ends['l2_shallow'], color=GRIP, lw=2.0, ls='--', marker='s', ms=5,
+    ax.plot(strengths, ends['l2_shallow'], color=GRIP, lw=2.2, ls='--', marker='s', ms=6,
             label='in the gradient: shallow weight')
-    ax.plot(strengths, ends['w_steep'], color=SLIDE, lw=2.0, marker='o', ms=5,
+    ax.plot(strengths, ends['w_steep'], color=SLIDE, lw=2.2, marker='o', ms=6,
             label='kept separate: steep weight')
-    ax.plot(strengths, ends['w_shallow'], color=SLIDE, lw=2.4, ls='--', marker='s', ms=5,
+    ax.plot(strengths, ends['w_shallow'], color=SLIDE, lw=2.8, ls='--', marker='s', ms=6,
             label='kept separate: shallow weight')
     ax.set_xscale('log')
     ax.set_xticks(strengths)
     ax.set_xticklabels([str(s) for s in strengths])
     ax.set_xlabel('how strong the shrink is', fontsize=10)
     ax.set_ylabel('where the weight ends up', fontsize=10)
-    ax.set_title('Kept separate, both weights shrink by the same share',
-                 fontsize=11.5, weight='bold')
-    ax.legend(fontsize=8.5, frameon=False, loc='lower left')
-    fig.tight_layout()
-    _save(fig, TL_DOC, 'adamw-decay.svg')
+    ax.set_title('Kept separate, both weights shrink by the same share, whatever the '
+                 'setting', fontsize=12, weight='bold')
+    ax.legend(fontsize=9, frameon=False, loc='lower left')
+    _save(fig, TL_DOC, 'adamw-strength.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1884,21 +2289,31 @@ def schedule_curves() -> None:
     _save(fig, TL_DOC, 'schedule-curves.svg')
 
 
-def schedule_loss() -> None:
-    """What the three schedules do to the loss of the same run."""
-    runs = {
-        'constant': train('sgd', lr=BASE_LR, schedule='constant', epochs=SCHED_EPOCHS),
-        'cosine decay': train('sgd', lr=BASE_LR, schedule='cosine', epochs=SCHED_EPOCHS),
-        'warmup then cosine': train('sgd', lr=BASE_LR, schedule='warmcos',
-                                    warm=WARM, epochs=SCHED_EPOCHS),
-    }
-    for name, r in runs.items():
-        print(f'[schedloss] {name:22s} ends with training loss {r["train"][-1]:.4f} '
-              f'and held-back loss {r["val"][-1]:.4f}')
-    best = min(runs, key=lambda k: runs[k]['val'][-1])
-    print(f'[schedloss] the lowest held-back loss comes from {best}')
-    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.5), facecolor='white')
-    ax = axes[0]
+_SCHED_CACHE: dict[str, dict[str, list[float]]] = {}
+
+
+def _schedule_runs() -> dict[str, dict[str, list[float]]]:
+    """The same network and data trained under each of the three schedules."""
+    if not _SCHED_CACHE:
+        _SCHED_CACHE['constant'] = train('sgd', lr=BASE_LR, schedule='constant',
+                                         epochs=SCHED_EPOCHS)
+        _SCHED_CACHE['cosine decay'] = train('sgd', lr=BASE_LR, schedule='cosine',
+                                             epochs=SCHED_EPOCHS)
+        _SCHED_CACHE['warmup then cosine'] = train('sgd', lr=BASE_LR,
+                                                   schedule='warmcos', warm=WARM,
+                                                   epochs=SCHED_EPOCHS)
+        for name, r in _SCHED_CACHE.items():
+            print(f'[schedloss] {name:22s} ends with training loss {r["train"][-1]:.4f} '
+                  f'and held-back loss {r["val"][-1]:.4f}')
+        best = min(_SCHED_CACHE, key=lambda k: _SCHED_CACHE[k]['val'][-1])
+        print(f'[schedloss] the lowest held-back loss comes from {best}')
+    return _SCHED_CACHE
+
+
+def schedule_loss_curves() -> None:
+    """The training loss of the three schedules, pass by pass."""
+    runs = _schedule_runs()
+    fig, ax = plt.subplots(figsize=(9.8, 4.8), facecolor='white')
     _plot_style(ax)
     for (name, r), colour in zip(runs.items(), (GRIP, LINK, SLIDE)):
         ax.plot(np.arange(1, SCHED_EPOCHS + 1), r['train'], color=colour, lw=2.2,
@@ -1906,26 +2321,31 @@ def schedule_loss() -> None:
     ax.set_yscale('log')
     ax.set_xlabel('passes through the data', fontsize=10)
     ax.set_ylabel('training loss (log scale)', fontsize=10)
-    ax.set_title('The same network, the same data, three schedules',
-                 fontsize=11.5, weight='bold')
+    ax.set_title('The same network and the same data: only the constant rate is still '
+                 'spiking at the end', fontsize=12, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='upper right')
+    _save(fig, TL_DOC, 'schedule-loss-curves.svg')
 
-    ax = axes[1]
-    _plot_style(ax)
+
+def schedule_final_loss() -> None:
+    """Where the three schedules leave the held-back loss at the end of the run."""
+    runs = _schedule_runs()
     names = list(runs)
     finals = [runs[n]['val'][-1] for n in names]
+    fig, ax = plt.subplots(figsize=(9.0, 4.6), facecolor='white')
+    _plot_style(ax)
     ax.bar(np.arange(3), finals, color=[LINK_PALE, '#f6e3c0', '#d9efdc'],
-           edgecolor=[LINK, JOINT, SLIDE], lw=1.5, width=0.58)
+           edgecolor=[LINK, JOINT, SLIDE], lw=1.6, width=0.58)
     for i, v in enumerate(finals):
-        ax.text(i, v + 0.002, f'{v:.4f}', ha='center', fontsize=11, color=INK)
+        ax.text(i, v + 0.004, f'{v:.4f}', ha='center', fontsize=11.5, color=INK,
+                weight='bold')
     ax.set_xticks(np.arange(3))
-    ax.set_xticklabels(['constant', 'cosine\ndecay', 'warmup then\ncosine'], fontsize=10)
+    ax.set_xticklabels(['constant', 'cosine\ndecay', 'warmup then\ncosine'], fontsize=11)
     ax.set_ylim(0, max(finals) * 1.25)
     ax.set_ylabel('loss on the held-back examples at the end', fontsize=10)
-    ax.set_title('Warming up, then letting the rate fall away, finishes lowest',
-                 fontsize=11.5, weight='bold')
-    fig.tight_layout()
-    _save(fig, TL_DOC, 'schedule-loss.svg')
+    ax.set_title(f'The same {SCHED_EPOCHS} passes end {max(finals) / min(finals):.1f} '
+                 f'times better with warmup and decay', fontsize=12, weight='bold')
+    _save(fig, TL_DOC, 'schedule-final-loss.svg')
 
 
 def warmup_blowup() -> None:
@@ -1983,15 +2403,11 @@ def _first_batch(mode: str, scale: float = 0.0) -> tuple[float, float, Arr]:
     return loss, size, h
 
 
-def init_zero() -> None:
-    """Two bad starts: all zero, and all the same."""
+def init_same_outputs() -> None:
+    """What the 32 hidden neurons give under three starts, for one example."""
     _l0, _g0, h_zero = _first_batch('zero')
     _l1, _g1, h_same = _first_batch('same')
     _l2, _g2, h_he = _first_batch('he')
-    xt, yt, _xv, _yv = make_data(0)
-    p_same = init_params(HIDDEN, 1, 'same')
-    _loss, g_same, _h = forward_backward(p_same, xt[:BATCH_SIZE], yt[:BATCH_SIZE])
-    col = g_same['w1'][0]
     print(f'[zerostart] with every weight 0 the 32 hidden outputs are all '
           f'{h_zero[0].max():.1f}')
     print(f'[zerostart] with every weight the same the hidden outputs are all '
@@ -1999,39 +2415,47 @@ def init_zero() -> None:
           f'{h_same[0].std():.1e}')
     print(f'[zerostart] with the chosen random start the outputs run from '
           f'{h_he[0].min():.3f} to {h_he[0].max():.3f}')
-    print(f'[zerostart] the 32 gradients for the first input weight of each neuron are '
-          f'all {col[0]:+.5f}, spread {col.std():.1e}, so the neurons can never differ')
-    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.5), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.8, 4.6), facecolor='white')
     _plot_style(ax)
     idx = np.arange(HIDDEN)
-    ax.plot(idx, h_he[0], 'o', color=SLIDE, ms=5, label='the chosen random start')
-    ax.plot(idx, h_same[0], 's', color=GRIP, ms=5, label='every weight the same')
-    ax.plot(idx, h_zero[0], '^', color=PURPLE, ms=5, label='every weight zero')
+    ax.plot(idx, h_he[0], 'o', color=SLIDE, ms=6, label='the chosen random start')
+    ax.plot(idx, h_same[0], 's', color=GRIP, ms=6, label='every weight the same')
+    ax.plot(idx, h_zero[0], '^', color=PURPLE, ms=6, label='every weight zero')
     ax.set_xlabel('hidden neuron', fontsize=10)
     ax.set_ylabel('what that neuron gives for one example', fontsize=10)
     ax.set_ylim(-0.08, 1.05)
-    ax.set_title(f'{HIDDEN} neurons, one example', fontsize=11.5, weight='bold')
-    ax.legend(fontsize=9, frameon=False, loc='upper right', ncol=2,
+    ax.set_title(f'{HIDDEN} neurons and one example: without random weights every '
+                 f'neuron gives the same number', fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper right', ncol=3,
               columnspacing=1.0, handletextpad=0.4)
+    _save(fig, TL_DOC, 'init-same-outputs.svg')
 
-    ax = axes[1]
-    _plot_style(ax)
-    ax.plot(idx, g_same['w1'][0], 's', color=GRIP, ms=5,
-            label='every weight the same')
+
+def init_same_gradients() -> None:
+    """The gradient each of the 32 neurons is handed, under two of those starts."""
+    xt, yt, _xv, _yv = make_data(0)
+    p_same = init_params(HIDDEN, 1, 'same')
+    _loss, g_same, _h = forward_backward(p_same, xt[:BATCH_SIZE], yt[:BATCH_SIZE])
+    col = g_same['w1'][0]
+    print(f'[zerostart] the 32 gradients for the first input weight of each neuron are '
+          f'all {col[0]:+.5f}, spread {col.std():.1e}, so the neurons can never differ')
     p_he = init_params(HIDDEN, 1, 'he')
-    _l, g_he, _h = forward_backward(p_he, xt[:BATCH_SIZE], yt[:BATCH_SIZE])
-    ax.plot(idx, g_he['w1'][0], 'o', color=SLIDE, ms=5, label='the chosen random start')
+    _l, g_he, _h2 = forward_backward(p_he, xt[:BATCH_SIZE], yt[:BATCH_SIZE])
+    fig, ax = plt.subplots(figsize=(9.8, 4.6), facecolor='white')
+    _plot_style(ax)
+    idx = np.arange(HIDDEN)
+    ax.plot(idx, col, 's', color=GRIP, ms=6, label='every weight the same')
+    ax.plot(idx, g_he['w1'][0], 'o', color=SLIDE, ms=6,
+            label='the chosen random start')
     ax.axhline(0, color=INK, lw=1.0)
     ax.set_xlabel('hidden neuron', fontsize=10)
     ax.set_ylabel('gradient for that neuron\'s first input weight', fontsize=10)
     ax.set_ylim(-0.33, 0.52)
-    ax.set_title('Identical neurons are handed identical blame',
-                 fontsize=11.5, weight='bold')
+    ax.set_title(f'Neurons that start identical are all handed the same gradient, '
+                 f'{col[0]:+.5f}', fontsize=12, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='lower center', ncol=2,
               columnspacing=1.0, handletextpad=0.4)
-    fig.tight_layout()
-    _save(fig, TL_DOC, 'init-zero.svg')
+    _save(fig, TL_DOC, 'init-same-gradients.svg')
 
 
 def init_scales() -> None:
@@ -2157,102 +2581,118 @@ def training_curve() -> None:
     _save(fig, TL_DOC, 'training-curve.svg')
 
 
-def curve_shapes() -> None:
-    """Four shapes a curve takes, and what each one is telling you."""
+def _curve_shape(run: dict[str, list[float]], epochs: int, title: str,
+                 name: str) -> None:
+    """One training curve and its held-back curve, drawn on its own."""
+    fig, ax = plt.subplots(figsize=(9.4, 4.4), facecolor='white')
+    _plot_style(ax)
+    xs = np.arange(1, epochs + 1)
+    ax.plot(xs, run['train'], color=LINK, lw=2.2, label='training')
+    ax.plot(xs, run['val'], color=GRIP, lw=2.2, label='held back')
+    ax.set_yscale('log')
+    ax.set_xlabel('passes through the data', fontsize=10)
+    ax.set_ylabel('squared error (log scale)', fontsize=10)
+    ax.set_title(title, fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper right')
+    _save(fig, TL_DOC, name)
+
+
+def curve_still_falling() -> None:
+    """The shape of a run with nothing wrong with it."""
     healthy = train('sgd', lr=0.1, epochs=SCHED_EPOCHS)
-    slow = train('sgd', lr=0.002, epochs=SCHED_EPOCHS)
-    toobig = train('sgd', lr=0.22, epochs=SCHED_EPOCHS)
-    over = overfit_run()
     print(f'[shapes] a good rate of 0.1 takes the training loss from '
           f'{healthy["train"][0]:.3f} to {healthy["train"][-1]:.4f}')
+    _curve_shape(healthy, SCHED_EPOCHS,
+                 f'A good rate of 0.1: both lines fall together, from '
+                 f'{healthy["train"][0]:.3f} to {healthy["train"][-1]:.4f}',
+                 'curve-still-falling.svg')
+
+
+def curve_rate_too_small() -> None:
+    """The shape of a run whose learning rate is too small."""
+    slow = train('sgd', lr=0.002, epochs=SCHED_EPOCHS)
     print(f'[shapes] a rate of 0.002 is still at {slow["train"][-1]:.3f} after '
           f'{SCHED_EPOCHS} passes, and still falling')
+    _curve_shape(slow, SCHED_EPOCHS,
+                 f'A rate of 0.002: a smooth, slow fall still at '
+                 f'{slow["train"][-1]:.3f} after {SCHED_EPOCHS} passes',
+                 'curve-rate-too-small.svg')
+
+
+def curve_rate_too_large() -> None:
+    """The shape of a run whose learning rate is too large."""
+    toobig = train('sgd', lr=0.22, epochs=SCHED_EPOCHS)
     print(f'[shapes] a rate of 0.22 spikes to {max(toobig["step_loss"]):.0f} on single '
           f'batches and ends at {toobig["train"][-1]:.3f}')
-    print(f'[shapes] the small-data run ends with training {over["train"][-1]:.5f} '
-          f'and held-back {over["val"][-1]:.3f}')
-    panels = [
-        ('Still falling, nothing wrong', healthy, 'both curves fall together',
-         SCHED_EPOCHS),
-        ('The rate is too small', slow, 'slow but straight', SCHED_EPOCHS),
-        ('The rate is too large', toobig, 'it jumps about and settles high',
-         SCHED_EPOCHS),
-        ('Too little data for the size of the network', over,
-         'training falls, held back rises', OVERFIT_EPOCHS),
-    ]
-    fig, axes = plt.subplots(2, 2, figsize=(11.6, 7.4), facecolor='white')
-    for ax, (title, run, note, epochs) in zip(axes.ravel(), panels):
-        _plot_style(ax)
-        xs = np.arange(1, epochs + 1)
-        ax.plot(xs, run['train'], color=LINK, lw=2.0, label='training')
-        ax.plot(xs, run['val'], color=GRIP, lw=2.0, label='held back')
-        ax.set_yscale('log')
-        if epochs == OVERFIT_EPOCHS:
-            ax.set_xscale('log')
-        ax.set_xlabel('passes through the data', fontsize=9.5)
-        ax.set_ylabel('squared error (log scale)', fontsize=9.5)
-        ax.set_title(title, fontsize=11.5, weight='bold')
-        ax.text(0.03, 0.05, note, transform=ax.transAxes, fontsize=9.5, color=MUTED,
-                zorder=10, bbox=dict(boxstyle='round,pad=0.25', facecolor='white',
-                                     edgecolor='none', alpha=0.95))
-        ax.legend(fontsize=9, frameon=False, loc='upper right')
-    fig.suptitle('Four shapes, read from four real runs of the same network',
-                 fontsize=12.5, weight='bold', y=1.0)
-    fig.tight_layout()
-    _save(fig, TL_DOC, 'curve-shapes.svg')
+    _curve_shape(toobig, SCHED_EPOCHS,
+                 f'A rate of 0.22: both lines jump about and settle high, at '
+                 f'{toobig["train"][-1]:.3f}',
+                 'curve-rate-too-large.svg')
 
 
-def step_time() -> None:
-    """How much arithmetic one step is, and the hours that turns into."""
+def step_arithmetic() -> None:
+    """How much arithmetic one step is, as the network gets wider.
+
+    Two layers of width w hold 2 w^2 weights. For one example the forward pass
+    is one multiplication per weight, which is 2 w^2. The backward pass is one
+    multiplication per weight for the weight's own gradient, which is another
+    2 w^2, plus one per weight to hand the blame back through the second layer,
+    which is w^2; the first layer does not hand anything back to the input. So
+    one example costs 5 w^2 multiplications, and a batch costs 5 batch w^2.
+    """
     widths = [64, 128, 256, 512, 1024, 2048]
     batch = 128
     mults = [5 * batch * w * w for w in widths]
     for w, m in zip(widths, mults):
         print(f'[arith] width {w:>5}: {2 * w * w:>12,} weights, and one step over a '
               f'batch of {batch} is {m:>15,} multiplications')
+    print(f'[arith] that is {5 / 2:.1f} multiplications per weight per example, '
+          f'forward and backward together')
     print(f'[arith] doubling the width makes one step '
           f'{mults[1] / mults[0]:.0f} times as much arithmetic')
-    counts = [1_000, 10_000, 100_000, 1_000_000]
-    rates = [0.01, 0.1, 1.0]
-    for r in rates:
-        line = ', '.join(f'{c:,} steps = {c * r / 3600:.2f} hours' for c in counts)
-        print(f'[arith] at {r} seconds a step: {line}')
-
-    fig, axes = plt.subplots(1, 2, figsize=(11.4, 4.5), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.6, 4.6), facecolor='white')
     _plot_style(ax)
-    ax.plot(widths, mults, color=LINK, lw=2.2, marker='o', ms=6)
+    ax.plot(widths, mults, color=LINK, lw=2.4, marker='o', ms=7)
     for w, m in zip(widths, mults):
-        ax.annotate(f'{m / 1e6:.0f}M', xy=(w, m), xytext=(6, -14),
-                    textcoords='offset points', ha='left', fontsize=9.5, color=INK)
-    ax.set_xlim(widths[0] * 0.75, widths[-1] * 1.6)
+        ax.annotate(f'{m / 1e6:.0f}M', xy=(w, m), xytext=(7, -14),
+                    textcoords='offset points', ha='left', fontsize=10, color=INK)
+    ax.set_xlim(widths[0] * 0.75, widths[-1] * 1.7)
     ax.set_xscale('log', base=2)
     ax.set_yscale('log')
     ax.set_xticks(widths)
     ax.set_xticklabels([str(w) for w in widths])
     ax.set_xlabel('width of the two layers', fontsize=10)
     ax.set_ylabel('multiplications in one step (log scale)', fontsize=10)
-    ax.set_title(f'Arithmetic in one step, batch of {batch}',
-                 fontsize=11.5, weight='bold')
+    ax.set_title(f'One step over a batch of {batch}: doubling the width is '
+                 f'{mults[1] / mults[0]:.0f} times the arithmetic',
+                 fontsize=12, weight='bold')
+    _save(fig, TL_DOC, 'step-arithmetic.svg')
 
-    ax = axes[1]
+
+def steps_to_hours() -> None:
+    """Turning a number of steps into hours, at three speeds per step."""
+    counts = [1_000, 10_000, 100_000, 1_000_000]
+    rates = [0.01, 0.1, 1.0]
+    for r in rates:
+        line = ', '.join(f'{c:,} steps = {c * r / 3600:.2f} hours' for c in counts)
+        print(f'[arith] at {r} seconds a step: {line}')
+    fig, ax = plt.subplots(figsize=(9.6, 4.6), facecolor='white')
     _plot_style(ax)
     for r, colour in zip(rates, (SLIDE, LINK, PURPLE)):
-        ax.plot(counts, [c * r / 3600 for c in counts], color=colour, lw=2.2,
-                marker='o', ms=5, label=f'{r} seconds a step')
+        ax.plot(counts, [c * r / 3600 for c in counts], color=colour, lw=2.4,
+                marker='o', ms=6, label=f'{r} seconds a step')
     ax.axhline(1.0, color=MUTED, lw=1.0, ls='--')
-    ax.text(1200, 1.15, 'one hour', fontsize=9.5, color=MUTED)
+    ax.text(1150, 1.2, 'one hour', fontsize=10, color=MUTED)
     ax.axhline(24.0, color=MUTED, lw=1.0, ls=':')
-    ax.text(1200, 27.0, 'one day', fontsize=9.5, color=MUTED)
+    ax.text(1150, 29.0, 'one day', fontsize=10, color=MUTED)
     ax.set_xscale('log')
     ax.set_yscale('log')
-    ax.set_xlabel('steps in the run', fontsize=10)
+    ax.set_xlabel('steps in the run (log scale)', fontsize=10)
     ax.set_ylabel('hours the run takes (log scale)', fontsize=10)
-    ax.set_title('Steps multiplied by the time of one step',
-                 fontsize=11.5, weight='bold')
+    ax.set_title('The hours a run takes are its steps multiplied by the time of one step',
+                 fontsize=12, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='upper left')
-    fig.tight_layout()
-    _save(fig, TL_DOC, 'arithmetic-and-time.svg')
+    _save(fig, TL_DOC, 'steps-to-hours.svg')
 
 
 def checkpoint_size() -> None:
@@ -2303,43 +2743,65 @@ def main() -> None:
     chain_two_stages()
     chain_curved_stages()
     chain_finite_difference()
+    cost_of_measuring()
     tiny_network_forward()
     forward_arithmetic()
     loss_at_this_prediction()
     tiny_network_backward()
+    relu_two_slopes()
+    relu_gate_blame()
     blame_bars()
-    relu_gate()
-    one_step()
+    one_step_weights()
+    one_step_loss()
     the_tape()
     gradient_check()
     activation_memory()
     memory_vs_batch()
+    checkpointing_trade()
     multiplying_many_numbers()
     sigmoid_slope()
+    sigmoid_depth()
     gradient_by_layer()
-    residual_gradient()
-    normalisation_rescue()
-    activation_slopes()
-    clipping_run()
+    residual_blame()
+    residual_forward_growth()
+    normalisation_forward()
+    normalisation_blame()
+    activation_slope_curves()
+    activation_slope_depth()
+    clipping_gradient_sizes()
+    clipping_direction()
+    clipping_loss()
     loop_order()
     batches_and_epochs()
     loss_per_step()
-    forgetting_to_zero()
+    forgetting_to_zero_loss()
+    forgetting_to_zero_gradient()
     momentum_path()
+    plain_rate_cliff()
+    momentum_past_weights()
+    momentum_average_steep()
+    momentum_average_shallow()
     momentum_loss()
-    momentum_average()
+    adam_two_averages()
+    adam_even_moves()
     adam_paths()
-    adam_inside()
-    adamw_decay()
+    optimiser_state_cost()
+    adamw_paths()
+    adamw_strength()
     schedule_curves()
-    schedule_loss()
+    schedule_loss_curves()
+    schedule_final_loss()
     warmup_blowup()
-    init_zero()
+    init_same_outputs()
+    init_same_gradients()
     init_scales()
     init_loss()
     training_curve()
-    curve_shapes()
-    step_time()
+    curve_still_falling()
+    curve_rate_too_small()
+    curve_rate_too_large()
+    step_arithmetic()
+    steps_to_hours()
     checkpoint_size()
     print(f'wrote the diagrams under {IMAGES}')
 

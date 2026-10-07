@@ -525,6 +525,33 @@ def moving_the_bias() -> None:
     _save(fig, ONE, 'moving-the-bias.svg')
 
 
+def bias_parallel_lines() -> None:
+    """Three biases, three parallel switch-on lines: the bias slides the line, never tilts it."""
+    d = np.linspace(0.0, 1.0, 201)
+    print('--- the bias slides the line ------------------------------------')
+    fig, ax = plt.subplots(figsize=(8.8, 6.2), facecolor='white')
+    _plain(ax)
+    for b, col in ((0.5, LINK), (0.0, JOINT), (-1.0, GRIP)):
+        g = (-W[0] * d - W[2] * BRIGHT - b) / W[1]
+        ax.plot(d, g, color=col, lw=2.4, label=f'bias {b:+.2f}')
+        inside = (g >= 0) & (g <= 1)
+        slope = float((g[-1] - g[0]) / (d[-1] - d[0]))
+        print(f'  bias {b:+.2f}: the line enters the square at opening {g[inside][0]:.3f} '
+              f'and leaves at {g[inside][-1]:.3f}, with a slope of {slope:.3f}')
+    ax.plot([DIST_M], [X[1]], 'o', color=PURPLE, ms=12, mec=INK, zorder=6)
+    _label(ax, DIST_M + 0.04, X[1] + 0.05, 'our reading', size=10, ha='left')
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_xlabel('distance to the object (m)', fontsize=10)
+    ax.set_ylabel('gripper opening / 100', fontsize=10)
+    ax.set_title('The bias slides the switch-on line sideways and never tilts it',
+                 fontsize=12.5, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='upper left')
+    _label(ax, 0.60, 0.14, 'all three lines have the same slope,\nbecause the weights did '
+           'not change', size=10, color=MUTED, ha='left')
+    _save(fig, ONE, 'bias-parallel-lines.svg')
+
+
 # ==========================================================================
 # 01_one-neuron.md  --  section 4: why a weighted sum is not enough
 # ==========================================================================
@@ -543,7 +570,7 @@ def _chain(d: Arr | float, depth: int, with_rule: bool = False) -> Arr:
 
 
 def two_plain_layers() -> None:
-    """Two neurons in a row with no rule between them are one neuron."""
+    """The chain itself: one reading through two neurons with no rule between them."""
     mid = DIST_M * CH_W[0] + CH_B[0]
     out = mid * CH_W[1] + CH_B[1]
     cw = CH_W[0] * CH_W[1]
@@ -553,47 +580,67 @@ def two_plain_layers() -> None:
     print(f'second neuron: {mid:+.3f} x {CH_W[1]:+.2f} {CH_B[1]:+.2f} = {out:+.3f}')
     print(f'the pair equals one neuron with weight {cw:+.2f} and bias {cb:+.2f}: '
           f'{DIST_M} x {cw:+.2f} {cb:+.2f} = {DIST_M * cw + cb:+.3f}')
-    fig, ax = plt.subplots(figsize=(14.0, 5.6), facecolor='white')
-    _axes(ax, (0, 30), (0, 12))
-    _label(ax, 15, 11.4, 'Two neurons in a row, with nothing between them, are one neuron',
+    fig, ax = plt.subplots(figsize=(12.6, 3.9), facecolor='white')
+    _axes(ax, (0, 21.5), (3.4, 11.4))
+    _label(ax, 10.7, 10.9, 'Two neurons in a row, with no rule between them',
            size=13, weight='bold')
-    y = 8.0
-    ax.add_patch(plt.Circle((2.0, y), 0.85, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
+    y = 7.2
+    ax.add_patch(plt.Circle((1.6, y), 0.85, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
                             zorder=4))
-    _label(ax, 2.0, y, f'{DIST_M}', size=11.5, family=MONO)
-    _label(ax, 2.0, y + 1.5, 'distance', size=10, color=MUTED)
-    _arrow(ax, (2.9, y), (4.6, y))
-    _box(ax, 4.8, y - 1.0, 5.2, 2.0, face='white', edge=JOINT)
-    _label(ax, 7.4, y + 0.45, f'x {CH_W[0]:+.2f}, then {CH_B[0]:+.2f}', size=10.5, family=MONO)
-    _label(ax, 7.4, y - 0.5, f'= {mid:+.3f}', size=11.5, family=MONO, weight='bold')
-    _arrow(ax, (10.0, y), (11.3, y))
-    _box(ax, 11.5, y - 1.0, 5.2, 2.0, face='white', edge=JOINT)
-    _label(ax, 14.1, y + 0.45, f'x {CH_W[1]:+.2f}, then {CH_B[1]:+.2f}', size=10.5, family=MONO)
-    _label(ax, 14.1, y - 0.5, f'= {out:+.3f}', size=11.5, family=MONO, weight='bold')
-    _arrow(ax, (16.7, y), (17.6, y))
-    ax.add_patch(plt.Circle((18.6, y), 0.95, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
+    _label(ax, 1.6, y, f'{DIST_M}', size=11.5, family=MONO)
+    _label(ax, 1.6, y + 1.5, 'distance', size=10, color=MUTED)
+    _arrow(ax, (2.5, y), (4.2, y))
+    _box(ax, 4.4, y - 1.0, 5.4, 2.0, face='white', edge=JOINT)
+    _label(ax, 7.1, y + 0.45, f'x {CH_W[0]:+.2f}, then {CH_B[0]:+.2f}', size=10.5, family=MONO)
+    _label(ax, 7.1, y - 0.5, f'= {mid:+.3f}', size=11.5, family=MONO, weight='bold')
+    _label(ax, 7.1, y + 1.5, 'first neuron', size=10, color=MUTED)
+    _arrow(ax, (9.8, y), (11.1, y))
+    _box(ax, 11.3, y - 1.0, 5.4, 2.0, face='white', edge=JOINT)
+    _label(ax, 14.0, y + 0.45, f'x {CH_W[1]:+.2f}, then {CH_B[1]:+.2f}', size=10.5, family=MONO)
+    _label(ax, 14.0, y - 0.5, f'= {out:+.3f}', size=11.5, family=MONO, weight='bold')
+    _label(ax, 14.0, y + 1.5, 'second neuron', size=10, color=MUTED)
+    _arrow(ax, (16.7, y), (17.9, y))
+    ax.add_patch(plt.Circle((19.0, y), 0.95, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
                             zorder=4))
-    _label(ax, 18.6, y, f'{out:+.2f}', size=11, family=MONO)
-    _label(ax, 24.5, y + 1.1, 'the two weights multiply\nand the first bias is scaled',
-           size=10, color=MUTED)
-    _label(ax, 24.5, y - 0.9, f'{CH_W[1]:+.2f} x ({CH_W[0]:+.2f} d {CH_B[0]:+.2f}) '
-           f'{CH_B[1]:+.2f}', size=10.5, family=MONO)
-    y2 = 3.2
-    ax.add_patch(plt.Circle((2.0, y2), 0.85, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
-                            zorder=4))
-    _label(ax, 2.0, y2, f'{DIST_M}', size=11.5, family=MONO)
-    _arrow(ax, (2.9, y2), (4.6, y2))
-    _box(ax, 4.8, y2 - 1.0, 11.9, 2.0, face='white', edge=SLIDE)
-    _label(ax, 10.75, y2 + 0.45, f'one neuron: x {cw:+.2f}, then {cb:+.2f}',
-           size=10.5, family=MONO)
-    _label(ax, 10.75, y2 - 0.5, f'= {DIST_M * cw + cb:+.3f}', size=11.5, family=MONO,
-           weight='bold')
-    _arrow(ax, (16.7, y2), (17.6, y2))
-    ax.add_patch(plt.Circle((18.6, y2), 0.95, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
-                            zorder=4))
-    _label(ax, 18.6, y2, f'{DIST_M * cw + cb:+.2f}', size=11, family=MONO)
-    _label(ax, 24.5, y2, 'the same answer, from\nhalf the arithmetic', size=10, color=MUTED)
+    _label(ax, 19.0, y, f'{out:+.2f}', size=11, family=MONO)
+    _label(ax, 19.0, y + 1.5, 'output', size=10, color=MUTED)
+    _label(ax, 10.7, 4.1, 'nothing is applied between the two boxes', size=10.5, color=MUTED)
     _save(fig, ONE, 'two-plain-layers.svg')
+
+
+def one_neuron_instead() -> None:
+    """Where the one equivalent neuron's weight and bias come from."""
+    cw = CH_W[0] * CH_W[1]
+    cb = CH_B[0] * CH_W[1] + CH_B[1]
+    print('--- the one neuron that replaces the pair -----------------------')
+    print(f'weight: {CH_W[1]:+.2f} x {CH_W[0]:+.2f} = {cw:+.2f}')
+    print(f'bias:   {CH_W[1]:+.2f} x {CH_B[0]:+.2f} {CH_B[1]:+.2f} = {cb:+.2f}')
+    fig, ax = plt.subplots(figsize=(12.6, 4.6), facecolor='white')
+    _axes(ax, (0, 21.5), (0.6, 11.4))
+    _label(ax, 10.7, 10.9, 'One neuron gives the same answer as that pair',
+           size=13, weight='bold')
+    y = 7.6
+    ax.add_patch(plt.Circle((1.6, y), 0.85, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
+                            zorder=4))
+    _label(ax, 1.6, y, f'{DIST_M}', size=11.5, family=MONO)
+    _label(ax, 1.6, y + 1.5, 'distance', size=10, color=MUTED)
+    _arrow(ax, (2.5, y), (4.2, y))
+    _box(ax, 4.4, y - 1.0, 12.3, 2.0, face='white', edge=SLIDE)
+    _label(ax, 10.55, y + 0.45, f'x {cw:+.2f}, then {cb:+.2f}', size=11, family=MONO)
+    _label(ax, 10.55, y - 0.5, f'= {DIST_M * cw + cb:+.3f}', size=11.5, family=MONO,
+           weight='bold')
+    _label(ax, 10.55, y + 1.5, 'one neuron', size=10, color=MUTED)
+    _arrow(ax, (16.7, y), (17.9, y))
+    ax.add_patch(plt.Circle((19.0, y), 0.95, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
+                            zorder=4))
+    _label(ax, 19.0, y, f'{DIST_M * cw + cb:+.2f}', size=11, family=MONO)
+    _label(ax, 19.0, y + 1.5, 'output', size=10, color=MUTED)
+    _label(ax, 10.7, 4.2, 'its two numbers come from the pair:', size=10.5, color=MUTED)
+    _label(ax, 10.7, 3.0, f'weight  {CH_W[1]:+.2f} x {CH_W[0]:+.2f} = {cw:+.2f}',
+           size=11.5, family=MONO)
+    _label(ax, 10.7, 1.8, f'bias    {CH_W[1]:+.2f} x {CH_B[0]:+.2f} {CH_B[1]:+.2f} = {cb:+.2f}',
+           size=11.5, family=MONO)
+    _save(fig, ONE, 'one-neuron-instead.svg')
 
 
 def collapse_curves() -> None:
@@ -656,8 +703,7 @@ def three_plain_layers() -> None:
     _save(fig, ONE, 'three-plain-layers.svg')
 
 
-def a_bend_is_needed() -> None:
-    """A job no straight line can do: brightness that is best in the middle."""
+def _bend_target() -> tuple[Arr, Arr, Arr, Arr, float, float]:
     b = np.linspace(0.0, 1.0, 501)
     target = 1.0 - 2.0 * np.abs(b - 0.5)
     A = np.stack([b, np.ones_like(b)], axis=1)
@@ -670,26 +716,43 @@ def a_bend_is_needed() -> None:
     print(f'the best straight line is {coef[0]:+.4f} x brightness {coef[1]:+.4f}, '
           f'and its average error is {err_line:.4f}')
     print(f'two rule-neurons rebuild the target exactly: biggest gap {err_built:.2e}')
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.2), facecolor='white')
-    for ax in axes:
-        _plain(ax)
-        ax.set_xlabel('patch brightness / 255', fontsize=10)
-        ax.set_ylim(-0.1, 1.5)
-    axes[0].plot(b, target, color=INK, lw=2.6, label='what we want')
-    axes[0].plot(b, line, color=GRIP, lw=2.4, ls='--',
-                 label=f'best straight line (average error {err_line:.3f})')
-    axes[0].fill_between(b, target, line, color=GRIP, alpha=0.15)
-    axes[0].set_ylabel('how good this brightness is for finding the object', fontsize=10)
-    axes[0].set_title('One plain neuron cannot bend', fontsize=12.5, weight='bold')
-    axes[0].legend(fontsize=9.6, frameon=False, loc='upper left')
-    axes[1].plot(b, relu(b - 0.5), color=LINK, lw=2.0, label='neuron A: rule(brightness - 0.50)')
-    axes[1].plot(b, relu(0.5 - b), color=SLIDE, lw=2.0, label='neuron B: rule(0.50 - brightness)')
-    axes[1].plot(b, built, color=JOINT, lw=3.0, label='1.00 - 2 x A - 2 x B')
-    axes[1].plot(b, target, color=INK, lw=1.2, ls=':', label='what we want')
-    axes[1].set_title(f'Two neurons with the rule hit it exactly (gap {err_built:.0e})',
-                      fontsize=12.5, weight='bold')
-    axes[1].legend(fontsize=9.4, frameon=False, loc='upper center', ncol=2)
+    return b, target, line, built, err_line, err_built
+
+
+def a_bend_is_needed() -> None:
+    """A job no straight line can do: brightness that is best in the middle."""
+    b, target, line, _built, err_line, _ = _bend_target()
+    fig, ax = plt.subplots(figsize=(9.6, 5.2), facecolor='white')
+    _plain(ax)
+    ax.set_xlabel('patch brightness / 255', fontsize=10)
+    ax.set_ylim(-0.1, 1.5)
+    ax.plot(b, target, color=INK, lw=2.6, label='what we want')
+    ax.plot(b, line, color=GRIP, lw=2.4, ls='--',
+            label=f'best straight line (average error {err_line:.3f})')
+    ax.fill_between(b, target, line, color=GRIP, alpha=0.15)
+    ax.set_ylabel('how good this brightness is for finding the object', fontsize=10)
+    ax.set_title('No straight line can be high in the middle and low at both ends',
+                 fontsize=12.5, weight='bold')
+    ax.legend(fontsize=9.6, frameon=False, loc='upper left')
     _save(fig, ONE, 'a-bend-is-needed.svg')
+
+
+def two_elbows_rebuild_it() -> None:
+    """The same job, done exactly by two neurons that each have the rule."""
+    b, target, _line, built, _, err_built = _bend_target()
+    fig, ax = plt.subplots(figsize=(9.6, 5.2), facecolor='white')
+    _plain(ax)
+    ax.set_xlabel('patch brightness / 255', fontsize=10)
+    ax.set_ylim(-0.1, 1.5)
+    ax.plot(b, relu(b - 0.5), color=LINK, lw=2.0, label='neuron A: rule(brightness - 0.50)')
+    ax.plot(b, relu(0.5 - b), color=SLIDE, lw=2.0, label='neuron B: rule(0.50 - brightness)')
+    ax.plot(b, built, color=JOINT, lw=3.0, label='1.00 - 2 x A - 2 x B')
+    ax.plot(b, target, color=INK, lw=1.2, ls=':', label='what we want')
+    ax.set_ylabel('how good this brightness is for finding the object', fontsize=10)
+    ax.set_title('Two neurons with the rule give the wanted shape exactly',
+                 fontsize=12.5, weight='bold')
+    ax.legend(fontsize=9.4, frameon=False, loc='upper left')
+    _save(fig, ONE, 'two-elbows-rebuild-it.svg')
 
 
 # ==========================================================================
@@ -705,9 +768,7 @@ def relu_curve() -> None:
     print('--- the rectified linear unit -----------------------------------')
     for c in CHECK:
         print(f'  in {c:+.3f} -> out {float(relu(c)):.3f}')
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white',
-                             gridspec_kw={'width_ratios': [1.35, 1.0]})
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.6, 5.2), facecolor='white')
     _plain(ax)
     ax.plot(z, relu(z), color=LINK, lw=2.8)
     ax.axhline(0, color=INK, lw=1.0)
@@ -722,14 +783,7 @@ def relu_curve() -> None:
     ax.set_title('The rectified linear unit: flat at 0, then a straight 45 degree climb',
                  fontsize=12, weight='bold')
     ax.set_ylim(-0.4, 3.3)
-    _label(ax, -2.0, 1.5, 'this half is\nswitched off', size=10, color=MUTED)
-    ax2 = axes[1]
-    _axes(ax2, (0, 12), (0, 11), equal=False)
-    rows = [['sum going in', 'output']]
-    for c in CHECK:
-        rows.append([f'{c:+.3f}', f'{float(relu(c)):.3f}'])
-    _table(ax2, 1.4, 10.6, [5.0, 4.0], rows, row_h=1.0, size=11, mono_from=0)
-    _label(ax2, 6.0, 0.7, 'our neuron\'s sum was +0.725', size=10.5, color=MUTED)
+    _label(ax, -2.0, 1.5, 'every sum below 0\ngives exactly 0', size=10, color=MUTED)
     _save(fig, ONE, 'relu-curve.svg')
 
 
@@ -768,40 +822,55 @@ def relu_pieces() -> None:
     _save(fig, ONE, 'relu-pieces.svg')
 
 
-def relu_dead_units() -> None:
-    """How often each of 64 simulated neurons fires, and how many never fire at all."""
+SIM_NEU: int = 64
+SIM_READ: int = 200
+
+
+def _simulated_neurons() -> tuple[Arr, Arr, int]:
+    """Sums of 64 simulated neurons over 200 simulated moments, and how often each is above 0."""
     rng = np.random.default_rng(7)
-    n_neu, n_read = 64, 200
-    w = rng.normal(0.0, 1.0, size=(n_neu, 3))
-    bias = rng.normal(0.0, 0.5, size=n_neu)
-    reads = np.stack([rng.uniform(0.10, 0.90, n_read),
-                      rng.uniform(0.00, 1.00, n_read),
-                      rng.uniform(0.10, 0.90, n_read)], axis=1)
+    w = rng.normal(0.0, 1.0, size=(SIM_NEU, 3))
+    bias = rng.normal(0.0, 0.5, size=SIM_NEU)
+    reads = np.stack([rng.uniform(0.10, 0.90, SIM_READ),
+                      rng.uniform(0.00, 1.00, SIM_READ),
+                      rng.uniform(0.10, 0.90, SIM_READ)], axis=1)
     sums = reads @ w.T + bias
-    fires = (sums > 0).mean(axis=0)
-    dead = int((fires == 0).sum())
+    above = (sums > 0).mean(axis=0)
+    return sums, above, int((above == 0).sum())
+
+
+def _grid_of_neurons(ax: Axes, values: Arr, silent: Arr, fmt: str, cmap: str,
+                     hi: float) -> None:
+    """One square per simulated neuron, with the silent ones outlined."""
+    for i in range(SIM_NEU):
+        r, c = divmod(i, 8)
+        x, y = 0.3 + c, 8.3 - r
+        v = float(values[i])
+        face = '#eeeeee' if v == 0 else plt.get_cmap(cmap)(0.15 + 0.75 * min(v / hi, 1.0))
+        ax.add_patch(Rectangle((x, y), 0.92, 0.92, facecolor=face, edgecolor=GRID, lw=0.8,
+                               zorder=3))
+        if silent[i]:
+            ax.add_patch(Rectangle((x, y), 0.92, 0.92, facecolor='none', edgecolor=GRIP,
+                                   lw=2.2, zorder=5))
+        _label(ax, x + 0.46, y + 0.46, format(v, fmt), size=9.2, family=MONO,
+               color=GRIP if v == 0 else INK)
+
+
+def relu_dead_units() -> None:
+    """How often each of 64 simulated neurons answers above 0, and how many never do."""
+    _sums, above, dead = _simulated_neurons()
     print('--- dead neurons ------------------------------------------------')
-    print(f'of {n_neu} simulated neurons reading {n_read} simulated moments, {dead} never '
-          f'fire at all, and the average neuron fires on {fires.mean() * 100:.1f}% of them')
+    print(f'of {SIM_NEU} simulated neurons reading {SIM_READ} simulated moments, {dead} never '
+          f'answer above 0, and the average neuron answers above 0 on '
+          f'{above.mean() * 100:.1f}% of them')
     fig, ax = plt.subplots(figsize=(9.6, 5.6), facecolor='white')
     _axes(ax, (0, 8.6), (0, 10.4))
     _label(ax, 4.3, 9.9, 'Each square is one neuron: how often it gives something above 0',
            size=12.5, weight='bold')
-    for i in range(n_neu):
-        r, c = divmod(i, 8)
-        x, y = 0.3 + c, 8.3 - r
-        v = fires[i]
-        face = '#eeeeee' if v == 0 else plt.get_cmap('YlGnBu')(0.15 + 0.75 * v)
-        ax.add_patch(Rectangle((x, y), 0.92, 0.92, facecolor=face, edgecolor=GRID, lw=0.8,
-                               zorder=3))
-        if v == 0:
-            ax.add_patch(Rectangle((x, y), 0.92, 0.92, facecolor='none', edgecolor=GRIP, lw=2.2,
-                                   zorder=5))
-        _label(ax, x + 0.46, y + 0.46, f'{v * 100:.0f}', size=9.2, family=MONO,
-               color=GRIP if v == 0 else INK)
-    _label(ax, 4.3, 0.55, f'the number in each square is the percentage of the 200 moments '
-           f'that neuron fired on', size=10, color=MUTED)
-    _label(ax, 4.3, -0.1, f'{dead} of the 64 never fired, so the rule had switched them off '
+    _grid_of_neurons(ax, above * 100.0, above == 0, '.0f', 'YlGnBu', 100.0)
+    _label(ax, 4.3, 0.55, 'the number in each square is the percentage of the 200 moments '
+           'on which that neuron gave something above 0', size=10, color=MUTED)
+    _label(ax, 4.3, -0.1, f'{dead} of the 64 gave 0 every time, so the rule silenced them '
            f'for every reading', size=10.5, color=GRIP)
     _save(fig, ONE, 'relu-dead-units.svg')
 
@@ -831,6 +900,34 @@ def relu_slope() -> None:
     _save(fig, ONE, 'relu-slope.svg')
 
 
+def relu_flat_region() -> None:
+    """After the rule, a whole part of the readings gives exactly 0."""
+    d = np.linspace(0.0, 1.0, 241)
+    dd, gg = np.meshgrid(d, d)
+    s = W[0] * dd + W[1] * gg + W[2] * BRIGHT + BIAS
+    out = relu(s)
+    share = float((out == 0).mean()) * 100.0
+    print('--- the flat part of the readings -------------------------------')
+    print(f'after the rule the output is exactly 0 on {share:.1f}% of the square, '
+          f'and it rises to {float(out.max()):.3f} in the top left corner')
+    fig, ax = plt.subplots(figsize=(8.6, 6.4), facecolor='white')
+    im = ax.pcolormesh(dd, gg, out, cmap='YlGnBu', shading='auto', vmin=0.0, vmax=2.3)
+    ax.contour(dd, gg, s, levels=[0.0], colors=[INK], linewidths=2.4)
+    ax.contourf(dd, gg, s, levels=[-10.0, 0.0], colors=['#dddddd'])
+    ax.plot([DIST_M], [X[1]], 'o', color='white', ms=12, mec=INK, mew=1.6, zorder=6)
+    ax.annotate(f'our reading -> {OUT:.3f}', xy=(DIST_M, X[1]), xytext=(0.07, 0.86),
+                fontsize=10.5, arrowprops=dict(arrowstyle='-|>', color=INK, lw=1.3))
+    _label(ax, 0.79, 0.22, f'output exactly 0\non {share:.1f}% of the square', size=10.5,
+           color=INK)
+    ax.set_xlabel('distance to the object (m)', fontsize=10)
+    ax.set_ylabel('gripper opening / 100', fontsize=10)
+    ax.set_title('The rule leaves a flat grey part where this neuron says nothing',
+                 fontsize=12.5, weight='bold')
+    ax.tick_params(labelsize=9.5)
+    fig.colorbar(im, ax=ax, label='the output after the rule', shrink=0.88)
+    _save(fig, ONE, 'relu-flat-region.svg')
+
+
 # ==========================================================================
 # 01_one-neuron.md  --  section 6: GELU and SiLU
 # ==========================================================================
@@ -848,9 +945,7 @@ def three_rules() -> None:
     g_min, s_min = float(gelu(fine).min()), float(silu(fine).min())
     print(f'  the lowest GELU ever gives is {g_min:.4f} at {fine[int(np.argmin(gelu(fine)))]:+.3f}; '
           f'the lowest SiLU is {s_min:.4f} at {fine[int(np.argmin(silu(fine)))]:+.3f}')
-    fig, axes = plt.subplots(1, 2, figsize=(13.5, 5.2), facecolor='white',
-                             gridspec_kw={'width_ratios': [1.3, 1.0]})
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.8, 5.4), facecolor='white')
     _plain(ax)
     for nm, f in ACTS.items():
         ax.plot(z, f(z), color=ACT_COLOUR[nm], lw=2.6, label=nm,
@@ -871,14 +966,8 @@ def three_rules() -> None:
     axin.set_title('the left half, close up', fontsize=9)
     axin.tick_params(labelsize=8)
     axin.grid(True, color=GRID, lw=0.6)
-    ax2 = axes[1]
-    _axes(ax2, (0, 13), (0, 11), equal=False)
-    rows = [['sum in'] + list(ACTS)]
-    for c in CHECK:
-        rows.append([f'{c:+.3f}'] + [f'{float(f(c)):+.4f}' for f in ACTS.values()])
-    _table(ax2, 0.6, 10.6, [3.2, 2.9, 2.9, 2.9], rows, row_h=1.02, size=10.5, mono_from=0)
-    _label(ax2, 6.4, 0.6, f'the lowest GELU ever gives is {g_min:.3f}, '
-           f'and SiLU {s_min:.3f}', size=10, color=MUTED)
+    _label(ax, 2.3, 0.55, f'lowest GELU {g_min:.3f}\nlowest SiLU {s_min:.3f}',
+           size=9.5, color=MUTED)
     _save(fig, ONE, 'three-rules.svg')
 
 
@@ -955,25 +1044,58 @@ def neuron_three_rules() -> None:
     _save(fig, ONE, 'neuron-three-rules.svg')
 
 
-def activation_cost() -> None:
-    """What the rule costs next to the multiplying and adding in the same layer."""
-    n_in, n_out = 1024, 1024
-    mult_adds = n_in * n_out
-    acts = n_out
+def gelu_keeps_a_slope() -> None:
+    """The same 64 simulated neurons under GELU: none of them has a slope of 0."""
+    sums, above, dead = _simulated_neurons()
+    h = 1e-5
+    slopes = (gelu(sums + h) - gelu(sums - h)) / (2 * h)
+    size = np.abs(slopes).mean(axis=0)
+    silent = above == 0
+    print('--- the silent neurons under GELU -------------------------------')
+    print(f'the {dead} neurons that ReLU silenced have a ReLU slope of exactly 0 on all '
+          f'{SIM_READ} moments')
+    print(f'under GELU the same {dead} neurons have an average slope size between '
+          f'{float(size[silent].min()):.4f} and {float(size[silent].max()):.4f}')
+    print(f'across all {SIM_NEU} neurons the smallest average slope size is '
+          f'{float(size.min()):.4f}, and none of them is 0')
+    fig, ax = plt.subplots(figsize=(9.6, 5.6), facecolor='white')
+    _axes(ax, (0, 8.6), (0, 10.4))
+    _label(ax, 4.3, 9.9, 'The same 64 neurons under GELU: the average size of the slope',
+           size=12.5, weight='bold')
+    _grid_of_neurons(ax, size, silent, '.2f', 'YlOrRd', 1.1)
+    _label(ax, 4.3, 0.55, 'the red outlines are the 25 neurons that the rectified linear '
+           'unit had silenced', size=10, color=GRIP)
+    _label(ax, 4.3, -0.1, f'the smallest number in the grid is '
+           f'{float(size.min()):.2f}, so no neuron has a slope of 0 any more',
+           size=10.5, color=MUTED)
+    _save(fig, ONE, 'gelu-keeps-a-slope.svg')
+
+
+COST_N: int = 1024
+COST_FACTORS: list[int] = [1, 5, 10, 20]
+
+
+def _cost_numbers() -> tuple[int, int, list[float]]:
+    mult_adds = COST_N * COST_N
+    acts = COST_N
+    rises = [k * acts / mult_adds * 100.0 for k in COST_FACTORS]
+    return mult_adds, acts, rises
+
+
+def how_often_the_rule_runs() -> None:
+    """How many multiply-adds one layer does, next to how often it uses the rule."""
+    mult_adds, acts, rises = _cost_numbers()
     check = np.linspace(-6.0, 6.0, 12001)
     approx_gap = float(np.max(np.abs(gelu(check) - gelu_fast(check))))
-    costs = [1, 5, 10, 20]
-    rises = [k * acts / mult_adds * 100.0 for k in costs]
     print('--- what the rule costs -----------------------------------------')
-    print(f'a layer of {n_in} inputs and {n_out} neurons does {mult_adds:,} multiply-adds '
+    print(f'a layer of {COST_N} inputs and {COST_N} neurons does {mult_adds:,} multiply-adds '
           f'and applies the rule {acts:,} times, which is one rule for every '
           f'{mult_adds // acts:,} multiply-adds')
-    for k, r in zip(costs, rises):
+    for k, r in zip(COST_FACTORS, rises):
         print(f'  if one use of the rule costs as much as {k:2d} multiply-adds, the layer '
               f'does {r:.2f}% more work')
     print(f'  the fast GELU never differs from the exact one by more than {approx_gap:.5f}')
-    fig, axes = plt.subplots(1, 2, figsize=(12.5, 4.8), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.4, 5.0), facecolor='white')
     _plain(ax)
     ax.bar(['multiply-adds', 'uses of the rule'], [mult_adds, acts],
            color=[LINK, PURPLE], edgecolor=INK, lw=0.8, width=0.5)
@@ -982,19 +1104,27 @@ def activation_cost() -> None:
     for i, v in enumerate([mult_adds, acts]):
         ax.text(i, v * 1.3, f'{v:,}', ha='center', fontsize=11.5, family=MONO)
     ax.set_ylim(100, 1e7)
-    ax.set_title(f'A 1024 into 1024 layer: one rule per {mult_adds // acts:,} multiply-adds',
+    ax.set_title(f'A 1024 into 1024 layer: one use of the rule '
+                 f'per {mult_adds // acts:,} multiply-adds',
                  fontsize=11.5, weight='bold')
-    ax = axes[1]
+    _save(fig, ONE, 'how-often-the-rule-runs.svg')
+
+
+def rule_cost_share() -> None:
+    """How much extra work a dearer rule adds to the whole layer."""
+    _mult_adds, _acts, rises = _cost_numbers()
+    fig, ax = plt.subplots(figsize=(8.4, 5.0), facecolor='white')
     _plain(ax)
-    ax.bar([str(k) for k in costs], rises, color=PURPLE, edgecolor=INK, lw=0.8, width=0.5)
+    ax.bar([str(k) for k in COST_FACTORS], rises, color=PURPLE, edgecolor=INK, lw=0.8,
+           width=0.5)
     for i, r in enumerate(rises):
         ax.text(i, r + 0.03, f'{r:.2f}%', ha='center', va='bottom', fontsize=11, family=MONO)
-    ax.set_ylabel("extra work for the whole layer", fontsize=10)
+    ax.set_ylabel('extra work for the whole layer, in per cent', fontsize=10)
     ax.set_xlabel('how many multiply-adds one use of the rule costs', fontsize=10)
     ax.set_ylim(0, max(rises) * 1.25)
-    ax.set_title('Even a rule that costs 20 multiply-adds adds under 2%',
+    ax.set_title('Even a rule that costs 20 multiply-adds adds under 2 per cent',
                  fontsize=11.5, weight='bold')
-    _save(fig, ONE, 'activation-cost.svg')
+    _save(fig, ONE, 'rule-cost-share.svg')
 
 
 def gelu_fast(z: Arr | float) -> Arr:
@@ -1143,31 +1273,33 @@ def four_features() -> None:
 # ==========================================================================
 
 def fully_connected_count() -> None:
-    """Every input joined to every neuron: count the lines."""
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.4), facecolor='white')
-    for ax, (n_in, n_out) in zip(axes, ((3, 4), (6, 8))):
-        _axes(ax, (0, 10), (0, 11))
-        in_y = np.linspace(2.0, 9.0, n_in)[::-1]
-        out_y = np.linspace(1.4, 9.6, n_out)[::-1]
-        for yi in in_y:
-            for yo in out_y:
-                ax.plot([2.6, 7.4], [yi, yo], color=LINK, lw=0.7, alpha=0.45, zorder=2)
-        for yi in in_y:
-            ax.add_patch(plt.Circle((2.3, yi), 0.42, facecolor=LINK_PALE, edgecolor=LINK,
-                                    lw=1.2, zorder=4))
-        for yo in out_y:
-            ax.add_patch(plt.Circle((7.7, yo), 0.42, facecolor=JOINT, edgecolor=INK, lw=1.0,
-                                    zorder=4))
-        _label(ax, 2.3, 10.4, f'{n_in} inputs', size=11, weight='bold')
-        _label(ax, 7.7, 10.4, f'{n_out} neurons', size=11, weight='bold')
-        _label(ax, 5.0, 0.5, f'{n_in} x {n_out} = {n_in * n_out} weights, '
-               f'plus {n_out} biases = {n_in * n_out + n_out} parameters', size=11)
-    axes[0].set_title('our layer', fontsize=12.5, weight='bold')
-    axes[1].set_title('the same idea, a little wider', fontsize=12.5, weight='bold')
+    """Every input joined to every neuron, with the lines counted."""
+    n_in, n_out = 3, 4
     print('--- fully connected counts --------------------------------------')
-    for n_in, n_out in ((3, 4), (6, 8), (1024, 1024)):
-        print(f'  {n_in} inputs into {n_out} neurons: {n_in * n_out:,} weights + '
-              f'{n_out:,} biases = {n_in * n_out + n_out:,} parameters')
+    for a, b in ((3, 4), (6, 8), (1024, 1024)):
+        print(f'  {a} inputs into {b} neurons: {a * b:,} weights + '
+              f'{b:,} biases = {a * b + b:,} parameters')
+    fig, ax = plt.subplots(figsize=(7.6, 5.6), facecolor='white')
+    _axes(ax, (0, 10), (0, 11))
+    in_y = np.linspace(2.5, 8.5, n_in)[::-1]
+    out_y = np.linspace(1.4, 9.6, n_out)[::-1]
+    for yi in in_y:
+        for yo in out_y:
+            ax.plot([2.6, 7.4], [yi, yo], color=LINK, lw=1.0, alpha=0.55, zorder=2)
+    for yi, nm in zip(in_y, SHORT):
+        ax.add_patch(plt.Circle((2.3, yi), 0.42, facecolor=LINK_PALE, edgecolor=LINK,
+                                lw=1.2, zorder=4))
+        _label(ax, 1.7, yi, nm, size=9.5, ha='right', color=MUTED)
+    for k, yo in enumerate(out_y):
+        ax.add_patch(plt.Circle((7.7, yo), 0.42, facecolor=JOINT, edgecolor=INK, lw=1.0,
+                                zorder=4))
+        _label(ax, 8.3, yo, f'neuron {k + 1}', size=9.5, ha='left', color=MUTED)
+    _label(ax, 2.3, 10.4, f'{n_in} inputs', size=11, weight='bold')
+    _label(ax, 7.7, 10.4, f'{n_out} neurons', size=11, weight='bold')
+    _label(ax, 5.0, 0.5, f'{n_in} x {n_out} = {n_in * n_out} lines, plus {n_out} biases '
+           f'= {n_in * n_out + n_out} parameters', size=11)
+    ax.set_title('A fully connected layer: one line for every input and neuron pair',
+                 fontsize=12.5, weight='bold')
     _save(fig, LAY, 'fully-connected-count.svg')
 
 
@@ -1198,45 +1330,119 @@ def parameters_against_width() -> None:
     _save(fig, LAY, 'parameters-against-width.svg')
 
 
-def local_versus_full() -> None:
-    """Joining every input to every neuron is not the only choice."""
-    n = 16
-    full = n * n + n
-    local = n * 3 + n
+WIRING_N: int = 16
+
+
+def _wiring_counts() -> tuple[int, int]:
+    """Weights when everything is joined, and weights when each neuron reads its neighbours."""
+    full = WIRING_N * WIRING_N
+    local = sum(len([j for j in (k - 1, k, k + 1) if 0 <= j < WIRING_N])
+                for k in range(WIRING_N))
+    return full, local
+
+
+def _wiring_picture(mode: str, name: str, title: str) -> None:
+    n = WIRING_N
+    full_w, local_w = _wiring_counts()
+    weights = full_w if mode == 'full' else local_w
+    params = weights + n
+    fig, ax = plt.subplots(figsize=(9.4, 5.2), facecolor='white')
+    _axes(ax, (0, 18), (0, 11))
+    in_x = np.linspace(1.0, 17.0, n)
+    for xi in in_x:
+        ax.add_patch(plt.Circle((xi, 8.4), 0.42, facecolor=LINK_PALE, edgecolor=LINK,
+                                lw=1.1, zorder=4))
+        ax.add_patch(plt.Circle((xi, 3.0), 0.42, facecolor=JOINT, edgecolor=INK,
+                                lw=1.0, zorder=4))
+    for k in range(n):
+        reads = range(n) if mode == 'full' else [j for j in (k - 1, k, k + 1) if 0 <= j < n]
+        for j in reads:
+            ax.plot([in_x[j], in_x[k]], [8.0, 3.4], color=LINK,
+                    lw=0.5 if mode == 'full' else 1.2,
+                    alpha=0.25 if mode == 'full' else 0.9, zorder=2)
+    _label(ax, 9.0, 9.9, '16 numbers going in', size=11, weight='bold')
+    _label(ax, 9.0, 1.7, '16 neurons', size=11, weight='bold')
+    _label(ax, 9.0, 0.5, f'{weights} lines, plus 16 biases = {params} parameters', size=11.5,
+           weight='bold', color=LINK if mode == 'full' else SLIDE)
+    ax.set_title(title, fontsize=12.5, weight='bold')
+    _save(fig, LAY, name)
+
+
+def every_neuron_reads_everything() -> None:
+    """The fully connected wiring of sixteen inputs into sixteen neurons."""
+    full_w, local_w = _wiring_counts()
+    n = WIRING_N
     print('--- joining everything, or only neighbours ----------------------')
-    print(f'  {n} inputs into {n} neurons, all joined: {full:,} parameters')
-    print(f'  the same, each neuron reading only its 3 neighbours: {local:,} parameters, '
-          f'which is {full / local:.1f} times fewer')
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.6), facecolor='white')
-    for ax, mode in zip(axes, ('full', 'local')):
-        _axes(ax, (0, 18), (0, 11))
-        in_x = np.linspace(1.0, 17.0, n)
-        for i, xi in enumerate(in_x):
-            ax.add_patch(plt.Circle((xi, 8.4), 0.42, facecolor=LINK_PALE, edgecolor=LINK,
-                                    lw=1.1, zorder=4))
-            ax.add_patch(plt.Circle((xi, 3.0), 0.42, facecolor=JOINT, edgecolor=INK,
-                                    lw=1.0, zorder=4))
-        for k in range(n):
-            reads = range(n) if mode == 'full' else [j for j in (k - 1, k, k + 1)
-                                                     if 0 <= j < n]
-            for j in reads:
-                ax.plot([in_x[j], in_x[k]], [8.0, 3.4], color=LINK,
-                        lw=0.5 if mode == 'full' else 1.2,
-                        alpha=0.25 if mode == 'full' else 0.9, zorder=2)
-        _label(ax, 9.0, 9.8, '16 numbers going in', size=11, weight='bold')
-        _label(ax, 9.0, 1.6, '16 neurons', size=11, weight='bold')
-        count = full if mode == 'full' else local
-        _label(ax, 9.0, 0.5, f'{count:,} parameters', size=12, weight='bold',
-               color=LINK if mode == 'full' else SLIDE)
-        ax.set_title('every neuron reads every input' if mode == 'full'
-                     else 'every neuron reads only its three neighbours',
-                     fontsize=12, weight='bold')
-    _save(fig, LAY, 'local-versus-full.svg')
+    print(f'  {n} inputs into {n} neurons, all joined: {full_w} weights + {n} biases = '
+          f'{full_w + n} parameters')
+    print(f'  the same, each neuron reading its own place and the ones either side: '
+          f'{local_w} weights + {n} biases = {local_w + n} parameters, which is '
+          f'{(full_w + n) / (local_w + n):.1f} times fewer')
+    print(f'  the two neurons at the ends have only one neighbour, so the count is '
+          f'{local_w} and not {3 * n}')
+    _wiring_picture('full', 'every-neuron-reads-everything.svg',
+                    'Every neuron reads all sixteen numbers')
+
+
+def each_neuron_reads_neighbours() -> None:
+    """The same sixteen neurons, each reading only the inputs beside it."""
+    _wiring_picture('local', 'each-neuron-reads-neighbours.svg',
+                    'Every neuron reads only its own place and the ones beside it')
 
 
 # ==========================================================================
 # 02_layers-and-depth.md  --  section 3: what each extra layer buys you
 # ==========================================================================
+
+W_SEC: Arr = np.array([[1.0, -1.0, 0.5, 0.0],
+                       [0.0, 1.0, 1.0, -1.0],
+                       [-1.0, 0.0, 1.0, 1.0]])
+B_SEC: Arr = np.array([-0.2, 0.1, 0.0])
+SUMS2: Arr = W_SEC @ OUT1 + B_SEC
+OUT2: Arr = relu(SUMS2)
+
+
+def second_layer_reads_features() -> None:
+    """The second layer's inputs are the first layer's outputs, not the camera's readings."""
+    print('--- the second layer reads the four features --------------------')
+    for i in range(3):
+        parts = ' '.join(f'{OUT1[j]:.3f}x{W_SEC[i, j]:+.1f}' for j in range(4))
+        print(f'  second-layer neuron {i + 1}: {parts} {B_SEC[i]:+.2f} = {SUMS2[i]:+.3f} '
+              f'-> output {OUT2[i]:.3f}')
+    fig, ax = plt.subplots(figsize=(13.0, 6.2), facecolor='white')
+    _axes(ax, (0, 28), (-0.4, 13.4))
+    _label(ax, 14, 12.9, 'The second layer reads the four features, not the three readings',
+           size=13, weight='bold')
+    in_y = [10.4, 8.0, 5.6, 3.2]
+    out_y = [9.6, 6.8, 4.0]
+    for k, y in enumerate(in_y):
+        ax.add_patch(plt.Circle((3.2, y), 0.8, facecolor=LINK_PALE if OUT1[k] > 0 else '#eeeeee',
+                                edgecolor=LINK if OUT1[k] > 0 else GRIP, lw=1.4, zorder=4))
+        _label(ax, 3.2, y, f'{OUT1[k]:.3f}', size=10.5, family=MONO)
+        _label(ax, 2.1, y, f'feature {k + 1}', size=9.8, ha='right', color=MUTED)
+    for i, y in enumerate(out_y):
+        for j, yi in enumerate(in_y):
+            w = W_SEC[i, j]
+            if w != 0:
+                ax.plot([4.1, 11.0], [yi, y], color=GRIP if w < 0 else SLIDE,
+                        lw=0.8 + 0.8 * abs(w), alpha=0.75, zorder=2)
+        _box(ax, 11.0, y - 1.1, 8.6, 2.2, face='white', edge=JOINT)
+        _label(ax, 15.3, y + 0.45, f'neuron {i + 1}: ' +
+               ' '.join(f'{W_SEC[i, j]:+.1f}' for j in range(4)) + f'  bias {B_SEC[i]:+.2f}',
+               size=8.8, family=MONO)
+        _label(ax, 15.3, y - 0.5, f'sum {SUMS2[i]:+.3f}  ->  output {OUT2[i]:.3f}',
+               size=9.8, family=MONO, weight='bold')
+        _arrow(ax, (19.8, y), (21.1, y))
+        ax.add_patch(plt.Circle((22.2, y), 0.85,
+                                facecolor=LINK_PALE if OUT2[i] > 0 else '#eeeeee',
+                                edgecolor=LINK if OUT2[i] > 0 else GRIP, lw=1.4, zorder=4))
+        _label(ax, 22.2, y, f'{OUT2[i]:.3f}', size=10.5, family=MONO)
+    _label(ax, 3.2, 1.6, 'these four came out\nof the first layer', size=10, color=MUTED)
+    _label(ax, 22.2, 1.9, 'three new features', size=10.5, weight='bold')
+    _label(ax, 14, -0.2, 'green lines are plus weights, red lines are minus weights, and a '
+           'weight of 0.0 is drawn as no line at all', size=10, color=MUTED)
+    _save(fig, LAY, 'second-layer-reads-features.svg')
+
 
 def _corners(x: Arr, y: Arr) -> Arr:
     """Where the line changes direction, counting each corner once."""
@@ -1277,39 +1483,52 @@ def one_layer_two_bends() -> None:
     _save(fig, LAY, 'one-layer-two-bends.svg')
 
 
-def two_layers_more_bends() -> None:
-    """A second layer bends the bends: four elbows out of the same two neurons."""
+def _two_layer_lines() -> tuple[Arr, Arr, Arr, Arr, Arr, Arr, int, int, Arr]:
     b = np.linspace(0.0, 1.0, 8001)
     a1, a2 = relu(3.0 * b - 0.9), relu(3.0 * b - 2.1)
     one = 2.5 * a1 - 5.0 * a2
     c1 = relu(0.8 * a1 - 1.6 * a2 - 0.4)
     c2 = relu(0.5 * a2 - 0.1)
     two = c1 + c2
-    n1, n2 = _bends(b, one), _bends(b, two)
-    corners = _corners(b, two)
+    return b, a1, a2, one, c1, c2, _bends(b, one), _bends(b, two), two
+
+
+def second_layer_neurons() -> None:
+    """What each second-layer neuron gives, as the brightness it never sees changes."""
+    b, _a1, _a2, one, c1, c2, n1, n2, _two = _two_layer_lines()
     print('--- a second layer ----------------------------------------------')
     print(f'  one layer: {n1} bends; two layers of the same two neurons: {n2} bends')
+    fig, ax = plt.subplots(figsize=(9.6, 5.2), facecolor='white')
+    _plain(ax)
+    ax.set_xlabel('patch brightness / 255', fontsize=10)
+    ax.set_ylim(-0.15, 1.5)
+    ax.plot(b, c1, color=LINK, lw=2.2, label='second-layer neuron C')
+    ax.plot(b, c2, color=SLIDE, lw=2.2, label='second-layer neuron D')
+    ax.set_ylabel('what each second-layer neuron gives', fontsize=10)
+    ax.set_title('The second layer reads A and B, and never reads the brightness',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='upper left')
+    _save(fig, LAY, 'second-layer-neurons.svg')
+
+
+def two_layers_more_bends() -> None:
+    """The whole two-layer network bends four times, out of the same two first-layer neurons."""
+    b, _a1, _a2, one, _c1, _c2, n1, n2, two = _two_layer_lines()
+    corners = _corners(b, two)
     print('  the two-layer bends sit at ' + ', '.join(f'{c:.3f}' for c in corners))
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.2), facecolor='white')
-    for ax in axes:
-        _plain(ax)
-        ax.set_xlabel('patch brightness / 255', fontsize=10)
-        ax.set_ylim(-0.15, 1.5)
-    axes[0].plot(b, c1, color=LINK, lw=2.2, label='second-layer neuron C')
-    axes[0].plot(b, c2, color=SLIDE, lw=2.2, label='second-layer neuron D')
-    axes[0].set_ylabel('what each second-layer neuron gives', fontsize=10)
-    axes[0].set_title('the second layer reads A and B, not the brightness',
-                      fontsize=12, weight='bold')
-    axes[0].legend(fontsize=9.8, frameon=False, loc='upper left')
-    axes[1].plot(b, two, color=GRIP, lw=2.8, label=f'two layers: {n2} bends')
-    axes[1].plot(b, one / 3.0, color=MUTED, lw=1.6, ls='--',
-                 label=f'one layer: {n1} bends (scaled to fit)')
+    fig, ax = plt.subplots(figsize=(9.6, 5.2), facecolor='white')
+    _plain(ax)
+    ax.set_xlabel('patch brightness / 255', fontsize=10)
+    ax.set_ylim(-0.15, 1.5)
+    ax.plot(b, two, color=GRIP, lw=2.8, label=f'two layers: {n2} bends')
+    ax.plot(b, one / 3.0, color=MUTED, lw=1.6, ls='--',
+            label=f'one layer: {n1} bends (made smaller to fit)')
     for c in corners:
-        axes[1].axvline(c, color=MUTED, lw=0.8, ls=':')
-    axes[1].set_ylabel('what the whole network gives', fontsize=10)
-    axes[1].set_title(f'the same two neurons, used twice, make {n2} bends',
-                      fontsize=12, weight='bold')
-    axes[1].legend(fontsize=9.8, frameon=False, loc='upper left')
+        ax.axvline(c, color=MUTED, lw=0.8, ls=':')
+    ax.set_ylabel('what the whole network gives', fontsize=10)
+    ax.set_title(f'The same two first-layer neurons, read by two more, make {n2} bends',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='upper left')
     _save(fig, LAY, 'two-layers-more-bends.svg')
 
 
@@ -1354,11 +1573,33 @@ def _draw_map(ax: Axes, a: Arr, title: str, cmap: str, vmin: float, vmax: float,
     ax.set_title(title, fontsize=11.5, weight='bold')
 
 
-def edges_first() -> None:
-    """Stage one: small groups of weights that answer where an edge is."""
+def _stage_answers() -> tuple[Arr, Arr, Arr, Arr, Arr]:
     pic = _mug()
-    v = _corr3(pic, VERT)
-    h = _corr3(pic, HORZ)
+    v, h = _corr3(pic, VERT), _corr3(pic, HORZ)
+    corner = np.minimum(np.abs(v), np.abs(h))
+    bar = np.zeros_like(v)
+    vpos, vneg = np.maximum(v, 0.0), np.maximum(-v, 0.0)
+    gap = 2
+    bar[:, :-gap] = np.minimum(vpos[:, :-gap], vneg[:, gap:])
+    return pic, v, h, corner, bar
+
+
+def _scene_and_map(a: Arr, title: str, cmap: str, hi: float, name: str, suptitle: str,
+                   marks: list[tuple[int, int]] | None = None) -> None:
+    """The same cup twice: the picture itself, and one measurement taken over it."""
+    pic = _mug()
+    fig, axes = plt.subplots(1, 2, figsize=(10.0, 5.2), facecolor='white')
+    _draw_map(axes[0], pic, 'the picture: a cup with a handle', 'Greys', 0.0, 1.3,
+              numbers=False)
+    _draw_map(axes[1], a, title, cmap, 0.0 if hi > 0 and float(a.min()) >= 0 else -hi, hi,
+              marks=marks)
+    fig.suptitle(suptitle, fontsize=12.5, weight='bold')
+    _save(fig, LAY, name)
+
+
+def edges_up_and_down() -> None:
+    """Stage one, first filter: where a dark column meets a bright one."""
+    pic, v, h, _corner, _bar = _stage_answers()
     print('--- stage one: edges --------------------------------------------')
     print(f'  the picture is {pic.shape[0]} by {pic.shape[1]}, with a six-wide body and a '
           f'three-wide handle')
@@ -1369,47 +1610,92 @@ def edges_first() -> None:
     print(f'  the side-to-side edge filter runs from {float(h.min()):+.0f} to '
           f'{float(h.max()):+.0f}, and it answers on rows '
           f'{sorted(set(np.where(h != 0)[0].tolist()))}')
-    fig, axes = plt.subplots(1, 3, figsize=(14.0, 5.2), facecolor='white')
-    _draw_map(axes[0], pic, 'the picture: a cup with a handle', 'Greys', 0.0, 1.3,
-              numbers=False)
-    _draw_map(axes[1], v, 'filter 1: up-and-down edges', 'RdYlBu', -3.5, 3.5)
-    _draw_map(axes[2], h, 'filter 2: side-to-side edges', 'RdYlBu', -3.5, 3.5)
-    fig.suptitle('Stage one: nine weights slid over the picture answer "is there an edge here"',
-                 fontsize=13, weight='bold')
-    _save(fig, LAY, 'edges-first.svg')
+    _scene_and_map(v, 'the up-and-down edge answer', 'RdYlBu', 3.5,
+                   'edges-up-and-down.svg',
+                   'Nine weights slid over the picture: where a column changes brightness')
 
 
-def shapes_then_parts() -> None:
-    """Stage two and three: corners out of edges, then a handle out of corners."""
-    pic = _mug()
-    v, h = _corr3(pic, VERT), _corr3(pic, HORZ)
-    corner = np.minimum(np.abs(v), np.abs(h))
-    bar = np.zeros_like(v)
-    vpos, vneg = np.maximum(v, 0.0), np.maximum(-v, 0.0)
-    gap = 2
-    bar[:, :-gap] = np.minimum(vpos[:, :-gap], vneg[:, gap:])
+def edges_side_to_side() -> None:
+    """Stage one, second filter: where a dark row meets a bright one."""
+    _pic, _v, h, _corner, _bar = _stage_answers()
+    _scene_and_map(h, 'the side-to-side edge answer', 'RdYlBu', 3.5,
+                   'edges-side-to-side.svg',
+                   'The same nine weights turned sideways: where a row changes brightness')
+
+
+def corners_from_edges() -> None:
+    """Stage two: an edge of each kind in the same place is a corner."""
+    _pic, _v, _h, corner, _bar = _stage_answers()
     corner_spots = [(int(r), int(c)) for r, c in zip(*np.where(corner >= 2))]
-    bar_spots = [(int(r), int(c)) for r, c in zip(*np.where(bar > 0))]
     print('--- stage two and three: shapes and parts -----------------------')
     print(f'  the corner answer is above 2 at {len(corner_spots)} places, all of them at the '
           f'ends of the two shapes: {corner_spots}')
-    print(f'  the "bright bar three wide" answer fires at {len(bar_spots)} places, '
+    _scene_and_map(corner, 'the corner answer', 'YlOrRd', 4.0,
+                   'corners-from-edges.svg',
+                   'Stage two reads the two edge answers, not the picture',
+                   marks=corner_spots)
+
+
+def handle_from_edges() -> None:
+    """Stage three: two opposite edges two columns apart make a narrow bright bar."""
+    _pic, _v, _h, _corner, bar = _stage_answers()
+    bar_spots = [(int(r), int(c)) for r, c in zip(*np.where(bar > 0))]
+    print(f'  the "bright bar three wide" answer is above 0 at {len(bar_spots)} places, '
           f'all in the handle: {bar_spots}')
-    print(f'  it never fires on the body, because the body is six wide')
-    fig, axes = plt.subplots(1, 3, figsize=(14.0, 5.2), facecolor='white')
-    _draw_map(axes[0], pic, 'the picture again', 'Greys', 0.0, 1.3, numbers=False)
-    _draw_map(axes[1], corner, 'stage two: a corner', 'YlOrRd', 0.0, 4.0,
-              marks=corner_spots)
-    _draw_map(axes[2], bar, 'stage three: a bar three wide', 'YlGnBu',
-              0.0, 4.0, marks=bar_spots)
-    fig.suptitle('Stages two and three are built out of stage one, not out of the picture',
-                 fontsize=13, weight='bold')
-    _save(fig, LAY, 'shapes-then-parts.svg')
+    print('  it is 0 everywhere on the body, because the body is six columns wide')
+    _scene_and_map(bar, 'the narrow bar answer', 'YlGnBu', 4.0,
+                   'handle-from-edges.svg',
+                   'Stage three finds the handle without ever reading the picture',
+                   marks=bar_spots)
 
 
 # ==========================================================================
 # 02_layers-and-depth.md  --  section 4: depth and width
 # ==========================================================================
+
+def depth_and_width_named() -> None:
+    """Which direction each of the two words counts, on the stack this page has built."""
+    sizes = [3, 4, 3, 1]
+    names = ['the three\nreadings', 'layer 1\n4 neurons', 'layer 2\n3 neurons',
+             'layer 3\n1 neuron']
+    print('--- what depth and width count ----------------------------------')
+    print(f'  the drawn stack has {len(sizes) - 1} layers of neurons, of widths '
+          f'{sizes[1]}, {sizes[2]} and {sizes[3]}')
+    fig, ax = plt.subplots(figsize=(10.4, 5.6), facecolor='white')
+    _axes(ax, (0, 22), (-1.6, 10.6))
+    _label(ax, 11, 10.1, 'Depth counts the columns; width counts the circles in one column',
+           size=12.5, weight='bold')
+    xs = [2.2, 7.6, 13.4, 19.4]
+    centre = 5.0
+    cols: list[list[float]] = []
+    for x, n_c in zip(xs, sizes):
+        ys = [centre + (i - (n_c - 1) / 2.0) * 1.8 for i in range(n_c)]
+        cols.append(ys)
+    for k, (x, ys, nm) in enumerate(zip(xs, cols, names)):
+        for y in ys:
+            face = LINK_PALE if k == 0 else JOINT
+            edge = LINK if k == 0 else INK
+            ax.add_patch(plt.Circle((x, y), 0.62, facecolor=face, edgecolor=edge, lw=1.2,
+                                    zorder=4))
+        _label(ax, x, 8.9, nm, size=10, color=MUTED)
+        if k > 0:
+            for y in ys:
+                for y0 in cols[k - 1]:
+                    ax.plot([xs[k - 1] + 0.65, x - 0.65], [y0, y], color=LINK, lw=0.6,
+                            alpha=0.4, zorder=2)
+    ax.annotate('', xy=(xs[1], 1.0), xytext=(xs[3], 1.0),
+                arrowprops=dict(arrowstyle='<|-|>', color=PURPLE, lw=1.8))
+    _label(ax, (xs[1] + xs[3]) / 2, 0.2, 'depth: 3 layers of neurons', size=11,
+           color=PURPLE, weight='bold')
+    ax.annotate('', xy=(15.2, cols[2][0] + 0.7), xytext=(15.2, cols[2][-1] - 0.7),
+                arrowprops=dict(arrowstyle='<|-|>', color=TEAL, lw=1.8))
+    ax.text(15.8, centre, 'width of\nlayer 2:\n3 neurons', fontsize=10, color=TEAL,
+            weight='bold', ha='left', va='center', zorder=8,
+            bbox=dict(facecolor='white', edgecolor='none', pad=1.5))
+    _label(ax, 11, -1.2, 'the readings are not a layer, because no neuron sits on them',
+           size=10, color=MUTED)
+    _save(fig, LAY, 'depth-and-width-named.svg')
+
 
 def _pieces(depth: int, width: int, seed: int, n: int = 6001) -> tuple[int, Arr, Arr, int]:
     """Count the straight pieces a random network of this shape makes on one sweep."""
@@ -1443,8 +1729,7 @@ def pieces_by_depth() -> None:
     print('--- straight pieces against depth (width 8, 5 seeds) ------------')
     for d, v in zip(depths, vals):
         print(f'  depth {d}: {v:.1f} pieces on average')
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.2), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.8, 5.2), facecolor='white')
     _plain(ax)
     ax.bar([str(d) for d in depths], vals, color=LINK, edgecolor=INK, lw=0.8, width=0.55)
     for i, v in enumerate(vals):
@@ -1452,19 +1737,28 @@ def pieces_by_depth() -> None:
     ax.set_xlabel('how many layers (the depth)', fontsize=10)
     ax.set_ylabel('straight pieces in the answer', fontsize=10)
     ax.set_ylim(0, max(vals) * 1.2)
-    ax.set_title('Width 8, counted on a sweep of 6,001 points', fontsize=12, weight='bold')
-    ax = axes[1]
+    ax.set_title('Every extra layer of 8 neurons adds straight pieces',
+                 fontsize=12.5, weight='bold')
+    _save(fig, LAY, 'pieces-by-depth.svg')
+
+
+def one_layer_and_three_layers() -> None:
+    """The answers two networks of the same width actually make."""
+    print('--- one layer and three layers, drawn ---------------------------')
+    fig, ax = plt.subplots(figsize=(9.6, 5.2), facecolor='white')
     _plain(ax)
     for d, col in zip((1, 3), (SLIDE, GRIP)):
         n_p, x, y, params = _pieces(d, 8, 100)
+        print(f'  {d} layer(s) of 8: {n_p} pieces, {params} parameters')
         ax.plot(x, y / np.max(np.abs(y)), color=col, lw=2.2,
-                label=f'{d} layer{"s" if d > 1 else ""}: {n_p} pieces, {params} parameters')
+                label=f'{d} layer{"s" if d > 1 else ""} of 8: {n_p} pieces, '
+                      f'{params} parameters')
     ax.set_xlabel('one reading, swept from -1 to +1', fontsize=10)
     ax.set_ylabel('the answer, scaled to fit', fontsize=10)
     ax.set_ylim(-1.2, 0.35)
-    ax.set_title('The same width, one layer and three layers', fontsize=12, weight='bold')
+    ax.set_title('The same width, one layer and three layers', fontsize=12.5, weight='bold')
     ax.legend(fontsize=9.6, frameon=False, loc='upper left')
-    _save(fig, LAY, 'pieces-by-depth.svg')
+    _save(fig, LAY, 'one-layer-and-three-layers.svg')
 
 
 def pieces_by_width() -> None:
@@ -1505,12 +1799,7 @@ def depth_width_grid() -> None:
     for i, d in enumerate(depths):
         print(f'  depth {d}: ' + '  '.join(f'w{w}={grid[i, j]:7.1f}'
                                            for j, w in enumerate(widths)))
-    neurons = np.array([[d * w for w in widths] for d in depths], dtype=float)
-    slope = float(np.sum(neurons * grid) / np.sum(neurons * neurons))
-    print(f'  pieces against total neurons: one straight line through 0 with slope '
-          f'{slope:.3f} fits all sixteen shapes')
-    fig, axes = plt.subplots(1, 2, figsize=(13.5, 5.4), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.8, 5.4), facecolor='white')
     im = ax.imshow(np.log10(grid), cmap='YlGnBu', aspect='auto')
     for i in range(len(depths)):
         for j in range(len(widths)):
@@ -1523,9 +1812,20 @@ def depth_width_grid() -> None:
     ax.set_xlabel('width: neurons in each layer', fontsize=10)
     ax.set_ylabel('depth: how many layers', fontsize=10)
     ax.set_title('Pieces made, averaged over five random networks',
-                 fontsize=12, weight='bold')
+                 fontsize=12.5, weight='bold')
     fig.colorbar(im, ax=ax, label='pieces (log scale)', shrink=0.85)
-    ax = axes[1]
+    _save(fig, LAY, 'depth-width-grid.svg')
+
+
+def pieces_follow_total_neurons() -> None:
+    """Sixteen shapes on one line: the total number of neurons is what decides the detail."""
+    depths, widths = [1, 2, 3, 4], [4, 8, 16, 32]
+    grid = np.array([[_mean_pieces(d, w) for w in widths] for d in depths])
+    neurons = np.array([[d * w for w in widths] for d in depths], dtype=float)
+    slope = float(np.sum(neurons * grid) / np.sum(neurons * neurons))
+    print(f'  pieces against total neurons: one straight line through 0 with slope '
+          f'{slope:.3f} fits all sixteen shapes')
+    fig, ax = plt.subplots(figsize=(9.6, 5.2), facecolor='white')
     _plain(ax)
     for i, d in enumerate(depths):
         ax.plot(neurons[i], grid[i], 'o', ms=8, color=[LINK, SLIDE, JOINT, GRIP][i],
@@ -1536,9 +1836,9 @@ def depth_width_grid() -> None:
     ax.set_xlabel('neurons in the whole network (depth x width)', fontsize=10)
     ax.set_ylabel('straight pieces in the answer', fontsize=10)
     ax.set_title('Pieces follow the total number of neurons, however they are arranged',
-                 fontsize=11.5, weight='bold')
+                 fontsize=12, weight='bold')
     ax.legend(fontsize=9.6, frameon=False, loc='upper left')
-    _save(fig, LAY, 'depth-width-grid.svg')
+    _save(fig, LAY, 'pieces-follow-total-neurons.svg')
 
 
 def deep_narrow_wide_shallow() -> None:
@@ -1607,19 +1907,14 @@ def parameters_and_memory() -> None:
     _save(fig, LAY, 'parameters-and-memory.svg')
 
 
-def multiply_adds() -> None:
-    """The multiply-adds one example costs, as the width and the depth change."""
+def multiply_adds_by_width() -> None:
+    """The work for one example as the width grows, with the depth held still."""
     widths = np.array([128, 256, 512, 1024, 2048, 4096])
-    depths = np.array([1, 2, 4, 8, 16, 32])
     by_width = np.array([_stack_mults(8, int(w)) for w in widths], dtype=float)
-    by_depth = np.array([_stack_mults(int(d), 1024) for d in depths], dtype=float)
     print('--- multiply-adds for one example -------------------------------')
     for w, m in zip(widths, by_width):
         print(f'  depth 8, width {w:5d}: {int(m):,} multiply-adds')
-    for d, m in zip(depths, by_depth):
-        print(f'  width 1024, depth {d:2d}: {int(m):,} multiply-adds')
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.8, 5.0), facecolor='white')
     _plain(ax)
     ax.plot(widths, by_width, marker='o', color=LINK, lw=2.4, ms=7)
     ax.set_xscale('log')
@@ -1629,8 +1924,17 @@ def multiply_adds() -> None:
     ax.minorticks_off()
     ax.set_xlabel('width, with the depth held at 8', fontsize=10)
     ax.set_ylabel('multiply-adds for one example', fontsize=10)
-    ax.set_title('Doubling the width multiplies the work by 4', fontsize=12, weight='bold')
-    ax = axes[1]
+    ax.set_title('Doubling the width multiplies the work by 4', fontsize=12.5, weight='bold')
+    _save(fig, LAY, 'multiply-adds-by-width.svg')
+
+
+def multiply_adds_by_depth() -> None:
+    """The work for one example as the depth grows, with the width held still."""
+    depths = np.array([1, 2, 4, 8, 16, 32])
+    by_depth = np.array([_stack_mults(int(d), 1024) for d in depths], dtype=float)
+    for d, m in zip(depths, by_depth):
+        print(f'  width 1024, depth {d:2d}: {int(m):,} multiply-adds')
+    fig, ax = plt.subplots(figsize=(8.8, 5.0), facecolor='white')
     _plain(ax)
     ax.plot(depths, by_depth, marker='s', color=GRIP, lw=2.4, ms=7)
     ax.set_xscale('log')
@@ -1640,8 +1944,8 @@ def multiply_adds() -> None:
     ax.minorticks_off()
     ax.set_xlabel('depth, with the width held at 1024', fontsize=10)
     ax.set_ylabel('multiply-adds for one example', fontsize=10)
-    ax.set_title('Doubling the depth multiplies the work by 2', fontsize=12, weight='bold')
-    _save(fig, LAY, 'multiply-adds.svg')
+    ax.set_title('Doubling the depth multiplies the work by 2', fontsize=12.5, weight='bold')
+    _save(fig, LAY, 'multiply-adds-by-depth.svg')
 
 
 def what_doubling_costs() -> None:
@@ -1770,29 +2074,28 @@ def _stacks(n_layers: int = 30, n: int = 64, scale: float = 0.8,
 
 
 def signal_through_30_layers() -> None:
-    """Thirty layers at two weight sizes: the plain stack fades, the residual stack does not."""
+    """Thirty layers of each kind: the plain stack fades, the residual stack does not."""
     print('--- thirty layers -----------------------------------------------')
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.2), facecolor='white')
-    layers = np.arange(1, 31)
-    for ax, scale in zip(axes, (0.6, 0.9)):
+    for scale in (0.6, 0.9):
         start, sp, sr = _stacks(scale=scale)
         print(f'  weights {scale:.1f} of the size that would hold steady: the numbers go in '
               f'at {start:.3f}; after 30 plain layers they are {sp[-1]:.2e}, and after 30 '
               f'residual layers {sr[-1]:.2e}')
-        _plain(ax)
-        ax.axhline(start, color=MUTED, lw=1.2, ls=':')
-        ax.plot(layers, sp, color=GRIP, lw=2.4, label='plain stack')
-        ax.plot(layers, sr, color=SLIDE, lw=2.4, label='residual stack')
-        ax.set_yscale('log')
-        ax.set_ylim(1e-9, 1e7)
-        ax.set_xlabel('layer number', fontsize=10)
-        ax.set_ylabel('typical size of the numbers', fontsize=10)
-        ax.set_title(f'block weights {scale:.1f} times the steady size', fontsize=12,
-                     weight='bold')
-        ax.legend(fontsize=10, frameon=False, loc='lower left')
-        _label(ax, 15, start * 2.2, 'the size that went in', size=9.5, color=MUTED)
-    fig.suptitle('Thirty layers: the plain stack fades to nothing, and the residual stack '
-                 'never does', fontsize=13, weight='bold')
+    start, sp, sr = _stacks(scale=0.6)
+    layers = np.arange(1, 31)
+    fig, ax = plt.subplots(figsize=(9.6, 5.2), facecolor='white')
+    _plain(ax)
+    ax.axhline(start, color=MUTED, lw=1.2, ls=':')
+    ax.plot(layers, sp, color=GRIP, lw=2.4, label='plain stack')
+    ax.plot(layers, sr, color=SLIDE, lw=2.4, label='residual stack')
+    ax.set_yscale('log')
+    ax.set_ylim(1e-9, 1e7)
+    ax.set_xlabel('layer number', fontsize=10)
+    ax.set_ylabel('typical size of the numbers', fontsize=10)
+    ax.set_title('Thirty layers, block weights 0.6 of the steady size',
+                 fontsize=12.5, weight='bold')
+    ax.legend(fontsize=10, frameon=False, loc='lower left')
+    _label(ax, 15, start * 2.6, 'the size that went in', size=9.5, color=MUTED)
     _save(fig, LAY, 'signal-through-30-layers.svg')
 
 
@@ -1820,46 +2123,58 @@ def residual_numbers_table() -> None:
     _save(fig, LAY, 'residual-numbers-table.svg')
 
 
-def quiet_block_does_nothing() -> None:
-    """A block with tiny weights changes almost nothing, which is why adding one is safe."""
+def _quiet_numbers() -> tuple[Arr, Arr, Arr, float, float, float]:
     rng = np.random.default_rng(23)
     n = 64
     x = np.abs(rng.normal(0.0, 1.0, size=n))
     tiny = rng.normal(0.0, 0.01 * math.sqrt(2.0 / n), size=(n, n))
-    res_out = x + relu(tiny @ x)
     plain_out = relu(tiny @ x)
+    res_out = x + plain_out
     res_gap = float(np.max(np.abs(res_out - x)))
     plain_size = float(np.sqrt(np.mean(plain_out ** 2)))
     x_size = float(np.sqrt(np.mean(x ** 2)))
+    return x, res_out, plain_out, res_gap, plain_size, x_size
+
+
+def quiet_residual_block() -> None:
+    """A residual block with tiny weights leaves the numbers it was given almost untouched."""
+    x, res_out, _plain_out, res_gap, plain_size, x_size = _quiet_numbers()
     print('--- a quiet block -----------------------------------------------')
     print(f'  with weights a hundred times smaller than usual, the residual block changes '
           f'no number by more than {res_gap:.5f}')
     print(f'  the same weights in a plain layer shrink the typical size from {x_size:.3f} '
           f'to {plain_size:.5f}')
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white')
-    idx = np.arange(12)
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.6, 5.0), facecolor='white')
     _plain(ax)
+    idx = np.arange(12)
     ax.bar(idx - 0.2, x[:12], width=0.4, color=LINK, edgecolor=INK, lw=0.6,
            label='what went in')
     ax.bar(idx + 0.2, res_out[:12], width=0.4, color=SLIDE, edgecolor=INK, lw=0.6,
            label='after a quiet residual block')
     ax.set_xlabel('the first twelve of the 64 numbers', fontsize=10)
     ax.set_ylabel('value', fontsize=10)
-    ax.set_title(f'Nothing moves by more than {res_gap:.5f}', fontsize=12, weight='bold')
+    ax.set_title(f'A quiet residual block moves nothing by more than {res_gap:.5f}',
+                 fontsize=12.5, weight='bold')
     ax.legend(fontsize=9.8, frameon=False, loc='upper right')
-    ax = axes[1]
+    _save(fig, LAY, 'quiet-residual-block.svg')
+
+
+def quiet_plain_layer() -> None:
+    """The same tiny weights without the add leave almost nothing of the numbers."""
+    x, _res_out, plain_out, _res_gap, plain_size, x_size = _quiet_numbers()
+    fig, ax = plt.subplots(figsize=(9.6, 5.0), facecolor='white')
     _plain(ax)
+    idx = np.arange(12)
     ax.bar(idx - 0.2, x[:12], width=0.4, color=LINK, edgecolor=INK, lw=0.6,
            label='what went in')
     ax.bar(idx + 0.2, plain_out[:12], width=0.4, color=GRIP, edgecolor=INK, lw=0.6,
            label='after a quiet plain layer')
     ax.set_xlabel('the first twelve of the 64 numbers', fontsize=10)
     ax.set_ylabel('value', fontsize=10)
-    ax.set_title(f'The same weights without the add: {x_size:.2f} becomes {plain_size:.5f}',
-                 fontsize=12, weight='bold')
+    ax.set_title(f'Without the add, a typical size of {x_size:.2f} becomes {plain_size:.5f}',
+                 fontsize=12.5, weight='bold')
     ax.legend(fontsize=9.8, frameon=False, loc='upper right')
-    _save(fig, LAY, 'quiet-block-does-nothing.svg')
+    _save(fig, LAY, 'quiet-plain-layer.svg')
 
 
 def main() -> None:
@@ -1878,19 +2193,25 @@ def main() -> None:
     sum_over_two_readings()
     flipping_one_weight()
     weight_size_lines()
+    bias_parallel_lines()
     moving_the_bias()
     two_plain_layers()
+    one_neuron_instead()
     collapse_curves()
     three_plain_layers()
     a_bend_is_needed()
+    two_elbows_rebuild_it()
     relu_curve()
     relu_pieces()
+    relu_flat_region()
     relu_dead_units()
     relu_slope()
     three_rules()
     three_slopes()
     neuron_three_rules()
-    activation_cost()
+    gelu_keeps_a_slope()
+    how_often_the_rule_runs()
+    rule_cost_share()
     report_layer()
     one_layer_four_neurons()
     layer_arithmetic()
@@ -1898,23 +2219,33 @@ def main() -> None:
     four_features()
     fully_connected_count()
     parameters_against_width()
-    local_versus_full()
+    every_neuron_reads_everything()
+    each_neuron_reads_neighbours()
     one_layer_two_bends()
+    second_layer_neurons()
     two_layers_more_bends()
-    edges_first()
-    shapes_then_parts()
+    second_layer_reads_features()
+    edges_up_and_down()
+    edges_side_to_side()
+    corners_from_edges()
+    handle_from_edges()
+    depth_and_width_named()
     pieces_by_depth()
+    one_layer_and_three_layers()
     pieces_by_width()
     depth_width_grid()
+    pieces_follow_total_neurons()
     deep_narrow_wide_shallow()
     parameters_and_memory()
-    multiply_adds()
+    multiply_adds_by_width()
+    multiply_adds_by_depth()
     what_doubling_costs()
     work_for_many_examples()
     residual_block_numbers()
     signal_through_30_layers()
     residual_numbers_table()
-    quiet_block_does_nothing()
+    quiet_residual_block()
+    quiet_plain_layer()
     print(f'wrote the diagrams under {IMAGES}')
 
 

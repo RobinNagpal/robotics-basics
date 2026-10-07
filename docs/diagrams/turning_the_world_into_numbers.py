@@ -663,11 +663,11 @@ def vocabulary_size_curve() -> None:
     _save(fig, TOK_DOC, 'vocabulary-size-curve.svg')
 
 
-def merge_table() -> None:
+def _gripper_states() -> list[tuple[int, str, list[str]]]:
+    """Every state of ␣gripper as the merge list is applied to it in order."""
     t = _tok()
-    word = END + 'gripper'
     states: list[tuple[int, str, list[str]]] = []
-    ps = list(word)
+    ps = list(END + 'gripper')
     states.append((-1, 'start', list(ps)))
     for i, (a, b) in enumerate(t.merges):
         new: list[str] = []
@@ -686,13 +686,16 @@ def merge_table() -> None:
             states.append((i, f'{a} + {b}', list(ps)))
         if len(ps) == 1:
             break
-    for rank, rule, st in states:
-        print(f'[s2] merge {rank + 1 if rank >= 0 else 0:4d} {rule:14s} -> '
-              + ' | '.join(st))
+    return states
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.4, 5.4), facecolor='white',
-                             gridspec_kw={'width_ratios': [1.0, 1.25]})
-    ax = axes[0]
+
+def merge_table() -> None:
+    t = _tok()
+    for k in range(10):
+        (a, b), n = t.merges[k], t.strengths[k]
+        print(f'[s2] merge {k + 1:3d}: {a} + {b} = {a + b}, seen {n:,} times')
+
+    fig, ax = plt.subplots(figsize=(8.8, 5.2), facecolor='white')
     _blank(ax)
     ax.text(0.0, 10.6, 'rank', fontsize=10, color=MUTED, weight='bold')
     ax.text(1.3, 10.6, 'pair joined', fontsize=10, color=MUTED, weight='bold')
@@ -709,14 +712,21 @@ def merge_table() -> None:
         ax.text(7.6, y, f'{n:,}', fontsize=10, color=MUTED, ha='right')
     ax.set_xlim(-0.2, 8.0)
     ax.set_ylim(-0.5, 11.2)
-    ax.set_title('The ten pairs joined first', fontsize=11.5, weight='bold', color=INK,
-                 loc='left')
+    ax.set_title('The ten pairs the tokeniser joined first, most common pair first',
+                 fontsize=12.2, weight='bold', color=INK, loc='left')
+    _save(fig, TOK_DOC, 'merge-table.svg')
 
-    ax = axes[1]
+
+def merges_build_a_word() -> None:
+    states = _gripper_states()
+    for rank, rule, st in states:
+        print(f'[s2] merge {rank + 1 if rank >= 0 else 0:4d} {rule:14s} -> '
+              + ' | '.join(st))
+
+    fig, ax = plt.subplots(figsize=(8.6, 5.2), facecolor='white')
     _blank(ax)
-    shown = states[:11]
-    for k, (rank, rule, st) in enumerate(shown):
-        y = (len(shown) - 1 - k) * 1.0
+    for k, (rank, rule, st) in enumerate(states):
+        y = (len(states) - 1 - k) * 1.0
         ax.text(0.0, y + 0.28, 'start' if rank < 0 else f'after merge {rank + 1}',
                 fontsize=9.5, color=MUTED)
         x = 2.6
@@ -726,13 +736,15 @@ def merge_table() -> None:
                  face=LINK_PALE if len(st) == 1 else 'white', size=9.5,
                  family='DejaVu Sans Mono', edge=LINK)
             x += w + 0.07
-        ax.text(x + 0.1, y + 0.28, f'{len(st)}', fontsize=9.5, color=MUTED, va='center')
+        ax.text(6.9, y + 0.28, f'{len(st)}', fontsize=9.5, color=MUTED, va='center',
+                ha='right')
+    ax.text(6.9, len(states) * 1.0 - 0.05, 'pieces', fontsize=9.5, color=MUTED,
+            ha='right')
     ax.set_xlim(-0.2, 7.2)
-    ax.set_ylim(-0.3, len(shown) * 1.0 + 0.3)
-    ax.set_title('␣gripper built up by those merges: eight pieces down to one',
-                 fontsize=11.5, weight='bold', color=INK, loc='left')
-    fig.tight_layout(w_pad=3.0)
-    _save(fig, TOK_DOC, 'merge-table.svg')
+    ax.set_ylim(-0.3, len(states) * 1.0 + 0.4)
+    ax.set_title('Seven of those merges turn ␣gripper from eight pieces into one token',
+                 fontsize=12.2, weight='bold', color=INK, loc='left')
+    _save(fig, TOK_DOC, 'merges-build-a-word.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1192,16 +1204,10 @@ def rope_relative() -> None:
     for m, n in cases:
         d = float(_rope(q, m, base) @ _rope(k, n, base))
         print(f'[s5]   query at {m:3d}, key at {n:3d} (gap {n - m}): {d:+.6f}')
-    gaps = np.arange(0, 61)
-    dots = [float(_rope(q, 5, base) @ _rope(k, 5 + int(g), base)) for g in gaps]
     plain = float(q @ k)
     print(f'[s5] without any rotation the dot product is {plain:+.6f} whatever the gap')
-    print(f'[s5] with rotation it runs from {min(dots):+.4f} to {max(dots):+.4f} '
-          'as the gap grows')
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.8), facecolor='white',
-                            gridspec_kw={'width_ratios': [1.0, 1.25]})
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.2, 4.4), facecolor='white')
     _blank(ax)
     ax.text(0.0, 4.6, 'query at', fontsize=10, color=MUTED, weight='bold')
     ax.text(2.0, 4.6, 'key at', fontsize=10, color=MUTED, weight='bold')
@@ -1218,24 +1224,75 @@ def rope_relative() -> None:
     ax.text(0.0, 0.5, 'Four different places, one gap of 3, one answer.', fontsize=10.5,
             color=SLIDE)
     ax.set_xlim(-0.2, 7.6)
-    ax.set_ylim(0.0, 5.2)
-    ax.set_title('What the rotated numbers carry is the gap',
-                 fontsize=11.5, weight='bold', color=INK, loc='left')
-
-    ax = axes[1]
-    _plain(ax)
-    ax.plot(gaps, dots, marker='o', ms=3, color=LINK, lw=1.6,
-            label='after rotating both rows by their place')
-    ax.axhline(plain, color=MUTED, ls='--', lw=1.3,
-               label=f'no rotation at all: always {plain:+.3f}')
-    ax.set_xlabel('gap between the two places', fontsize=10)
-    ax.set_ylabel('dot product of the two rows', fontsize=10)
-    ax.set_ylim(min(dots) - 0.6, plain + 0.9)
-    ax.legend(fontsize=9.5, frameon=False, loc='lower left')
-    ax.set_title('Rotating pulls the score away from its no-gap value as the gap grows',
-                 fontsize=11.5, weight='bold', color=INK, loc='left')
-    fig.tight_layout(w_pad=2.5)
+    ax.set_ylim(0.0, 5.4)
+    ax.set_title('What the rotated rows carry is the gap, not the places',
+                 fontsize=12.2, weight='bold', color=INK, loc='left')
     _save(fig, TOK_DOC, 'rope-relative.svg')
+
+
+def rope_keeps_length() -> None:
+    """Turning a row leaves its length alone; adding a position row does not."""
+    e = _emb()
+    rng = np.random.default_rng(23)
+    pos = np.round(rng.normal(0.0, 0.25, size=(10, 6)), 2)
+    row = e.small[e.index['mug']]
+    places = np.arange(10)
+    turned = [float(np.linalg.norm(_rope(row, int(p), 100.0))) for p in places]
+    added = [float(np.linalg.norm(row + pos[int(p)])) for p in places]
+    print(f'[s5] the row for ␣mug is {np.linalg.norm(row):.4f} long')
+    print('[s5] after turning, its length at places 0 to 9: '
+          + ' '.join(f'{v:.4f}' for v in turned))
+    print('[s5] after adding a position row, its length at places 0 to 9: '
+          + ' '.join(f'{v:.4f}' for v in added))
+    print(f'[s5] turning changes the length by at most '
+          f'{max(abs(v - turned[0]) for v in turned):.6f}; adding changes it by up to '
+          f'{max(abs(v - turned[0]) for v in added):.4f}')
+
+    fig, ax = plt.subplots(figsize=(9.2, 4.6), facecolor='white')
+    _plain(ax)
+    ax.plot(places, turned, marker='o', color=LINK, lw=2,
+            label='after turning the row (rotary)')
+    ax.plot(places, added, marker='s', color=WRIST, lw=2,
+            label='after adding a learned position row')
+    ax.set_xticks(places)
+    ax.set_ylim(0, max(added) * 1.25)
+    ax.set_xlabel('place of the token in the sentence', fontsize=10)
+    ax.set_ylabel('length of the row for ␣mug', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    ax.set_title('Turning never changes how long the row is, and adding to it does',
+                 fontsize=12.0, weight='bold', color=INK, loc='left')
+    _save(fig, TOK_DOC, 'rope-keeps-length.svg')
+
+
+def position_rows_starved() -> None:
+    """How many of the 3,200 instructions are long enough to reach each position."""
+    t = _tok()
+    lengths = np.array([len(t.split(s)) for s in t.corpus])
+    longest = int(lengths.max())
+    reach = np.array([int((lengths > p).sum()) for p in range(longest)])
+    print(f'[s5] the {len(lengths):,} instructions are {lengths.min()} to {longest} '
+          f'tokens long, {lengths.mean():.2f} on average')
+    for p in (0, 6, 9, 11, 14, 17, 20, longest - 1):
+        print(f'[s5] position {p:2d} is reached by {reach[p]:,} of the '
+              f'{len(lengths):,} instructions ({100 * reach[p] / len(lengths):.1f} '
+              'per cent)')
+
+    fig, ax = plt.subplots(figsize=(10.4, 4.8), facecolor='white')
+    _plain(ax)
+    ax.bar(range(longest), reach, color=LINK, width=0.78)
+    ax.set_xlabel('place in the sentence, which is one row of the position table',
+                  fontsize=10)
+    ax.set_ylabel('instructions long enough to reach it', fontsize=10)
+    ax.set_xticks(range(0, longest, 2))
+    for p in (11, 17, 23):
+        ax.annotate(f'{reach[p]:,}', xy=(p, reach[p]), xytext=(p, reach[p] + 330),
+                    fontsize=9.5, color=INK, ha='center',
+                    arrowprops=dict(arrowstyle='-', color=MUTED, lw=0.9))
+    ax.set_ylim(0, len(lengths) * 1.18)
+    ax.set_title('Few instructions are long enough to train the later rows of a '
+                 'learned position table',
+                 fontsize=12.0, weight='bold', color=INK, loc='left')
+    _save(fig, TOK_DOC, 'position-rows-starved.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1370,6 +1427,81 @@ def one_row_many_meanings() -> None:
                  'and not an answer',
                  fontsize=12.5, weight='bold', color=INK, loc='left')
     _save(fig, TOK_DOC, 'one-row-many-meanings.svg')
+
+
+def more_directions_than_numbers() -> None:
+    """How far apart random directions stay when more of them share 64 numbers."""
+    dim = 64
+    rng = np.random.default_rng(3)
+    counts = [64, 128, 256, 512, 1024, 2048, 4096]
+    worst: list[float] = []
+    typical: list[float] = []
+    for n in counts:
+        v = rng.normal(size=(n, dim))
+        v /= np.linalg.norm(v, axis=1, keepdims=True)
+        c = np.abs(v @ v.T)
+        np.fill_diagonal(c, 0.0)
+        worst.append(float(c.max()))
+        typical.append(float(np.median(c)))
+        print(f'[s6] {n:5d} random directions in {dim} numbers: worst overlap '
+              f'{worst[-1]:.3f}, typical overlap {typical[-1]:.3f}')
+
+    fig, ax = plt.subplots(figsize=(9.6, 4.8), facecolor='white')
+    _plain(ax)
+    ax.plot(counts, worst, marker='o', color=GRIP, lw=2,
+            label='the worst overlapping pair')
+    ax.plot(counts, typical, marker='s', color=LINK, lw=2,
+            label='the middle pair')
+    for x, y in zip(counts, worst):
+        ax.text(x, y + 0.035, f'{y:.2f}', fontsize=9, color=GRIP, ha='center')
+    ax.text(counts[2], typical[2] + 0.04, f'{typical[2]:.2f} all the way along',
+            fontsize=9.5, color=LINK)
+    ax.set_xscale('log', base=2)
+    ax.set_xticks(counts)
+    ax.set_xticklabels([f'{c:,}' for c in counts], fontsize=9.5)
+    ax.set_ylim(0, 1.0)
+    ax.set_xlabel(f'how many directions are packed into {dim} numbers', fontsize=10)
+    ax.set_ylabel('cosine between two of them', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.set_title(f'{counts[-1]:,} directions fit in {dim} numbers if they are allowed '
+                 'to overlap a little',
+                 fontsize=12.0, weight='bold', color=INK, loc='left')
+    _save(fig, TOK_DOC, 'more-directions-than-numbers.svg')
+
+
+def direction_means_several_things() -> None:
+    """Read one direction of the trained table and list the words highest along it."""
+    e = _emb()
+    which = 4                                   # the fifth direction of the table
+    col = e.full[:, which]
+    order = np.argsort(-col)
+    top = [(e.words[i], float(col[i])) for i in order[:8]]
+    bottom = [(e.words[i], float(col[i])) for i in order[-8:]]
+    print(f'[s6] direction {which + 1} of the table, highest words: '
+          + ', '.join(f'{w} {v:+.2f}' for w, v in top))
+    print(f'[s6] direction {which + 1}, lowest words: '
+          + ', '.join(f'{w} {v:+.2f}' for w, v in bottom))
+
+    fig, ax = plt.subplots(figsize=(9.6, 5.0), facecolor='white')
+    _plain(ax)
+    rows = top + bottom[::-1]
+    y = np.arange(len(rows))
+    vals = [v for _, v in rows]
+    ax.barh(y, vals, color=[LINK if v > 0 else WRIST for v in vals], height=0.68)
+    for i, (w, v) in enumerate(rows):
+        off = 0.015 if v > 0 else -0.015
+        ax.text(v + off, i, f'␣{w}', va='center', fontsize=9.6, color=INK,
+                ha='left' if v > 0 else 'right')
+    ax.set_yticks([])
+    ax.invert_yaxis()
+    ax.axvline(0, color=INK, lw=1.0)
+    ax.set_xlim(-0.72, 0.72)
+    ax.set_xlabel(f'how far each token reaches along direction {which + 1} of '
+                  'the table', fontsize=10)
+    ax.set_title('One direction, several unrelated kinds of word: a direction does not '
+                 'mean one property',
+                 fontsize=12.0, weight='bold', color=INK, loc='left')
+    _save(fig, TOK_DOC, 'direction-means-several-things.svg')
 
 
 # ==========================================================================
@@ -1523,16 +1655,7 @@ def why_scale() -> None:
     reach = next((i for i, v in enumerate(raw_hist) if v <= sc_hist[299]), None)
     print(f'[p1] the raw run reaches the scaled run’s 300-step loss at step '
           f'{reach if reach is not None else f"beyond {steps}"}')
-    curv = []
-    for name, x in (('raw 0 to 255', raw), ('scaled', scaled)):
-        h = 2.0 * (x.T @ x) / len(y)
-        ev = np.linalg.eigvalsh(h)
-        curv.append((name, float(ev.max() / ev.min())))
-        print(f'[p1] {name}: steepest direction {ev.max():.2f}, flattest {ev.min():.4f}, '
-              f'ratio {ev.max() / ev.min():,.0f}')
-
-    fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.8), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.6, 4.8), facecolor='white')
     _plain(ax)
     ax.plot(raw_hist, color=GRIP, lw=2,
             label=f'raw 0 to 255, learning rate {lr_raw:.1e}')
@@ -1542,25 +1665,43 @@ def why_scale() -> None:
     ax.set_xlabel('training step', fontsize=10)
     ax.set_ylabel('average squared error (log scale)', fontsize=10)
     ax.legend(fontsize=9.5, frameon=False)
-    ax.set_title(f'Each run at the fastest learning rate it can take, {steps:,} steps',
-                 fontsize=11.5, weight='bold', color=INK)
-    ax = axes[1]
+    ax.set_title(f'The same line fitted twice, {steps:,} steps each, every run at the '
+                 'fastest learning rate it can take',
+                 fontsize=11.8, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'why-scale.svg')
+
+
+def curvature_ratio() -> None:
+    """Why the raw run has to crawl: the loss surface is far steeper one way."""
+    rng = np.random.default_rng(7)
+    n = 400
+    raw = np.column_stack([rng.uniform(0, 255, n), rng.uniform(0, 1, n)])
+    truth = np.array([0.004, 2.0])
+    y = raw @ truth + rng.normal(0, 0.05, n)
+    scaled = (raw - raw.mean(0)) / raw.std(0)
+    curv: list[tuple[str, float]] = []
+    for name, x in (('raw, 0 to 255', raw), ('scaled', scaled)):
+        h = 2.0 * (x.T @ x) / len(y)
+        ev = np.linalg.eigvalsh(h)
+        curv.append((name, float(ev.max() / ev.min())))
+        print(f'[p1] {name}: steepest direction {ev.max():.2f}, flattest {ev.min():.4f}, '
+              f'ratio {ev.max() / ev.min():,.0f}')
+
+    fig, ax = plt.subplots(figsize=(7.2, 4.8), facecolor='white')
     _plain(ax)
     names = [c[0] for c in curv]
     ratios = [c[1] for c in curv]
-    ax.bar(names, ratios, color=[GRIP, SLIDE], width=0.5)
+    ax.bar(names, ratios, color=[GRIP, SLIDE], width=0.45)
     for i, v in enumerate(ratios):
-        ax.text(i, v * 1.6, f'{v:,.0f}', ha='center', fontsize=12, color=INK,
+        ax.text(i, v * 1.6, f'×{v:,.0f}', ha='center', fontsize=13, color=INK,
                 weight='bold')
     ax.set_yscale('log')
     ax.set_ylim(0.5, max(ratios) * 30)
     ax.set_ylabel('steepest direction divided by flattest', fontsize=10)
-    ax.set_title('Why: one input runs over a range 255 times wider',
-                 fontsize=11.5, weight='bold', color=INK)
-    fig.suptitle('Scaling the inputs is not tidiness: it sets how fast training is '
-                 'allowed to go', fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, STA_DOC, 'why-scale.svg')
+    ax.set_title('Why the raw run must take tiny steps: its loss is far steeper '
+                 'one way than the other',
+                 fontsize=11.8, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'curvature-ratio.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1655,43 +1796,60 @@ def patch_to_vector() -> None:
     _save(fig, STA_DOC, 'patch-to-vector.svg')
 
 
-def patch_count_cost() -> None:
-    cases = [(224, 16), (224, 14), (336, 14), (448, 16), (896, 16)]
+PATCH_CASES: list[tuple[int, int]] = [(224, 16), (224, 14), (336, 14), (448, 16),
+                                      (896, 16)]
+
+
+def _patch_rows() -> list[tuple[int, int, int, int, int]]:
     rows = []
-    for size, p in cases:
+    for size, p in PATCH_CASES:
         across = size // p
         tok = across * across
         rows.append((size, p, across, tok, tok * tok))
+    return rows
+
+
+def patch_count() -> None:
+    rows = _patch_rows()
+    for size, p, across, tok, pairs in rows:
         print(f'[p2] {size} by {size} with {p} by {p} patches: {across} × {across} '
-              f'= {tok:,} tokens, {tok * tok:,} token pairs for attention')
-    base = rows[0][4]
-    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.8), facecolor='white')
-    ax = axes[0]
+              f'= {tok:,} tokens, {pairs:,} token pairs for attention')
+
+    fig, ax = plt.subplots(figsize=(9.6, 4.8), facecolor='white')
     _plain(ax)
-    labels = [f'{s}\n{p} px patches' for s, p, _, _, _ in rows]
+    labels = [f'{s} px\n{p} px patches' for s, p, _, _, _ in rows]
     toks = [r[3] for r in rows]
     ax.bar(labels, toks, color=LINK, width=0.55)
     for i, v in enumerate(toks):
-        ax.text(i, v * 1.04, f'{v:,}', ha='center', fontsize=10, color=INK)
+        ax.text(i, v * 1.04, f'{v:,}', ha='center', fontsize=10.5, color=INK)
     ax.set_ylabel('tokens the model must read', fontsize=10)
     ax.set_ylim(0, max(toks) * 1.2)
-    ax.set_title('How many tokens one photo turns into', fontsize=11.5, weight='bold',
-                 color=INK)
-    ax = axes[1]
+    ax.set_title('How many tokens one photo turns into, for five ways of cutting it',
+                 fontsize=11.8, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'patch-count.svg')
+
+
+def attention_cost() -> None:
+    rows = _patch_rows()
+    base = rows[0][4]
+    for size, p, _, tok, pairs in rows:
+        print(f'[p2] {size} by {size} with {p} px patches: attention work '
+              f'×{pairs / base:,.0f} of the first case')
+
+    fig, ax = plt.subplots(figsize=(9.6, 4.8), facecolor='white')
     _plain(ax)
+    labels = [f'{s} px\n{p} px patches' for s, p, _, _, _ in rows]
     pairs = [r[4] / base for r in rows]
     ax.bar(labels, pairs, color=GRIP, width=0.55)
     for i, v in enumerate(pairs):
-        ax.text(i, v * 1.3, f'×{v:,.0f}', ha='center', fontsize=10, color=INK)
+        ax.text(i, v * 1.3, f'×{v:,.0f}', ha='center', fontsize=10.5, color=INK)
     ax.set_yscale('log')
     ax.set_ylim(0.5, max(pairs) * 8)
     ax.set_ylabel('attention work, as a multiple of the first case', fontsize=10)
-    ax.set_title('What that costs: work grows with the square of the token count',
-                 fontsize=11.5, weight='bold', color=INK)
-    fig.suptitle('Patch size is the knob: smaller patches see more detail and cost '
-                 'far more', fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, STA_DOC, 'patch-count-cost.svg')
+    ax.set_title('What those tokens cost: attention work grows with the square of '
+                 'the token count',
+                 fontsize=11.8, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'attention-cost.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1760,36 +1918,75 @@ def depth_holes() -> None:
     print(f'[p3] a 0 also looks nearer than the nearest real reading, {near:.3f} m, '
           'so a safety check reads it as something touching the camera')
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.8), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(9.2, 4.8), facecolor='white')
     _plain(ax)
     vals = zeros.reshape(-1)
-    ax.hist(vals[vals > 0], bins=18, color=LINK, label='real readings')
+    ax.hist(vals[vals > 0], bins=18, color=LINK, label='the real readings')
     ax.hist(vals[vals == 0], bins=[-0.02, 0.02], color=GRIP,
-            label=f'the {miss} holes, written as 0')
+            label=f'the {miss} holes, written as 0 m')
+    ax.axvline(near, color=MUTED, ls='--', lw=1.2)
+    ax.text(near - 0.02, 17, f'nearest real reading, {near:.3f} m', fontsize=9.5,
+            color=MUTED, ha='right')
     ax.set_xlabel('distance in metres', fontsize=10)
     ax.set_ylabel('how many pixels', fontsize=10)
-    ax.legend(fontsize=9.5, frameon=False)
-    ax.set_title('A hole written as 0 lands in the middle of nothing',
-                 fontsize=11.5, weight='bold', color=INK)
-    ax = axes[1]
+    ax.set_ylim(0, 28)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper right')
+    ax.set_title('A hole written as 0 m lands far below every real reading',
+                 fontsize=11.8, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'depth-holes.svg')
+
+
+def depth_hole_average() -> None:
+    d = _dep()
+    zeros = np.nan_to_num(d, nan=0.0)
+    honest = float(np.nanmean(d))
+    wrong = float(zeros.mean())
+    print(f'[p3] average distance counting the holes as 0 m: {wrong:.3f} m, '
+          f'leaving them out: {honest:.3f} m, a gap of '
+          f'{100 * (honest - wrong):.1f} cm')
+
+    fig, ax = plt.subplots(figsize=(7.2, 4.8), facecolor='white')
     _plain(ax)
     names = ['holes counted as 0 m', 'holes left out']
     ax.bar(names, [wrong, honest], color=[GRIP, SLIDE], width=0.45)
     for i, v in enumerate([wrong, honest]):
-        ax.text(i, v + 0.02, f'{v:.3f} m', ha='center', fontsize=12, color=INK,
+        ax.text(i, v + 0.02, f'{v:.3f} m', ha='center', fontsize=13, color=INK,
                 weight='bold')
-    ax.axhline(near, color=MUTED, ls='--', lw=1.2)
-    ax.text(-0.46, near + 0.015, f'nearest real reading, {near:.2f} m', fontsize=9.5,
-            color=MUTED, ha='left')
     ax.set_ylabel('average distance over the frame (m)', fontsize=10)
     ax.set_ylim(0, max(wrong, honest) * 1.3)
-    ax.set_title('What that does to a number taken from the frame',
-                 fontsize=11.5, weight='bold', color=INK)
-    fig.suptitle('A missing reading is not a distance of zero, and treating it as one '
-                 'changes every answer', fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, STA_DOC, 'depth-holes.svg')
+    ax.set_title(f'Counting the holes moves the frame’s average distance by '
+                 f'{100 * (honest - wrong):.0f} centimetres',
+                 fontsize=11.8, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'depth-hole-average.svg')
+
+
+def depth_mask() -> None:
+    """The second grid that says, pixel by pixel, whether the reading is real."""
+    d = _dep()
+    mask = (~np.isnan(d)).astype(float)
+    print(f'[p3] the mask grid holds {int(mask.sum())} ones and '
+          f'{int(mask.size - mask.sum())} zeros for the same {mask.size} pixels')
+
+    fig, ax = plt.subplots(figsize=(8.4, 7.0), facecolor='white')
+    rows, cols = mask.shape
+    for r in range(rows):
+        for c in range(cols):
+            on = mask[r, c] > 0.5
+            yy = rows - 1 - r
+            ax.add_patch(Rectangle((c, yy), 1, 1,
+                                   facecolor='#ddeedd' if on else '#f2c3c3',
+                                   edgecolor='white', lw=0.8))
+            ax.text(c + 0.5, yy + 0.5, '1' if on else '0', ha='center', va='center',
+                    fontsize=10, color=SLIDE if on else GRIP, weight='bold')
+    ax.set_xlim(-0.05, cols + 0.05)
+    ax.set_ylim(-0.95, rows + 0.05)
+    ax.set_aspect('equal')
+    _blank(ax)
+    ax.text(0.0, -0.62, '1 means the camera measured that pixel, 0 means it did not.',
+            fontsize=10.5, color=INK)
+    ax.set_title('The second grid to hand the network: which readings are real',
+                 fontsize=12.2, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'depth-mask.svg')
 
 
 def _cloud() -> tuple[Arr, int, int, float]:
@@ -1817,9 +2014,7 @@ def depth_to_points() -> None:
     print(f'[p3] the list is {kept:,} x 3 = {kept * 3:,} numbers, against '
           f'{total:,} for the depth frame')
 
-    fig = plt.figure(figsize=(12.6, 4.8), facecolor='white')
-    gs = fig.add_gridspec(1, 2, width_ratios=[1.1, 1.3], wspace=0.25)
-    ax = fig.add_subplot(gs[0, 0])
+    fig, ax = plt.subplots(figsize=(7.6, 4.8), facecolor='white')
     _blank(ax)
     ax.text(0.0, 6.5, 'pixel (column, row) and its distance', fontsize=10.5,
             color=MUTED)
@@ -1840,48 +2035,47 @@ def depth_to_points() -> None:
                     ha='center')
     ax.text(1.4, 0.0, f'... and so on, {kept:,} rows in all', fontsize=10, color=MUTED)
     ax.set_xlim(-0.2, 8.0)
-    ax.set_ylim(-0.4, 7.0)
-    ax.set_title('three numbers per pixel that had a reading',
-                 fontsize=11.5, weight='bold', color=INK, loc='left')
-    ax = fig.add_subplot(gs[0, 1])
-    _plain(ax)
-    sc = ax.scatter(pts[:, 0], pts[:, 2], c=pts[:, 1], cmap='viridis', s=5)
-    fig.colorbar(sc, ax=ax, label='y, metres up or down from the centre', shrink=0.85)
-    ax.set_xlabel('x, metres left or right (m)', fontsize=10)
-    ax.set_ylabel('z, metres away from the camera (m)', fontsize=10)
-    ax.set_title(f'the same {kept:,} points, seen from above',
-                 fontsize=11.5, weight='bold', color=INK)
-    fig.suptitle('A depth picture becomes a point cloud: a long list of three-number '
-                 'positions', fontsize=12.5, weight='bold', color=INK, y=1.03)
+    ax.set_ylim(-0.4, 7.2)
+    ax.set_title('One pixel becomes three numbers, by the same three lines of '
+                 'arithmetic every time',
+                 fontsize=11.6, weight='bold', color=INK, loc='left')
     _save(fig, STA_DOC, 'depth-to-points.svg')
 
 
-def order_free() -> None:
+def point_cloud_from_above() -> None:
+    pts, total, kept, _ = _cloud()
+    print(f'[p3] the cloud spans x from {pts[:, 0].min():+.3f} to {pts[:, 0].max():+.3f} m '
+          f'and z from {pts[:, 2].min():.3f} to {pts[:, 2].max():.3f} m')
+
+    fig, ax = plt.subplots(figsize=(8.0, 5.4), facecolor='white')
+    _plain(ax)
+    sc = ax.scatter(pts[:, 0], pts[:, 2], c=pts[:, 1], cmap='viridis', s=5)
+    fig.colorbar(sc, ax=ax, label='y, metres up or down from the centre', shrink=0.9)
+    ax.set_xlabel('x, metres left or right', fontsize=10)
+    ax.set_ylabel('z, metres away from the camera', fontsize=10)
+    ax.set_title(f'The same {kept:,} positions drawn as a scene, seen from above',
+                 fontsize=12.0, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'point-cloud-from-above.svg')
+
+
+def _shuffle_cloud() -> tuple[Arr, Arr, int]:
     pts, _, kept, _ = _cloud()
     rng = np.random.default_rng(29)
-    order = rng.permutation(len(pts))
-    shuffled = pts[order]
-    centre_a = pts.mean(axis=0)
-    centre_b = shuffled.mean(axis=0)
-    max_a = pts.max(axis=0)
-    max_b = shuffled.max(axis=0)
-    w = rng.normal(0, 1, size=12)
-    line_a = float(pts[:4].reshape(-1) @ w)
-    line_b = float(shuffled[:4].reshape(-1) @ w)
-    print('[p3] average position before shuffling: '
-          + ' '.join(f'{v:+.4f}' for v in centre_a))
-    print('[p3] average position after shuffling:  '
-          + ' '.join(f'{v:+.4f}' for v in centre_b))
-    print('[p3] largest value in each column, before and after: '
-          + ' '.join(f'{a:+.3f}/{b:+.3f}' for a, b in zip(max_a, max_b)))
-    print(f'[p3] a layer that reads the first four rows in order gives {line_a:+.3f} '
-          f'before and {line_b:+.3f} after')
+    shuffled = pts[rng.permutation(len(pts))]
+    return pts, shuffled, kept
 
-    fig, ax = plt.subplots(figsize=(12.6, 5.4), facecolor='white')
+
+def order_free() -> None:
+    pts, shuffled, kept = _shuffle_cloud()
+    print(f'[p3] the same {kept:,} positions in two orders; row 1 is '
+          + ' '.join(f'{v:+.3f}' for v in pts[0]) + ' before and '
+          + ' '.join(f'{v:+.3f}' for v in shuffled[0]) + ' after')
+
+    fig, ax = plt.subplots(figsize=(9.0, 5.0), facecolor='white')
     _blank(ax)
-    for k, (title, arr, x0) in enumerate((('the list as the camera made it', pts, 0.0),
-                                          ('the same points, shuffled', shuffled, 5.4))):
-        ax.text(x0, 5.5, title, fontsize=10.5, color=INK, weight='bold')
+    for title, arr, x0 in (('the list as the camera made it', pts, 0.0),
+                           ('the same points, shuffled', shuffled, 5.4)):
+        ax.text(x0, 5.5, title, fontsize=10.8, color=INK, weight='bold')
         for j, h in enumerate(['x', 'y', 'z']):
             ax.text(x0 + 0.5 + j * 1.3, 5.0, h, fontsize=10, color=MUTED,
                     weight='bold', ha='center')
@@ -1890,31 +2084,58 @@ def order_free() -> None:
             for j in range(3):
                 ax.text(x0 + 0.5 + j * 1.3, y, f'{arr[i, j]:+.3f}', fontsize=9.6,
                         color=INK, ha='center')
-        ax.text(x0, 0.45, f'... {kept:,} rows', fontsize=10, color=MUTED)
-    ax.text(10.6, 5.0, 'what a network may read from the list', fontsize=10.5,
-            color=INK, weight='bold')
-    ax.text(10.6, 4.4, 'average of every row  (same both times)', fontsize=10,
-            color=SLIDE)
-    ax.text(10.6, 3.95, '  ' + '  '.join(f'{v:+.4f}' for v in centre_a), fontsize=9.6,
-            color=SLIDE, family='DejaVu Sans Mono')
-    ax.text(10.6, 3.5, '  ' + '  '.join(f'{v:+.4f}' for v in centre_b), fontsize=9.6,
-            color=SLIDE, family='DejaVu Sans Mono')
-    ax.text(10.6, 2.7, 'largest in each column  (same both times)', fontsize=10,
-            color=SLIDE)
-    ax.text(10.6, 2.25, '  ' + '  '.join(f'{v:+.3f}' for v in max_a), fontsize=9.6,
-            color=SLIDE, family='DejaVu Sans Mono')
-    ax.text(10.6, 1.8, '  ' + '  '.join(f'{v:+.3f}' for v in max_b), fontsize=9.6,
-            color=SLIDE, family='DejaVu Sans Mono')
-    ax.text(10.6, 1.0, 'the first four rows laid end to end,\nread by a fully '
-                       'connected layer  (different)', fontsize=10, color=GRIP)
-    ax.text(10.6, 0.2, f'  {line_a:+.3f}        {line_b:+.3f}', fontsize=9.6,
-            color=GRIP, family='DejaVu Sans Mono')
-    ax.set_xlim(-0.2, 19.0)
+        ax.text(x0 + 0.5, 0.45, f'... {kept:,} rows', fontsize=10, color=MUTED)
+    ax.set_xlim(-0.2, 10.0)
     ax.set_ylim(0.0, 6.0)
-    ax.set_title('The order of a point cloud means nothing, so only order-blind '
-                 'reading of it is safe',
-                 fontsize=12.5, weight='bold', color=INK, loc='left')
+    ax.set_title('The same scene twice: the order of the rows is the only difference',
+                 fontsize=12.0, weight='bold', color=INK, loc='left')
     _save(fig, STA_DOC, 'order-free.svg')
+
+
+def order_blind_readings() -> None:
+    pts, shuffled, _ = _shuffle_cloud()
+    rng = np.random.default_rng(29)
+    rng.permutation(len(pts))                    # keep the draw order of order_free
+    w = rng.normal(0, 1, size=12)
+    rows = [
+        ('average of every row', pts.mean(axis=0), shuffled.mean(axis=0), '{:+.4f}'),
+        ('largest in each column', pts.max(axis=0), shuffled.max(axis=0), '{:+.3f}'),
+        ('first four rows end to end,\nthrough a fully connected layer',
+         np.array([float(pts[:4].reshape(-1) @ w)]),
+         np.array([float(shuffled[:4].reshape(-1) @ w)]), '{:+.3f}'),
+    ]
+    for name, a, b, fmt in rows:
+        same = bool(np.allclose(a, b))
+        print(f'[p3] {name.replace(chr(10), " ")}: before '
+              + ' '.join(fmt.format(v) for v in a) + ', after '
+              + ' '.join(fmt.format(v) for v in b)
+              + ('  (same)' if same else '  (different)'))
+
+    fig, ax = plt.subplots(figsize=(11.8, 3.8), facecolor='white')
+    _blank(ax)
+    ax.text(0.0, 3.3, 'what the network works out', fontsize=10.5, color=MUTED,
+            weight='bold')
+    ax.text(6.3, 3.3, 'before the shuffle', fontsize=10.5, color=MUTED, weight='bold',
+            ha='center')
+    ax.text(10.0, 3.3, 'after the shuffle', fontsize=10.5, color=MUTED, weight='bold',
+            ha='center')
+    for i, (name, a, b, fmt) in enumerate(rows):
+        y = 2.5 - i * 0.8
+        same = bool(np.allclose(a, b))
+        colour = SLIDE if same else GRIP
+        ax.text(0.0, y, name, fontsize=10.2, color=INK, va='center')
+        ax.text(6.3, y, '  '.join(fmt.format(v) for v in a), fontsize=9.8,
+                color=colour, ha='center', va='center', family='DejaVu Sans Mono')
+        ax.text(10.0, y, '  '.join(fmt.format(v) for v in b), fontsize=9.8,
+                color=colour, ha='center', va='center', family='DejaVu Sans Mono')
+        ax.text(13.3, y, 'same' if same else 'different', fontsize=10.2, color=colour,
+                weight='bold', va='center', ha='right')
+    ax.set_xlim(-0.2, 13.4)
+    ax.set_ylim(0.5, 3.6)
+    ax.set_title('Two of these three readings survive the shuffle, and the third '
+                 'does not',
+                 fontsize=12.0, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'order-blind-readings.svg')
 
 
 # --------------------------------------------------------------------------
@@ -2100,7 +2321,7 @@ def joint_traces() -> None:
         print(f'[p5] {nm:9s} from {a.angles[0, i]:+.3f} to {a.angles[-1, i]:+.3f} '
               f'radians, fastest {np.abs(a.vel[:, i]).max():.3f} radians a second')
 
-    fig, axes = plt.subplots(1, 3, figsize=(13.0, 4.4), facecolor='white')
+    fig, axes = plt.subplots(1, 2, figsize=(11.8, 4.4), facecolor='white')
     ax = axes[0]
     _plain(ax)
     for i, nm in enumerate(JOINT_NAMES):
@@ -2108,27 +2329,50 @@ def joint_traces() -> None:
     ax.set_xlabel('seconds', fontsize=10)
     ax.set_ylabel('joint angle (radians)', fontsize=10)
     ax.legend(fontsize=8.2, frameon=False, ncol=2)
-    ax.set_title('six joint angles', fontsize=11.5, weight='bold', color=INK)
+    ax.set_title('measured as angles', fontsize=11.5, weight='bold', color=INK)
     ax = axes[1]
     _plain(ax)
     for i in range(6):
         ax.plot(a.t, a.vel[:, i], lw=1.6)
     ax.set_xlabel('seconds', fontsize=10)
     ax.set_ylabel('joint speed (radians a second)', fontsize=10)
-    ax.set_title('the same six, as speeds', fontsize=11.5, weight='bold', color=INK)
-    ax = axes[2]
-    _plain(ax)
-    ax.plot(a.t, a.grip * 1000, color=SLIDE, lw=1.8, label='gripper opening (mm)')
-    ax.plot(a.t, a.force[:, 2], color=GRIP, lw=1.5, label='force down the wrist (N)')
-    ax.axhline(0, color=GRID, lw=0.8)
-    ax.set_xlabel('seconds', fontsize=10)
-    ax.legend(fontsize=9, frameon=False, loc='center left')
-    ax.set_title('gripper and wrist force', fontsize=11.5, weight='bold', color=INK)
-    fig.suptitle('Two seconds of one reach: everything the arm knows about itself, '
-                 'read 100 times a second',
+    ax.set_title('the same movement, measured as speeds', fontsize=11.5, weight='bold',
+                 color=INK)
+    fig.suptitle('The same two seconds of one reach, measured two ways, 100 times '
+                 'a second',
                  fontsize=12.5, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, STA_DOC, 'joint-traces.svg')
+
+
+def gripper_and_force() -> None:
+    a = _arm()
+    grip_mm = a.grip * 1000.0
+    closing = int(np.argmax(grip_mm < 1.0))
+    print(f'[p5] the gripper runs from {grip_mm[0]:.1f} mm open to '
+          f'{grip_mm[-1]:.2f} mm, closed by {a.t[closing]:.2f} seconds')
+    print(f'[p5] the downward wrist force runs from {a.force[0, 2]:+.2f} N to '
+          f'{a.force[-1, 2]:+.2f} N')
+
+    fig, axes = plt.subplots(2, 1, figsize=(9.6, 5.2), facecolor='white', sharex=True)
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(a.t, grip_mm, color=SLIDE, lw=2.0)
+    ax.axvline(a.t[closing], color=MUTED, ls='--', lw=1.1)
+    ax.text(a.t[closing] - 0.05, 60, 'closed', fontsize=10, color=MUTED, ha='right')
+    ax.set_ylabel('gripper opening (mm)', fontsize=10)
+    ax.set_title('The gripper closes on the mug, and the wrist feels the grip take '
+                 'hold',
+                 fontsize=12.0, weight='bold', color=INK, loc='left')
+    ax = axes[1]
+    _plain(ax)
+    ax.plot(a.t, a.force[:, 2], color=GRIP, lw=1.6)
+    ax.axvline(a.t[closing], color=MUTED, ls='--', lw=1.1)
+    ax.axhline(0, color=GRID, lw=0.8)
+    ax.set_ylabel('force down the wrist (N)', fontsize=10)
+    ax.set_xlabel('seconds', fontsize=10)
+    fig.tight_layout()
+    _save(fig, STA_DOC, 'gripper-and-force.svg')
 
 
 def _state_rows(k: int) -> list[tuple[str, str, float]]:
@@ -2177,7 +2421,7 @@ def state_vector() -> None:
     _save(fig, STA_DOC, 'state-vector.svg')
 
 
-def channel_ranges() -> None:
+def _channels() -> list[tuple[str, Arr, str]]:
     a = _arm()
     chans: list[tuple[str, Arr, str]] = []
     for i, nm in enumerate(JOINT_NAMES):
@@ -2187,6 +2431,11 @@ def channel_ranges() -> None:
     chans.append(('gripper opening', a.grip, TEAL))
     for i, nm in enumerate(['sideways', 'forwards', 'down']):
         chans.append((f'force {nm}', a.force[:, i], GRIP))
+    return chans
+
+
+def channel_ranges() -> None:
+    chans = _channels()
     spreads = [float(c[1].std()) for c in chans]
     print('[p5] spread of each channel over the two seconds:')
     for (nm, _, _), sd in zip(chans, spreads):
@@ -2194,8 +2443,7 @@ def channel_ranges() -> None:
     print(f'[p5] widest channel divided by narrowest: '
           f'{max(spreads) / min(spreads):,.0f}')
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.6, 5.4), facecolor='white')
-    ax = axes[0]
+    fig, ax = plt.subplots(figsize=(8.8, 5.4), facecolor='white')
     _plain(ax)
     y = np.arange(len(chans))
     ax.barh(y, spreads, color=[c[2] for c in chans], height=0.68)
@@ -2207,26 +2455,71 @@ def channel_ranges() -> None:
     ax.set_xscale('log')
     ax.set_xlim(min(spreads) * 0.4, max(spreads) * 9)
     ax.set_xlabel('spread of the channel, in its own units (log scale)', fontsize=10)
-    ax.set_title(f'The widest channel moves {max(spreads) / min(spreads):,.0f} times '
-                 'as far as the narrowest', fontsize=11.2, weight='bold', color=INK)
-    ax = axes[1]
-    _plain(ax)
-    std = np.array(spreads)
+    ax.set_title(f'In their own units, the widest channel moves '
+                 f'{max(spreads) / min(spreads):,.0f} times as far as the narrowest',
+                 fontsize=11.8, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'channel-ranges.svg')
+
+
+def channels_after_scaling() -> None:
+    chans = _channels()
+    std = np.array([float(c[1].std()) for c in chans])
     mean = np.array([float(c[1].mean()) for c in chans])
     norm = [(c[1] - m) / s for c, m, s in zip(chans, mean, std)]
-    ax.boxplot(norm, vert=False, widths=0.6, showfliers=False)
+    widest = max(float(n.std()) for n in norm)
+    narrowest = min(float(n.std()) for n in norm)
+    print(f'[p5] after scaling, every channel has a spread of 1: widest '
+          f'{widest:.6f}, narrowest {narrowest:.6f}')
+
+    fig, ax = plt.subplots(figsize=(8.8, 5.4), facecolor='white')
+    _plain(ax)
+    ax.boxplot(norm, orientation='horizontal', widths=0.6, showfliers=False)
     ax.set_yticks(range(1, len(chans) + 1))
     ax.set_yticklabels([c[0] for c in chans], fontsize=8.8)
     ax.invert_yaxis()
     ax.axvline(0, color=GRID, lw=1.0)
-    ax.set_xlabel('after taking the average off and dividing by the spread',
-                  fontsize=10)
-    ax.set_title('After scaling, every channel asks for the same attention',
-                 fontsize=11.2, weight='bold', color=INK)
-    fig.suptitle('Raw robot readings are in units that have nothing to do with each '
-                 'other', fontsize=12.5, weight='bold', color=INK)
-    fig.tight_layout()
-    _save(fig, STA_DOC, 'channel-ranges.svg')
+    ax.set_xlabel('the channel after taking its average off and dividing by its '
+                  'own spread', fontsize=10)
+    ax.set_title('After scaling, all sixteen channels cover the same ground',
+                 fontsize=11.8, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'channels-after-scaling.svg')
+
+
+def state_beside_image_tokens() -> None:
+    """How little the arm's own readings cost next to one photo."""
+    rows = _state_rows(150)
+    size, patch = 224, 16
+    across = size // patch
+    img_tokens = across * across
+    img_numbers = 3 * size * size
+    print(f'[p5] one {size} by {size} photo is {img_numbers:,} numbers and '
+          f'{img_tokens} tokens; the arm state is {len(rows)} numbers and 1 token')
+
+    fig, ax = plt.subplots(figsize=(9.0, 4.6), facecolor='white')
+    _blank(ax)
+    top = 4.9
+    for i in range(img_tokens):
+        r, c = divmod(i, across)
+        ax.add_patch(Rectangle((c * 0.34, top - r * 0.34), 0.30, 0.30,
+                               facecolor=LINK_PALE, edgecolor=LINK, lw=0.5))
+    ax.text(across * 0.34 / 2, top + 0.52, f'{img_tokens} tokens from one photo',
+            fontsize=11.5, color=LINK, weight='bold', ha='center')
+    x0 = across * 0.34 + 1.2
+    mid = top - 6.5 * 0.34
+    ax.add_patch(Rectangle((x0, mid), 0.30, 0.30, facecolor='#ddeedd',
+                           edgecolor=SLIDE, lw=1.4))
+    ax.text(x0 + 0.15, top + 0.52, '1 token', fontsize=11.5, color=SLIDE,
+            weight='bold', ha='center')
+    ax.text(x0 + 0.15, mid - 0.18, f'the {len(rows)} numbers\nthe arm knows\n'
+                                   'about itself',
+            fontsize=10, color=SLIDE, ha='center', va='top')
+    ax.set_xlim(-0.2, x0 + 1.6)
+    ax.set_ylim(top - 13 * 0.34 - 0.3, top + 0.95)
+    ax.set_aspect('equal')
+    ax.set_title('The arm’s own readings are one more token beside the photo’s '
+                 f'{img_tokens}',
+                 fontsize=12.0, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'state-beside-image-tokens.svg')
 
 
 # --------------------------------------------------------------------------
@@ -2387,8 +2680,8 @@ def loss_dominated() -> None:
                 ax.text(v + 0.5, i, f'{v:.1f}%', va='center', fontsize=9.5, color=INK)
             ax.set_xlabel('share of the total squared error', fontsize=10)
         ax.set_title(title, fontsize=11.5, weight='bold', color=INK)
-    fig.suptitle('One channel measured in millimetres swallows the loss, and the six '
-                 'that steer the arm are left with almost none',
+    fig.suptitle('One channel measured in millimetres takes almost the whole loss, '
+                 'and the six that steer the arm are left with almost none',
                  fontsize=12.4, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, STA_DOC, 'loss-dominated.svg')
@@ -2471,6 +2764,41 @@ def scaled_training() -> None:
     _save(fig, STA_DOC, 'scaled-training.svg')
 
 
+def wrong_statistics_at_run_time() -> None:
+    """A model that is exactly right in scaled numbers, undone by the wrong spreads."""
+    acts, names = _action_set()
+    mean, std = acts.mean(0), acts.std(0)
+    live = acts[-80:]
+    mean_live, std_live = live.mean(0), live.std(0)
+    scaled = (acts - mean) / std
+    recovered = scaled * std_live + mean_live
+    err = np.abs(recovered - acts).mean(0)
+    print('[p6] the model outputs exactly the right scaled numbers; de-scaling them '
+          'with statistics taken from the last 80 steps instead of the stored ones:')
+    for nm, sd, sl, e in zip(names, std, std_live, err):
+        print(f'[p6]   {nm:24s} stored spread {sd:.5f}, live spread {sl:.5f}, '
+              f'command wrong by {e:.5f} = {e / sd:.2f} spreads')
+    print(f'[p6] the gripper command is wrong by {err[-1]:.1f} millimetres')
+
+    fig, ax = plt.subplots(figsize=(10.0, 4.6), facecolor='white')
+    _plain(ax)
+    y = np.arange(len(names))
+    share = err / std
+    ax.barh(y, share, color=[JOINT] * 6 + [TEAL], height=0.62)
+    for i, v in enumerate(share):
+        ax.text(v + 0.012, i, f'{v:.2f}', va='center', fontsize=9.6, color=INK)
+    ax.set_yticks(y)
+    ax.set_yticklabels(names, fontsize=9.5)
+    ax.invert_yaxis()
+    ax.set_xlim(0, float(share.max()) * 1.22)
+    ax.set_xlabel('how wrong the command is, as a share of that channel’s own spread',
+                  fontsize=10)
+    ax.set_title('A perfect model still sends the wrong command when the run-time '
+                 'spreads are not the stored ones',
+                 fontsize=11.8, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'wrong-statistics-at-run-time.svg')
+
+
 def main() -> None:
     """Draw every picture. Pass --png <folder> to also write PNG copies for checking."""
     global PNG_DIR
@@ -2484,6 +2812,7 @@ def main() -> None:
     three_ways_to_split()
     vocabulary_size_curve()
     merge_table()
+    merges_build_a_word()
     embedding_table()
     lookup_as_matrix()
     table_size()
@@ -2495,29 +2824,43 @@ def main() -> None:
     position_vectors_added()
     rope_rotation()
     rope_relative()
+    rope_keeps_length()
+    position_rows_starved()
     two_shadows()
     shadow_distorts()
     one_row_many_meanings()
+    more_directions_than_numbers()
+    direction_means_several_things()
     three_colour_grids()
     scaling_the_values()
     why_scale()
+    curvature_ratio()
     patch_grid()
     patch_to_vector()
-    patch_count_cost()
+    patch_count()
+    attention_cost()
     depth_grid()
     depth_holes()
+    depth_hole_average()
+    depth_mask()
     depth_to_points()
+    point_cloud_from_above()
     order_free()
+    order_blind_readings()
     waveform()
     spectrogram()
     one_frame()
     joint_traces()
+    gripper_and_force()
     state_vector()
+    state_beside_image_tokens()
     channel_ranges()
+    channels_after_scaling()
     action_meanings()
     absolute_vs_delta()
     loss_dominated()
     scaled_training()
+    wrong_statistics_at_run_time()
     print(f'wrote the diagrams under {IMAGES}')
 
 

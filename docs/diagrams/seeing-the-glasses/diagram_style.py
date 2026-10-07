@@ -25,7 +25,26 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 AREA = "seeing-the-glasses"
 IMAGES = Path(__file__).resolve().parents[2] / "images" / AREA
-FOLDERS = json.loads((Path(__file__).parent / "image_folders.json").read_text())
+def _folders() -> dict:
+    """Which document folders each picture belongs in.
+
+    image_folders.json is the shared register, built from the documents
+    themselves. Beside it, image_folders.d/ holds one fragment per generator
+    that is being written, in the same shape. A fragment exists so that two
+    people adding pictures at the same time write to two files rather than
+    fighting over one, and so that a new generator can be read on its own. The
+    fragments are merged over the register, and a name may appear in both.
+    """
+    here = Path(__file__).parent
+    found = json.loads((here / "image_folders.json").read_text())
+    extra = here / "image_folders.d"
+    if extra.is_dir():
+        for part in sorted(extra.glob("*.json")):
+            found.update(json.loads(part.read_text()))
+    return found
+
+
+FOLDERS = _folders()
 
 # The palette the rest of the project's diagrams use.
 INK = "#22272e"      # text, and anything structural

@@ -337,41 +337,51 @@ SECONDS_PER_LABEL: float = 20.0
 
 
 def labels_versus_free_signal() -> None:
+    """One idea: the same text holds 7.3 times as many answers as a person would write."""
     n_sent = len(CORPUS.sentences)
     hand = n_sent
     free = CORPUS.n_next_pairs
-    hours = hand * SECONDS_PER_LABEL / 3600.0
     print(f'[sig] corpus: {_si(n_sent)} sentences, {_si(CORPUS.n_tokens)} words, '
           f'vocabulary {CORPUS.v}')
-    print(f'[sig] one hand label per sentence: {_si(hand)} training signals, '
-          f'{hours:.1f} person-hours at {SECONDS_PER_LABEL:.0f} s each')
-    print(f'[sig] next-word targets in the same text: {_si(free)} signals, 0 person-hours')
+    print(f'[sig] one hand label per sentence: {_si(hand)} training signals')
+    print(f'[sig] next-word targets in the same text: {_si(free)} signals')
     print(f'[sig] ratio {free / hand:.1f} times as many signals')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.4, 4.4), facecolor='white')
-    _plain(ax1)
-    ax1.bar([0, 1], [hand, free], color=[GRIP, SLIDE], width=0.55)
+    fig, ax = plt.subplots(figsize=(8.6, 4.8), facecolor='white')
+    _plain(ax)
+    ax.bar([0, 1], [hand, free], color=[GRIP, SLIDE], width=0.5)
     for i, v in enumerate([hand, free]):
-        ax1.text(i, v + free * 0.02, _si(v), ha='center', fontsize=11, weight='bold')
-    ax1.set_xticks([0, 1])
-    ax1.set_xticklabels(['one hand label\nper sentence', 'every next word\nin the same text'],
-                        fontsize=9.5)
-    ax1.set_ylim(0, free * 1.16)
-    ax1.set_ylabel('training signals', fontsize=10)
-    ax1.set_title(f'{_si(n_sent)} sentences, two kinds of signal',
-                  fontsize=11.5, weight='bold')
-
-    _plain(ax2)
-    ax2.bar([0, 1], [hours, 0.0], color=[GRIP, SLIDE], width=0.55)
-    ax2.text(0, hours * 1.03, f'{hours:.1f} hours', ha='center', fontsize=11, weight='bold')
-    ax2.text(1, hours * 0.03, 'none', ha='center', fontsize=11, weight='bold', color=SLIDE)
-    ax2.set_xticks([0, 1])
-    ax2.set_xticklabels(['hand labels', 'next-word targets'], fontsize=9.5)
-    ax2.set_ylim(0, hours * 1.25)
-    ax2.set_ylabel(f'person-hours at {SECONDS_PER_LABEL:.0f} seconds a label', fontsize=10)
-    ax2.set_title('What each one costs a person', fontsize=11.5, weight='bold')
-    fig.subplots_adjust(wspace=0.32)
+        ax.text(i, v + free * 0.025, _si(v), ha='center', fontsize=12, weight='bold')
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(['one hand label\nper sentence', 'every next word\nin the same text'],
+                       fontsize=10)
+    ax.set_ylim(0, free * 1.18)
+    ax.set_ylabel('training signals', fontsize=10)
+    ax.set_title(f'The same {_si(n_sent)} sentences: {free / hand:.1f} times as many '
+                 f'answers if the text supplies them', fontsize=12, weight='bold')
     _save(fig, SSP_DOC, 'labels-versus-free-signal.svg')
+
+
+def what_a_label_costs() -> None:
+    """One idea: the hand labels cost 22.2 person-hours and the free answers cost nothing."""
+    hand = len(CORPUS.sentences)
+    hours = hand * SECONDS_PER_LABEL / 3600.0
+    print(f'[sig] {_si(hand)} hand labels at {SECONDS_PER_LABEL:.0f} seconds each cost '
+          f'{hours:.1f} person-hours; the next-word targets cost 0')
+    fig, ax = plt.subplots(figsize=(8.6, 4.8), facecolor='white')
+    _plain(ax)
+    ax.bar([0, 1], [hours, 0.0], color=[GRIP, SLIDE], width=0.5)
+    ax.text(0, hours * 1.03, f'{hours:.1f} person-hours', ha='center', fontsize=12,
+            weight='bold')
+    ax.text(1, hours * 0.03, 'no human time at all', ha='center', fontsize=12,
+            weight='bold', color=SLIDE)
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels([f'{_si(hand)} hand labels', f'{_si(CORPUS.n_next_pairs)} '
+                        f'next-word targets'], fontsize=10)
+    ax.set_ylim(0, hours * 1.25)
+    ax.set_ylabel(f'person-hours at {SECONDS_PER_LABEL:.0f} seconds a label', fontsize=10)
+    ax.set_title('What each kind of answer costs a person', fontsize=12, weight='bold')
+    _save(fig, SSP_DOC, 'what-a-label-costs.svg')
 
 
 def make_the_label_from_the_data() -> None:
@@ -402,67 +412,63 @@ def make_the_label_from_the_data() -> None:
     _save(fig, SSP_DOC, 'make-the-label-from-the-data.svg')
 
 
-def one_picture_many_targets() -> None:
-    px = 224
-    patch = 16
-    per_side = px // patch
-    n_patch = per_side * per_side
-    mask_rate = 0.75
-    n_masked = int(round(mask_rate * n_patch))
-    numbers = px * px * 3
-    print(f'[targets] a {px} by {px} colour picture is {_si(numbers)} numbers')
-    print(f'[targets] cut into {patch} by {patch} patches: {per_side} by {per_side} '
-          f'= {n_patch} patches')
-    print(f'[targets] hiding {mask_rate:.0%} of them gives {n_masked} things to predict, '
-          f'against 1 hand label')
+BIG_PX: int = 224
+BIG_PATCH: int = 16
+BIG_RATE: float = 0.75
 
+
+def _big_picture_counts() -> tuple[int, int, int, int]:
+    per_side = BIG_PX // BIG_PATCH
+    n_patch = per_side * per_side
+    n_masked = int(round(BIG_RATE * n_patch))
+    return per_side, n_patch, n_masked, BIG_PX * BIG_PX * 3
+
+
+def three_quarters_hidden() -> None:
+    """One idea: what it looks like to hide three quarters of a picture's squares."""
+    per_side, n_patch, n_masked, _ = _big_picture_counts()
+    print(f'[targets] cut into {BIG_PATCH} by {BIG_PATCH} patches: {per_side} by '
+          f'{per_side} = {n_patch} patches')
+    print(f'[targets] hiding {BIG_RATE:.0%} of them hides {n_masked} and leaves '
+          f'{n_patch - n_masked} visible')
     rng = np.random.default_rng(3)
     hidden = np.zeros(n_patch, dtype=bool)
     hidden[rng.permutation(n_patch)[:n_masked]] = True
     grid = hidden.reshape(per_side, per_side)
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.6, 4.8), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.0, 1.25]})
-    _blank(ax1)
-    ax1.set_xlim(-0.5, per_side - 0.5)
-    ax1.set_ylim(per_side - 0.5, -0.5)
+    fig, ax = plt.subplots(figsize=(6.4, 6.4), facecolor='white')
+    _blank(ax)
+    ax.set_xlim(-0.5, per_side - 0.5)
+    ax.set_ylim(per_side - 0.5, -0.5)
     for i in range(per_side):
         for j in range(per_side):
             face = MUTED if grid[i, j] else LINK_PALE
-            ax1.add_patch(Rectangle((j - 0.5, i - 0.5), 1, 1, facecolor=face,
-                                    edgecolor='white', lw=1.0))
-    ax1.set_title(f'{per_side} by {per_side} = {n_patch} patches, '
-                  f'{n_masked} of them hidden (grey)', fontsize=11, weight='bold')
+            ax.add_patch(Rectangle((j - 0.5, i - 0.5), 1, 1, facecolor=face,
+                                   edgecolor='white', lw=1.0))
+    ax.set_title(f'One {BIG_PX} by {BIG_PX} picture cut into {per_side} by {per_side} '
+                 f'= {n_patch} squares,\nwith {n_masked} of them hidden (grey)',
+                 fontsize=11.5, weight='bold')
+    _save(fig, SSP_DOC, 'three-quarters-hidden.svg')
 
-    _plain(ax2)
-    ax2.bar([0, 1, 2], [1, n_masked, numbers], color=[GRIP, SLIDE, TEAL], width=0.55)
-    ax2.set_yscale('log')
-    ax2.set_xticks([0, 1, 2])
-    ax2.set_xticklabels(['one hand label\n("a mug")', f'{n_masked} hidden\npatches to fill in',
-                         'all its numbers,\nif you predict pixels'], fontsize=9.5)
+
+def one_picture_many_targets() -> None:
+    """One idea: one picture is 1, 147 or 150,528 training signals, depending on the task."""
+    _, _, n_masked, numbers = _big_picture_counts()
+    print(f'[targets] a {BIG_PX} by {BIG_PX} colour picture is {_si(numbers)} numbers')
+    print(f'[targets] one hand label, {n_masked} hidden patches, or {_si(numbers)} pixels')
+    fig, ax = plt.subplots(figsize=(9.0, 5.0), facecolor='white')
+    _plain(ax)
+    ax.bar([0, 1, 2], [1, n_masked, numbers], color=[GRIP, SLIDE, TEAL], width=0.5)
+    ax.set_yscale('log')
+    ax.set_xticks([0, 1, 2])
+    ax.set_xticklabels(['one hand label\n("a mug")', f'{n_masked} hidden\nsquares to fill in',
+                        'all its numbers,\nif you predict pixels'], fontsize=10)
     for i, v in enumerate([1, n_masked, numbers]):
-        ax2.text(i, v * 1.5, _si(v), ha='center', fontsize=11, weight='bold')
-    ax2.set_ylim(0.5, numbers * 12)
-    ax2.set_ylabel('training signals from one picture (log scale)', fontsize=10)
-    ax2.set_title('One label, or hundreds of guesses', fontsize=11.5, weight='bold')
-    fig.subplots_adjust(wspace=0.3)
+        ax.text(i, v * 1.6, _si(v), ha='center', fontsize=12, weight='bold')
+    ax.set_ylim(0.5, numbers * 14)
+    ax.set_ylabel('training signals from one picture (log scale)', fontsize=10)
+    ax.set_title('What one picture is worth, depending on what you ask of it',
+                 fontsize=12, weight='bold')
     _save(fig, SSP_DOC, 'one-picture-many-targets.svg')
-
-
-# --------------------------------------------------------------------------
-# simulated matched pairs of picture and caption vectors (used by sections 1 and 4)
-# --------------------------------------------------------------------------
-
-def paired_vectors(n: int, dim: int = 8, noise: float = 0.75, seed: int = 5
-                   ) -> tuple[Arr, Arr]:
-    """Matched picture and caption vectors: one shared content vector plus separate noise."""
-    rng = np.random.default_rng(seed)
-    content = rng.normal(size=(n, dim))
-    pic = content + noise * rng.normal(size=(n, dim))
-    txt = content + noise * rng.normal(size=(n, dim))
-    pic /= np.linalg.norm(pic, axis=1, keepdims=True)
-    txt /= np.linalg.norm(txt, axis=1, keepdims=True)
-    return pic, txt
 
 
 def _patch_mask(rate: float, seed: int) -> NDArray[np.bool_]:
@@ -475,71 +481,6 @@ def _patch_mask(rate: float, seed: int) -> NDArray[np.bool_]:
     grid = np.repeat(np.repeat(hide.reshape(per_side, per_side), 2, axis=0), 2, axis=1)
     return grid.reshape(-1)
 
-
-def four_recipes() -> None:
-    sentence = CORPUS.sentences[3]
-    pic = Pics(1, seed=31).a[0].reshape(SIDE, SIDE)
-    mask = _patch_mask(0.5, seed=32)
-    shown = pic.copy().reshape(-1)
-    shown[mask] = np.nan
-    pv, tv = paired_vectors(4, seed=33)
-    sim = pv @ tv.T
-    big_pic = Pics(1, seed=34).a[0].reshape(SIDE, SIDE)
-    print(f'[recipes] sentence: {" ".join(sentence)}  (last word hidden: {sentence[-2]})')
-    print(f'[recipes] picture mask hides {int(mask.sum())} of {SIDE * SIDE} pixels')
-    print('[recipes] 4 by 4 similarity grid, diagonal: '
-          + ', '.join(f'{sim[i, i]:+.2f}' for i in range(4)))
-    print(f'[recipes] mean off-diagonal similarity {np.mean(sim[~np.eye(4, dtype=bool)]):+.2f}')
-
-    fig, axes = plt.subplots(2, 2, figsize=(10.8, 7.2), facecolor='white')
-    fig.suptitle('Four ways to make the answer out of the data itself',
-                 fontsize=13, weight='bold', y=0.98)
-
-    ax = axes[0, 0]
-    _blank(ax)
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 3)
-    words = sentence[:-1]
-    for i, w in enumerate(words):
-        shown_word = i < len(words) - 1
-        _box(ax, 0.2 + i * 1.32, 1.3, 1.24, 0.7, w if shown_word else '?',
-             face=LINK_PALE if shown_word else '#fbdcdc',
-             edge=LINK if shown_word else GRIP,
-             weight='normal' if shown_word else 'bold', size=8.2)
-    ax.text(0.2, 2.55, 'Next word: hide what comes next', fontsize=11, weight='bold')
-    ax.text(0.2, 0.75, f'answer = "{words[-1]}", taken from the text', fontsize=9.5, color=MUTED)
-
-    ax = axes[0, 1]
-    _blank(ax)
-    hidden_map = matplotlib.colormaps['Greys_r'].with_extremes(bad=GRIP)
-    ax.imshow(shown.reshape(SIDE, SIDE), cmap=hidden_map, interpolation='nearest')
-    ax.set_title('Masked patches: hide part of the picture', fontsize=11, weight='bold')
-    ax.text(0.5, -0.09, f'answer = the {int(mask.sum())} hidden pixel values',
-            transform=ax.transAxes, ha='center', fontsize=9.5, color=MUTED)
-
-    ax = axes[1, 0]
-    _blank(ax)
-    ax.imshow(sim, cmap='RdYlGn', vmin=-1, vmax=1, interpolation='nearest')
-    for i in range(4):
-        for j in range(4):
-            ax.text(j, i, f'{sim[i, j]:+.2f}', ha='center', va='center', fontsize=9.5,
-                    weight='bold' if i == j else 'normal')
-    for i in range(4):
-        ax.add_patch(Rectangle((i - 0.5, i - 0.5), 1, 1, fill=False, edgecolor=INK, lw=2.0))
-    ax.set_title('Pairs: push the matching ones together', fontsize=11, weight='bold')
-    ax.text(0.5, -0.09, 'answer = "the match is on the diagonal"',
-            transform=ax.transAxes, ha='center', fontsize=9.5, color=MUTED)
-
-    ax = axes[1, 1]
-    _blank(ax)
-    ax.imshow(big_pic, cmap='Greys_r', interpolation='nearest')
-    ax.add_patch(Rectangle((-0.5, -0.5), 8, 8, fill=False, edgecolor=LINK, lw=2.4))
-    ax.add_patch(Rectangle((3.5, 3.5), 8, 8, fill=False, edgecolor=GRIP, lw=2.4))
-    ax.set_title('Two crops: make the two agree', fontsize=11, weight='bold')
-    ax.text(0.5, -0.09, 'answer = whatever the slower copy said about the other crop',
-            transform=ax.transAxes, ha='center', fontsize=9.5, color=MUTED)
-    fig.subplots_adjust(hspace=0.33)
-    _save(fig, SSP_DOC, 'four-recipes.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1101,77 +1042,103 @@ def softmax_of_one_row() -> None:
 
 
 def contrastive_training() -> None:
+    """One idea: the same grid of similarities, measured before and after training."""
     cl = _cl()
     k = 6
     before = cl.grid(k, trained=False)
     after = cl.grid(k, trained=True)
-    chance = float(np.log(cl.batch))
-    print(f'[clip] held-out loss before training {cl.hist[0]:.3f}, '
-          f'after {cl.hist[-1]:.3f}, guessing at random {chance:.3f}')
     print(f'[clip] before: matching {np.mean(np.diag(before)):+.3f}, '
           f'rest {np.mean(before[~np.eye(k, dtype=bool)]):+.3f}')
     print(f'[clip] after:  matching {np.mean(np.diag(after)):+.3f}, '
           f'rest {np.mean(after[~np.eye(k, dtype=bool)]):+.3f}')
-    fig = plt.figure(figsize=(13.0, 4.8), facecolor='white')
-    ax1 = fig.add_subplot(1, 3, 1)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.2, 5.0), facecolor='white')
     ax1.set_facecolor('white')
-    _draw_grid(ax1, before, 'before training')
-    ax2 = fig.add_subplot(1, 3, 2)
+    _draw_grid(ax1, before, f'before training: matching {np.mean(np.diag(before)):+.2f},\n'
+                            f'the rest {np.mean(before[~np.eye(k, dtype=bool)]):+.2f}')
     ax2.set_facecolor('white')
-    _draw_grid(ax2, after, 'after training')
-    ax3 = fig.add_subplot(1, 3, 3)
-    _plain(ax3)
-    ax3.plot(cl.at, cl.hist, color=LINK, lw=2.0)
-    ax3.axhline(chance, color=MUTED, ls='--', lw=1.3)
-    ax3.text(cl.at[-1], chance + 0.06, f'guessing: {chance:.2f}', ha='right', fontsize=9,
-             color=MUTED)
-    ax3.set_xlabel('gradient steps', fontsize=10)
-    ax3.set_ylabel(f'held-out loss, batch of {cl.batch}', fontsize=10)
-    ax3.set_ylim(0, chance * 1.15)
-    ax3.set_title('the loss falling', fontsize=11, weight='bold')
-    fig.suptitle('Pulling matching pairs together and pushing the rest apart',
+    _draw_grid(ax2, after, f'after training: matching {np.mean(np.diag(after)):+.2f},\n'
+                           f'the rest {np.mean(after[~np.eye(k, dtype=bool)]):+.2f}')
+    fig.suptitle('The same six pairs, scored before and after training',
                  fontsize=12.5, weight='bold', y=1.02)
-    fig.subplots_adjust(wspace=0.55)
+    fig.subplots_adjust(wspace=0.45)
     _save(fig, SSP_DOC, 'contrastive-training.svg')
 
 
-def batch_size_and_temperature() -> None:
+def contrastive_loss_curve() -> None:
+    """One idea: the held-out contrastive loss falls from 5.703 to 1.940."""
+    cl = _cl()
+    chance = float(np.log(cl.batch))
+    print(f'[clip] held-out loss before training {cl.hist[0]:.3f}, '
+          f'after {cl.hist[-1]:.3f}, guessing at random {chance:.3f}')
+    fig, ax = plt.subplots(figsize=(9.4, 5.0), facecolor='white')
+    _plain(ax)
+    ax.plot(cl.at, cl.hist, color=LINK, lw=2.2)
+    ax.axhline(chance, color=MUTED, ls='--', lw=1.3)
+    ax.text(cl.at[-1], chance + 0.12, f'guessing one caption out of {cl.batch}: '
+                                      f'{chance:.3f}', ha='right', fontsize=9.5, color=MUTED)
+    ax.text(cl.at[0] + 40, cl.hist[0], f'{cl.hist[0]:.3f} at the start', fontsize=9.5,
+            color=LINK, va='center')
+    ax.text(cl.at[-1], cl.hist[-1] + 0.3, f'{cl.hist[-1]:.3f} at the end', fontsize=9.5,
+            color=LINK, ha='right')
+    ax.set_xlabel('gradient steps', fontsize=10)
+    ax.set_ylabel(f'held-out loss, batch of {cl.batch}', fontsize=10)
+    ax.set_ylim(0, cl.hist[0] * 1.1)
+    ax.set_title('Learning to pick the right caption out of a batch of 32',
+                 fontsize=12, weight='bold')
+    _save(fig, SSP_DOC, 'contrastive-loss-curve.svg')
+
+
+def batch_size_is_the_question() -> None:
+    """One idea: a bigger batch means more wrong answers to beat, so a higher loss."""
     cl = _cl()
     sizes = [2, 4, 8, 16, 32, 64, 128]
     got = [cl.loss(cl.wp, cl.wt, cl.tau, b, seed=900) for b in sizes]
     chance = [float(np.log(b)) for b in sizes]
-    taus = [0.02, 0.04, 0.07, 0.1, 0.15, 0.25, 0.4, 0.7, 1.0]
-    by_tau = [cl.loss(cl.wp, cl.wt, t, 32, seed=901) for t in taus]
-    best = taus[int(np.argmin(by_tau))]
     for b, g, c in zip(sizes, got, chance):
         print(f'[clip] batch {b:4d}: {b - 1:3d} wrong answers, trained loss {g:.3f}, '
               f'guessing {c:.3f}')
+    fig, ax = plt.subplots(figsize=(9.4, 5.0), facecolor='white')
+    _plain(ax)
+    ax.plot(sizes, chance, marker='s', ls='--', color=MUTED, lw=1.8,
+            label='guessing at random')
+    ax.plot(sizes, got, marker='o', color=SLIDE, lw=2.2, label='the trained encoders')
+    for b, g in zip(sizes, got):
+        ax.text(b, g - 0.22, f'{g:.2f}', ha='center', fontsize=9.5, color=SLIDE)
+    ax.set_xscale('log')
+    ax.set_xticks(sizes)
+    ax.set_xticklabels([str(s) for s in sizes])
+    ax.set_ylim(-0.4, max(chance) * 1.12)
+    ax.set_xlabel('pictures in the batch: one right caption and the rest wrong',
+                  fontsize=10)
+    ax.set_ylabel('held-out loss', fontsize=10)
+    ax.set_title('More wrong answers to beat, so a higher loss, but still far below chance',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    _save(fig, SSP_DOC, 'batch-size-is-the-question.svg')
+
+
+def temperature_has_one_best_value() -> None:
+    """One idea: the temperature has a single best value, and the loss rises either side."""
+    cl = _cl()
+    taus = [0.02, 0.04, 0.07, 0.1, 0.15, 0.25, 0.4, 0.7, 1.0]
+    by_tau = [cl.loss(cl.wp, cl.wt, t, 32, seed=901) for t in taus]
+    best = taus[int(np.argmin(by_tau))]
     for t, v in zip(taus, by_tau):
         print(f'[clip] temperature {t:.2f}: held-out loss {v:.3f}')
     print(f'[clip] the lowest loss is at temperature {best:.2f}')
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.0, 4.6), facecolor='white')
-    _plain(ax1)
-    ax1.plot(sizes, chance, marker='s', ls='--', color=MUTED, lw=1.8,
-             label='guessing at random')
-    ax1.plot(sizes, got, marker='o', color=SLIDE, lw=2.0, label='the trained encoders')
-    for b, g in zip(sizes, got):
-        ax1.text(b, g - 0.18, f'{g:.2f}', ha='center', fontsize=9, color=SLIDE)
-    ax1.set_xscale('log')
-    ax1.set_xticks(sizes)
-    ax1.set_xticklabels([str(s) for s in sizes])
-    ax1.set_xlabel('pictures in the batch', fontsize=10)
-    ax1.set_ylabel('held-out loss', fontsize=10)
-    ax1.set_title('A bigger batch is a harder question', fontsize=11.5, weight='bold')
-    ax1.legend(fontsize=9.5, frameon=False, loc='upper left')
-    _plain(ax2)
-    ax2.plot(taus, by_tau, marker='o', color=PURPLE, lw=2.0)
-    ax2.axvline(best, color=GRIP, ls='--', lw=1.3)
-    ax2.text(best * 1.08, max(by_tau) * 0.9, f'lowest at {best:.2f}', fontsize=9.5, color=GRIP)
-    ax2.set_xscale('log')
-    ax2.set_xlabel('temperature the similarities are divided by', fontsize=10)
-    ax2.set_ylabel('held-out loss, batch of 32', fontsize=10)
-    ax2.set_title('Too sharp or too flat, and the loss rises', fontsize=11.5, weight='bold')
-    _save(fig, SSP_DOC, 'batch-size-and-temperature.svg')
+    fig, ax = plt.subplots(figsize=(9.4, 5.0), facecolor='white')
+    _plain(ax)
+    ax.plot(taus, by_tau, marker='o', color=PURPLE, lw=2.2)
+    ax.axvline(best, color=GRIP, ls='--', lw=1.3)
+    ax.text(best * 1.1, max(by_tau) * 0.88, f'lowest loss at {best:.2f}', fontsize=10,
+            color=GRIP)
+    ax.set_xscale('log')
+    ax.set_xticks(taus)
+    ax.set_xticklabels([f'{t:g}' for t in taus], fontsize=8.5)
+    ax.set_xlabel('temperature the similarities are divided by', fontsize=10)
+    ax.set_ylabel('held-out loss, batch of 32', fontsize=10)
+    ax.set_title('Too sharp on the left, too flat on the right', fontsize=12, weight='bold')
+    _save(fig, SSP_DOC, 'temperature-has-one-best-value.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1366,38 +1333,73 @@ def teacher_and_student() -> None:
     _save(fig, SSP_DOC, 'teacher-and-student.svg')
 
 
-def agreement_rises() -> None:
+def student_copies_the_teacher() -> None:
+    """One idea: the loss between the student's answer and the teacher's falls to 0.52."""
     ds = _ds()
-    best = float(np.log(ds.k))
     print(f'[dino] loss between teacher and student: {ds.loss[0]:.3f} at the start, '
           f'{ds.loss[-1]:.3f} at the end')
+    fig, ax = plt.subplots(figsize=(9.4, 5.0), facecolor='white')
+    _plain(ax)
+    ax.plot(ds.at, ds.loss, color=LINK, lw=2.2)
+    ax.text(ds.at[1] + 30, ds.loss[0], f'{ds.loss[0]:.2f} at the start', fontsize=10,
+            color=LINK, va='center')
+    ax.text(ds.at[-1], max(ds.loss) * 0.03, f'{ds.loss[-1]:.2f} at the end',
+            fontsize=10, color=LINK, ha='right')
+    ax.set_xlabel('gradient steps', fontsize=10)
+    ax.set_ylabel("loss against the teacher's answer", fontsize=10)
+    ax.set_ylim(0, max(ds.loss) * 1.12)
+    ax.set_title("The student learns to say what the teacher said about the other crop",
+                 fontsize=12, weight='bold')
+    _save(fig, SSP_DOC, 'student-copies-the-teacher.svg')
+
+
+def agreement_rises() -> None:
+    """One idea: on unseen items the two crops end up with the same prototype 78.5% of the time."""
+    ds = _ds()
     print(f'[dino] the two crops are given the same prototype '
           f'{ds.agree[0]:.1%} of the time at the start and {ds.agree[-1]:.1%} at the end, '
           f'where guessing gives {1 / ds.k:.1%}')
-    print(f'[dino] spread of the answers over the {ds.k} prototypes: {ds.spread[0]:.3f} '
-          f'at the start, {ds.spread[-1]:.3f} at the end, and {best:.3f} would be '
-          f'all prototypes used equally')
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.2, 4.6), facecolor='white')
-    _plain(ax1)
-    ax1.plot(ds.at, ds.loss, color=LINK, lw=2.0)
-    ax1.set_xlabel('gradient steps', fontsize=10)
-    ax1.set_ylabel("loss against the teacher's answer", fontsize=10)
-    ax1.set_ylim(0, max(ds.loss) * 1.08)
-    ax1.set_title(f'the student learns to agree: {ds.loss[0]:.2f} down to '
-                  f'{ds.loss[-1]:.2f}', fontsize=11.5, weight='bold')
-    _plain(ax2)
-    ax2.plot(ds.at, [100 * a for a in ds.agree], color=SLIDE, lw=2.0,
-             label='both crops given the same prototype')
-    ax2.axhline(100 / ds.k, color=MUTED, ls='--', lw=1.3,
-                label=f'guessing: {100 / ds.k:.0f} per cent')
-    ax2.set_xlabel('gradient steps', fontsize=10)
-    ax2.set_ylabel('per cent of held-out items', fontsize=10)
-    ax2.set_ylim(0, 105)
-    ax2.set_title('two crops, one answer, on items never trained on',
-                  fontsize=11.5, weight='bold')
-    ax2.legend(fontsize=9.5, frameon=False, loc='upper left')
-    fig.subplots_adjust(wspace=0.3)
+    fig, ax = plt.subplots(figsize=(9.4, 5.0), facecolor='white')
+    _plain(ax)
+    ax.plot(ds.at, [100 * a for a in ds.agree], color=SLIDE, lw=2.2,
+            label='both crops given the same prototype')
+    ax.axhline(100 / ds.k, color=MUTED, ls='--', lw=1.3,
+               label=f'guessing one of {ds.k}: {100 / ds.k:.1f} per cent')
+    ax.text(ds.at[-1], 100 * ds.agree[-1] + 4, f'{100 * ds.agree[-1]:.1f} per cent',
+            fontsize=10, color=SLIDE, ha='right')
+    ax.set_xlabel('gradient steps', fontsize=10)
+    ax.set_ylabel('per cent of held-out items', fontsize=10)
+    ax.set_ylim(0, 105)
+    ax.set_title('Two crops of one item, one answer, on items never trained on',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
     _save(fig, SSP_DOC, 'agreement-rises.svg')
+
+
+def answers_stay_spread_out() -> None:
+    """One idea: the answers did not collapse onto one prototype, which is what centring buys."""
+    ds = _ds()
+    even = float(np.log(ds.k))
+    print(f'[dino] spread of the answers over the {ds.k} prototypes: {ds.spread[0]:.3f} '
+          f'at the start, {ds.spread[-1]:.3f} at the end, {even:.3f} would be '
+          f'all prototypes used equally, and 0 would be collapse')
+    fig, ax = plt.subplots(figsize=(9.6, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot(ds.at, ds.spread, color=PURPLE, lw=2.2)
+    ax.axhline(even, color=SLIDE, ls='--', lw=1.4)
+    ax.axhline(0.0, color=GRIP, ls='--', lw=1.4)
+    ax.text(ds.at[-1], even + 0.09, f'all {ds.k} prototypes used equally: {even:.3f}',
+            fontsize=10, color=SLIDE, ha='right')
+    ax.text(ds.at[-1], 0.12, 'every picture given the same answer: 0', fontsize=10,
+            color=GRIP, ha='right')
+    ax.text(ds.at[-1], ds.spread[-1] - 0.42, f'this run ends at {ds.spread[-1]:.3f}',
+            fontsize=10, color=PURPLE, ha='right', weight='bold')
+    ax.set_xlabel('gradient steps', fontsize=10)
+    ax.set_ylabel('spread of the answers over the prototypes', fontsize=10)
+    ax.set_ylim(-0.25, even * 1.2)
+    ax.set_title('The answers never collapse onto one prototype',
+                 fontsize=12, weight='bold')
+    _save(fig, SSP_DOC, 'answers-stay-spread-out.svg')
 
 
 def same_item_closer() -> None:
@@ -1566,7 +1568,80 @@ def _bb() -> Backbone:
     return BB
 
 
+BIG_BACK_LAYERS: int = 24
+BIG_BACK_WIDTH: int = 1024
+BIG_HEAD_CLASSES: int = 20
+
+
+def frozen_and_trained() -> None:
+    """One idea: one real picture goes through a frozen backbone into a trained head."""
+    bb = _bb()
+    back_numbers = P * bb.k
+    head = mlp_params(bb.k, bb.hidden_head, 4)
+    i = 0
+    feats = bb.features(bb.test.a[i:i + 1])[0]
+    tr = Pics(400, seed=900 + 400)
+    par = mlp_fit(bb.features(tr.a), tr.cls, 4, hidden=bb.hidden_head, steps=3000,
+                  lr=0.15, seed=0)
+    w1, b1, w2, b2 = par
+    scores = _softmax((np.maximum(feats @ w1 + b1, 0.0) @ w2 + b2)[None, :])[0]
+    print(f'[frozen] one held-out picture: {bb.k} features '
+          + ', '.join(f'{v:+.2f}' for v in feats))
+    print('[frozen] the head turns them into class chances '
+          + ', '.join(f'{v:.3f}' for v in scores)
+          + f'; the true class is {int(bb.test.cls[i]) + 1}')
+
+    fig, axes = plt.subplots(1, 5, figsize=(13.8, 3.8), facecolor='white',
+                             gridspec_kw={'width_ratios': [1.0, 0.95, 1.0, 0.95, 1.0]})
+    for ax in axes:
+        _blank(ax)
+    axes[0].imshow(bb.test.a[i].reshape(SIDE, SIDE), cmap='Greys_r',
+                   interpolation='nearest')
+    axes[0].set_title(f'one picture,\n{P} pixels', fontsize=10.5, weight='bold')
+
+    ax = axes[1]
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    _box(ax, 0.0, 0.42, 1.0, 0.3, f'frozen backbone\n{_si(back_numbers)} numbers',
+         face='#e8e8e8', edge=MUTED, size=9.0, weight='bold')
+    ax.text(0.5, 0.22, 'no labels were used', ha='center', fontsize=8.5, color=MUTED)
+    _arrow(ax, 0.0, 0.86, 1.0, 0.86, colour=INK)
+
+    ax = axes[2]
+    _plain(ax)
+    ax.bar(range(1, bb.k + 1), feats, color=LINK, width=0.6)
+    ax.axhline(0, color=INK, lw=0.8)
+    ax.set_xticks(range(1, bb.k + 1))
+    ax.tick_params(labelsize=8)
+    ax.set_xlabel('feature', fontsize=9)
+    ax.set_title(f'{bb.k} numbers\nout of the backbone', fontsize=10.5, weight='bold')
+
+    ax = axes[3]
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    _box(ax, 0.0, 0.42, 1.0, 0.3, f'the head\n{head} numbers',
+         face='#d8f0dc', edge=SLIDE, size=9.0, weight='bold')
+    ax.text(0.5, 0.22, 'your labels train these', ha='center', fontsize=8.5, color=SLIDE)
+    _arrow(ax, 0.0, 0.86, 1.0, 0.86, colour=INK)
+
+    ax = axes[4]
+    _plain(ax)
+    cols = [GRIP if j == int(bb.test.cls[i]) else LINK for j in range(4)]
+    ax.bar(range(1, 5), scores, color=cols, width=0.6)
+    for j, v in enumerate(scores):
+        ax.text(j + 1, v + 0.03, f'{v:.2f}', ha='center', fontsize=8.5)
+    ax.set_ylim(0, 1.15)
+    ax.set_xticks(range(1, 5))
+    ax.tick_params(labelsize=8)
+    ax.set_xlabel('class', fontsize=9)
+    ax.set_title(f'4 chances;\ntrue class {int(bb.test.cls[i]) + 1} in red',
+                 fontsize=10.5, weight='bold')
+    fig.subplots_adjust(wspace=0.45)
+    _save(fig, SSP_DOC, 'frozen-and-trained.svg')
+
+
 def backbone_and_head() -> None:
+    """One idea: on this page the labels pay for 212 numbers instead of 12,964."""
     bb = _bb()
     back_numbers = P * bb.k
     head = mlp_params(bb.k, bb.hidden_head, 4)
@@ -1574,41 +1649,50 @@ def backbone_and_head() -> None:
     print(f'[frozen] this demonstration: backbone {_si(back_numbers)} numbers, fitted on '
           f'{_si(bb.n_unlabelled)} unlabelled pairs and then frozen')
     print(f'[frozen] head trained on the labels: {head} parameters')
-    print(f'[frozen] the same job from scratch: {scratch} parameters, all of them trained')
+    print(f'[frozen] the from-scratch network on raw pixels: {scratch} parameters, '
+          f'all of them trained, which is {scratch / head:.0f} times the head')
     print(f'[frozen] so the head trains {head / scratch:.3%} as many parameters')
-    layers, width, classes = 24, 1024, 20
+    fig, ax = plt.subplots(figsize=(9.4, 5.0), facecolor='white')
+    _plain(ax)
+    ax.bar([0, 1, 2], [back_numbers, head, scratch], color=[MUTED, SLIDE, GRIP], width=0.5)
+    for i, v in enumerate([back_numbers, head, scratch]):
+        ax.text(i, v * 1.4, _si(v), ha='center', fontsize=11.5, weight='bold')
+    ax.set_yscale('log')
+    ax.set_ylim(50, back_numbers * 40)
+    ax.set_xticks([0, 1, 2])
+    ax.set_xticklabels(['the frozen backbone\n(no labels)', 'the head\n(your labels)',
+                        'the whole network,\nfrom scratch'], fontsize=9.5)
+    ax.set_ylabel('numbers in the model (log scale)', fontsize=10)
+    ax.set_title("This page's demonstration: the labels pay for the middle bar only",
+                 fontsize=12, weight='bold')
+    _save(fig, SSP_DOC, 'backbone-and-head.svg')
+
+
+def full_size_backbone_and_head() -> None:
+    """One idea: at full size the head is a ten-thousandth of the backbone."""
+    layers, width, classes = BIG_BACK_LAYERS, BIG_BACK_WIDTH, BIG_HEAD_CLASSES
     big_back = 12 * width * width * layers
     big_head = width * classes + classes
     print(f'[frozen] an example full-size backbone of {layers} blocks and width {width}: '
           f'{big_back / 1e6:.0f} million parameters')
     print(f'[frozen] a head of {classes} classes on top of it: {_si(big_head)} parameters, '
           f'which is {big_head / big_back:.5%} of the backbone')
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.0, 4.8), facecolor='white')
-    _plain(ax1)
-    ax1.bar([0, 1, 2], [back_numbers, head, scratch], color=[MUTED, SLIDE, GRIP], width=0.55)
-    for i, v in enumerate([back_numbers, head, scratch]):
-        ax1.text(i, v * 1.35, _si(v), ha='center', fontsize=10.5, weight='bold')
-    ax1.set_yscale('log')
-    ax1.set_ylim(50, back_numbers * 40)
-    ax1.set_xticks([0, 1, 2])
-    ax1.set_xticklabels(['the frozen\nbackbone', 'the head\n(trained)',
-                         'the whole network,\nfrom scratch'], fontsize=9)
-    ax1.set_ylabel('numbers in the model (log scale)', fontsize=10)
-    ax1.set_title('This page\'s demonstration', fontsize=11.5, weight='bold')
-    _plain(ax2)
-    ax2.bar([0, 1], [big_back, big_head], color=[MUTED, SLIDE], width=0.5)
-    ax2.text(0, big_back * 1.4, f'{big_back / 1e6:.0f} million', ha='center',
-             fontsize=10.5, weight='bold')
-    ax2.text(1, big_head * 1.4, _si(big_head), ha='center', fontsize=10.5, weight='bold')
-    ax2.set_yscale('log')
-    ax2.set_ylim(1e3, big_back * 60)
-    ax2.set_xticks([0, 1])
-    ax2.set_xticklabels([f'example backbone:\n{layers} blocks, width {width}',
-                         f'head for {classes} classes'], fontsize=9.5)
-    ax2.set_ylabel('parameters (log scale)', fontsize=10)
-    ax2.set_title(f'An example full-size pair: the head is '
-                  f'{big_head / big_back:.4%} of it', fontsize=11.5, weight='bold')
-    _save(fig, SSP_DOC, 'backbone-and-head.svg')
+    fig, ax = plt.subplots(figsize=(9.0, 5.0), facecolor='white')
+    _plain(ax)
+    ax.bar([0, 1], [big_back, big_head], color=[MUTED, SLIDE], width=0.45)
+    ax.text(0, big_back * 1.5, f'{big_back / 1e6:.0f} million', ha='center',
+            fontsize=11.5, weight='bold')
+    ax.text(1, big_head * 1.5, _si(big_head), ha='center', fontsize=11.5, weight='bold')
+    ax.set_yscale('log')
+    ax.set_ylim(1e3, big_back * 80)
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels([f'example backbone:\n{layers} blocks, width {width}',
+                        f'head for {classes} classes'], fontsize=10)
+    ax.set_ylabel('parameters (log scale)', fontsize=10)
+    ax.set_title(f'An example full-size pair: the head is '
+                 f'{big_head / big_back:.4%} of the backbone',
+                 fontsize=12, weight='bold')
+    _save(fig, SSP_DOC, 'full-size-backbone-and-head.svg')
 
 
 def what_the_features_track() -> None:
@@ -1660,9 +1744,10 @@ def few_labels_beat_many() -> None:
                                                  for n, v in zip(bb.sizes, ys)))
     fig, ax = plt.subplots(figsize=(10.2, 5.4), facecolor='white')
     _plain(ax)
-    style = {'frozen backbone': (SLIDE, 'o', 'a small head on the frozen backbone'),
+    style = {'frozen backbone': (SLIDE, 'o', 'a small head on the frozen backbone (212 numbers)'),
              'top 8 directions': (WRIST, '^', 'a small head on the 8 biggest directions'),
-             'from scratch': (GRIP, 's', 'the same size of network, from scratch on pixels')}
+             'from scratch': (GRIP, 's', 'a bigger network, from scratch on the raw pixels '
+                                         '(12,964 numbers)')}
     for key, ys in bb.curves.items():
         col, mark, label = style[key]
         ax.plot(bb.sizes, [100 * v for v in ys], marker=mark, color=col, lw=2.0, label=label)
@@ -1677,7 +1762,8 @@ def few_labels_beat_many() -> None:
     ax.set_ylim(20, 103)
     ax.set_title('200 labels on a frozen backbone beat 800 labels from scratch',
                  fontsize=12, weight='bold')
-    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper center',
+              bbox_to_anchor=(0.5, -0.17), ncol=1)
     _save(fig, SSP_DOC, 'few-labels-beat-many.svg')
 
 
@@ -1798,6 +1884,34 @@ def one_matrix_multiply() -> None:
                  fontsize=12, weight='bold', y=1.02)
     fig.subplots_adjust(wspace=0.3)
     _save(fig, SDC_DOC, 'one-matrix-multiply.svg')
+
+
+def many_workers_one_multiply() -> None:
+    """One idea: the example multiply's 60 pairs finish sooner the more workers there are."""
+    rows, inner, cols = 4, 3, 5
+    cells = rows * cols
+    pairs = cells * inner
+    workers = [1, 4, 20]
+    steps = [pairs / w for w in workers]
+    print(f'[gpu] the example multiply is {cells} cells of {inner} multiply-and-add '
+          f'pairs = {pairs} pairs')
+    for w, s in zip(workers, steps):
+        print(f'[gpu] {w:2d} worker(s): {s:.0f} pairs each, so {s:.0f} steps '
+              f'one after another')
+    fig, ax = plt.subplots(figsize=(8.8, 4.8), facecolor='white')
+    _plain(ax)
+    ax.bar(range(len(workers)), steps, color=[GRIP, WRIST, SLIDE], width=0.5)
+    for i, s in enumerate(steps):
+        ax.text(i, s + pairs * 0.03, f'{s:.0f} steps', ha='center', fontsize=11.5,
+                weight='bold')
+    ax.set_xticks(range(len(workers)))
+    ax.set_xticklabels([f'1 worker', '4 workers', f'{cells} workers,\none per cell'],
+                       fontsize=10)
+    ax.set_ylim(0, pairs * 1.2)
+    ax.set_ylabel('steps taken one after another', fontsize=10)
+    ax.set_title(f'The same {pairs} multiply-and-add pairs, shared out {len(workers)} ways',
+                 fontsize=12, weight='bold')
+    _save(fig, SDC_DOC, 'many-workers-one-multiply.svg')
 
 
 def work_and_independence() -> None:
@@ -1924,6 +2038,44 @@ def bytes_per_parameter() -> None:
     ax.set_title(f'The same {n / 1e9:.2f} billion parameters, stored four ways',
                  fontsize=12, weight='bold')
     _save(fig, SDC_DOC, 'bytes-per-parameter.svg')
+
+
+def where_the_bits_go() -> None:
+    """One idea: bfloat16 pays for float32's range by giving up fraction bits."""
+    # name, sign bits, exponent bits, fraction bits
+    formats: list[tuple[str, int, int, int]] = [
+        ('float32', 1, 8, 23),
+        ('float16', 1, 5, 10),
+        ('bfloat16', 1, 8, 7),
+    ]
+    for name, s, e, f in formats:
+        print(f'[mem] {name:9s} {s} sign bit, {e:2d} exponent bits (the range), '
+              f'{f:2d} fraction bits (the precision), {s + e + f:2d} bits in all')
+    fig, ax = plt.subplots(figsize=(10.6, 3.9), facecolor='white')
+    _blank(ax)
+    ax.set_xlim(-0.6, 33.4)
+    ax.set_ylim(-0.4, 3.9)
+    for row, (name, s, e, f) in enumerate(formats):
+        y = 2.6 - row * 0.95
+        ax.text(-0.5, y + 0.22, name, fontsize=11, weight='bold', ha='left')
+        x = 0.0
+        for count, colour, label in [(s, MUTED, 'sign'), (e, LINK, f'{e} exponent bits'),
+                                     (f, SLIDE, f'{f} fraction bits')]:
+            ax.add_patch(Rectangle((x, y - 0.32), count, 0.52, facecolor=colour,
+                                   edgecolor='white', lw=1.0))
+            if count >= 7:
+                ax.text(x + count / 2, y - 0.06, label, ha='center', va='center',
+                        fontsize=8.5, color='white', weight='bold')
+            elif count >= 3:
+                ax.text(x + count / 2, y - 0.06, str(count), ha='center', va='center',
+                        fontsize=8.5, color='white', weight='bold')
+            x += count
+        ax.text(x + 0.3, y - 0.06, f'{int(x)} bits', fontsize=9.5, va='center', color=INK)
+    ax.text(0.0, 3.4, 'exponent bits set the range of a number, fraction bits set how '
+                      'finely it is rounded',
+            fontsize=10.5, color=INK, weight='bold')
+    ax.text(0.0, 0.2, 'grey = the sign bit', fontsize=9, color=MUTED)
+    _save(fig, SDC_DOC, 'where-the-bits-go.svg')
 
 
 def rounding_at_each_precision() -> None:
@@ -2054,40 +2206,36 @@ def training_memory_budget() -> None:
     print(f'[train] {"to run it on one sequence":42s} {run_only / 1e9:7.1f} GB')
     print(f'[train] training needs {total / run_only:.1f} times as much memory as running')
     print(f'[train] that is {total / EX_MEM:.1f} cards of {EX_MEM / 1e9:.0f} GB')
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.4, 5.2), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.35, 1.0]})
-    _plain(ax1)
+    for k, v in budget.items():
+        print(f'[train] share of the training memory, {k:42s} {100 * v / total:4.1f} %')
+    opt_state = sum(v for k, v in budget.items()
+                    if 'master copy' in k or 'optimiser' in k)
+    print(f'[train] master copy and the two averages together: '
+          f'{100 * opt_state / total:.0f} per cent of the training memory')
+    fig, ax = plt.subplots(figsize=(8.8, 5.6), facecolor='white')
+    _plain(ax)
     bottom = 0.0
     cols = [LINK, WRIST, PURPLE, TEAL, SLIDE]
-    for (k, v), col in zip(budget.items(), cols):
-        ax1.bar([0], [v / 1e9], bottom=[bottom / 1e9], color=col, width=0.5)
-        ax1.text(0.0, (bottom + v / 2) / 1e9, f'{v / 1e9:.0f} GB', fontsize=9.5,
-                 va='center', ha='center', color='white', weight='bold')
+    short = ['parameters', 'gradients', 'master copy', 'optimiser averages', 'activations']
+    for (k, v), col, name in zip(budget.items(), cols, short):
+        ax.bar([0], [v / 1e9], bottom=[bottom / 1e9], color=col, width=0.6)
+        ax.text(0.0, (bottom + v / 2) / 1e9, f'{name}\n{v / 1e9:.0f} GB', fontsize=9.0,
+                va='center', ha='center', color='white', weight='bold',
+                linespacing=1.15)
         bottom += v
-    ax1.bar([1], [run_only / 1e9], color=MUTED, width=0.5)
-    ax1.text(1, run_only / 1e9 + total / 1e9 * 0.02, f'{run_only / 1e9:.0f} GB',
-             ha='center', fontsize=10.5, weight='bold')
-    ax1.set_xticks([0, 1])
-    ax1.set_xticklabels(['training it', 'just running it'], fontsize=10)
-    ax1.set_xlim(-0.5, 1.6)
-    ax1.set_ylim(0, total / 1e9 * 1.1)
-    ax1.set_ylabel('gigabytes', fontsize=10)
-    ax1.set_title(f'{total / 1e9:.0f} GB against {run_only / 1e9:.0f} GB: '
-                  f'{total / run_only:.0f} times as much', fontsize=11.5, weight='bold')
-    _plain(ax2)
-    share = [v / total * 100 for v in budget.values()]
-    ax2.barh(range(len(share))[::-1], share, color=cols, height=0.6)
-    for i, v in enumerate(share):
-        ax2.text(v + 1, len(share) - 1 - i, f'{v:.0f}%', va='center', fontsize=9.5)
-    ax2.set_yticks(range(len(share))[::-1])
-    ax2.set_yticklabels(['parameters', 'gradients', 'master copy',
-                         'optimiser averages', 'activations'], fontsize=9)
-    ax2.set_xlim(0, max(share) * 1.25)
-    ax2.set_xlabel('share of the training memory (per cent)', fontsize=10)
-    ax2.set_title('the parameters are the small part', fontsize=11.5, weight='bold')
-    fig.suptitle(f'Training the example model: batch of 4 sequences of {_si(EX_SEQ)} '
-                 f'words', fontsize=12.5, weight='bold', y=1.0)
-    fig.subplots_adjust(wspace=0.5)
+    ax.text(0, total / 1e9 * 1.02, f'{total / 1e9:.0f} GB', ha='center', fontsize=11.5,
+            weight='bold')
+    ax.bar([1], [run_only / 1e9], color=MUTED, width=0.6)
+    ax.text(1, run_only / 1e9 + total / 1e9 * 0.02, f'{run_only / 1e9:.0f} GB',
+            ha='center', fontsize=11.5, weight='bold')
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(['training it', 'just running it'], fontsize=10.5)
+    ax.set_xlim(-0.6, 1.6)
+    ax.set_ylim(0, total / 1e9 * 1.12)
+    ax.set_ylabel('gigabytes', fontsize=10)
+    ax.set_title(f'The example model, batch of 4 sequences of {_si(EX_SEQ)} words:\n'
+                 f'{total / 1e9:.0f} GB to train against {run_only / 1e9:.0f} GB to run, '
+                 f'{total / run_only:.0f} times as much', fontsize=12, weight='bold')
     _save(fig, SDC_DOC, 'training-memory-budget.svg')
 
 
@@ -2426,28 +2574,48 @@ def grow_together() -> None:
           f'by {10 ** slope_n:.2f} and the best token count by {10 ** slope_d:.2f}')
     print(f'[law] tokens per parameter at the small end '
           f'{ds[0] / ns[0]:.0f}, at the large end {ds[-1] / ns[-1]:.0f}')
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.2, 4.8), facecolor='white')
-    _plain(ax1)
-    ax1.plot(budgets, ns, color=LINK, lw=2.4, label='best number of parameters')
-    ax1.plot(budgets, ds, color=SLIDE, lw=2.4, label='best number of training tokens')
-    ax1.set_xscale('log')
-    ax1.set_yscale('log')
-    ax1.set_xlabel('operations in the run (log scale)', fontsize=10)
-    ax1.set_ylabel('count (log scale)', fontsize=10)
-    ax1.set_title('both grow, and at almost the same rate', fontsize=11.5, weight='bold')
-    ax1.legend(fontsize=9.5, frameon=False, loc='upper left')
-    _plain(ax2)
-    ax2.plot(budgets, ds / ns, color=PURPLE, lw=2.4)
-    ax2.set_xscale('log')
-    ax2.set_xlabel('operations in the run (log scale)', fontsize=10)
-    ax2.set_ylabel('training tokens for each parameter', fontsize=10)
-    ax2.set_ylim(0, float(np.max(ds / ns)) * 1.2)
-    ax2.set_title('so the tokens for each parameter move slowly',
-                  fontsize=11.5, weight='bold')
-    fig.suptitle('Spend a budget of arithmetic well: make the model and the data grow '
-                 'together', fontsize=12.5, weight='bold', y=1.0)
-    fig.subplots_adjust(wspace=0.32)
+    fig, ax = plt.subplots(figsize=(9.6, 5.0), facecolor='white')
+    _plain(ax)
+    ax.plot(budgets, ns, color=LINK, lw=2.4,
+            label=f'best number of parameters (x{10 ** slope_n:.2f} per ten times '
+                  f'the budget)')
+    ax.plot(budgets, ds, color=SLIDE, lw=2.4,
+            label=f'best number of training tokens (x{10 ** slope_d:.2f} per ten times '
+                  f'the budget)')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel('operations in the run (log scale)', fontsize=10)
+    ax.set_ylabel('count (log scale)', fontsize=10)
+    ax.set_title('Spend a bigger budget by growing the model and the data together',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
     _save(fig, SDC_DOC, 'grow-together.svg')
+
+
+def tokens_for_each_parameter() -> None:
+    """One idea: the best tokens-per-parameter drifts from 13 to 54 over a huge budget range."""
+    budgets = np.logspace(18, 26, 30)
+    best = [best_split(c) for c in budgets]
+    ns = np.array([b[0] for b in best])
+    ds = np.array([b[1] for b in best])
+    ratio = ds / ns
+    print(f'[law] tokens for each parameter: {ratio[0]:.0f} at {budgets[0]:.0e} '
+          f'operations and {ratio[-1]:.0f} at {budgets[-1]:.0e}, while the budget '
+          f'rose by a factor of {budgets[-1] / budgets[0]:.0e}')
+    fig, ax = plt.subplots(figsize=(9.6, 5.0), facecolor='white')
+    _plain(ax)
+    ax.plot(budgets, ratio, color=PURPLE, lw=2.4)
+    ax.text(budgets[0] * 1.4, ratio[0] - 4.5, f'{ratio[0]:.0f} tokens for each parameter',
+            fontsize=10, color=PURPLE)
+    ax.text(budgets[-1], ratio[-1] + 2.5, f'{ratio[-1]:.0f}', fontsize=10, color=PURPLE,
+            ha='right')
+    ax.set_xscale('log')
+    ax.set_xlabel('operations in the run (log scale)', fontsize=10)
+    ax.set_ylabel('training tokens for each parameter', fontsize=10)
+    ax.set_ylim(0, float(np.max(ratio)) * 1.25)
+    ax.set_title(f'The budget rises a hundred million times and this number rises '
+                 f'{ratio[-1] / ratio[0]:.1f} times', fontsize=12, weight='bold')
+    _save(fig, SDC_DOC, 'tokens-for-each-parameter.svg')
 
 
 def predict_the_big_run() -> None:
@@ -2534,6 +2702,7 @@ def quality_beats_volume() -> None:
 
 
 def duplicates_waste_the_budget() -> None:
+    """One idea: with the set held at 1,600, accuracy follows the number of different examples."""
     bb = _bb()
     budget = 1600
     fractions = [0.0, 0.5, 0.75, 0.9, 0.95, 0.98]
@@ -2553,28 +2722,21 @@ def duplicates_waste_the_budget() -> None:
         uniques.append(u)
         print(f'[data] {f:.0%} of the {budget} examples are copies: {u} different '
               f'examples, accuracy {accs[-1]:.3f}')
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.0, 4.8), facecolor='white')
-    _plain(ax1)
-    ax1.bar([f * 100 for f in fractions], uniques, width=4, color=LINK)
-    for f, u in zip(fractions, uniques):
-        ax1.text(f * 100, u + budget * 0.02, str(u), ha='center', fontsize=9.5)
-    ax1.set_xlabel('percentage of the set that is copies', fontsize=10)
-    ax1.set_ylabel('different examples in it', fontsize=10)
-    ax1.set_ylim(0, budget * 1.15)
-    ax1.set_title(f'the set is always {_si(budget)} examples', fontsize=11.5,
-                  weight='bold')
-    _plain(ax2)
-    ax2.plot([f * 100 for f in fractions], [100 * a for a in accs], marker='o',
-             color=GRIP, lw=2.2)
-    for f, a in zip(fractions, accs):
-        ax2.text(f * 100, 100 * a + 1.2, f'{100 * a:.1f}', ha='center', fontsize=9.5)
-    ax2.set_xlabel('percentage of the set that is copies', fontsize=10)
-    ax2.set_ylabel('accuracy on held-out pictures (per cent)', fontsize=10)
-    ax2.set_ylim(20, 108)
-    ax2.set_title('and the accuracy falls with every copy', fontsize=11.5, weight='bold')
-    fig.suptitle('Copies cost the same to train on and teach nothing, which is why '
-                 'duplicates are taken out first', fontsize=12.5, weight='bold', y=1.0)
-    fig.subplots_adjust(wspace=0.3)
+    fig, ax = plt.subplots(figsize=(9.8, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot(uniques, [100 * a for a in accs], marker='o', color=GRIP, lw=2.2)
+    for u, a in zip(uniques, accs):
+        ax.text(u, 100 * a + 2.4, f'{100 * a:.1f}%', ha='center', fontsize=10,
+                weight='bold')
+    ax.set_xscale('log')
+    ax.set_xticks(uniques)
+    ax.set_xticklabels([f'{u}\n{f:.0%} copies' for u, f in zip(uniques, fractions)],
+                       fontsize=9)
+    ax.set_xlabel('different examples in the set (log scale)', fontsize=10)
+    ax.set_ylabel('accuracy on held-out pictures (per cent)', fontsize=10)
+    ax.set_ylim(20, 110)
+    ax.set_title(f'The set is always {_si(budget)} examples, and the accuracy follows '
+                 f'the different ones', fontsize=12, weight='bold')
     _save(fig, SDC_DOC, 'duplicates-waste-the-budget.svg')
 
 
@@ -2600,33 +2762,46 @@ def a_data_mixture() -> None:
               f'run = {dr / 1e12:5.3f}, so each token is read {t:.2f} times')
     print(f'[data] the shares add to {share.sum():.2f} and the run is '
           f'{total / 1e12:.1f} million million tokens')
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.4, 4.8), facecolor='white')
-    _plain(ax1)
+    fig, ax = plt.subplots(figsize=(9.8, 5.0), facecolor='white')
+    _plain(ax)
     y = np.arange(len(names))[::-1]
-    ax1.barh(y + 0.18, have / 1e12, height=0.34, color=MUTED, label='tokens there are')
-    ax1.barh(y - 0.18, drawn / 1e12, height=0.34, color=LINK, label='tokens the run reads')
-    ax1.set_yticks(y)
-    ax1.set_yticklabels(names, fontsize=9)
-    ax1.set_xscale('log')
-    ax1.set_xlabel('million million tokens (log scale)', fontsize=10)
-    ax1.set_title('what there is, and what is read', fontsize=11.5, weight='bold')
-    ax1.legend(fontsize=9, frameon=False, loc='lower right')
-    _plain(ax2)
-    cols = [SLIDE if t <= 1.0 else GRIP for t in times]
-    ax2.barh(y, times, height=0.5, color=cols)
-    for yy, t in zip(y, times):
-        ax2.text(t * 1.1, yy, f'{t:.1f} times', va='center', fontsize=9.5)
-    ax2.axvline(1.0, color=INK, lw=1.2, ls='--')
-    ax2.set_yticks(y)
-    ax2.set_yticklabels(names, fontsize=9)
-    ax2.set_xscale('log')
-    ax2.set_xlim(0.05, max(times) * 3)
-    ax2.set_xlabel('times each token of that source is read (log scale)', fontsize=10)
-    ax2.set_title('a small source read many times over', fontsize=11.5, weight='bold')
-    fig.suptitle(f'An example mixture for a run of {total / 1e12:.1f} million million '
-                 f'tokens', fontsize=12.5, weight='bold', y=1.0)
-    fig.subplots_adjust(wspace=0.6)
+    ax.barh(y + 0.18, have / 1e12, height=0.34, color=MUTED, label='tokens there are')
+    ax.barh(y - 0.18, drawn / 1e12, height=0.34, color=LINK, label='tokens the run reads')
+    ax.set_yticks(y)
+    ax.set_yticklabels(names, fontsize=10)
+    ax.set_xscale('log')
+    ax.set_xlabel('million million tokens (log scale)', fontsize=10)
+    ax.set_title(f'An example mixture for a run of {total / 1e12:.1f} million million '
+                 f'tokens', fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
     _save(fig, SDC_DOC, 'a-data-mixture.svg')
+
+
+def times_each_token_is_read() -> None:
+    """One idea: the smallest source in the mixture is read 5.6 times and the largest 0.08."""
+    total = EX_TOKENS
+    names = [m[0] for m in MIXTURE]
+    have = np.array([m[1] for m in MIXTURE]) * 1e12
+    times = np.array([m[2] for m in MIXTURE]) * total / have
+    for nm, t in zip(names, times):
+        print(f'[data] {nm:24s} each token read {t:.2f} times')
+    fig, ax = plt.subplots(figsize=(9.8, 4.6), facecolor='white')
+    _plain(ax)
+    y = np.arange(len(names))[::-1]
+    cols = [SLIDE if t <= 1.0 else GRIP for t in times]
+    ax.barh(y, times, height=0.5, color=cols)
+    for yy, t in zip(y, times):
+        ax.text(t * 1.12, yy, f'{t:.2f} times', va='center', fontsize=10)
+    ax.axvline(1.0, color=INK, lw=1.2, ls='--')
+    ax.text(1.05, len(names) - 0.6, 'once each', fontsize=9, color=INK)
+    ax.set_yticks(y)
+    ax.set_yticklabels(names, fontsize=10)
+    ax.set_xscale('log')
+    ax.set_xlim(0.05, max(times) * 4)
+    ax.set_xlabel('times each token of that source is read (log scale)', fontsize=10)
+    ax.set_title('The source that matters most to a robot is read 5.6 times over',
+                 fontsize=12, weight='bold')
+    _save(fig, SDC_DOC, 'times-each-token-is-read.svg')
 
 
 DEMO_SECONDS: float = 25.0
@@ -2645,33 +2820,20 @@ def robot_data_costs_time() -> None:
     for t, h, y in zip(targets, hours, years):
         print(f'[robot] {_si(t)} demonstrations: {_si(h)} person-hours, '
               f'{y:.1f} person-years of 8-hour days')
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.0, 4.8), facecolor='white')
-    _plain(ax1)
-    ax1.bar([0], [per_hour], color=SLIDE, width=0.4)
-    ax1.text(0, per_hour * 1.03, f'{per_hour:.0f} demonstrations', ha='center',
-             fontsize=11.5, weight='bold')
-    ax1.set_xlim(-0.6, 0.6)
-    ax1.set_xticks([0])
-    ax1.set_xticklabels([f'{DEMO_SECONDS:.0f} s of moving\n+ {RESET_SECONDS:.0f} s of '
-                         f'resetting'], fontsize=10)
-    ax1.set_ylim(0, per_hour * 1.2)
-    ax1.set_ylabel('demonstrations in one person-hour', fontsize=10)
-    ax1.set_title('one person, one hour, one arm', fontsize=11.5, weight='bold')
-    _plain(ax2)
-    ax2.bar(range(len(targets)), hours, color=[LINK, WRIST, GRIP], width=0.5)
+    fig, ax = plt.subplots(figsize=(9.4, 5.2), facecolor='white')
+    _plain(ax)
+    ax.bar(range(len(targets)), hours, color=[LINK, WRIST, GRIP], width=0.5)
     for i, (h, y) in enumerate(zip(hours, years)):
-        ax2.text(i, h * 1.3, f'{_si(h)} hours\n{y:.1f} person-years', ha='center',
-                 fontsize=9.5, weight='bold')
-    ax2.set_yscale('log')
-    ax2.set_ylim(50, max(hours) * 12)
-    ax2.set_xticks(range(len(targets)))
-    ax2.set_xticklabels([f'{_si(t)}\ndemonstrations' for t in targets], fontsize=9.5)
-    ax2.set_ylabel('person-hours (log scale)', fontsize=10)
-    ax2.set_title('what a dataset of that size costs in people', fontsize=11.5,
-                  weight='bold')
-    fig.suptitle('Robot data is scarce because every example is somebody sitting at an arm',
-                 fontsize=12.5, weight='bold', y=1.0)
-    fig.subplots_adjust(wspace=0.35)
+        ax.text(i, h * 1.35, f'{_si(h)} person-hours\n{y:.1f} person-years', ha='center',
+                fontsize=10, weight='bold')
+    ax.set_yscale('log')
+    ax.set_ylim(50, max(hours) * 14)
+    ax.set_xticks(range(len(targets)))
+    ax.set_xticklabels([f'{_si(t)}\ndemonstrations' for t in targets], fontsize=10)
+    ax.set_ylabel('person-hours (log scale)', fontsize=10)
+    ax.set_title(f'At {DEMO_SECONDS:.0f} seconds of moving plus {RESET_SECONDS:.0f} to '
+                 f'reset, one person-hour gives {per_hour:.0f} demonstrations',
+                 fontsize=11.5, weight='bold')
     _save(fig, SDC_DOC, 'robot-data-costs-time.svg')
 
 
@@ -2692,58 +2854,50 @@ def four_ways_to_get_more_data() -> None:
     for nm, (_, h, got), r, n in zip(names, WAYS, rate, need):
         print(f'[robot] {nm:38s} {h:5.0f} person-hours gives {_si(got):>9s} examples '
               f'= {r:9.1f} an hour; {_si(n):>7s} hours for 100,000')
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.0, 4.8), facecolor='white')
+    fig, ax = plt.subplots(figsize=(9.8, 4.8), facecolor='white')
     cols = [GRIP, LINK, SLIDE, PURPLE, WRIST]
-    _plain(ax1)
+    _plain(ax)
     y = np.arange(len(names))[::-1]
-    ax1.barh(y, rate, color=cols, height=0.55)
+    ax.barh(y, rate, color=cols, height=0.55)
     for yy, r in zip(y, rate):
-        ax1.text(r * 1.15, yy, f'{r:,.0f}', va='center', fontsize=9.5)
-    ax1.set_xscale('log')
-    ax1.set_xlim(50, max(rate) * 6)
-    ax1.set_yticks(y)
-    ax1.set_yticklabels(names, fontsize=9)
-    ax1.set_xlabel('examples for each person-hour (log scale)', fontsize=10)
-    ax1.set_title('what an hour of a person buys', fontsize=11.5, weight='bold')
-    _plain(ax2)
-    ax2.barh(y, need, color=cols, height=0.55)
-    for yy, n in zip(y, need):
-        ax2.text(n * 1.15, yy, f'{n:,.0f} h', va='center', fontsize=9.5)
-    ax2.set_xscale('log')
-    ax2.set_xlim(5, max(need) * 8)
-    ax2.set_yticks(y)
-    ax2.set_yticklabels([])
-    ax2.set_xlabel('person-hours for 100,000 examples (log scale)', fontsize=10)
-    ax2.set_title('and what 100,000 examples cost', fontsize=11.5, weight='bold')
-    fig.suptitle('Example costings for five ways of getting robot data, written for this '
-                 'page', fontsize=12.5, weight='bold', y=1.0)
-    fig.subplots_adjust(wspace=0.12)
+        ax.text(r * 1.15, yy, f'{r:,.0f}', va='center', fontsize=10)
+    ax.set_xscale('log')
+    ax.set_xlim(50, max(rate) * 8)
+    ax.set_yticks(y)
+    ax.set_yticklabels(names, fontsize=10)
+    ax.set_xlabel('examples for each person-hour (log scale)', fontsize=10)
+    ax.set_title('What an hour of a person buys, under the example costings of this page',
+                 fontsize=12, weight='bold')
     _save(fig, SDC_DOC, 'four-ways-to-get-more-data.svg')
 
 
 # --------------------------------------------------------------------------
 
-PAGE_ONE = [labels_versus_free_signal, make_the_label_from_the_data,
-            one_picture_many_targets, four_recipes,
+PAGE_ONE = [labels_versus_free_signal, what_a_label_costs, make_the_label_from_the_data,
+            three_quarters_hidden, one_picture_many_targets,
             next_token_pairs, context_helps, one_position_probabilities,
             next_token_training_curve,
             masked_patches, fill_the_gaps, mask_rate_curve, masked_word_fill,
             similarity_grid, softmax_of_one_row, contrastive_training,
-            batch_size_and_temperature,
-            two_crops, teacher_and_student, agreement_rises, same_item_closer,
-            backbone_and_head, what_the_features_track, few_labels_beat_many,
-            labels_needed]
+            contrastive_loss_curve, batch_size_is_the_question,
+            temperature_has_one_best_value,
+            two_crops, teacher_and_student, student_copies_the_teacher,
+            answers_stay_spread_out, agreement_rises, same_item_closer,
+            frozen_and_trained, backbone_and_head, full_size_backbone_and_head,
+            what_the_features_track, few_labels_beat_many, labels_needed]
 
-PAGE_TWO = [one_matrix_multiply, work_and_independence, arithmetic_per_byte,
-            batch_fills_the_chip,
-            bytes_per_parameter, rounding_at_each_precision, where_the_parameters_are,
-            model_size_versus_card,
+PAGE_TWO = [one_matrix_multiply, many_workers_one_multiply, work_and_independence,
+            arithmetic_per_byte, batch_fills_the_chip,
+            bytes_per_parameter, where_the_bits_go, rounding_at_each_precision,
+            where_the_parameters_are, model_size_versus_card,
             training_memory_budget, activations_grow_with_batch, recompute_tradeoff,
             how_many_cards,
             six_n_d, flops_and_days, iso_compute_grid, training_versus_serving,
-            power_law_curve, bigger_model_alone, grow_together, predict_the_big_run,
+            power_law_curve, bigger_model_alone, grow_together,
+            tokens_for_each_parameter, predict_the_big_run,
             quality_beats_volume, duplicates_waste_the_budget, a_data_mixture,
-            robot_data_costs_time, four_ways_to_get_more_data]
+            times_each_token_is_read, robot_data_costs_time,
+            four_ways_to_get_more_data]
 
 
 def main() -> None:

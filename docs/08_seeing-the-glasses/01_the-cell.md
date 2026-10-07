@@ -27,7 +27,7 @@ by hand.
 
 ## 1. The layout, from above
 
-![The cell from above](../images/seeing-the-glasses/the-cell/cell-from-above.png)
+![The cell seen from straight above: the arm bolted at the origin, the glass zone it works over, the drying rack the glasses end up in, and the ring of table the arm can comfortably reach.](../images/seeing-the-glasses/the-cell/cell-from-above.png)
 
 The arm is bolted to the table at the origin. Everything it does happens in two
 rectangles on that table:
@@ -42,7 +42,7 @@ limit.
 
 ## 2. The layout, from the side
 
-![The cell from the side](../images/seeing-the-glasses/the-cell/cell-from-the-side.png)
+![The same cell seen level, which is the view that shows the heights: the table top, how far above it the camera flies, and how tall the glasses stand against the arm.](../images/seeing-the-glasses/the-cell/cell-from-the-side.png)
 
 The table top is 750 mm above the floor and the arm stands on it, so **every
 height in this cell is measured from the table**, not the ground. A glass's
@@ -76,7 +76,7 @@ option available.
 
 ## 3. The glasses
 
-![The four kinds](../images/seeing-the-glasses/the-cell/the-four-kinds.png)
+![The four kinds of glass drawn side on, each at the tallest and the shortest its range allows, so the tapered kind's range can be seen to be much the widest of the four.](../images/seeing-the-glasses/the-cell/the-four-kinds.png)
 
 Four kinds, each drawn at random inside its own range of proportions. **No
 glass's size is written down anywhere in the code** — not in a constant,
@@ -114,7 +114,7 @@ what it can be asked to do.
 
 ## 4. The sensors
 
-![The sensors](../images/seeing-the-glasses/the-cell/the-sensors.png)
+![What the cell can measure and what it cannot: the wrist camera and the arm's own joint encoders against the things no sensor in the cell reads, of which friction is the one that matters.](../images/seeing-the-glasses/the-cell/the-sensors.png)
 
 Four, and that is the whole list. Everything else the cell believes is
 arithmetic on these.
@@ -143,7 +143,7 @@ The arm has one camera and it is on the wrist, so a camera position here always
 means a place the arm carries that one camera to. Five places cover the whole
 run. These are their names, and the rest of the documents use them.
 
-![Where the camera is put](../images/seeing-the-glasses/the-cell/the-camera-positions.png)
+![The places the camera is parked and what each one is called: the survey height above the glass zone, and the side-on ring a glass is measured from.](../images/seeing-the-glasses/the-cell/the-camera-positions.png)
 
 | name | where it stands | which way it looks | what it is for |
 |---|---|---|---|
@@ -271,7 +271,7 @@ earlier job of taking a single glass from the table to the rack measured exactly
 this: a glass standing 157 mm from the nadir was reported at 244 mm, which is
 87 mm out.
 
-![Why splay happens](../images/seeing-the-glasses/the-cell/splay-why-it-happens.png)
+![Why a glass's outline leans outwards in a picture taken from above: the rim is nearer the lens than the table is, so it is drawn further out from the point below the camera, and the taller the glass the further it goes.](../images/seeing-the-glasses/the-cell/splay-why-it-happens.png)
 
 Three things follow from that formula, and all three matter later:
 
@@ -286,7 +286,7 @@ Three things follow from that formula, and all three matter later:
   why a glass seen from above is a teardrop leaning away from the nadir and not
   a circle.
 
-![What splay costs](../images/seeing-the-glasses/the-cell/splay-what-it-costs.png)
+![What that leaning costs: two glasses standing well apart on the table can have outlines that touch or overlap in the picture, which is the difficulty the whole book is about.](../images/seeing-the-glasses/the-cell/splay-what-it-costs.png)
 
 None of this is a fault in the camera or the code. It is what a single picture
 from one point can tell you, and no more. It is also the reason the survey's job

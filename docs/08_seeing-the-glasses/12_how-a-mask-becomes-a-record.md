@@ -53,6 +53,14 @@ their middle is the axis. That band is narrow enough to be rim and wide enough
 to hold a useful number of points, and it works from whichever side the camera
 stood.
 
+![A glass seen side on with the points a mask back-projects to: the rim rings the glass's axis because the camera sees all the way round it, while the wall below appears on one side only, so the middle of the whole cloud is pulled away from the glass and the middle of the rim band is not.](../images/seeing-the-glasses/how-a-mask-becomes-a-record/mask-why-the-axis-is-the-rim.png)
+
+Nothing in that picture is distorted. Back-projection puts every point exactly
+where it really is. What is one-sided is **which points exist at all**: the
+camera sees the rim all the way round, and below the rim it sees the wall on one
+side only, because the glass hides the other. That crescent is what drags the
+middle of the whole cloud off the glass.
+
 ## 3. Why the width is a percentile and not the widest point
 
 With the axis fixed, the width is how far the cloud reaches from it. Taking the
@@ -65,6 +73,8 @@ This is a deliberate choice to be insensitive. A ragged mask edge moves the
 largest distance a long way and the 95th percentile hardly at all, which is what
 makes a width comparable between a solution that outlines tightly and one that
 outlines coarsely.
+
+![One cloud of points with a single stray reading far outside it, and the two circles that result: the widest point is dragged out to the stray one, while the 95th percentile barely moves.](../images/seeing-the-glasses/how-a-mask-becomes-a-record/mask-why-the-width-is-a-percentile.png)
 
 ## 4. Why a mask that asserts pixels must say which ones
 

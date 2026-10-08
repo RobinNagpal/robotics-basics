@@ -157,14 +157,21 @@ one run, and a run has these steps:
    with a summary of it, so the session keeps what it learned about the docs
    without growing every run.
 3. It works through the comments a page at a time, starting with the page whose
-   oldest comment was written first. For each page, it puts the clone exactly on
-   `main`, making the clone first if it is missing, and gives Claude all of that page's comments in one turn, so the page
-   is changed in one go. Claude finds the source file, decides what each comment
+   oldest comment was written first. For each page, it first brings its clone up
+   to the latest `main` with `git pull --rebase`, which keeps any commits of its
+   own on top. If git cannot pull, because of leftover edits, a rebase that
+   stopped part-way or a conflict, the worker gives Claude git's error and asks it
+   to put the clone into a state where the pull works, keeping real work. Then it
+   pulls again. If that still fails, the page's comments stay open for the next
+   run. On the latest `main`, it gives Claude all of that page's comments in one
+   turn, so the page is changed in one go. Claude finds the source file, decides what each comment
    needs, makes the changes under the rules in `CLAUDE.md`, and commits them, but
    does not push.
 4. When Claude has finished the page, the worker pushes. It commits anything
    Claude changed but left uncommitted, rebases the commits onto `main`, and
-   pushes them.
+   pushes them. If the push fails, the comments stay open and the commits stay in
+   the clone. The next run's pull puts them on top of `main`, or asks Claude to,
+   and Claude then finds its work already done and replies.
 5. Only then does it record a reply for each comment. Claude replies in a fixed
    shape, which Claude Code checks against a schema: one entry for each comment's
    ID, with a status and a response of 3 to 7 short lines. For a comment that
@@ -187,7 +194,8 @@ still says what Claude was shown. A comment edited while Claude worked on it sta
 `open`, and the next run picks up the new text.
 
 Claude works in a clone of the repository that exists only for the worker, so it
-never edits files that a person is editing. Nobody is there to answer a permission
+never edits files that a person is editing. The clone is made once, the first time
+it is needed, and is kept and pulled from then on. Nobody is there to answer a permission
 prompt, so it runs with every permission. That is why it gets a clone of its own,
 and why the comments are only ever written by someone holding an API key.
 
@@ -404,7 +412,8 @@ flush its cache, and nothing else.
 - `worker/prompt.ts` is what Claude is told about a page's comments, and the
   shape of its replies.
 - `worker/feedback.ts` reads the open comments and records each outcome.
-- `worker/git.ts` resets the clone before each page and pushes after it.
+- `worker/git.ts` pulls the latest `main` into the clone before each page and
+  pushes after it.
 - `worker/ecosystem.config.cjs` tells PM2 how to run the worker.
 - `terraform/` creates the AWS resources.
 - `scripts/bootstrap-state-bucket.sh` creates the bucket that holds the

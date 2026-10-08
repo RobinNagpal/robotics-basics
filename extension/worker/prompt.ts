@@ -77,3 +77,18 @@ Then reply with one entry for every comment above, using its id:
 - status: "changed" if you changed the docs for that comment, or "answered" if you did not.
 - response: ${MIN_LINES} to ${MAX_LINES} lines written for the reader who left that comment, each line one short sentence. If you changed the docs, say what you changed and why. If you did not, give your answer. Do not give a commit hash; the program adds it. Keep to what the reader needs, and leave out the steps you took.`;
 }
+
+// Asked when git cannot bring the clone up to the latest main.
+export function repairPrompt(error: string, status: string) {
+  return `Before the next piece of feedback, the clone you work in has to be on the latest main from GitHub. Running \`git pull --rebase origin main\` on the main branch failed with:
+"""
+${error}
+"""
+
+\`git status\` says:
+"""
+${status}
+"""
+
+Put the clone into a state where \`git pull --rebase origin main\` works. Keep real work: finish or redo a rebase that stopped, resolve conflicts in favour of what is on main plus the intent of our own commits, and commit edits that are worth keeping. Throw away only what is clearly broken or half-done. Do not push; the program that runs you pulls and pushes. Reply in a few lines saying what you did.`;
+}

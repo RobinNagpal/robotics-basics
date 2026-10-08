@@ -348,30 +348,6 @@ def scaling_the_readings() -> None:
     _save(fig, ONE, 'scaling-the-readings.svg')
 
 
-def the_four_parameters() -> None:
-    """The four numbers this neuron owns: three weights and one bias."""
-    fig, ax = plt.subplots(figsize=(11.0, 5.0), facecolor='white')
-    _plain(ax)
-    names = ['weight on\ndistance', 'weight on\nopening', 'weight on\nbrightness', 'bias']
-    vals = [W[0], W[1], W[2], BIAS]
-    cols = [GRIP, SLIDE, SLIDE, PURPLE]
-    bars = ax.bar(range(4), vals, color=cols, edgecolor=INK, lw=0.8, width=0.56)
-    for i, (b, v) in enumerate(zip(bars, vals)):
-        off = 0.12 if v > 0 else -0.12
-        ax.text(i, v + off, f'{v:+.2f}', ha='center',
-                va='bottom' if v > 0 else 'top', fontsize=12, family=MONO)
-    ax.axhline(0, color=INK, lw=1.2)
-    ax.set_xticks(range(4))
-    ax.set_xticklabels(names, fontsize=10)
-    ax.set_ylim(-2.6, 2.0)
-    ax.set_ylabel('value of the number', fontsize=10)
-    ax.set_title('This one neuron owns four numbers: 3 weights + 1 bias = 4 parameters',
-                 fontsize=12.5, weight='bold')
-    ax.text(2.65, -2.2, 'a minus weight pushes the output down\nas that reading grows',
-            fontsize=9.5, color=MUTED, ha='center')
-    _save(fig, ONE, 'the-four-parameters.svg')
-
-
 # ==========================================================================
 # 01_one-neuron.md  --  section 3: the weighted sum
 # ==========================================================================
@@ -2234,7 +2210,6 @@ def main() -> None:
     sag_model_as_a_neuron()
     neuron_parts()
     scaling_the_readings()
-    the_four_parameters()
     weighted_sum_lines()
     contribution_bars()
     sum_against_distance()

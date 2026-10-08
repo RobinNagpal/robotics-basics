@@ -149,14 +149,10 @@ is called a **weight**. A weight says how much that input counts and in which
 direction. The neuron also has one further number, which is called its **bias**,
 and the bias is added to the total whatever the inputs are.
 
-The picture below draws those four numbers as four bars, so that you can see
-their signs and their sizes next to each other.
-
-![A bar chart of four numbers: the weights -2.00, +1.50 and +0.80, and the bias +0.50](../../images/inside-a-network/one-neuron/the-four-parameters.svg)
-
 The weight on the distance is -2.00. The weight on the opening is +1.50. The
-weight on the brightness is +0.80. The bias is +0.50. That is four numbers for a
-neuron with three inputs.
+weight on the brightness is +0.80. The bias is +0.50. These are the same four
+numbers that the first picture in this section showed in its boxes. That is four
+numbers for a neuron with three inputs.
 
 A weight below 0 means that the neuron's answer gets smaller as that reading gets
 bigger. A weight above 0 means the opposite, so the answer gets bigger as that

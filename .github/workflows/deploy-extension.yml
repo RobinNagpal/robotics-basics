@@ -1,7 +1,10 @@
 name: Deploy the highlighter extension
 
-# Builds the Chrome extension in extension/ and publishes it with its install
-# page. The zip and the page always keep the same names, so each deploy
+# Builds the Chrome extension in extension/ui/ and publishes it with its
+# install page. It runs only when something the extension is built from has
+# changed: anything in extension/ui/, or the API's types.
+#
+# The zip and the page always keep the same names, so each deploy
 # replaces the previous version and the download link never changes. The
 # bucket and the CloudFront distribution are made by extension/terraform/.
 #
@@ -11,16 +14,10 @@ on:
   push:
     branches: [main]
     paths:
-      - 'extension/entrypoints/**'
-      - 'extension/lib/**'
-      # The extension is built with the API's types, so a change there changes it too.
+      - 'extension/ui/**'
+      # The extension is built with this one file from the API, so a change to
+      # it changes the extension too.
       - 'extension/api/types.ts'
-      - 'extension/install-page/**'
-      - 'extension/scripts/build-install.mjs'
-      - 'extension/wxt.config.ts'
-      - 'extension/package.json'
-      - 'extension/package-lock.json'
-      - '.github/workflows/deploy-extension.yml'
   workflow_dispatch:
 
 concurrency:
@@ -43,7 +40,7 @@ jobs:
     timeout-minutes: 15
     defaults:
       run:
-        working-directory: extension
+        working-directory: extension/ui
 
     steps:
       - uses: actions/checkout@v4
@@ -52,7 +49,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: extension/package-lock.json
+          cache-dependency-path: extension/ui/package-lock.json
 
       - name: Install and type-check
         run: |

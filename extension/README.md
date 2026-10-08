@@ -135,7 +135,7 @@ popup, and the next sync removes it from the bucket.
 
 ## Why these tools
 
-[WXT](https://wxt.dev) builds the extension. It turns the files in `entrypoints/`
+[WXT](https://wxt.dev) builds the extension. It turns the files in `ui/entrypoints/`
 into a Manifest V3 extension, compiles the TypeScript, and reloads the extension
 while you edit. The obvious alternative is Plasmo. WXT was chosen because it is
 more actively maintained and does not require React, so the pages here are plain
@@ -168,16 +168,17 @@ page file and needs the conditional write described above.
 
 ## Running it
 
-The extension needs no settings to build, because the server URL and the key are
-typed into its popup.
+The extension is a package of its own in `ui/`. It needs no settings to build,
+because the server URL and the key are typed into its popup.
 
 ```bash
+cd ui
 npm install
-npm run build    # writes the extension to .output/chrome-mv3
+npm run build    # writes the extension to ui/.output/chrome-mv3
 ```
 
 To load the extension, open `chrome://extensions`, turn on developer mode, choose
-**Load unpacked** and pick `.output/chrome-mv3`. Then open the popup and enter the
+**Load unpacked** and pick `ui/.output/chrome-mv3`. Then open the popup and enter the
 server URL and the API key. `terraform output -raw feedback_api_url` in `terraform/`
 prints the server URL. During development, `npm run dev` opens a Chrome with the extension loaded
 and rebuilds it on every save.
@@ -210,12 +211,15 @@ HTTPS, in the same way as the docs site. The zip always has the same name,
 link never changes. The bucket keeps no old versions, because every version can be
 built again from the repository.
 
-`npm run build:install` puts both files in `.install/`. It zips the extension, and
-then writes the page from `install-page/index.html` with the version, the date and the
+`npm run build:install` in `ui/` puts both files in `ui/.install/`. It zips the
+extension, and then writes the page from `ui/install-page/index.html` with the version, the date and the
 server URL filled in. The server URL comes from `FEEDBACK_API_URL`.
 
-The workflow `.github/workflows/deploy-extension.yml` publishes them on every push
-to `main` that changes the extension or the page. It uploads the zip first and the
+The workflow `.github/workflows/deploy-extension.yml` publishes them on a push to
+`main` only when something in `ui/` has changed, or `api/types.ts`. The extension
+is built with that one file from the API, so a change to it changes the extension
+too. Everything else the extension is built from is inside `ui/`, in the same way
+that everything the API is built from is inside `api/`. It uploads the zip first and the
 page second, so the page never offers a file that is not there yet. Then it flushes
 the CloudFront cache, downloads the zip from the live page, and checks that it is
 the file it has just built.
@@ -274,14 +278,16 @@ flush its cache, and nothing else.
 
 ## Files
 
-- `entrypoints/content.ts` draws the highlights on the page and shows the colour
+- `ui/` is the extension, as a package of its own, and the folder its deploy
+  watches.
+- `ui/entrypoints/content.ts` draws the highlights on the page and shows the colour
   bar and the comment box.
-- `entrypoints/background.ts` runs the sync.
-- `entrypoints/popup/` is the popup, including the form for the server URL and
+- `ui/entrypoints/background.ts` runs the sync.
+- `ui/entrypoints/popup/` is the popup, including the form for the server URL and
   the API key.
-- `lib/store.ts` reads and writes the browser copy, and holds the server URL and
+- `ui/lib/store.ts` reads and writes the browser copy, and holds the server URL and
   the API key.
-- `lib/auth.ts` checks the server URL and the key with the API, and signs out.
+- `ui/lib/auth.ts` checks the server URL and the key with the API, and signs out.
 - `api/` is the API, as a package of its own, and the folder its deploy watches.
 - `api/types.ts` is what the API stores, which the extension imports too.
 - `api/app.ts` is the API: the key check, `GET /me` and `POST /sync`.
@@ -289,8 +295,8 @@ flush its cache, and nothing else.
 - `api/store.ts` reads and writes the page files in S3.
 - `api/lambda.ts` and `api/local.ts` run the API on Lambda and on your own
   machine.
-- `install-page/index.html` is the install page, before its values are filled in.
-- `scripts/build-install.mjs` builds the install page and the zip.
+- `ui/install-page/index.html` is the install page, before its values are filled in.
+- `ui/scripts/build-install.mjs` builds the install page and the zip.
 - `terraform/` creates the AWS resources.
 - `scripts/bootstrap-state-bucket.sh` creates the bucket that holds the
   Terraform state.

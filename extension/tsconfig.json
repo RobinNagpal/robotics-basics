@@ -1,6 +1,0 @@
-{
-  "extends": "./.wxt/tsconfig.json",
-  // The API is its own package with its own settings. The extension still
-  // compiles api/types.ts, because it imports it.
-  "exclude": ["api", "node_modules", ".output"]
-}

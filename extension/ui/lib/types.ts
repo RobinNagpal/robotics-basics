@@ -1,7 +1,7 @@
-import type { Highlight } from '../api/types';
+import type { Highlight } from '../../api/types';
 
 // The shapes the API stores, and the rule for a valid page, belong to the API.
-export * from '../api/types';
+export * from '../../api/types';
 
 // The browser copy carries two extra flags the server never sees.
 export interface LocalHighlight extends Highlight {

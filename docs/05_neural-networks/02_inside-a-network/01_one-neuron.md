@@ -10,13 +10,6 @@ that owns a few numbers of its own. This page works one neuron out
 in full with real numbers, so that nothing here stays a word you have to accept
 without checking it.
 
-A neuron works in four steps. First it takes a few numbers in. Second it
-multiplies each of those numbers by a number of its own. Third it adds the
-results together and then adds one more number of its own. Fourth it passes the
-total through a simple rule, and that rule decides what comes out. Everything
-else in this book is built by joining many neurons together and by finding good
-values for the numbers they own.
-
 This page is for a reader who has read the chapter before it. If you came
 straight to this page, section 1 repeats the part of that chapter you need: what a
 model is, how a model relates to a neuron, and where the inputs come from. You

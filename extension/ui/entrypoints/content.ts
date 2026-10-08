@@ -1,7 +1,11 @@
 import { highlights, pageKey, remove, save, user, visible } from '@/lib/store';
 import { COLORS, validPage, type Highlight } from '@/lib/types';
 
-const ROOT = 'article.prose'; // where the site puts the page text
+// The parts of a docs page that can be highlighted: the page title, which the
+// site puts in the header above the text, and the text itself with its headings.
+const REGIONS = 'header.doc-header h1, article.prose';
+// The '#' link the site adds to each heading. It is not part of the words.
+const SKIP = '.heading-anchor';
 const CONTEXT = 32; // characters kept on each side to find the text again
 
 export default defineContentScript({
@@ -12,14 +16,29 @@ export default defineContentScript({
     const pop = div('dh-pop');
     document.body.append(bar, pop);
 
-    const render = async () => {
-      const root = document.querySelector<HTMLElement>(ROOT);
-      if (!root) return;
-      unwrapAll(root);
+    // Removes every mark and draws them again. Two draws must never overlap: the
+    // second would wrap the first one's marks again, and each highlight would be
+    // drawn twice. So a draw asked for while one runs waits, and runs once after.
+    const draw = async () => {
+      const roots = regions();
+      if (!roots.length) return;
+      unwrapAll(roots);
       const { book, chapter, page } = pageKey(location.href);
       for (const h of visible(await highlights.getValue())) {
-        if (h.book === book && h.chapter === chapter && h.page === page) wrap(root, h);
+        if (h.book === book && h.chapter === chapter && h.page === page) wrap(roots, h);
       }
+    };
+    let running: Promise<void> | null = null;
+    let again = false;
+    const render = (): Promise<void> => {
+      if (running) return ((again = true), running);
+      return (running = (async () => {
+        do {
+          again = false;
+          await draw();
+        } while (again);
+        running = null;
+      })());
     };
     render();
     highlights.watch(render);
@@ -30,13 +49,14 @@ export default defineContentScript({
       if (bar.contains(e.target as Node) || pop.contains(e.target as Node)) return;
       bar.style.display = 'none';
       const sel = getSelection();
-      const root = document.querySelector<HTMLElement>(ROOT);
+      const roots = regions();
       const author = await user.getValue();
       // Only a page with a book, a chapter and a page in its address can be
       // stored, so nothing can be highlighted on any other page.
-      if (!sel || sel.isCollapsed || !root || !author || !validPage(pageKey(location.href))) return;
+      if (!sel || sel.isCollapsed || !roots.length || !author || !validPage(pageKey(location.href))) return;
       const range = sel.getRangeAt(0);
-      if (!root.contains(range.commonAncestorContainer) || !range.toString().trim()) return;
+      const inside = (n: Node) => roots.some((r) => r.contains(n));
+      if (!inside(range.startContainer) || !inside(range.endContainer) || !range.toString().trim()) return;
 
       bar.replaceChildren(
         ...COLORS.map((color) => button('', () => create(color), color)),
@@ -45,13 +65,14 @@ export default defineContentScript({
       place(bar, range.getBoundingClientRect());
 
       async function create(color: string) {
-        const full = textOf(root!);
-        const start = offset(root!, range.startContainer, range.startOffset);
-        const end = offset(root!, range.endContainer, range.endOffset);
+        const nodes = textNodes(roots);
+        const full = nodes.map((n) => n.data).join('');
+        const start = position(nodes, range.startContainer, range.startOffset);
+        const end = position(nodes, range.endContainer, range.endOffset);
         const h: Highlight = {
           id: crypto.randomUUID(),
           ...pageKey(location.href),
-          section: sectionOf(root!, range.startContainer),
+          section: sectionOf(range.startContainer),
           url: location.href,
           text: full.slice(start, end),
           prefix: full.slice(Math.max(0, start - CONTEXT), start),
@@ -101,49 +122,69 @@ export default defineContentScript({
   },
 });
 
-// All the text under root, in the same order Range.toString() reads it.
-function textNodes(root: Node) {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+const regions = () => [...document.querySelectorAll<HTMLElement>(REGIONS)];
+
+// Every text node in the regions, in page order, leaving out the heading links.
+// Positions in a highlight count characters along this list.
+function textNodes(roots: HTMLElement[]) {
   const nodes: Text[] = [];
-  while (walker.nextNode()) nodes.push(walker.currentNode as Text);
+  for (const root of roots) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => (n.parentElement?.closest(SKIP) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+    });
+    while (walker.nextNode()) nodes.push(walker.currentNode as Text);
+  }
   return nodes;
 }
+
+// How many characters of the list come before a point in the page. The point is
+// where a selection starts or ends, and it may sit in a text node or between two
+// elements; comparing it with each text node handles both.
+function position(nodes: Text[], node: Node, off: number) {
+  let pos = 0;
+  const r = document.createRange();
+  for (const t of nodes) {
+    r.selectNodeContents(t);
+    const where = r.comparePoint(node, off);
+    if (where < 0) break; // the point is before this text node
+    if (where === 0) return pos + (node === t ? off : 0);
+    pos += t.length;
+  }
+  return pos;
+}
+
 // The text of the last heading before node, so a comment says which section of the
-// page it is about. Text above the first heading has no section.
-function sectionOf(root: HTMLElement, node: Node) {
+// page it is about. Text above the first heading, and the page title, have no section.
+function sectionOf(node: Node) {
   let found = '';
-  for (const h of root.querySelectorAll('h1, h2, h3, h4')) {
-    if (h.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING) found = h.textContent?.trim() ?? '';
-    else break;
+  for (const h of document.querySelectorAll('article.prose :is(h2, h3, h4)')) {
+    if (!(h.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING)) break;
+    found = textNodes([h as HTMLElement]).map((n) => n.data).join('').trim();
   }
   return found;
 }
 
-const textOf = (root: Node) => textNodes(root).map((n) => n.data).join('');
-
-function offset(root: Node, node: Node, off: number) {
-  const r = document.createRange();
-  r.setStart(root, 0);
-  r.setEnd(node, off);
-  return r.toString().length;
-}
-
 // Find the highlight's text on the page and wrap it, one <mark> per text node.
-function wrap(root: HTMLElement, h: Highlight) {
-  const full = textOf(root);
+function wrap(roots: HTMLElement[], h: Highlight) {
+  const nodes = textNodes(roots);
+  const full = nodes.map((n) => n.data).join('');
   let start = full.indexOf(h.prefix + h.text + h.suffix);
   start = start >= 0 ? start + h.prefix.length : full.indexOf(h.text);
   if (start < 0 || !h.text) return;
   const end = start + h.text.length;
 
   let pos = 0;
-  for (const node of textNodes(root)) {
+  for (const node of nodes) {
     const a = Math.max(start, pos) - pos;
     const b = Math.min(end, pos + node.length) - pos;
     pos += node.length;
     if (a >= b) continue;
     const piece = node.splitText(a);
     piece.splitText(b - a);
+    // The line breaks between two blocks are part of a selection that crosses
+    // them, but a mark there would show nothing, and inside a list it is not
+    // allowed at all.
+    if (!piece.data.trim()) continue;
     const mark = document.createElement('mark');
     mark.dataset.hl = h.id;
     mark.style.background = h.color;
@@ -153,9 +194,11 @@ function wrap(root: HTMLElement, h: Highlight) {
   }
 }
 
-function unwrapAll(root: HTMLElement) {
-  root.querySelectorAll('mark[data-hl]').forEach((m) => m.replaceWith(...m.childNodes));
-  root.normalize();
+function unwrapAll(roots: HTMLElement[]) {
+  for (const root of roots) {
+    root.querySelectorAll('mark[data-hl]').forEach((m) => m.replaceWith(...m.childNodes));
+    root.normalize();
+  }
 }
 
 function div(cls: string, children: Node[] = []) {

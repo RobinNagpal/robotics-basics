@@ -257,76 +257,43 @@ numbers the neuron owns actually control.
 
 ## 4. What changes when a weight or the bias changes
 
-The weighted sum in the section before used one particular set of four numbers,
-so the natural question is what would have happened with different ones. The
-answer is easiest to see if you change one number at a time. The clearest single
-change is to turn the weight on the distance from -2.00 into +2.00, which changes
-its sign but not its size.
+This section changes one of the four numbers at a time and shows what the neuron
+does differently. There are three things to see. The sign of a weight decides
+what the neuron is for. The size of a weight decides how much the neuron cares
+about that reading. The bias decides where the neuron stops answering.
 
-The picture below shows the same calculation twice. The two tables use the same
-three readings, and the only difference between them is that one weight.
+Start with the sign. The picture below shows the calculation of the section
+before twice, with the same three readings. The only difference is that the
+weight on the distance is -2.00 on the left and +2.00 on the right.
 
 ![Two tables of the same three readings; the left table uses the weight -2.00 and reaches +0.725, and the right table uses +2.00 and reaches +2.405](../../images/inside-a-network/one-neuron/flipping-one-weight.svg)
 
-With the weight -2.00 the distance contributes -0.840, and the sum is +0.725.
-With the weight +2.00 the same reading contributes +0.840, and the sum is +2.405.
-The second sum is more than three times as large as the first one.
+With -2.00 the sum is +0.725. With +2.00 the sum is +2.405. With the minus weight
+the neuron answers whether the arm is close to the object. With the plus weight
+it answers whether the arm is far from it. The robot did not change, and only one
+weight did.
 
-Nothing about the robot changed between those two tables. Only one of the
-neuron's own numbers moved, and the neuron now answers a different question.
-A neuron with a plus weight on the distance answers whether the arm is far from a
-bright object with the gripper open. So a weight is not a small detail of the
-arithmetic, because a weight decides what the neuron is for.
-
-The size of a weight matters as well as its sign. The way to see that is to look
-again at the line where the sum is exactly 0.
-
-The picture below draws that line three times in the same square, once for each
-of three sizes of the weight on the distance. The other numbers stay as they
-were.
+Now the size. The picture below draws the line where the sum is exactly 0, for
+three sizes of the weight on the distance. The other numbers stay as they were.
 
 ![Three straight lines across a square of distance against gripper opening, drawn for the distance weights -1.00, -2.00 and -4.00](../../images/inside-a-network/one-neuron/weight-size-lines.svg)
 
-With the weight -1.00 the line only reaches an opening of 0.173 at the far right
-of the square. With -2.00 it reaches 0.840. With -4.00 it crosses the whole
-square. So a bigger weight on the distance makes the line stand closer to
-upright, and a more upright line means that the neuron cares more about the
-distance and less about the opening.
+The bigger the weight, the closer to upright the line stands. An upright line
+means that the distance alone decides whether the neuron is on, and the opening
+hardly matters.
 
-A weight of +2.00 is missing from that picture for a reason. With a plus weight
-of that size, the smallest sum anywhere in the square is +0.740. The sum never
-reaches 0, so the neuron is switched on for every reading it could ever see, and
-there is no line to draw.
-
-The bias does something different. It is added whatever the readings are, so it
-slides the whole line sideways without tilting it.
-
-The picture below draws the same line for three different biases, in the same
-square of two readings.
-
-![Three parallel lines across a square of distance against gripper opening, drawn for the biases +0.50, 0.00 and -1.00](../../images/inside-a-network/one-neuron/bias-parallel-lines.svg)
-
-All three lines have the same slope, which is 1.333, because the weights did not
-change. With the bias +0.50 the line leaves the square at an opening of 0.840.
-With the bias 0.00 it leaves at the top of the square. With the bias -1.00 it
-already enters the square at an opening of 0.507, which leaves much less room
-below it. Moving the bias therefore moves the point at which the neuron stops
-answering.
-
-The picture below shows the same change again, but with only the distance moving,
-so that you can read the stopping point off the bottom axis in metres.
+Last, the bias. It is added whatever the readings are, so it moves the line
+without tilting it. The picture below shows this with only the distance moving.
 
 ![Three lines of the output against distance, for the biases +0.50, 0.00 and -1.00, each reaching 0 at a different distance](../../images/inside-a-network/one-neuron/moving-the-bias.svg)
 
-With the bias +0.50 the output reaches 0 at 0.7825 metres. With the bias 0.00 it
-reaches 0 at 0.5325 metres. With the bias -1.00 it reaches 0 at only 0.0325
-metres, so the neuron gives 0 for almost every distance it could meet.
+With the bias +0.50 the output reaches 0 at 0.7825 metres. With 0.00 it reaches 0
+at 0.5325 metres. With -1.00 it reaches 0 at only 0.0325 metres. So a lower bias
+makes the neuron stop answering at a shorter distance.
 
-So the weights decide which way the dividing line leans, and the bias decides
-where that line sits. Those four numbers are the only freedom this neuron has.
-The freedom is narrow, because whatever you do to the four numbers the dividing
-line stays straight. The next section shows why adding more neurons of this same
-kind cannot fix that.
+Those four numbers are the only freedom this neuron has. Whatever you do to them,
+the dividing line stays straight. The next section shows why adding more neurons
+of this same kind cannot fix that.
 
 ---
 

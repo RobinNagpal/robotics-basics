@@ -548,33 +548,6 @@ def moving_the_bias() -> None:
     _save(fig, ONE, 'moving-the-bias.svg')
 
 
-def bias_parallel_lines() -> None:
-    """Three biases, three parallel switch-on lines: the bias slides the line, never tilts it."""
-    d = np.linspace(0.0, 1.0, 201)
-    print('--- the bias slides the line ------------------------------------')
-    fig, ax = plt.subplots(figsize=(8.8, 6.2), facecolor='white')
-    _plain(ax)
-    for b, col in ((0.5, LINK), (0.0, JOINT), (-1.0, GRIP)):
-        g = (-W[0] * d - W[2] * BRIGHT - b) / W[1]
-        ax.plot(d, g, color=col, lw=2.4, label=f'bias {b:+.2f}')
-        inside = (g >= 0) & (g <= 1)
-        slope = float((g[-1] - g[0]) / (d[-1] - d[0]))
-        print(f'  bias {b:+.2f}: the line enters the square at opening {g[inside][0]:.3f} '
-              f'and leaves at {g[inside][-1]:.3f}, with a slope of {slope:.3f}')
-    ax.plot([DIST_M], [X[1]], 'o', color=PURPLE, ms=12, mec=INK, zorder=6)
-    _label(ax, DIST_M + 0.04, X[1] + 0.05, 'our reading', size=10, ha='left')
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    ax.set_xlabel('distance to the object (m)', fontsize=10)
-    ax.set_ylabel('gripper opening / 100', fontsize=10)
-    ax.set_title('The bias slides the switch-on line sideways and never tilts it',
-                 fontsize=12.5, weight='bold')
-    ax.legend(fontsize=9.8, frameon=False, loc='upper left')
-    _label(ax, 0.60, 0.14, 'all three lines have the same slope,\nbecause the weights did '
-           'not change', size=10, color=MUTED, ha='left')
-    _save(fig, ONE, 'bias-parallel-lines.svg')
-
-
 # ==========================================================================
 # 01_one-neuron.md  --  section 5: why a weighted sum is not enough
 # ==========================================================================
@@ -2216,7 +2189,6 @@ def main() -> None:
     sum_over_two_readings()
     flipping_one_weight()
     weight_size_lines()
-    bias_parallel_lines()
     moving_the_bias()
     two_plain_layers()
     one_neuron_instead()

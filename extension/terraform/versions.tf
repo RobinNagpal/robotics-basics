@@ -12,26 +12,14 @@ terraform {
     }
   }
 
-  # The same state bucket as deployment/terraform, under its own key, so the
-  # two stacks are applied separately and neither can change the other's
-  # resources:
-  #   terraform init -backend-config="bucket=robotics-basics-tfstate-<account-id>"
+  # State lives in a private, versioned, SSE-encrypted S3 bucket created by
+  # extension/scripts/bootstrap-state-bucket.sh. It is this application's own
+  # bucket, not the docs site's, because the feedback API is a separate
+  # application. The bucket name is account-specific, so init with:
+  #   terraform init -backend-config="bucket=feedback-api-tfstate-<account-id>"
   backend "s3" {
-    key     = "robotics-basics/feedback-api.tfstate"
+    key     = "feedback-api/terraform.tfstate"
     region  = "us-east-1"
     encrypt = true
   }
 }
-
-provider "aws" {
-  region = var.aws_region
-
-  default_tags {
-    tags = {
-      Project   = var.app_name
-      ManagedBy = "terraform"
-    }
-  }
-}
-
-data "aws_caller_identity" "current" {}

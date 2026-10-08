@@ -177,13 +177,21 @@ created once by Terraform, and the code is uploaded by GitHub Actions on every
 change.
 
 The Terraform in `terraform/` creates the bucket, the key parameter, the Lambda
-function, its function URL, and the role the function runs as. It keeps its state
-in the same state bucket as `deployment/terraform`, under a key of its own, so the
-two are applied separately. Run it with administrator credentials:
+function, its function URL, and the role the function runs as. Terraform records
+what it has created in a state file. This stack keeps that file in a state bucket
+of its own, `feedback-api-tfstate-<account-id>`, rather than in the docs site's.
+That is the same rule the courtpot and interestled projects follow: each
+application has its own private, versioned and encrypted state bucket, made once
+by a script. The feedback API is a separate application, so it gets its own bucket,
+and the docs site's Terraform can never change it by accident.
+
+Run it with administrator credentials. The script is safe to run again, so running
+it on an account that already has the bucket does nothing:
 
 ```bash
+bash scripts/bootstrap-state-bucket.sh
 cd terraform
-terraform init -backend-config="bucket=robotics-basics-tfstate-<account-id>"
+terraform init -backend-config="bucket=feedback-api-tfstate-<account-id>"
 terraform apply
 ```
 
@@ -219,3 +227,5 @@ which lets it replace this function's code and nothing else.
 - `server/lambda.ts` and `server/local.ts` run the API on Lambda and on your own
   machine.
 - `terraform/` creates the AWS resources.
+- `scripts/bootstrap-state-bucket.sh` creates the bucket that holds the
+  Terraform state.

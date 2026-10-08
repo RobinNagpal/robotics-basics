@@ -1,0 +1,90 @@
+name: Deploy the highlighter extension
+
+# Builds the Chrome extension in extension/ and publishes it with its install
+# page. The zip and the page always keep the same names, so each deploy
+# replaces the previous version and the download link never changes. The
+# bucket and the CloudFront distribution are made by extension/terraform/.
+#
+# It lives here rather than in extension/ because GitHub only reads workflows
+# from .github/workflows/.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'extension/entrypoints/**'
+      - 'extension/lib/**'
+      - 'extension/install/**'
+      - 'extension/scripts/build-install.mjs'
+      - 'extension/wxt.config.ts'
+      - 'extension/package.json'
+      - 'extension/package-lock.json'
+      - '.github/workflows/deploy-extension.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-extension
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  BUCKET: robotics-basics-highlighter-install-729763663166
+  DISTRIBUTION_ID: E25U4SI8OF32Q7
+  PAGE_URL: https://d18wv231p6lnln.cloudfront.net
+  # The server URL the page shows, for people to paste into the popup.
+  FEEDBACK_API_URL: https://3kc6u7uem25eetqtt7xt637b6q0vppkm.lambda-url.us-east-1.on.aws
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: extension
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: extension/package-lock.json
+
+      - name: Install and type-check
+        run: |
+          npm ci
+          npm run check
+
+      # Zips the extension, then fills in the page's version, date and server URL.
+      - name: Build the extension and the page
+        run: npm run build:install
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # The zip first and the page second, so the page never offers a version
+      # that is not there yet.
+      - name: Upload
+        run: |
+          aws s3 cp .install/dodao-highlighter.zip "s3://$BUCKET/dodao-highlighter.zip" \
+            --content-type application/zip --cache-control 'max-age=0, must-revalidate' --no-progress
+          aws s3 cp .install/index.html "s3://$BUCKET/index.html" \
+            --content-type 'text/html; charset=utf-8' --cache-control 'max-age=0, must-revalidate' --no-progress
+
+      - name: Flush the edge cache
+        run: |
+          id=$(aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" \
+                 --paths '/*' --query 'Invalidation.Id' --output text)
+          aws cloudfront wait invalidation-completed --distribution-id "$DISTRIBUTION_ID" --id "$id"
+
+      # The live zip must be the one just built.
+      - name: Check the download is the new build
+        run: |
+          curl -sSf -o live.zip "$PAGE_URL/dodao-highlighter.zip"
+          cmp live.zip .install/dodao-highlighter.zip
+          echo "live zip matches this build"

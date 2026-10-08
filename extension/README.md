@@ -16,6 +16,7 @@ uses the extension, deploys the API, or asks Claude to work through the feedback
 - [Working on the feedback with Claude](#working-on-the-feedback-with-claude)
 - [Why these tools](#why-these-tools)
 - [Running it](#running-it)
+- [The install page](#the-install-page)
 - [Deploying the API](#deploying-the-api)
 - [Files](#files)
 
@@ -187,6 +188,37 @@ your own AWS credentials, and the bucket and parameter named in `.env`, so it re
 and writes the real comments. To use it, sign out in the popup and sign in with
 `http://localhost:8787` as the server URL.
 
+## The install page
+
+People who only want to use the extension get it from the install page,
+https://d18wv231p6lnln.cloudfront.net/. The page has one download button and the
+steps to load the extension into Chrome. It also shows the server URL, with a
+button that copies it, because the popup asks for it.
+
+The page cannot install the extension in one click. Chrome allows a one-click
+install only from the Chrome Web Store, and it refuses to install an extension
+file downloaded from any other website. So the page offers the zip, and the reader
+loads it with **Load unpacked** in developer mode. Publishing the extension in the
+Chrome Web Store, as an unlisted item that only people with the link can find,
+would give a real one-click install. That costs a one-time developer fee and a
+review of every new version, which takes from a day to a few days.
+
+The page and the zip are kept in a private bucket, and CloudFront serves them over
+HTTPS, in the same way as the docs site. The zip always has the same name,
+`dodao-highlighter.zip`, so a new version replaces the old one and the download
+link never changes. The bucket keeps no old versions, because every version can be
+built again from the repository.
+
+`npm run build:install` puts both files in `.install/`. It zips the extension, and
+then writes the page from `install/index.html` with the version, the date and the
+server URL filled in. The server URL comes from `FEEDBACK_API_URL`.
+
+The workflow `.github/workflows/deploy-extension.yml` publishes them on every push
+to `main` that changes the extension or the page. It uploads the zip first and the
+page second, so the page never offers a file that is not there yet. Then it flushes
+the CloudFront cache, downloads the zip from the live page, and checks that it is
+the file it has just built.
+
 ## Deploying the API
 
 The API has two parts that change at different speeds. The AWS resources are
@@ -194,7 +226,8 @@ created once by Terraform, and the code is uploaded by GitHub Actions on every
 change.
 
 The Terraform in `terraform/` creates the bucket, the key parameter, the Lambda
-function, its function URL, and the role the function runs as. Terraform records
+function, its function URL, and the role the function runs as. It also creates the
+install page's bucket and CloudFront distribution. Terraform records
 what it has created in a state file. This stack keeps that file in a state bucket
 of its own, `feedback-api-tfstate-<account-id>`, rather than in the docs site's.
 That is the same rule the courtpot and interestled projects follow: each
@@ -228,7 +261,8 @@ check fails if the new code is not running.
 
 The workflow uses the same AWS credentials as the docs deploy. Those belong to the
 docs site's deployer user, and `terraform/deployer.tf` adds a policy to that user
-which lets it replace this function's code and nothing else.
+which lets it replace this function's code, write the install page's bucket and
+flush its cache, and nothing else.
 
 ## Files
 
@@ -245,6 +279,8 @@ which lets it replace this function's code and nothing else.
 - `server/store.ts` reads and writes the page files in S3.
 - `server/lambda.ts` and `server/local.ts` run the API on Lambda and on your own
   machine.
+- `install/index.html` is the install page, before its values are filled in.
+- `scripts/build-install.mjs` builds the install page and the zip.
 - `terraform/` creates the AWS resources.
 - `scripts/bootstrap-state-bucket.sh` creates the bucket that holds the
   Terraform state.

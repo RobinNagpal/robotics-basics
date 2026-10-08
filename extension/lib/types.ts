@@ -15,6 +15,13 @@ export interface Highlight {
   updatedAt: number;
 }
 
+// Book, chapter and page become a file path on the server, so each must be one
+// plain path segment. The extension refuses to highlight anywhere else, and the
+// server refuses a sync that breaks the rule.
+const SEGMENT = /^[a-z0-9][a-z0-9_-]*$/i;
+export const validPage = (p: Pick<Highlight, 'book' | 'chapter' | 'page'>) =>
+  [p.book, p.chapter, p.page].every((s) => SEGMENT.test(s ?? ''));
+
 // Enough to find a highlight's page file on the server, which is all a delete needs.
 export type HighlightRef = Pick<Highlight, 'id' | 'book' | 'chapter' | 'page'>;
 

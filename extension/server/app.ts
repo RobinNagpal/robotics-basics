@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
-import type { Highlight, HighlightRef } from '../lib/types';
+import { validPage, type Highlight, type HighlightRef } from '../lib/types';
 import { nameForKey } from './keys';
-import { pageKeyOf, readAll, updatePage, validPage } from './store';
+import { pageKeyOf, readAll, updatePage } from './store';
 
 export const app = new Hono<{ Variables: { name: string } }>();
 

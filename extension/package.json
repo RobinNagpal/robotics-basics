@@ -10,7 +10,8 @@
     "check": "tsc --noEmit",
     "server": "tsx --env-file-if-exists=.env server/local.ts",
     "build:lambda": "esbuild server/lambda.ts --bundle --platform=node --target=node22 --format=esm --outfile=.lambda/index.mjs --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\" && cd .lambda && rm -f ../lambda.zip && zip -q ../lambda.zip index.mjs",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "build:install": "wxt zip && node scripts/build-install.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1147.0",

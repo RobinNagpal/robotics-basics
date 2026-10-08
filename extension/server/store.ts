@@ -18,8 +18,6 @@ const PREFIX = 'feedback/';
 
 type PageRef = Pick<Highlight, 'book' | 'chapter' | 'page'>;
 
-const SEGMENT = /^[a-z0-9][a-z0-9_-]*$/i;
-export const validPage = (p: PageRef) => [p.book, p.chapter, p.page].every((s) => SEGMENT.test(s ?? ''));
 export const pageKeyOf = (p: PageRef) => `${PREFIX}${p.book}/${p.chapter}/${p.page}.json`;
 
 async function read(key: string): Promise<{ items: Highlight[]; etag?: string }> {

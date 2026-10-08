@@ -1,5 +1,5 @@
 import { highlights, pageKey, remove, save, user, visible } from '@/lib/store';
-import { COLORS, type Highlight } from '@/lib/types';
+import { COLORS, validPage, type Highlight } from '@/lib/types';
 
 const ROOT = 'article.prose'; // where the site puts the page text
 const CONTEXT = 32; // characters kept on each side to find the text again
@@ -32,7 +32,9 @@ export default defineContentScript({
       const sel = getSelection();
       const root = document.querySelector<HTMLElement>(ROOT);
       const author = await user.getValue();
-      if (!sel || sel.isCollapsed || !root || !author) return;
+      // Only a page with a book, a chapter and a page in its address can be
+      // stored, so nothing can be highlighted on any other page.
+      if (!sel || sel.isCollapsed || !root || !author || !validPage(pageKey(location.href))) return;
       const range = sel.getRangeAt(0);
       if (!root.contains(range.commonAncestorContainer) || !range.toString().trim()) return;
 
@@ -76,7 +78,9 @@ export default defineContentScript({
       if (!pop.contains(e.target as Node)) pop.style.display = 'none';
     });
 
-    function openNote(h: Highlight) {
+    function openNote(original: Highlight) {
+      // A colour click changes this copy, so a later Save keeps the new colour.
+      let h = original;
       const mark = document.querySelector(`mark[data-hl="${h.id}"]`);
       if (!mark) return;
       const note = Object.assign(document.createElement('textarea'), {
@@ -86,7 +90,7 @@ export default defineContentScript({
       pop.replaceChildren(
         note,
         div('dh-row', [
-          ...COLORS.map((color) => button('', () => save({ ...h, color }), color)),
+          ...COLORS.map((color) => button('', () => save((h = { ...h, color })), color)),
           button('Delete', () => (remove(h.id), (pop.style.display = 'none'))),
           button('Save', () => (save({ ...h, note: note.value }), (pop.style.display = 'none'))),
         ]),

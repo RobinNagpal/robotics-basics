@@ -292,18 +292,40 @@ at 0.5325 metres. With -1.00 it reaches 0 at only 0.0325 metres. So a lower bias
 makes the neuron stop answering at a shorter distance.
 
 Those four numbers are the only freedom this neuron has. Whatever you do to them,
-the dividing line stays straight. The next section shows why adding more neurons
-of this same kind cannot fix that.
+the dividing line stays straight. The next section shows why that is a problem,
+and why the rule at the end of the neuron is the thing that solves it.
 
 ---
 
 ## 5. Why multiplying and adding is not enough
 
-The sections before this one kept finding straight lines, and that is not an
-accident of the numbers that were chosen. Multiplying by a weight and adding a
-bias can only ever make a straight line. Doing it twice does not help either,
-because two of these neurons in a row are exactly equal to one neuron with
-different numbers.
+Section 2 said that a neuron ends with a simple rule, and section 1 showed the sag
+model working with no rule at all. So it is fair to ask what the rule is for. This
+section answers that question before section 6 describes the rule itself. The
+answer comes in three steps. First, many jobs need an output that bends, and one
+neuron without the rule can only draw a straight line. Second, putting more
+neurons in a row does not fix this if nothing comes between them. Third, the rule
+between them does fix it.
+
+Start with a job that a straight line cannot do. The brightness of the patch is
+one of those jobs. A patch that is nearly black shows nothing, and a patch that is
+completely white shows nothing either. So brightness is good in the middle and bad
+at both ends.
+
+The picture below draws what we want from the brightness, which is a shape that
+rises to the middle and falls again, and it draws the best straight line through
+that shape.
+
+![A target line that rises to the middle and falls again, with the best straight line through it drawn flat at 0.499 and the gap between them shaded](../../images/inside-a-network/one-neuron/a-bend-is-needed.svg)
+
+The best straight line through this target is flat at 0.499, and it is wrong by
+0.251 on average. A straight line cannot be high in the middle and low at both
+ends, so no choice of weight and bias fixes this.
+
+The obvious fix is to use more than one neuron, one after the other. The rest of
+this section shows that this fix does nothing on its own. Multiplying by a weight
+and adding a bias can only ever make a straight line, and two of these neurons in
+a row are exactly equal to one neuron with different numbers.
 
 The picture below puts one reading through two neurons, one after the other, with
 nothing applied between them.
@@ -352,20 +374,9 @@ The three weights multiply to -3.00, and the three biases gather into +1.75. So
 three layers in a row give exactly the same +0.490 that one layer with those two
 numbers gives.
 
-This matters because many useful jobs cannot be done by a straight line at all.
-The brightness of the patch is one of those jobs. A patch that is nearly black
-shows nothing, and a patch that is completely white shows nothing either, so
-brightness is good in the middle and bad at both ends.
-
-The picture below draws what we want from the brightness, which is a shape that
-rises to the middle and falls again, and it draws the best straight line through
-that shape.
-
-![A target line that rises to the middle and falls again, with the best straight line through it drawn flat at 0.499 and the gap between them shaded](../../images/inside-a-network/one-neuron/a-bend-is-needed.svg)
-
-The best straight line through this target is flat at 0.499, and it is wrong by
-0.251 on average. A straight line cannot be high in the middle and low at both
-ends, so no choice of weight and bias fixes this.
+So a network made only of multiplying and adding could have a thousand layers and
+would still only be able to draw one straight line. That brings back the
+brightness job from the start of this section.
 
 The picture below does the same job with two neurons that each apply the rule,
 and it draws what each of those neurons gives as well as their total.
@@ -375,10 +386,9 @@ and it draws what each of those neurons gives as well as their total.
 Two neurons with the rule rebuild the wanted shape exactly, and the biggest gap
 anywhere between the two lines is zero.
 
-So a network made only of multiplying and adding could have a thousand layers and
-would still only be able to draw one straight line. The thing that removes this
-limit is the simple rule applied at the end of each neuron, and the next section
-finally looks at that rule properly.
+That is what the rule at the end of each neuron is for. Without it, any number of
+neurons collapses into one straight line. With it, a few neurons can bend the line
+into the shape a job needs. The next section looks at that rule properly.
 
 ---
 

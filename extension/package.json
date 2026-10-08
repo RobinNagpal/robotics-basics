@@ -1,0 +1,30 @@
+{
+  "name": "dodao-highlighter",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "zip": "wxt zip",
+    "check": "tsc --noEmit",
+    "server": "tsx --env-file-if-exists=.env server/local.ts",
+    "build:lambda": "esbuild server/lambda.ts --bundle --platform=node --target=node22 --format=esm --outfile=.lambda/index.mjs --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\" && cd .lambda && rm -f ../lambda.zip && zip -q ../lambda.zip index.mjs",
+    "postinstall": "wxt prepare",
+    "build:install": "wxt zip && node scripts/build-install.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1147.0",
+    "@aws-sdk/client-ssm": "^3.1147.0",
+    "@hono/node-server": "^2.1.3",
+    "hono": "^4.13.13"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.164",
+    "@types/node": "^22.20.5",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.23.15",
+    "typescript": "5.9",
+    "wxt": "^0.21.4"
+  }
+}

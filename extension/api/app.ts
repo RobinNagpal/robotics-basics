@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { validPage, type Highlight, type HighlightRef } from '../lib/types';
+import { validPage, type Highlight, type HighlightRef } from './types';
 import { nameForKey } from './keys';
 import { pageKeyOf, readAll, updatePage } from './store';
 

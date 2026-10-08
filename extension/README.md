@@ -182,8 +182,9 @@ server URL and the API key. `terraform output -raw feedback_api_url` in `terrafo
 prints the server URL. During development, `npm run dev` opens a Chrome with the extension loaded
 and rebuilds it on every save.
 
-`npm run server` runs the same API on your own machine, on port 8787. Copy
-`.env.example` to `.env` in this folder and fill it in first. The local API uses
+The API is a separate package in `api/`, with its own dependencies. `npm install`
+and then `npm run dev` inside `api/` run it on your own machine, on port 8787. Copy
+`api/.env.example` to `api/.env` and fill it in first. The local API uses
 your own AWS credentials, and the bucket and parameter named in `.env`, so it reads
 and writes the real comments. To use it, sign out in the popup and sign in with
 `http://localhost:8787` as the server URL.
@@ -210,7 +211,7 @@ link never changes. The bucket keeps no old versions, because every version can 
 built again from the repository.
 
 `npm run build:install` puts both files in `.install/`. It zips the extension, and
-then writes the page from `install/index.html` with the version, the date and the
+then writes the page from `install-page/index.html` with the version, the date and the
 server URL filled in. The server URL comes from `FEEDBACK_API_URL`.
 
 The workflow `.github/workflows/deploy-extension.yml` publishes them on every push
@@ -251,10 +252,17 @@ changes the code afterwards. So the keys stay out of the Terraform state, and a
 later `terraform apply` does not undo a code deploy.
 
 The workflow `.github/workflows/deploy-feedback-api.yml` uploads the code. It is
-the one file for this extension outside this folder, because GitHub reads
-workflows only from that folder. It runs on every push to `main` that changes
-`server/`, `lib/types.ts` or the package files, and it can also be run by hand from
-the Actions tab. It type-checks the code, bundles the API into one file with
+one of the two files for this extension outside this folder, because GitHub reads
+workflows only from `.github/workflows/`. It runs on a push to `main` only when
+something in `api/` has changed, and it can also be run by hand from the Actions
+tab. It replaces the code of the same function every time, so the server URL never
+changes.
+
+That rule is safe because `api/` holds everything the function is built from. It
+is a package of its own, with its own `package.json` and lock file, and the shapes
+it shares with the extension are in `api/types.ts`. The extension imports that
+file from `api/`, not the other way round. So no change outside `api/` can change
+the function, and every change inside it redeploys the function. It type-checks the code, bundles the API into one file with
 esbuild, uploads it to the function, and then checks that a request without a key
 is refused with 401. A placeholder or a broken bundle answers differently, so the
 check fails if the new code is not running.
@@ -274,12 +282,14 @@ flush its cache, and nothing else.
 - `lib/store.ts` reads and writes the browser copy, and holds the server URL and
   the API key.
 - `lib/auth.ts` checks the server URL and the key with the API, and signs out.
-- `server/app.ts` is the API: the key check, `GET /me` and `POST /sync`.
-- `server/keys.ts` reads the keys from Parameter Store.
-- `server/store.ts` reads and writes the page files in S3.
-- `server/lambda.ts` and `server/local.ts` run the API on Lambda and on your own
+- `api/` is the API, as a package of its own, and the folder its deploy watches.
+- `api/types.ts` is what the API stores, which the extension imports too.
+- `api/app.ts` is the API: the key check, `GET /me` and `POST /sync`.
+- `api/keys.ts` reads the keys from Parameter Store.
+- `api/store.ts` reads and writes the page files in S3.
+- `api/lambda.ts` and `api/local.ts` run the API on Lambda and on your own
   machine.
-- `install/index.html` is the install page, before its values are filled in.
+- `install-page/index.html` is the install page, before its values are filled in.
 - `scripts/build-install.mjs` builds the install page and the zip.
 - `terraform/` creates the AWS resources.
 - `scripts/bootstrap-state-bucket.sh` creates the bucket that holds the

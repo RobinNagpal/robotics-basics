@@ -9,7 +9,7 @@ if (!server) throw new Error('Set FEEDBACK_API_URL to the Lambda function URL');
 mkdirSync('.install', { recursive: true });
 // One fixed name, so the page's download link never changes.
 copyFileSync(`.output/${name}-${version}-chrome.zip`, '.install/dodao-highlighter.zip');
-const html = readFileSync('install/index.html', 'utf8')
+const html = readFileSync('install-page/index.html', 'utf8')
   .replaceAll('{{VERSION}}', version)
   .replaceAll('{{BUILT}}', new Date().toISOString().slice(0, 10))
   .replaceAll('{{SERVER_URL}}', server);

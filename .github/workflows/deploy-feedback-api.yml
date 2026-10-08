@@ -1,9 +1,14 @@
 name: Deploy the feedback API
 
 # The highlighter extension's API runs as one AWS Lambda function. Its code is
-# in extension/server/, and the infrastructure around it is in
+# in extension/api/, and the infrastructure around it is in
 # extension/terraform/. This workflow only replaces the function's code; it
-# never changes the function's settings, which are Terraform's.
+# never changes the function's settings, which are Terraform's. The function
+# keeps its function URL across code updates, so the API's address never changes.
+#
+# It runs only when something in extension/api/ changes. That folder is a
+# package of its own, with its own dependencies, so everything the function is
+# built from is inside it.
 #
 # It lives here rather than in extension/ because GitHub only reads workflows
 # from .github/workflows/.
@@ -11,11 +16,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'extension/server/**'
-      - 'extension/lib/types.ts'
-      - 'extension/package.json'
-      - 'extension/package-lock.json'
-      - '.github/workflows/deploy-feedback-api.yml'
+      - 'extension/api/**'
   workflow_dispatch:
 
 concurrency:
@@ -35,7 +36,7 @@ jobs:
     timeout-minutes: 10
     defaults:
       run:
-        working-directory: extension
+        working-directory: extension/api
 
     steps:
       - uses: actions/checkout@v4
@@ -44,7 +45,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: extension/package-lock.json
+          cache-dependency-path: extension/api/package-lock.json
 
       - name: Install and type-check
         run: |
@@ -53,7 +54,7 @@ jobs:
 
       # One file with every dependency inside it, zipped, which is what Lambda takes.
       - name: Bundle the function
-        run: npm run build:lambda
+        run: npm run build
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:

@@ -13,7 +13,9 @@ on:
     paths:
       - 'extension/entrypoints/**'
       - 'extension/lib/**'
-      - 'extension/install/**'
+      # The extension is built with the API's types, so a change there changes it too.
+      - 'extension/api/types.ts'
+      - 'extension/install-page/**'
       - 'extension/scripts/build-install.mjs'
       - 'extension/wxt.config.ts'
       - 'extension/package.json'

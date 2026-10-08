@@ -7,7 +7,7 @@ import {
   S3Client,
   S3ServiceException,
 } from '@aws-sdk/client-s3';
-import type { Highlight } from '../lib/types';
+import type { Highlight } from './types';
 
 // One JSON file per docs page, at feedback/<book>/<chapter>/<page>.json, holding
 // every comment on that page in the order they were made. A page file is what a

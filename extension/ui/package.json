@@ -1,7 +1,7 @@
 {
   "name": "dodao-highlighter",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",
@@ -9,10 +9,11 @@
     "zip": "wxt zip",
     "check": "tsc --noEmit",
     "postinstall": "wxt prepare",
-    "build:install": "wxt zip && node scripts/build-install.mjs"
+    "build:install": "wxt zip && tsx scripts/build-install.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
     "typescript": "5.9",
     "wxt": "^0.21.4"
   }

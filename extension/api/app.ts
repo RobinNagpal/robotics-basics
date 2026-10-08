@@ -36,8 +36,14 @@ app.post('/sync', async (c) => {
         const byId = new Map(items.filter((h) => !change.deletes.has(h.id)).map((h) => [h.id, h]));
         for (const h of change.upserts) {
           const old = byId.get(h.id);
-          if (!old) byId.set(h.id, h);
-          else if (old.updatedAt < h.updatedAt) byId.set(h.id, { ...old, color: h.color, note: h.note, updatedAt: h.updatedAt });
+          // The status and Claude's response belong to the worker, so whatever the
+          // browser sends for them is replaced.
+          if (!old) byId.set(h.id, { ...h, status: 'open', claudeResponse: '', respondedAt: undefined });
+          else if (old.updatedAt < h.updatedAt) {
+            // A changed comment is new feedback, so it goes back to Claude.
+            const reopened = h.note !== old.note ? { status: 'open' as const, claudeResponse: '', respondedAt: undefined } : {};
+            byId.set(h.id, { ...old, color: h.color, note: h.note, updatedAt: h.updatedAt, ...reopened });
+          }
         }
         return [...byId.values()];
       }),

@@ -119,19 +119,109 @@ comment can be brought back from the version history.
 
 ## Working on the feedback with Claude
 
-The reason for keeping the comments as files is that Claude can read them directly.
-One file is one page's feedback, and each comment says which section it is about,
-quotes the exact text it is about, and gives the page address. To work through the
-feedback, copy the files to your machine and ask Claude to go through them:
+The comments are kept as files so that Claude can read them directly. One file is
+one page's feedback, and each comment says which section it is about, quotes the
+exact text it is about, and gives the page address. A program called the feedback
+worker hands the comments to Claude Code and records what Claude did with each one.
+
+### Status and response
+
+Each comment carries two fields that say what has happened to it. The status is one
+of four values:
+
+- `open`: the comment is waiting for Claude.
+- `changed`: Claude changed the docs to answer it.
+- `answered`: Claude replied without changing the docs, for a question or for a
+  comment it decided the docs already meet.
+- `failed`: the run went wrong, and the response says how.
+
+The response is what Claude says about the comment, written for the person who
+left it. The popup and the comment box on the page show both under the comment.
+
+Only the worker writes these two fields. The API sets a new comment to `open` and
+ignores whatever the browser sends for them. If someone edits the text of a
+comment, the API sets it back to `open` and clears the response, because the edited
+comment is new feedback.
+
+### What the worker does
+
+The worker is a long-running TypeScript program in `worker/`. On a schedule it does
+one run, and a run has four steps:
+
+1. It reads every comment from the bucket, and keeps the ones that are `open` and
+   have some text. A highlight with no comment asks nothing, so it is left alone.
+2. It brings its own clone of the repository up to date with `main`.
+3. It compacts the Claude Code session. Compacting replaces the conversation so far
+   with a summary of it, so the session keeps what it learned about the docs
+   without growing every run.
+4. It gives Claude the comments one at a time, oldest first. For each one, Claude
+   finds the source page, decides whether the docs should change, and either
+   changes them and pushes to `main` under the rules in `CLAUDE.md`, or answers
+   without changing anything. Claude replies in a fixed shape, a status and a
+   response, which Claude Code checks against a schema. The worker writes them
+   into the comment's page file at once, and the extension shows them after its
+   next sync.
+
+Steps 2 to 4 happen only when there is open feedback, so a quiet run costs nothing.
+
+Every run uses the same Claude Code session. The first run creates it with an ID
+the worker chooses, and the worker keeps that ID in `worker/.state/session.json`.
+Every later turn resumes the session by that ID. This works like one long
+conversation that is summarised every run, rather than a new conversation for each
+comment.
+
+The worker writes an outcome only if the comment is still there, still `open`, and
+still says what Claude was shown. A comment edited while Claude worked on it stays
+`open`, and the next run picks up the new text.
+
+Claude works in a clone of the repository that exists only for the worker, so it
+never edits files that a person is editing. Nobody is there to answer a permission
+prompt, so it runs with every permission. That is why it gets a clone of its own,
+and why the comments are only ever written by someone holding an API key.
+
+### Why these tools
+
+[PM2](https://pm2.keymetrics.io) runs the worker. It is a process manager for
+Node programs: it starts the worker, restarts it if it crashes, keeps its logs, and
+can start it again when the machine restarts. The obvious alternative is a service
+file written by hand for the system's own service manager, such as `launchd` on a
+Mac. PM2 was chosen because the same commands work on a Mac and on a Linux server,
+and because it shows the worker's state and logs with one command each. It costs
+one more tool to install, and its configuration file has to be JavaScript, because
+PM2 reads only JavaScript or JSON.
+
+[Croner](https://croner.56k.guru) decides when a run starts, from a cron pattern
+such as `*/2 * * * *` for every two minutes. The obvious alternative is a plain
+timer in the program. Croner was chosen because of its `protect` option: when a run
+is still going at the next start time, that start is skipped. One comment can keep
+Claude busy for longer than two minutes, and without this two runs would work in
+the same clone at once. It costs one small dependency.
+
+### Setting it up
+
+The worker needs its own AWS keys, which can only read and write the feedback
+bucket. `terraform/worker.tf` makes an IAM user for it.
 
 ```bash
-aws s3 sync s3://robotics-basics-feedback-<account-id>/feedback/ feedback/
+cd worker
+npm install
+cd ../api && npm install && cd ../worker   # the worker uses the API's S3 code
+cp .env.example .env                       # then fill it in
+npm run once      # one run now, to see that it works
+npm run start     # start it under PM2
+npm run logs      # watch it
 ```
 
-The page address leaves out the reading-order numbers, so Claude finds the source
-file by matching each part of the address to a folder or file in `docs/` with the
-number removed. When a comment has been dealt with, delete its highlight in the
-popup, and the next sync removes it from the bucket.
+The keys come from `terraform output -raw worker_access_key_id` and
+`terraform output -raw worker_secret_access_key` in `terraform/`. `SCHEDULE` in
+`.env` sets how often it runs. It is every two minutes while the worker is being
+tested. To change it to every thirty minutes, set `SCHEDULE=*/30 * * * *` and run
+`npm run restart`. To start the worker again after the machine restarts, run
+`npx pm2 save` and then `npx pm2 startup`, and run the command it prints.
+
+The clone needs whatever `CLAUDE.md` asks Claude to use. Copy the repository's
+root `.env` into the clone if Claude should be able to make narration again for
+the pages it changes.
 
 ## Why these tools
 
@@ -296,7 +386,13 @@ flush its cache, and nothing else.
 - `api/lambda.ts` and `api/local.ts` run the API on Lambda and on your own
   machine.
 - `ui/install-page/index.html` is the install page, before its values are filled in.
-- `ui/scripts/build-install.mjs` builds the install page and the zip.
+- `ui/scripts/build-install.ts` builds the install page and the zip.
+- `worker/index.ts` is the feedback worker: the schedule and one run.
+- `worker/claude.ts` runs one turn of the Claude Code session.
+- `worker/prompt.ts` is what Claude is told about each comment, and the shape of
+  its reply.
+- `worker/feedback.ts` reads the open comments and records each outcome.
+- `worker/ecosystem.config.cjs` tells PM2 how to run the worker.
 - `terraform/` creates the AWS resources.
 - `scripts/bootstrap-state-bucket.sh` creates the bucket that holds the
   Terraform state.

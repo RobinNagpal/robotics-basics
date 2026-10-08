@@ -1,5 +1,6 @@
 import { signIn, signOut } from '@/lib/auth';
 import { apiUrl, highlights, lastSync, pageKey, remove, user, visible } from '@/lib/store';
+import { statusLabel, statusOf } from '@/lib/types';
 
 const app = document.querySelector('#app')!;
 let book = '';
@@ -54,6 +55,8 @@ async function render() {
         Object.assign(el('a', [el('small', h.section ? `${h.page} · ${h.section}` : h.page), el('div', h.text)]), { href: h.url, target: '_blank' }),
         ...(h.note ? [el('div', h.note, 'note')] : []),
         el('small', h.author, 'author'),
+        ...(statusOf(h) ? [el('span', statusLabel(h), `badge ${statusOf(h)}`)] : []),
+        ...(h.claudeResponse ? [el('div', h.claudeResponse, 'response')] : []),
       ]);
       li.style.borderColor = h.color;
       return li;

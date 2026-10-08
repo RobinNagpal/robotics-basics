@@ -1,6 +1,13 @@
 // What the API stores and what the extension sends it. This file belongs to the
 // API, so that a change to it redeploys the API; the extension imports it from here.
 
+// Where a comment stands. The API sets 'open' when a comment is made, and again
+// when its text is changed. The feedback worker sets the others after Claude has
+// worked on it: 'changed' when Claude changed the docs, 'answered' when Claude
+// replied without changing them, and 'failed' when the run went wrong.
+export const STATUSES = ['open', 'changed', 'answered', 'failed'] as const;
+export type FeedbackStatus = (typeof STATUSES)[number];
+
 export interface Highlight {
   id: string;
   book: string;
@@ -16,6 +23,10 @@ export interface Highlight {
   author: string; // the name the server gave the API key that wrote it
   createdAt: number;
   updatedAt: number;
+  // Written only by the feedback worker. The API ignores them in a sync.
+  status?: FeedbackStatus; // missing on comments made before it existed, which means 'open'
+  claudeResponse?: string;
+  respondedAt?: number;
 }
 
 // Book, chapter and page become a file path on the server, so each must be one

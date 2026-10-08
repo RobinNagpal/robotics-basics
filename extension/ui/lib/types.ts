@@ -10,3 +10,12 @@ export interface LocalHighlight extends Highlight {
 }
 
 export const COLORS = ['#fde047', '#86efac', '#93c5fd', '#f9a8d4'] as const;
+
+// How each status reads to the reader. A highlight with no comment is not
+// feedback, so it shows no status at all.
+const LABELS = { open: 'Waiting for Claude', changed: 'Docs changed', answered: 'Answered', failed: 'Failed' } as const;
+export const statusOf = (h: Highlight) => (h.note.trim() ? (h.status ?? 'open') : null);
+export const statusLabel = (h: Highlight) => {
+  const s = statusOf(h);
+  return s ? LABELS[s] : '';
+};

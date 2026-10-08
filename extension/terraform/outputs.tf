@@ -27,3 +27,14 @@ output "install_distribution_id" {
   description = "The install page's CloudFront distribution, invalidated on every deploy."
   value       = aws_cloudfront_distribution.install.id
 }
+
+output "worker_access_key_id" {
+  description = "AWS_ACCESS_KEY_ID for extension/worker/.env."
+  value       = aws_iam_access_key.feedback_worker.id
+}
+
+output "worker_secret_access_key" {
+  description = "AWS_SECRET_ACCESS_KEY for extension/worker/.env."
+  value       = aws_iam_access_key.feedback_worker.secret
+  sensitive   = true
+}

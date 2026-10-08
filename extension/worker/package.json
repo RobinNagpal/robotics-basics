@@ -1,0 +1,24 @@
+{
+  "name": "dodao-highlighter-worker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "once": "tsx --env-file=.env index.ts --once",
+    "start": "pm2 start ecosystem.config.cjs",
+    "stop": "pm2 stop feedback-worker",
+    "restart": "pm2 restart feedback-worker --update-env",
+    "logs": "pm2 logs feedback-worker",
+    "status": "pm2 describe feedback-worker"
+  },
+  "dependencies": {
+    "croner": "^10.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "pm2": "^7.0.4",
+    "tsx": "^4.23.15",
+    "typescript": "5.9"
+  }
+}

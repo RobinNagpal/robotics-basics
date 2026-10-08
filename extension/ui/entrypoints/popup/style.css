@@ -16,3 +16,8 @@ li button { float: right; border: 0; background: none; color: #999; }
 .error { color: #b91c1c; }
 .signin input { flex: 1; min-width: 0; padding: 4px; font: inherit; }
 li .author { display: block; margin-top: 2px; }
+.badge { display: inline-block; margin-top: 4px; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 999px; background: #eef; color: #334; }
+.badge.changed { background: #dcfce7; color: #14532d; }
+.badge.answered { background: #dbeafe; color: #1e3a8a; }
+.badge.failed { background: #fee2e2; color: #7f1d1d; }
+li .response { margin-top: 4px; padding: 4px 6px; background: #fff; border: 1px solid #e5e5e5; border-radius: 4px; white-space: pre-wrap; }

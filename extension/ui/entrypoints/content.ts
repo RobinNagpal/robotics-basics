@@ -1,5 +1,5 @@
 import { highlights, pageKey, remove, save, user, visible } from '@/lib/store';
-import { COLORS, validPage, type Highlight } from '@/lib/types';
+import { COLORS, statusLabel, statusOf, validPage, type Highlight } from '@/lib/types';
 
 // The parts of a docs page that can be highlighted: the page title, which the
 // site puts in the header above the text, and the text itself with its headings.
@@ -108,8 +108,14 @@ export default defineContentScript({
         value: h.note,
         placeholder: 'Add a comment…',
       });
+      // What Claude did with the comment, under it, once the comment has been sent.
+      const status = statusOf(h);
+      const answer = status
+        ? [div(`dh-status dh-${status}`, [text(statusLabel(h))]), ...(h.claudeResponse ? [div('dh-response', [text(h.claudeResponse)])] : [])]
+        : [];
       pop.replaceChildren(
         note,
+        ...answer,
         div('dh-row', [
           ...COLORS.map((color) => button('', () => save((h = { ...h, color })), color)),
           button('Delete', () => (remove(h.id), (pop.style.display = 'none'))),
@@ -201,6 +207,8 @@ function unwrapAll(roots: HTMLElement[]) {
   }
 }
 
+const text = (s: string) => document.createTextNode(s);
+
 function div(cls: string, children: Node[] = []) {
   const el = document.createElement('div');
   el.className = cls;
@@ -231,5 +239,10 @@ mark[data-hl] { color: inherit; cursor: pointer; border-radius: 2px; }
 .dh-pop textarea { height: 70px; resize: vertical; font: inherit; padding: 4px; }
 .dh-row { display: flex; gap: 6px; align-items: center; }
 .dh-bar button, .dh-pop button { border: 1px solid #ccc; border-radius: 6px; background: #f6f6f6; cursor: pointer; font: inherit; }
+.dh-status { font-size: 11px; font-weight: 600; align-self: flex-start; padding: 1px 6px; border-radius: 999px; background: #eef; color: #334; }
+.dh-changed { background: #dcfce7; color: #14532d; }
+.dh-answered { background: #dbeafe; color: #1e3a8a; }
+.dh-failed { background: #fee2e2; color: #7f1d1d; }
+.dh-response { white-space: pre-wrap; max-height: 180px; overflow-y: auto; padding: 6px; background: #f6f6f6; border-radius: 6px; }
 .dh-dot { width: 20px; height: 20px; border-radius: 50% !important; padding: 0; }
 `;

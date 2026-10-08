@@ -13,7 +13,9 @@ with WXT, for leaving feedback on docs.dodao.io. Everything it needs is in that
 folder: the extension in `extension/ui/`, the API in `extension/api/` that stores
 the comments in S3 and runs on AWS Lambda, and the Terraform for both. Each of
 `ui/` and `api/` is its own package, and its deploy runs only when that folder
-changes. The one exception is its deploy workflow,
+changes. `extension/worker/` is a program that runs on a machine of
+ours, hands each new comment to a Claude Code session, and writes Claude's
+response and the comment's status back to S3. The one exception is its deploy workflow,
 which GitHub reads only from `.github/workflows/`. Its README says how to set it up,
 and how to work through the comments.
 The folders in `docs/`

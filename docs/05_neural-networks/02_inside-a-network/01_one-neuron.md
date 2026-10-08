@@ -1,11 +1,12 @@
 # One neuron, worked out by hand
 
-The page before this one, [the words everyone uses](../01_what-learning-means/06_the-words-everyone-uses.md),
-gave you the words that machine learning uses. It said that a model is a function
-with numbers inside it, and that training is the search for good values for those
-numbers. This page opens one model and shows you the smallest part that the model
-is built from. That part is called a **neuron**, and a neuron is one small piece
-of arithmetic that owns a few numbers of its own. This page works one neuron out
+The chapter before this one,
+starting at [how rules do the work](../01_what-learning-means/01_how-rules-do-the-work.md),
+explained what a model is. It said that a model is a function with numbers inside
+it, and that training is the search for good values for those numbers. This page
+opens one model and shows you the smallest part that the model is built from.
+That part is called a **neuron**, and a neuron is one small piece of arithmetic
+that owns a few numbers of its own. This page works one neuron out
 in full with real numbers, so that nothing here stays a word you have to accept
 without checking it.
 
@@ -16,8 +17,10 @@ total through a simple rule, and that rule decides what comes out. Everything
 else in this book is built by joining many neurons together and by finding good
 values for the numbers they own.
 
-This page is for a reader who has read the chapter before it. You need to be able
-to multiply, to add, and to read a graph that has two axes. You do not need to
+This page is for a reader who has read the chapter before it. If you came
+straight to this page, section 1 repeats the part of that chapter you need: what a
+model is, how a model relates to a neuron, and where the inputs come from. You
+need to be able to multiply, to add, and to read a graph that has two axes. You do not need to
 know anything about training, because the numbers on this page were chosen by
 hand so that you can watch what they do. Everything is worked out on one made-up
 moment of one grasp, in which a robot arm is reaching for a cup. Every number in
@@ -30,20 +33,83 @@ never be enough, and what the rule at the end of the neuron adds.
 
 ## Contents
 
-1. [What one neuron is made of](#1-what-one-neuron-is-made-of)
-2. [The weighted sum, line by line](#2-the-weighted-sum-line-by-line)
-3. [What changes when a weight or the bias changes](#3-what-changes-when-a-weight-or-the-bias-changes)
-4. [Why multiplying and adding is not enough](#4-why-multiplying-and-adding-is-not-enough)
-5. [The rectified linear unit](#5-the-rectified-linear-unit)
-6. [GELU and SiLU, and why networks use them now](#6-gelu-and-silu-and-why-networks-use-them-now)
-7. [Where to read next](#7-where-to-read-next)
-8. [Using it in Python](#8-using-it-in-python)
+1. [From a model to a neuron](#1-from-a-model-to-a-neuron)
+2. [What one neuron is made of](#2-what-one-neuron-is-made-of)
+3. [The weighted sum, line by line](#3-the-weighted-sum-line-by-line)
+4. [What changes when a weight or the bias changes](#4-what-changes-when-a-weight-or-the-bias-changes)
+5. [Why multiplying and adding is not enough](#5-why-multiplying-and-adding-is-not-enough)
+6. [The rectified linear unit](#6-the-rectified-linear-unit)
+7. [GELU and SiLU, and why networks use them now](#7-gelu-and-silu-and-why-networks-use-them-now)
+8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
-## 1. What one neuron is made of
+## 1. From a model to a neuron
 
-The page before this one described a model as a function with numbers inside it.
+This section connects the word model to the word neuron, and it says where the
+numbers that go into a neuron come from. The earlier page
+[what a model is](../01_what-learning-means/03_what-a-model-is.md) covers models
+in full, with every step worked out. This section repeats only the part that this
+page needs.
+
+A **model** is a formula with adjustable numbers inside it, together with the
+values that those numbers have been given. You hand the model some numbers, it
+does its arithmetic, and it hands back an answer. The numbers you hand it are its
+**inputs**, and the answer is its **output**. The adjustable numbers inside it are
+its **parameters**, and finding good values for them is called **training**.
+
+The earlier page built the smallest useful model. A robot arm bends a little when
+a mass hangs on its wrist, so the tool tip sits lower than the controller expects.
+That bending is called sag. Somebody measured the sag for six masses and fitted a
+straight line to the measurements. The result was the formula
+sag = 1.4 x mass + 0.5. Its input is the mass in kilograms. Its output is the drop
+of the tool tip in millimetres. Its two parameters are 1.4 and 0.5.
+
+That formula already has the shape of a neuron. The picture below redraws it in
+the shape that the rest of this page uses for a neuron. Read it from left to
+right.
+
+![The input 1.75 kilograms multiplied by a weight of +1.40 to give +2.450, added to a bias of +0.50 to make 2.950, passed out with no rule as an output of 2.95 millimetres](../../images/inside-a-network/one-neuron/sag-model-as-a-neuron.svg)
+
+The input of 1.75 kg is multiplied by 1.4, which gives 2.45. Then 0.5 is added,
+which gives 2.95. So the model predicts a drop of 2.95 mm. A number that
+multiplies an input is called a **weight**. A number that is added at the end,
+whatever the input is, is called a **bias**. So the slope of the sag line is a
+weight, and its offset is a bias.
+
+A neuron does the same arithmetic with two changes. First, it can take several
+inputs, and each input gets its own weight. Second, it passes its total through a
+simple rule before it hands the total on. The sag model has no rule, which is why
+the picture says "no rule here". Section 5 explains why a neuron needs one.
+
+A **neural network** is a model built from many neurons. The outputs of some
+neurons become the inputs of others, and the whole network is still one formula
+with parameters inside it. So the relation between the two words is this. A
+neuron is the smallest piece, and a network is a model made by joining many of
+those pieces together. Every weight and every bias of every neuron is one
+parameter of the model. The page after this one,
+[layers and depth](02_layers-and-depth.md), shows how the neurons are joined.
+
+The inputs come from outside the model, because a model never reads a sensor
+itself. A program on the robot reads the sensors at one moment. It turns each
+reading into one number, and it puts those numbers in a fixed order. That ordered
+list of numbers is what arrives at the model, and each number in the list is one
+input. The order matters, because the first weight always multiplies the first
+number in the list. If the program swapped two readings, each weight would
+multiply the wrong reading. The answer would be wrong, and nothing would report an
+error.
+
+For the sag model the list holds one number, which is the mass. The neuron on the
+rest of this page reads three numbers. They come from three sensors on an arm at
+the moment it reaches for a cup. Section 2 shows those three readings and how each
+one is turned into a number before it arrives.
+
+---
+
+## 2. What one neuron is made of
+
+The section before this one described a model as a function with numbers inside it.
 The smallest function of that kind that is worth looking at is one neuron with
 three inputs. The numbers that go into a neuron are called its **inputs**. The
 single number that comes out of it is called its **output**. Between the inputs
@@ -113,7 +179,7 @@ search.
 
 ---
 
-## 2. The weighted sum, line by line
+## 3. The weighted sum, line by line
 
 The three inputs and the four numbers of the neuron are now all known, so the
 neuron can do its first job. That job is to work out the **weighted sum**, which
@@ -179,12 +245,12 @@ the square through the bottom edge. Our own reading sits well inside the part
 where the sum is above 0.
 
 The straightness of that line is the most important limit of a single neuron, and
-section 4 returns to it. Before that, the next section shows what the four
+section 5 returns to it. Before that, the next section shows what the four
 numbers the neuron owns actually control.
 
 ---
 
-## 3. What changes when a weight or the bias changes
+## 4. What changes when a weight or the bias changes
 
 The weighted sum in the section before used one particular set of four numbers,
 so the natural question is what would have happened with different ones. The
@@ -259,7 +325,7 @@ kind cannot fix that.
 
 ---
 
-## 4. Why multiplying and adding is not enough
+## 5. Why multiplying and adding is not enough
 
 The sections before this one kept finding straight lines, and that is not an
 accident of the numbers that were chosen. Multiplying by a weight and adding a
@@ -344,9 +410,9 @@ finally looks at that rule properly.
 
 ---
 
-## 5. The rectified linear unit
+## 6. The rectified linear unit
 
-The rule that section 4 kept putting between the layers has a name. It is called
+The rule that section 5 kept putting between the layers has a name. It is called
 the **activation function**, which means a rule that is applied to the weighted
 sum to give the neuron's output. The number that comes out of it is called the
 neuron's **activation**. The simplest one, and the one networks have used the
@@ -381,7 +447,7 @@ Our own neuron had a sum of +0.725, which is the sixth row, so its output is
 This rule looks too simple to do any work. The reason it does so much work is the
 corner at 0. A neuron with this rule is two different things joined at one point,
 because on one side of the corner it ignores its inputs and on the other side it
-follows them exactly. The place where it changes is the point that section 3
+follows them exactly. The place where it changes is the point that section 4
 moved with the bias, and this page calls that point the elbow. Once several
 neurons each have an elbow in a different place, the elbows can be added together
 into any shape at all.
@@ -396,7 +462,7 @@ Six neurons with elbows at 0.08, 0.25, 0.42, 0.58, 0.75 and 0.92 follow the
 smooth curve to within 0.107 everywhere. Twelve of them bring that largest gap
 down to 0.030.
 
-That is the answer to the question section 4 raised. A network can bend because
+That is the answer to the question section 5 raised. A network can bend because
 each neuron can switch itself off, and a network with more neurons can bend in
 more places. What this costs is that half of every neuron's range gives nothing
 at all.
@@ -447,7 +513,7 @@ next section change.
 
 ---
 
-## 6. GELU and SiLU, and why networks use them now
+## 7. GELU and SiLU, and why networks use them now
 
 The rectified linear unit has those two awkward places, so two smoother rules
 have taken over much of its work in the models built today. Both of them keep its
@@ -463,7 +529,7 @@ inside it repeats the left half of the same picture at a larger size.
 ![The three rules drawn on one set of axes, with an inset showing the left half close up, where GELU and SiLU dip below 0](../../images/inside-a-network/one-neuron/three-rules.svg)
 
 The table below gives what each rule produces for the same eight sums that
-section 5 used. Read one row at a time: the first column is the sum going in, and
+section 6 used. Read one row at a time: the first column is the sum going in, and
 the other three columns are what each rule gives for that sum.
 
 | sum going in | ReLU | GELU | SiLU |
@@ -497,7 +563,7 @@ between them. GELU's slope runs from -0.0852 at -2 to +1.0852 at +2, and SiLU's
 runs from -0.0908 to +1.0908. Both of the smooth rules dip below 0 on the left,
 GELU down to -0.129 near -1.42 and SiLU down to -0.100 near -2.40.
 
-The picture below puts the three rules back on the neuron from section 1. The
+The picture below puts the three rules back on the neuron from section 2. The
 left half sweeps the distance from 0 to 1 metre, and the right half is the same
 sweep again with the area around the elbow made larger.
 
@@ -508,7 +574,7 @@ rectified linear unit, 0.5552 under GELU and 0.4884 under SiLU. At 0.85 metres,
 where the sum is -0.1350, the rectified linear unit gives exactly 0, while GELU
 gives -0.0603 and SiLU gives -0.0630.
 
-The dead units of section 5 are the clearest case where that difference matters.
+The dead units of section 6 are the clearest case where that difference matters.
 The picture below takes the same 64 simulated neurons and the same 200 simulated
 moments, replaces the rule with GELU, and writes in each square the average size
 of the slope that neuron gets. The 25 neurons that the rectified linear unit had
@@ -564,7 +630,7 @@ arranged in a grid which a computer multiplies in one go.
 
 ---
 
-## 7. Where to read next
+## 8. Where to read next
 
 - [Layers and depth](02_layers-and-depth.md) is the next page, and it joins many
   copies of this neuron into a layer, stacks the layers, and explains what each
@@ -572,7 +638,7 @@ arranged in a grid which a computer multiplies in one go.
 - [The shape of the numbers](03_the-shape-of-the-numbers.md) explains how those
   weights are stored and multiplied, and why the hardware is built the way it
   is.
-- [What a network can learn](04_what-a-network-can-learn.md) picks up section 4
+- [What a network can learn](04_what-a-network-can-learn.md) picks up section 5
   and shows why stacking layers with a rule between them can follow any shape.
 - [The score of being wrong](../03_how-training-works/01_the-score-of-being-wrong.md)
   starts the chapter that finds the weights and biases this page chose by hand.
@@ -584,10 +650,10 @@ arranged in a grid which a computer multiplies in one go.
 
 ---
 
-## 8. Using it in Python
+## 9. Using it in Python
 
 Everything on this page is one line of PyTorch, which is the library most of this
-book's models are built with. The code below builds the same neuron as section 1,
+book's models are built with. The code below builds the same neuron as section 2,
 puts the same three readings through it, and checks the arithmetic of sections 2,
 5 and 6.
 
@@ -595,21 +661,21 @@ puts the same three readings through it, and checks the arithmetic of sections 2
 import torch
 from torch import nn
 
-neuron = nn.Linear(in_features=3, out_features=1)   # section 1: 3 weights + 1 bias
+neuron = nn.Linear(in_features=3, out_features=1)   # section 2: 3 weights + 1 bias
 with torch.no_grad():                               # fix them by hand, as this page did
     neuron.weight.copy_(torch.tensor([[-2.0, 1.5, 0.8]]))
     neuron.bias.copy_(torch.tensor([0.5]))
 
 readings = torch.tensor([[0.42, 0.55, 0.30]])       # the three scaled readings
-total = neuron(readings)                            # section 2: the weighted sum
+total = neuron(readings)                            # section 3: the weighted sum
 print(f"{total.item():.4f}")                        # 0.7250
 print(sum(p.numel() for p in neuron.parameters()))  # 4
 
-print(f"{torch.relu(total).item():.4f}")                      # section 5: 0.7250
-print(f"{torch.nn.functional.gelu(total).item():.4f}")        # section 6: 0.5552
-print(f"{torch.nn.functional.silu(total).item():.4f}")        # section 6: 0.4884
+print(f"{torch.relu(total).item():.4f}")                      # section 6: 0.7250
+print(f"{torch.nn.functional.gelu(total).item():.4f}")        # section 7: 0.5552
+print(f"{torch.nn.functional.silu(total).item():.4f}")        # section 7: 0.4884
 
-below = torch.tensor([-0.135])                      # the sum at 0.85 m, from section 6
+below = torch.tensor([-0.135])                      # the sum at 0.85 m, from section 7
 print(f"{torch.relu(below).item():.4f}")                      # 0.0000
 print(f"{torch.nn.functional.gelu(below).item():.4f}")        # -0.0603
 ```
@@ -617,7 +683,7 @@ print(f"{torch.nn.functional.gelu(below).item():.4f}")        # -0.0603
 The class is called `nn.Linear` and not `nn.Neuron`, because it is written to
 hold a whole layer of neurons at once. Asking for one output is how you get a
 single neuron out of it. The library gives you the weights, the bias, the
-multiplying and the adding, so you never write the arithmetic of section 2
+multiplying and the adding, so you never write the arithmetic of section 3
 yourself.
 
 Each number is printed to four decimal places on purpose. PyTorch works in a
@@ -629,6 +695,6 @@ ones that models are run in.
 
 What you have to decide is none of the arithmetic and all of the shape. You
 choose how many inputs the layer takes and how many neurons it has, which the
-next page is about. You also choose which rule to apply after it, which section 6
+next page is about. You also choose which rule to apply after it, which section 7
 weighed up. You do not choose the weights or the bias, because training chooses
 those.

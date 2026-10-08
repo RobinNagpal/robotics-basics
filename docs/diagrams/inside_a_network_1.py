@@ -206,7 +206,54 @@ def report_core() -> None:
 
 
 # ==========================================================================
-# 01_one-neuron.md  --  section 1: what one neuron holds
+# 01_one-neuron.md  --  section 1: from a model to a neuron
+# ==========================================================================
+
+SAG_MASS: float = 1.75      # kg, the new input from the page "What a model is"
+SAG_W: float = 1.4          # the fitted slope, which is a weight
+SAG_B: float = 0.5          # the fitted offset, which is a bias
+
+
+def sag_model_as_a_neuron() -> None:
+    """The fitted line sag = 1.4 x mass + 0.5, drawn in the shape of a neuron."""
+    prod = SAG_MASS * SAG_W
+    total = prod + SAG_B
+    print('--- the sag model as a neuron ------------------------------------')
+    print(f'{SAG_MASS} kg x {SAG_W:+.2f} = {prod:+.3f}; plus bias {SAG_B:+.2f} -> {total:.3f} mm')
+    fig, ax = plt.subplots(figsize=(13.0, 4.6), facecolor='white')
+    _axes(ax, (0, 27), (0, 9.6))
+    _label(ax, 13.5, 9.1, 'The sag model from the earlier page, drawn as a neuron with one input',
+           size=13, weight='bold')
+    y = 5.6
+    cx, bx, sx = 2.6, 5.4, 15.0
+    _label(ax, cx, y + 1.5, 'input: mass (kg)', size=10, color=MUTED)
+    ax.add_patch(plt.Circle((cx, y), 0.9, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
+                            zorder=4))
+    _label(ax, cx, y, f'{SAG_MASS:.2f}', size=11.5, family=MONO)
+    ax.plot([cx + 0.9, bx], [y, y], color=MUTED, lw=1.3, zorder=2)
+    _box(ax, bx, y - 0.5, 2.2, 1.0, face='white', edge=JOINT)
+    _label(ax, bx + 1.1, y, f'{SAG_W:+.2f}', size=11.5, family=MONO)
+    _label(ax, bx + 1.1, y + 1.5, 'weight (slope)', size=10, color=JOINT, weight='bold')
+    _label(ax, bx + 2.5, y, f'= {prod:+.3f}', size=11, family=MONO, ha='left')
+    ax.plot([10.5, sx - 1.55], [y, y], color=MUTED, lw=1.3, zorder=2)
+    ax.add_patch(plt.Circle((sx, y), 1.55, facecolor=JOINT, edgecolor=INK, lw=1.2, zorder=4))
+    _label(ax, sx, y + 0.45, 'add up', size=10.5, weight='bold')
+    _label(ax, sx, y - 0.35, f'{total:.3f}', size=12, family=MONO)
+    _box(ax, sx - 1.3, 0.6, 2.6, 1.1, face='white', edge=SLIDE)
+    _label(ax, sx, 1.15, f'{SAG_B:+.2f}', size=11.5, family=MONO)
+    _label(ax, sx + 1.6, 1.15, 'bias (offset)', size=10, weight='bold', color=SLIDE, ha='left')
+    _arrow(ax, (sx, 1.75), (sx, y - 1.6), color=SLIDE, lw=1.6)
+    _arrow(ax, (sx + 1.6, y), (22.6, y))
+    _label(ax, 19.6, y + 0.7, 'no rule here', size=9.8, color=MUTED)
+    ax.add_patch(plt.Circle((24.0, y), 1.1, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
+                            zorder=4))
+    _label(ax, 24.0, y, f'{total:.2f}', size=11.5, family=MONO)
+    _label(ax, 24.0, y + 1.6, 'output: drop (mm)', size=10, color=MUTED)
+    _save(fig, ONE, 'sag-model-as-a-neuron.svg')
+
+
+# ==========================================================================
+# 01_one-neuron.md  --  section 2: what one neuron holds
 # ==========================================================================
 
 def neuron_parts() -> None:
@@ -326,7 +373,7 @@ def the_four_parameters() -> None:
 
 
 # ==========================================================================
-# 01_one-neuron.md  --  section 2: the weighted sum
+# 01_one-neuron.md  --  section 3: the weighted sum
 # ==========================================================================
 
 def weighted_sum_lines() -> None:
@@ -438,7 +485,7 @@ def sum_over_two_readings() -> None:
 
 
 # ==========================================================================
-# 01_one-neuron.md  --  section 3: changing a weight, changing the bias
+# 01_one-neuron.md  --  section 4: changing a weight, changing the bias
 # ==========================================================================
 
 def flipping_one_weight() -> None:
@@ -553,7 +600,7 @@ def bias_parallel_lines() -> None:
 
 
 # ==========================================================================
-# 01_one-neuron.md  --  section 4: why a weighted sum is not enough
+# 01_one-neuron.md  --  section 5: why a weighted sum is not enough
 # ==========================================================================
 
 CH_W: list[float] = [-2.0, 3.0, 0.5]
@@ -756,7 +803,7 @@ def two_elbows_rebuild_it() -> None:
 
 
 # ==========================================================================
-# 01_one-neuron.md  --  section 5: the rectified linear unit
+# 01_one-neuron.md  --  section 6: the rectified linear unit
 # ==========================================================================
 
 CHECK: list[float] = [-2.0, -1.0, -0.5, 0.0, 0.5, 0.725, 1.0, 2.0]
@@ -929,7 +976,7 @@ def relu_flat_region() -> None:
 
 
 # ==========================================================================
-# 01_one-neuron.md  --  section 6: GELU and SiLU
+# 01_one-neuron.md  --  section 7: GELU and SiLU
 # ==========================================================================
 
 def three_rules() -> None:
@@ -2184,6 +2231,7 @@ def main() -> None:
         PNG_DIR = pathlib.Path(sys.argv[2])
         PNG_DIR.mkdir(parents=True, exist_ok=True)
     report_core()
+    sag_model_as_a_neuron()
     neuron_parts()
     scaling_the_readings()
     the_four_parameters()

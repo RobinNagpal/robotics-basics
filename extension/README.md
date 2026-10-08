@@ -183,6 +183,16 @@ one run, and a run has these steps:
 
 Steps 2 to 5 happen only when there is open feedback, so a quiet run costs nothing.
 
+Only one run uses the session at a time. A run holds a lock file while it works,
+in `worker/.state/run.lock`, whether the schedule started it or `npm run once` did.
+A run that is due while another still holds the lock waits for it to finish, for
+up to an hour (`WAIT_MINUTES`), and is skipped if the other run is still going
+after that. Only one run waits at a time, so a long run does not collect a queue of
+waiting runs on a short schedule. The lock file holds the process ID of the run
+that made it, so a file left by a process that died is recognised and removed. One
+Claude turn may take up to an hour too (`TIMEOUT_MINUTES`). A turn that takes
+longer is stopped, and its page's comments are marked `failed`.
+
 Every run uses the same Claude Code session. The first run creates it with an ID
 the worker chooses, and the worker keeps that ID in `worker/.state/session.json`.
 Every later turn resumes the session by that ID. This works like one long
@@ -211,11 +221,12 @@ one more tool to install, and its configuration file has to be JavaScript, becau
 PM2 reads only JavaScript or JSON.
 
 [Croner](https://croner.56k.guru) decides when a run starts, from a cron pattern
-such as `*/2 * * * *` for every two minutes. The obvious alternative is a plain
-timer in the program. Croner was chosen because of its `protect` option: when a run
-is still going at the next start time, that start is skipped. One comment can keep
-Claude busy for longer than two minutes, and without this two runs would work in
-the same clone at once. It costs one small dependency.
+such as `*/2 * * * *` for every two minutes, or `*/30 * * * *` for every thirty.
+The obvious alternative is a plain timer in the program. Croner was chosen because
+a cron pattern says the times plainly and is the same notation every scheduler
+uses, so the schedule can be changed in `.env` without reading any code. It costs
+one small dependency. What happens when a run is still working at the next start
+time is decided by the worker's own lock, described above.
 
 ### Setting it up
 

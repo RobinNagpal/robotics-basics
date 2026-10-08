@@ -5,6 +5,7 @@ import { runTurn } from './claude';
 import { config } from './config';
 import { openFeedback, record } from './feedback';
 import { ensureClone, pullLatest, pushPage, status } from './git';
+import { acquire } from './lock';
 import { pagePrompt, repairPrompt, RESULT_SCHEMA, type Reply } from './prompt';
 import { loadSession, saveSession, type State } from './session';
 
@@ -111,11 +112,30 @@ async function addressPage(session: State, comments: Highlight[]) {
   }
 }
 
+// A run that is due while another is still using the session waits for it, for
+// at most waitMinutes. Only one run waits at a time: on a short schedule a long
+// run would otherwise collect a queue of waiting runs, all doing the same thing.
+let waiting = false;
+async function run() {
+  if (waiting) return log('skipped: a run is already waiting for the session');
+  waiting = true;
+  let release: (() => void) | null;
+  try {
+    release = await acquire(config.waitMinutes * 60_000, () => log('the session is in use, waiting for it'));
+  } finally {
+    waiting = false;
+  }
+  if (!release) return log(`skipped: the session was still in use after ${config.waitMinutes} minutes`);
+  try {
+    await cycle();
+  } finally {
+    release();
+  }
+}
+
 if (process.argv.includes('--once')) {
-  await cycle();
+  await run();
 } else {
-  // protect: a run that is still going when the next one is due makes that one
-  // skip, instead of two runs working on the same clone at once.
-  new Cron(config.schedule, { protect: true, catch: (e) => log('run failed', e) }, cycle);
+  new Cron(config.schedule, { catch: (e) => log('run failed', e) }, run);
   log(`feedback worker started, schedule "${config.schedule}", repo ${config.repoDir}`);
 }

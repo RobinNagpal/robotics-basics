@@ -170,6 +170,22 @@ them, and the chapter [how training
 works](../03_how-training-works/01_the-score-of-being-wrong.md) explains that
 search.
 
+The three readings here are of three different kinds: a distance, an opening and
+a brightness. Nothing requires that. A neuron only ever sees numbers, so its
+inputs can all be of one kind, such as sixteen pixel brightnesses. They can also
+be of different kinds, as they are here. What matters is that each reading is
+scaled first, so that no reading counts for more just because of its unit.
+
+This page uses three readings so that you can follow the arithmetic by hand. A
+real robot might have 50 readings, and nobody decides which of them go to which
+neuron. In the usual layout, every neuron receives all 50 readings, and each
+neuron has 50 weights of its own. Training then sets those weights. When training
+leaves a neuron's weight on one reading close to 0, that neuron in effect ignores
+that reading. So the combination of readings that each neuron responds to is found
+by training, and no person chooses it. The next page describes this layout, which
+is called a [fully connected
+layer](02_layers-and-depth.md#2-fully-connected-and-what-joining-everything-costs).
+
 ---
 
 ## 3. The weighted sum, line by line

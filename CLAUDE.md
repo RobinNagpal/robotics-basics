@@ -9,8 +9,11 @@ Makefile and the pixi environment; run every `make` and `pixi` command from insi
 pages into spoken recordings: `narrate.py` asks a model for a transcript and then
 reads it aloud, the transcripts are committed because they are the part worth
 checking, and the recordings themselves go to S3 rather than into the repository. `extension/` is a Chrome extension, built
-with WXT, for highlighting and commenting on docs.dodao.io, together with the
-small Hono server that stores the highlights; its README says how to set it up.
+with WXT, for leaving feedback on docs.dodao.io. Everything it needs is in that
+folder: the extension, the API that stores the comments in S3 and runs on AWS
+Lambda, and the Terraform for both. The one exception is its deploy workflow,
+which GitHub reads only from `.github/workflows/`. Its README says how to set it up,
+and how to work through the comments.
 The folders in `docs/`
 are its structure, so moving a doc moves it on the site too;
 `website/lib/books.config.ts` only holds display text such as book titles, and the

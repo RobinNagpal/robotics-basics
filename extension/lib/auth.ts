@@ -1,31 +1,21 @@
-import { browser } from '#imports';
-import { ALLOWED_EMAILS } from './allowed';
-import { user } from './store';
+import { apiKey, user } from './store';
 
-export async function getToken(interactive: boolean): Promise<string | null> {
-  try {
-    const res = await browser.identity.getAuthToken({ interactive });
-    return res.token ?? null;
-  } catch {
-    return null;
-  }
-}
+const API = import.meta.env.WXT_API_URL;
 
-export async function signIn() {
-  const token = await getToken(true);
-  if (!token) throw new Error('Google sign-in was cancelled');
-  const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const info = await res.json();
-  if (!info.email_verified || !ALLOWED_EMAILS.includes(info.email)) {
-    await browser.identity.removeCachedAuthToken({ token });
-    throw new Error(`${info.email} is not allowed to use this extension`);
-  }
-  await user.setValue(info.email);
+// The user types in an API key. The server says whether it knows the key, and
+// whose it is. Only a key the server accepts is kept.
+export async function signIn(key: string) {
+  key = key.trim();
+  if (!key) throw new Error('Enter an API key');
+  const res = await fetch(`${API}/me`, { headers: { Authorization: `Bearer ${key}` } });
+  if (res.status === 401) throw new Error('The server does not know this API key');
+  if (!res.ok) throw new Error(`Server answered ${res.status}`);
+  const { name } = await res.json();
+  await apiKey.setValue(key);
+  await user.setValue(name);
 }
 
 export async function signOut() {
-  await browser.identity.clearAllCachedAuthTokens();
+  await apiKey.setValue(null);
   await user.setValue(null);
 }

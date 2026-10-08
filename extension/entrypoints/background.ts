@@ -1,5 +1,4 @@
-import { getToken } from '@/lib/auth';
-import { highlights, lastSync, user } from '@/lib/store';
+import { apiKey, highlights, lastSync } from '@/lib/store';
 import type { Highlight, LocalHighlight } from '@/lib/types';
 
 const API = import.meta.env.WXT_API_URL;
@@ -25,23 +24,23 @@ export default defineBackground(() => {
 let running = false;
 
 async function sync() {
-  if (running || !(await user.getValue())) return;
+  const key = await apiKey.getValue();
+  if (running || !key) return;
   running = true;
   try {
-    const token = await getToken(false);
-    if (!token) throw new Error('Not signed in to Google');
-
     const sent = await highlights.getValue();
     const dirty = Object.values(sent).filter((h) => h.dirty);
     const res = await fetch(`${API}/sync`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         upserts: dirty.filter((h) => !h.deleted).map(({ dirty, deleted, ...h }) => h),
-        deletes: dirty.filter((h) => h.deleted).map((h) => h.id),
+        deletes: dirty.filter((h) => h.deleted).map(({ id, book, chapter, page }) => ({ id, book, chapter, page })),
       }),
     });
-    if (res.status === 401) await browser.identity.removeCachedAuthToken({ token });
+    // A key removed on the server stops working here too. The popup then shows the
+    // error, and the user signs out and enters a new key.
+    if (res.status === 401) throw new Error('The server no longer accepts this API key');
     if (!res.ok) throw new Error(`Server answered ${res.status}`);
     const server: Highlight[] = await res.json();
 

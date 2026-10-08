@@ -13,10 +13,15 @@ if (tab?.url?.startsWith('https://docs.dodao.io/')) ({ book, chapter } = pageKey
 async function render() {
   const email = await user.getValue();
   if (!email) {
-    app.replaceChildren(el('button', 'Sign in with Google', async () => {
-      try { await signIn(); browser.runtime.sendMessage('sync'); } catch (e) { error = (e as Error).message; }
+    const key = Object.assign(document.createElement('input'), { type: 'password', placeholder: 'API key' });
+    const form = el('form', [key, el('button', 'Sign in')], 'signin');
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      try { await signIn(key.value); error = ''; browser.runtime.sendMessage('sync'); } catch (e) { error = (e as Error).message; }
       render();
-    }), el('p', error));
+    };
+    app.replaceChildren(form, el('p', error));
+    key.focus();
     return;
   }
 
@@ -45,8 +50,9 @@ async function render() {
     el('ul', shown.length ? shown.map((h) => {
       const li = el('li', [
         el('button', '✕', () => remove(h.id)),
-        Object.assign(el('a', [el('small', h.page), el('div', h.text)]), { href: h.url, target: '_blank' }),
+        Object.assign(el('a', [el('small', h.section ? `${h.page} · ${h.section}` : h.page), el('div', h.text)]), { href: h.url, target: '_blank' }),
         ...(h.note ? [el('div', h.note, 'note')] : []),
+        el('small', h.author, 'author'),
       ]);
       li.style.borderColor = h.color;
       return li;

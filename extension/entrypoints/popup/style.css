@@ -11,3 +11,6 @@ li a { color: #111; text-decoration: none; display: block; }
 li small { color: #666; }
 li .note { margin-top: 2px; font-style: italic; }
 li button { float: right; border: 0; background: none; color: #999; }
+.signin { display: flex; gap: 6px; }
+.signin input { flex: 1; min-width: 0; padding: 4px; font: inherit; }
+li .author { display: block; margin-top: 2px; }

@@ -3,16 +3,20 @@ export interface Highlight {
   book: string;
   chapter: string;
   page: string;
+  section: string; // the nearest heading above the text, or '' above the first one
   url: string;
   text: string;
   prefix: string;
   suffix: string;
   color: string;
   note: string;
-  userEmail: string;
+  author: string; // the name the server gave the API key that wrote it
   createdAt: number;
   updatedAt: number;
 }
+
+// Enough to find a highlight's page file on the server, which is all a delete needs.
+export type HighlightRef = Pick<Highlight, 'id' | 'book' | 'chapter' | 'page'>;
 
 // The browser copy carries two extra flags the server never sees.
 export interface LocalHighlight extends Highlight {

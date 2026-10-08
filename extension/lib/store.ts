@@ -6,6 +6,8 @@ import type { Highlight, LocalHighlight } from './types';
 export const highlights = storage.defineItem<Record<string, LocalHighlight>>('local:highlights', {
   fallback: {},
 });
+// The API key the user typed in, and the name the server gave it.
+export const apiKey = storage.defineItem<string | null>('local:apiKey', { fallback: null });
 export const user = storage.defineItem<string | null>('local:user', { fallback: null });
 export const lastSync = storage.defineItem<{ at: number; error?: string } | null>('local:lastSync', {
   fallback: null,

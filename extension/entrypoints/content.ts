@@ -31,8 +31,8 @@ export default defineContentScript({
       bar.style.display = 'none';
       const sel = getSelection();
       const root = document.querySelector<HTMLElement>(ROOT);
-      const email = await user.getValue();
-      if (!sel || sel.isCollapsed || !root || !email) return;
+      const author = await user.getValue();
+      if (!sel || sel.isCollapsed || !root || !author) return;
       const range = sel.getRangeAt(0);
       if (!root.contains(range.commonAncestorContainer) || !range.toString().trim()) return;
 
@@ -49,13 +49,14 @@ export default defineContentScript({
         const h: Highlight = {
           id: crypto.randomUUID(),
           ...pageKey(location.href),
+          section: sectionOf(root!, range.startContainer),
           url: location.href,
           text: full.slice(start, end),
           prefix: full.slice(Math.max(0, start - CONTEXT), start),
           suffix: full.slice(end, end + CONTEXT),
           color,
           note: '',
-          userEmail: email!,
+          author: author!,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };
@@ -103,6 +104,17 @@ function textNodes(root: Node) {
   while (walker.nextNode()) nodes.push(walker.currentNode as Text);
   return nodes;
 }
+// The text of the last heading before node, so a comment says which section of the
+// page it is about. Text above the first heading has no section.
+function sectionOf(root: HTMLElement, node: Node) {
+  let found = '';
+  for (const h of root.querySelectorAll('h1, h2, h3, h4')) {
+    if (h.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING) found = h.textContent?.trim() ?? '';
+    else break;
+  }
+  return found;
+}
+
 const textOf = (root: Node) => textNodes(root).map((n) => n.data).join('');
 
 function offset(root: Node, node: Node, off: number) {

@@ -1,0 +1,78 @@
+name: Deploy the feedback API
+
+# The highlighter extension's API runs as one AWS Lambda function. Its code is
+# in extension/server/, and the infrastructure around it is in
+# extension/terraform/. This workflow only replaces the function's code; it
+# never changes the function's settings, which are Terraform's.
+#
+# It lives here rather than in extension/ because GitHub only reads workflows
+# from .github/workflows/.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'extension/server/**'
+      - 'extension/lib/types.ts'
+      - 'extension/package.json'
+      - 'extension/package-lock.json'
+      - '.github/workflows/deploy-feedback-api.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-feedback-api
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  FUNCTION_NAME: robotics-basics-feedback-api
+  API_URL: https://3kc6u7uem25eetqtt7xt637b6q0vppkm.lambda-url.us-east-1.on.aws
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: extension
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: extension/package-lock.json
+
+      - name: Install and type-check
+        run: |
+          npm ci
+          npm run check
+
+      # One file with every dependency inside it, zipped, which is what Lambda takes.
+      - name: Bundle the function
+        run: npm run build:lambda
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Upload the code
+        run: |
+          aws lambda update-function-code \
+            --function-name "$FUNCTION_NAME" \
+            --zip-file fileb://lambda.zip \
+            --query 'LastUpdateStatus' --output text
+          aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
+
+      # A request with no key must be refused with 401. The placeholder answers
+      # 503 and a broken bundle answers 502, so 401 shows the new code is running.
+      - name: Check the API answers
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$API_URL/me")
+          echo "GET /me with no key answered $code"
+          test "$code" = 401

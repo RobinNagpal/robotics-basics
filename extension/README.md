@@ -137,8 +137,8 @@ of four values:
 
 The response is what Claude says about the comment, written for the person who
 left it, in 3 to 8 short lines. Claude sends the lines as a list, and the schema
-allows only 3 to 8 of them, so a longer reply is refused rather than cut short
-afterwards. The popup and the comment box on the page show the status and the
+allows only 3 to 7 of them, so a longer reply is refused rather than cut short
+afterwards. The worker adds an eighth line naming the commit when the docs changed. The popup and the comment box on the page show the status and the
 response under the comment.
 
 Only the worker writes these two fields. The API sets a new comment to `open` and
@@ -149,23 +149,32 @@ comment is new feedback.
 ### What the worker does
 
 The worker is a long-running TypeScript program in `worker/`. On a schedule it does
-one run, and a run has four steps:
+one run, and a run has these steps:
 
 1. It reads every comment from the bucket, and keeps the ones that are `open` and
    have some text. A highlight with no comment asks nothing, so it is left alone.
-2. It brings its own clone of the repository up to date with `main`.
-3. It compacts the Claude Code session. Compacting replaces the conversation so far
+2. It compacts the Claude Code session. Compacting replaces the conversation so far
    with a summary of it, so the session keeps what it learned about the docs
    without growing every run.
-4. It gives Claude the comments one at a time, oldest first. For each one, Claude
-   finds the source page, decides whether the docs should change, and either
-   changes them and pushes to `main` under the rules in `CLAUDE.md`, or answers
-   without changing anything. Claude replies in a fixed shape, a status and a
-   response of 3 to 8 short lines, which Claude Code checks against a schema. The worker writes them
-   into the comment's page file at once, and the extension shows them after its
-   next sync.
+3. It works through the comments a page at a time, starting with the page whose
+   oldest comment was written first. For each page, it puts the clone exactly on
+   `main`, making the clone first if it is missing, and gives Claude all of that page's comments in one turn, so the page
+   is changed in one go. Claude finds the source file, decides what each comment
+   needs, makes the changes under the rules in `CLAUDE.md`, and commits them, but
+   does not push.
+4. When Claude has finished the page, the worker pushes. It commits anything
+   Claude changed but left uncommitted, rebases the commits onto `main`, and
+   pushes them.
+5. Only then does it record a reply for each comment. Claude replies in a fixed
+   shape, which Claude Code checks against a schema: one entry for each comment's
+   ID, with a status and a response of 3 to 7 short lines. For a comment that
+   changed the docs, the worker adds one more line naming the pushed commit,
+   which Claude cannot know, because the rebase gives the commit a new hash. So
+   every response is 3 to 8 lines, and a comment marked `changed` is one whose
+   change is already on `main`. A comment Claude gave no reply to, or says it
+   changed when nothing was committed, is marked `failed`.
 
-Steps 2 to 4 happen only when there is open feedback, so a quiet run costs nothing.
+Steps 2 to 5 happen only when there is open feedback, so a quiet run costs nothing.
 
 Every run uses the same Claude Code session. The first run creates it with an ID
 the worker chooses, and the worker keeps that ID in `worker/.state/session.json`.
@@ -392,9 +401,10 @@ flush its cache, and nothing else.
 - `ui/scripts/build-install.ts` builds the install page and the zip.
 - `worker/index.ts` is the feedback worker: the schedule and one run.
 - `worker/claude.ts` runs one turn of the Claude Code session.
-- `worker/prompt.ts` is what Claude is told about each comment, and the shape of
-  its reply.
+- `worker/prompt.ts` is what Claude is told about a page's comments, and the
+  shape of its replies.
 - `worker/feedback.ts` reads the open comments and records each outcome.
+- `worker/git.ts` resets the clone before each page and pushes after it.
 - `worker/ecosystem.config.cjs` tells PM2 how to run the worker.
 - `terraform/` creates the AWS resources.
 - `scripts/bootstrap-state-bucket.sh` creates the bucket that holds the

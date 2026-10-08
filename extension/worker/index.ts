@@ -1,32 +1,26 @@
 import { Cron } from 'croner';
-import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { pageKeyOf } from '../api/store';
+import type { Highlight } from '../api/types';
 import { runTurn } from './claude';
 import { config } from './config';
 import { openFeedback, record } from './feedback';
-import { feedbackPrompt, RESULT_SCHEMA } from './prompt';
-import { loadSession, saveSession } from './session';
+import { pushPage, resetToMain } from './git';
+import { pagePrompt, RESULT_SCHEMA, type Reply } from './prompt';
+import { loadSession, saveSession, type State } from './session';
 
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
 
-// Brings the clone up to date with main, making it first if it is missing.
-function updateRepo() {
-  if (!existsSync(config.repoDir)) {
-    mkdirSync(dirname(config.repoDir), { recursive: true });
-    execFileSync('git', ['clone', config.repoUrl, config.repoDir], { stdio: 'inherit' });
-  }
-  execFileSync('git', ['-C', config.repoDir, 'pull', '--ff-only'], { stdio: 'inherit' });
-}
-
-// One run: find the open feedback, compact the session, then hand Claude the
-// feedback one piece at a time, in the order it was written, and record each
-// outcome as soon as it is known.
+// One run: find the open feedback, compact the session, then work through it a
+// page at a time, oldest page first.
 async function cycle() {
   const pending = await openFeedback();
   if (!pending.length) return log('no open feedback');
-  log(`${pending.length} open feedback`);
-  updateRepo();
+
+  // openFeedback returns the oldest comment first, so the pages come out in the
+  // order their first comment was written.
+  const pages = new Map<string, Highlight[]>();
+  for (const h of pending) pages.set(pageKeyOf(h), [...(pages.get(pageKeyOf(h)) ?? []), h]);
+  log(`${pending.length} open feedback on ${pages.size} page(s)`);
 
   const session = loadSession();
   // Compacting replaces the conversation so far with a summary of it. The
@@ -36,23 +30,48 @@ async function cycle() {
     log(r.isError ? `compact failed: ${r.text}` : 'session compacted');
   }
 
-  for (const h of pending) {
-    log(`addressing ${h.id} on ${h.book}/${h.chapter}/${h.page}`);
-    try {
-      const r = await runTurn(session, feedbackPrompt(h), RESULT_SCHEMA);
-      if (!session.created) {
-        session.created = true;
-        saveSession(session);
-      }
-      const out = r.structured as { status: 'changed' | 'answered'; response: string[] } | undefined;
-      if (r.isError || !out) throw new Error(r.text || 'Claude gave no structured result');
-      const written = await record(h, out.status, out.response.join('\n'));
-      log(`${h.id}: ${out.status}${written ? '' : ' (not written: the comment changed meanwhile)'} $${r.costUsd?.toFixed(2) ?? '?'}`);
-    } catch (e) {
-      const message = (e as Error).message;
-      log(`${h.id}: failed: ${message}`);
-      await record(h, 'failed', `The run failed: ${message}`).catch((e2) => log('could not record failure', e2));
+  for (const comments of pages.values()) await addressPage(session, comments);
+}
+
+// Claude makes every change one page needs in one turn and commits it. Then the
+// worker pushes, and only after that records each comment's reply, so a comment
+// marked 'changed' is one whose change is already on main.
+async function addressPage(session: State, comments: Highlight[]) {
+  const page = `${comments[0].book}/${comments[0].chapter}/${comments[0].page}`;
+  log(`addressing ${comments.length} comment(s) on ${page}`);
+  let replies: Reply[];
+  let commit: string | null;
+  try {
+    resetToMain();
+    const r = await runTurn(session, pagePrompt(comments), RESULT_SCHEMA);
+    if (!session.created) {
+      session.created = true;
+      saveSession(session);
     }
+    const out = r.structured as { replies: Reply[] } | undefined;
+    if (r.isError || !out) throw new Error(r.text || 'Claude gave no structured result');
+    replies = out.replies;
+    commit = pushPage(page);
+    log(`${page}: ${commit ? `pushed ${commit}` : 'nothing to push'}, $${r.costUsd?.toFixed(2) ?? '?'}`);
+  } catch (e) {
+    const message = (e as Error).message.split('\n')[0];
+    log(`${page}: failed: ${message}`);
+    for (const h of comments) await record(h, 'failed', `The run failed: ${message}`).catch((e2) => log('could not record failure', e2));
+    return;
+  }
+
+  for (const h of comments) {
+    const reply = replies.find((x) => x.id === h.id);
+    let status: Reply['status'] | 'failed' = reply?.status ?? 'failed';
+    let response = reply?.response.join('\n') ?? 'Claude gave no reply to this comment.';
+    if (status === 'changed' && !commit) {
+      status = 'failed';
+      response = `Claude said it changed the docs, but nothing was committed.\n${response}`;
+    } else if (status === 'changed') {
+      response += `\nPushed to main in commit ${commit}.`;
+    }
+    const written = await record(h, status, response);
+    log(`${h.id}: ${status}${written ? '' : ' (not written: the comment changed meanwhile)'}`);
   }
 }
 

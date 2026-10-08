@@ -136,7 +136,10 @@ of four values:
 - `failed`: the run went wrong, and the response says how.
 
 The response is what Claude says about the comment, written for the person who
-left it. The popup and the comment box on the page show both under the comment.
+left it, in 3 to 8 short lines. Claude sends the lines as a list, and the schema
+allows only 3 to 8 of them, so a longer reply is refused rather than cut short
+afterwards. The popup and the comment box on the page show the status and the
+response under the comment.
 
 Only the worker writes these two fields. The API sets a new comment to `open` and
 ignores whatever the browser sends for them. If someone edits the text of a
@@ -158,7 +161,7 @@ one run, and a run has four steps:
    finds the source page, decides whether the docs should change, and either
    changes them and pushes to `main` under the rules in `CLAUDE.md`, or answers
    without changing anything. Claude replies in a fixed shape, a status and a
-   response, which Claude Code checks against a schema. The worker writes them
+   response of 3 to 8 short lines, which Claude Code checks against a schema. The worker writes them
    into the comment's page file at once, and the extension shows them after its
    next sync.
 

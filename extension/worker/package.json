@@ -8,7 +8,7 @@
     "once": "tsx --env-file=.env index.ts --once",
     "start": "pm2 start ecosystem.config.cjs",
     "stop": "pm2 stop feedback-worker",
-    "restart": "pm2 restart feedback-worker --update-env",
+    "restart": "pm2 restart feedback-worker",
     "logs": "pm2 logs feedback-worker",
     "status": "pm2 describe feedback-worker"
   },

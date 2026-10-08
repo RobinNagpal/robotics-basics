@@ -44,9 +44,9 @@ async function cycle() {
         session.created = true;
         saveSession(session);
       }
-      const out = r.structured as { status: 'changed' | 'answered'; response: string } | undefined;
+      const out = r.structured as { status: 'changed' | 'answered'; response: string[] } | undefined;
       if (r.isError || !out) throw new Error(r.text || 'Claude gave no structured result');
-      const written = await record(h, out.status, out.response);
+      const written = await record(h, out.status, out.response.join('\n'));
       log(`${h.id}: ${out.status}${written ? '' : ' (not written: the comment changed meanwhile)'} $${r.costUsd?.toFixed(2) ?? '?'}`);
     } catch (e) {
       const message = (e as Error).message;

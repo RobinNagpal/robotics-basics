@@ -1,12 +1,21 @@
 import type { Highlight } from '../api/types';
 
 // What Claude must send back after each piece of feedback. The schema is checked
-// by Claude Code, so the worker always gets a status it knows and a response.
+// by Claude Code, so the worker always gets a status it knows, and a response of
+// 3 to 8 lines. The lines are a list rather than one string so that the length
+// is a rule the reply cannot break, not only a request in the prompt.
+export const MIN_LINES = 3;
+export const MAX_LINES = 8;
 export const RESULT_SCHEMA = {
   type: 'object',
   properties: {
     status: { type: 'string', enum: ['changed', 'answered'] },
-    response: { type: 'string' },
+    response: {
+      type: 'array',
+      items: { type: 'string', minLength: 1, maxLength: 160 },
+      minItems: MIN_LINES,
+      maxItems: MAX_LINES,
+    },
   },
   required: ['status', 'response'],
   additionalProperties: false,
@@ -39,5 +48,5 @@ Decide what the comment needs.
 
 Then reply with:
 - status: "changed" if you changed the docs, or "answered" if you did not.
-- response: a few sentences written for the reader. If you changed the docs, say what you changed and why, and give the commit hash. If you did not, give your answer.`;
+- response: ${MIN_LINES} to ${MAX_LINES} lines written for the reader, each line one short sentence. If you changed the docs, say what you changed and why, and give the commit hash. If you did not, give your answer. Keep to what the reader needs; leave out the steps you took.`;
 }

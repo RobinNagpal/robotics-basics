@@ -55,6 +55,13 @@ chapter.
 
 ## Signing in with an API key
 
+The popup asks for two things before it does anything else: the server URL and an
+API key. The server URL says where the API is. It is the function URL of the
+Lambda function that runs the API, which looks like
+`https://<id>.lambda-url.us-east-1.on.aws`. Because the URL is typed in rather
+than written into the extension when it is built, one build of the extension can be
+pointed at any copy of the API.
+
 The extension needs to prove to the API that its user is allowed to write
 comments. It does this with an API key. An API key is a long random string that the
 API knows in advance, in the same way a password is.
@@ -63,13 +70,23 @@ The API holds its keys in one encrypted value in AWS Systems Manager Parameter
 Store, which is the AWS service for keeping small settings and secrets. The value
 is a JSON object that maps a name to a key, such as `{"robin": "<key>"}`. The name
 is who the key belongs to, and the API writes it on every comment made with that
-key. At the moment there is one key, a random UUID, and a copy of it is in the
-`.env` file at the root of the repository as `FEEDBACK_API_KEY`.
+key. At the moment there is one key, a random UUID. A copy of it is in the `.env` file
+at the root of the repository as `FEEDBACK_API_KEY`, next to the server URL as
+`FEEDBACK_API_URL`.
 
-You type the key into the popup once. The popup asks the API whose key it is. If
-the API knows the key, the popup stores it and shows the name, and from then on
-every request carries the key. If the API does not know it, the popup says so and
-stores nothing. The API reads the keys again every five minutes, so a key that is
+You type both into the popup once. The popup sends the key to the server URL and
+asks whose key it is. If the server knows the key, the popup stores the URL and the
+key and shows the name, and from then on every request goes to that URL and carries
+that key. If the server cannot be reached, or does not know the key, the popup says
+so and stores nothing. Signing out forgets the key but keeps the URL, so signing in
+again only needs the key.
+
+A Chrome extension may call only the addresses its manifest lists, and the
+manifest is fixed when the extension is built. So the manifest lists every Lambda
+function URL, and `localhost` for the API run on your own machine, and the popup
+refuses any other server URL. That is a wider permission than one exact address,
+but it only lets the extension send requests to those addresses, and it is the
+price of choosing the server in the popup. The API reads the keys again every five minutes, so a key that is
 added or removed takes effect without a deploy. A removed key makes the next sync
 fail, and the popup shows that error until you sign out and enter a new key.
 
@@ -150,10 +167,8 @@ page file and needs the conditional write described above.
 
 ## Running it
 
-Copy `.env.example` to `.env` in this folder and fill it in. The extension reads
-`WXT_API_URL` when it is built. That is the function URL, which
-`terraform output -raw feedback_api_url` prints in `terraform/`, without its
-trailing slash.
+The extension needs no settings to build, because the server URL and the key are
+typed into its popup.
 
 ```bash
 npm install
@@ -162,13 +177,15 @@ npm run build    # writes the extension to .output/chrome-mv3
 
 To load the extension, open `chrome://extensions`, turn on developer mode, choose
 **Load unpacked** and pick `.output/chrome-mv3`. Then open the popup and enter the
-API key. During development, `npm run dev` opens a Chrome with the extension loaded
+server URL and the API key. `terraform output -raw feedback_api_url` in `terraform/`
+prints the server URL. During development, `npm run dev` opens a Chrome with the extension loaded
 and rebuilds it on every save.
 
-`npm run server` runs the same API on your own machine, on port 8787. It uses your
-own AWS credentials, and the bucket and parameter named in `.env`, so it reads and
-writes the real comments. Build the extension with
-`WXT_API_URL=http://localhost:8787` to point it at this local API.
+`npm run server` runs the same API on your own machine, on port 8787. Copy
+`.env.example` to `.env` in this folder and fill it in first. The local API uses
+your own AWS credentials, and the bucket and parameter named in `.env`, so it reads
+and writes the real comments. To use it, sign out in the popup and sign in with
+`http://localhost:8787` as the server URL.
 
 ## Deploying the API
 
@@ -218,9 +235,11 @@ which lets it replace this function's code and nothing else.
 - `entrypoints/content.ts` draws the highlights on the page and shows the colour
   bar and the comment box.
 - `entrypoints/background.ts` runs the sync.
-- `entrypoints/popup/` is the popup, including the API key form.
-- `lib/store.ts` reads and writes the browser copy, and holds the API key.
-- `lib/auth.ts` checks a key with the API and signs out.
+- `entrypoints/popup/` is the popup, including the form for the server URL and
+  the API key.
+- `lib/store.ts` reads and writes the browser copy, and holds the server URL and
+  the API key.
+- `lib/auth.ts` checks the server URL and the key with the API, and signs out.
 - `server/app.ts` is the API: the key check, `GET /me` and `POST /sync`.
 - `server/keys.ts` reads the keys from Parameter Store.
 - `server/store.ts` reads and writes the page files in S3.

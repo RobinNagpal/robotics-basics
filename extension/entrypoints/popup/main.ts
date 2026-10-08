@@ -1,5 +1,5 @@
 import { signIn, signOut } from '@/lib/auth';
-import { highlights, lastSync, pageKey, remove, user, visible } from '@/lib/store';
+import { apiUrl, highlights, lastSync, pageKey, remove, user, visible } from '@/lib/store';
 
 const app = document.querySelector('#app')!;
 let book = '';
@@ -13,15 +13,16 @@ if (tab?.url?.startsWith('https://docs.dodao.io/')) ({ book, chapter } = pageKey
 async function render() {
   const email = await user.getValue();
   if (!email) {
-    const key = Object.assign(document.createElement('input'), { type: 'password', placeholder: 'API key' });
-    const form = el('form', [key, el('button', 'Sign in')], 'signin');
+    const url = input('Server URL', 'url', (await apiUrl.getValue()) ?? '');
+    const key = input('API key', 'password');
+    const form = el('form', [url, key, el('button', 'Sign in')], 'signin');
     form.onsubmit = async (e) => {
       e.preventDefault();
-      try { await signIn(key.value); error = ''; browser.runtime.sendMessage('sync'); } catch (e) { error = (e as Error).message; }
+      try { await signIn(url.value, key.value); error = ''; browser.runtime.sendMessage('sync'); } catch (e) { error = (e as Error).message; }
       render();
     };
-    app.replaceChildren(form, el('p', error));
-    key.focus();
+    app.replaceChildren(form, el('p', error, 'error'));
+    (url.value ? key : url).focus();
     return;
   }
 
@@ -66,6 +67,10 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, content: string | Nod
   if (typeof extra === 'function') e.onclick = extra;
   else if (extra) e.className = extra;
   return e;
+}
+
+function input(placeholder: string, type: string, value = '') {
+  return Object.assign(document.createElement('input'), { placeholder, type, value, required: true });
 }
 
 function select(all: string, options: string[], value: string, onChange: (v: string) => void) {

@@ -1,7 +1,5 @@
-import { apiKey, highlights, lastSync } from '@/lib/store';
+import { apiKey, apiUrl, highlights, lastSync } from '@/lib/store';
 import type { Highlight, LocalHighlight } from '@/lib/types';
-
-const API = import.meta.env.WXT_API_URL;
 
 export default defineBackground(() => {
   browser.alarms.create('sync', { periodInMinutes: 1 });
@@ -24,13 +22,13 @@ export default defineBackground(() => {
 let running = false;
 
 async function sync() {
-  const key = await apiKey.getValue();
-  if (running || !key) return;
+  const [url, key] = [await apiUrl.getValue(), await apiKey.getValue()];
+  if (running || !url || !key) return;
   running = true;
   try {
     const sent = await highlights.getValue();
     const dirty = Object.values(sent).filter((h) => h.dirty);
-    const res = await fetch(`${API}/sync`, {
+    const res = await fetch(`${url}/sync`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({

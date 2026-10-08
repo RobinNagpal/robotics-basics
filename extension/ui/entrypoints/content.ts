@@ -224,14 +224,16 @@ function button(label: string, onClick: () => unknown, color?: string) {
   return b;
 }
 
+// Under the text, and moved left if it would run past the window's right edge.
 function place(el: HTMLElement, rect: DOMRect) {
   el.style.display = 'flex';
   el.style.top = `${rect.bottom + scrollY + 6}px`;
-  el.style.left = `${rect.left + scrollX}px`;
+  const left = Math.min(rect.left, document.documentElement.clientWidth - el.offsetWidth - 8);
+  el.style.left = `${Math.max(8, left) + scrollX}px`;
 }
 
 const CSS = `
-mark[data-hl] { color: inherit; cursor: pointer; border-radius: 2px; }
+mark[data-hl] { color: #111; cursor: pointer; border-radius: 2px; } /* the colours are pale, so the text is dark even on a dark page */
 .dh-bar, .dh-pop { position: absolute; z-index: 2147483647; display: none; gap: 6px; padding: 6px;
   background: #fff; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 16px #0002;
   font: 13px system-ui, sans-serif; color: #111; }

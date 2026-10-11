@@ -29,11 +29,11 @@ block many feed-forward parts and use only two of them for each token.
 You should read [attention](01_attention.md) first, because the attention step is
 used here without being explained again. You should also know what a residual
 connection is, from [layers and
-depth](../02_inside-a-network/02_layers-and-depth.md), what normalisation is,
+depth](../02_inside-a-network/07_layers-and-depth.md), what normalisation is,
 from [normalisation and
 stability](../04_making-training-work/02_normalisation-and-stability.md), and
 what an activation function does, from [one
-neuron](../02_inside-a-network/01_one-neuron.md). As on the last page, the
+neuron](../02_inside-a-network/03_one-neuron.md). As on the last page, the
 weights in the small example were produced by a random number generator with a
 fixed starting value rather than by training. So the arithmetic in the pictures
 is real, but the pattern it produces means nothing.
@@ -244,7 +244,7 @@ made deeper without the new blocks having to undo what the old ones did. The add
 is also what lets the gradient reach the bottom of the model, because a sum
 passes the gradient to both of its parts unchanged. That is exactly the property
 that makes very deep stacks trainable, and [layers and
-depth](../02_inside-a-network/02_layers-and-depth.md) describes it.
+depth](../02_inside-a-network/07_layers-and-depth.md) describes it.
 
 ---
 

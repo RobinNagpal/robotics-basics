@@ -18,7 +18,7 @@ means spreading out, because the method works by spreading the data out into
 random noise and then pulling it back together again.
 
 This page is for a reader who knows what a [neural
-network](../02_inside-a-network/01_one-neuron.md) is, what a
+network](../02_inside-a-network/03_one-neuron.md) is, what a
 [loss](../03_how-training-works/01_the-score-of-being-wrong.md) is, and what
 [training](../03_how-training-works/04_the-training-loop.md) does. It assumes you
 have never met a generative model before, so every new word is explained where it

@@ -21,7 +21,7 @@ This page is for a reader who has read the two pages before it, so it assumes
 you already know what a loss is from [the score of being
 wrong](01_the-score-of-being-wrong.md), what a gradient, a step and a learning
 rate are from [gradient descent](02_gradient-descent.md), and what a neuron is
-from [inside a network](../02_inside-a-network/01_one-neuron.md). The only maths
+from [inside a network](../02_inside-a-network/03_one-neuron.md). The only maths
 is multiplying and adding. The page calculates one real network by hand,
 forwards and then backwards, and every number in it comes from the script that
 drew the pictures.
@@ -395,7 +395,7 @@ solved them was not one idea but four, and each one attacks a different part of
 the multiplication.
 
 The first fix, and the biggest, is the residual connection, which was explained
-in [layers and depth](../02_inside-a-network/02_layers-and-depth.md). Instead of
+in [layers and depth](../02_inside-a-network/07_layers-and-depth.md). Instead of
 replacing what came in, a layer adds its result to what came in. The numbers
 then flow along a path that goes around every layer as well as through it.
 
@@ -497,12 +497,12 @@ So clipping is the better trade.
 - [The training loop](04_the-training-loop.md) is the next page, and it puts
   the forward pass, the backward pass and the step into the loop that actually
   runs, with the optimiser and the schedule around them.
-- [Layers and depth](../02_inside-a-network/02_layers-and-depth.md) is where
+- [Layers and depth](../02_inside-a-network/07_layers-and-depth.md) is where
   the residual connection of section 6 was introduced.
 - [Normalisation and stability](../04_making-training-work/02_normalisation-and-stability.md)
   takes section 6's rescaling seriously, and explains layer normalisation and
   what a loss spike is.
-- [The shape of the numbers](../02_inside-a-network/03_the-shape-of-the-numbers.md)
+- [The shape of the numbers](../02_inside-a-network/09_the-shape-of-the-numbers.md)
   explains the tensors whose memory section 4 counted, and what fewer bytes per
   number buys you.
 - [How a model learns](../../07_learned-models/01_what-models-are/02_how-a-model-learns.md)

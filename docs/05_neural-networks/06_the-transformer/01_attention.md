@@ -33,7 +33,7 @@ the picture.
 
 You should already know three things from earlier pages. You should know what a
 matrix multiply is, which [the shape of the
-numbers](../02_inside-a-network/03_the-shape-of-the-numbers.md) explains. You
+numbers](../02_inside-a-network/09_the-shape-of-the-numbers.md) explains. You
 should know what softmax does, which [the score of being
 wrong](../03_how-training-works/01_the-score-of-being-wrong.md) explains. You
 should also know that the numbers inside a model are found by training rather
@@ -127,7 +127,7 @@ mixture from the same place. The last two rows stay different from each other.
 There is an obvious alternative to all of this, and naming it is what shows what
 attention is worth. The alternative is to mix the neighbours in a pattern fixed
 in advance, which is what a convolution does, and [what a network can
-learn](../02_inside-a-network/04_what-a-network-can-learn.md) explains that kind
+learn](../02_inside-a-network/10_what-a-network-can-learn.md) explains that kind
 of layer. The next picture shows what the weights of such a layer look like for
 the same four tokens, if the layer mixes each token with the one before it and
 the one after it.
@@ -349,7 +349,7 @@ side, then a softmax along each row, then one more multiply by the values.
 
 Doing it this way matters for speed rather than for correctness, because the
 hardware that runs these models is built to multiply matrices, as [the shape of
-the numbers](../02_inside-a-network/03_the-shape-of-the-numbers.md) explains.
+the numbers](../02_inside-a-network/09_the-shape-of-the-numbers.md) explains.
 The next picture gives the real sizes for a small language model, where the
 input is 512 tokens long and each token is a vector of 768 numbers.
 

@@ -161,9 +161,9 @@ networks were asked to match, and the shape that two of them actually produced.
 
 The one-layer network rounds off every bend in the target and ends up almost
 straight. The three-layer network follows the bends.
-[What a network can learn](../02_inside-a-network/04_what-a-network-can-learn.md)
+[What a network can learn](../02_inside-a-network/10_what-a-network-can-learn.md)
 explains why stacking layers has that effect, and
-[layers and depth](../02_inside-a-network/02_layers-and-depth.md) explains what a
+[layers and depth](../02_inside-a-network/07_layers-and-depth.md) explains what a
 layer is. Almost every model that this book describes after chapter 2 is a deep
 model, which is why deep learning and machine learning are so often confused with
 each other.
@@ -252,13 +252,13 @@ difference is that training moves them and inference does not. Everything that
 follows in this book is this same picture with more parameters in it. The next
 chapter opens the model box and shows what is inside when the formula is not a
 straight line but a network, starting with
-[one neuron](../02_inside-a-network/01_one-neuron.md) worked out by hand.
+[one neuron](../02_inside-a-network/03_one-neuron.md) worked out by hand.
 
 ---
 
 ## 4. Where to read next
 
-[One neuron](../02_inside-a-network/01_one-neuron.md) opens a model up and works
+[One neuron](../02_inside-a-network/03_one-neuron.md) opens a model up and works
 out by hand what the smallest piece inside it does. It is the next page of the
 book, and everything from here on is built out of that piece.
 

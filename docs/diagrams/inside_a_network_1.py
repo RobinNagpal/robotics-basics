@@ -1,16 +1,17 @@
-"""Generate the diagrams for the first two pages of docs/05_neural-networks/02_inside-a-network/.
+"""Generate the diagrams for three pages of docs/05_neural-networks/02_inside-a-network/.
 
 Each document's pictures go to a folder named after it, under
 docs/images/inside-a-network/:
 
-    01_one-neuron.md        -> one-neuron/
-    02_layers-and-depth.md  -> layers-and-depth/
+    03_one-neuron.md            -> one-neuron/
+    06_activation-functions.md  -> activation-functions/
+    07_layers-and-depth.md      -> layers-and-depth/
 
 Run with:  python3 inside_a_network_1.py
 Add --png <folder> to also write PNG copies for checking by eye.
 
 Every number drawn in a picture is worked out in this file and printed, so the
-two documents quote the same values. The worked neuron reads three made-up
+documents quote the same values. The worked neuron reads three made-up
 sensor values for one moment of one grasp: a distance of 0.42 m from a depth
 camera, a gripper opening of 55 mm, and the average brightness of a 4 by 4
 patch of pixels, which is set out in the file. The weights and biases of that
@@ -55,6 +56,7 @@ MUTED: str = '#777777'
 MONO: str = 'DejaVu Sans Mono'
 
 ONE: str = 'one-neuron'
+ACT: str = 'activation-functions'
 LAY: str = 'layers-and-depth'
 
 Arr = NDArray[np.float64]
@@ -206,7 +208,7 @@ def report_core() -> None:
 
 
 # ==========================================================================
-# 01_one-neuron.md  --  section 1: from a model to a neuron
+# 03_one-neuron.md  --  section 1: from a model to a neuron
 # ==========================================================================
 
 SAG_MASS: float = 1.75      # kg, the new input from the page "What a model is"
@@ -253,7 +255,7 @@ def sag_model_as_a_neuron() -> None:
 
 
 # ==========================================================================
-# 01_one-neuron.md  --  section 2: what one neuron holds
+# 03_one-neuron.md  --  section 2: what one neuron holds
 # ==========================================================================
 
 def neuron_parts() -> None:
@@ -349,7 +351,7 @@ def scaling_the_readings() -> None:
 
 
 # ==========================================================================
-# 01_one-neuron.md  --  section 3: the weighted sum
+# 03_one-neuron.md  --  section 3: the weighted sum
 # ==========================================================================
 
 def weighted_sum_lines() -> None:
@@ -461,7 +463,7 @@ def sum_over_two_readings() -> None:
 
 
 # ==========================================================================
-# 01_one-neuron.md  --  section 4: changing a weight, changing the bias
+# 03_one-neuron.md  --  section 4: changing a weight, changing the bias
 # ==========================================================================
 
 def weight_size_lines() -> None:
@@ -518,7 +520,7 @@ def moving_the_bias() -> None:
 
 
 # ==========================================================================
-# 01_one-neuron.md  --  section 5: why a weighted sum is not enough
+# 06_activation-functions.md  --  section 1: why a weighted sum is not enough
 # ==========================================================================
 
 CH_W: list[float] = [-2.0, 3.0, 0.5]
@@ -570,7 +572,7 @@ def two_plain_layers() -> None:
     _label(ax, 19.0, y, f'{out:+.2f}', size=11, family=MONO)
     _label(ax, 19.0, y + 1.5, 'output', size=10, color=MUTED)
     _label(ax, 10.7, 4.1, 'nothing is applied between the two boxes', size=10.5, color=MUTED)
-    _save(fig, ONE, 'two-plain-layers.svg')
+    _save(fig, ACT, 'two-plain-layers.svg')
 
 
 def one_neuron_instead() -> None:
@@ -605,7 +607,7 @@ def one_neuron_instead() -> None:
            size=11.5, family=MONO)
     _label(ax, 10.7, 1.8, f'bias    {CH_W[1]:+.2f} x {CH_B[0]:+.2f} {CH_B[1]:+.2f} = {cb:+.2f}',
            size=11.5, family=MONO)
-    _save(fig, ONE, 'one-neuron-instead.svg')
+    _save(fig, ACT, 'one-neuron-instead.svg')
 
 
 def collapse_curves() -> None:
@@ -638,7 +640,7 @@ def collapse_curves() -> None:
     ax.legend(fontsize=9.8, frameon=False, loc='lower left')
     _label(ax, CH_B[0] / -CH_W[0] + 0.02, 1.0, 'the bend the rule makes,\nat 0.25 m',
            size=9.8, color=MUTED, ha='left')
-    _save(fig, ONE, 'collapse-curves.svg')
+    _save(fig, ACT, 'collapse-curves.svg')
 
 
 def three_plain_layers() -> None:
@@ -665,7 +667,7 @@ def three_plain_layers() -> None:
            f'end at {DIST_M * cw + cb:+.3f}', size=11)
     _label(ax, 12.2, bottom - 1.7, f'the three weights multiply: {CH_W[0]:+.2f} x '
            f'{CH_W[1]:+.2f} x {CH_W[2]:+.2f} = {cw:+.2f}', size=10, color=MUTED)
-    _save(fig, ONE, 'three-plain-layers.svg')
+    _save(fig, ACT, 'three-plain-layers.svg')
 
 
 def _bend_target() -> tuple[Arr, Arr, Arr, Arr, float, float]:
@@ -699,7 +701,7 @@ def a_bend_is_needed() -> None:
     ax.set_title('No straight line can be high in the middle and low at both ends',
                  fontsize=12.5, weight='bold')
     ax.legend(fontsize=9.6, frameon=False, loc='upper left')
-    _save(fig, ONE, 'a-bend-is-needed.svg')
+    _save(fig, ACT, 'a-bend-is-needed.svg')
 
 
 def two_elbows_rebuild_it() -> None:
@@ -717,11 +719,11 @@ def two_elbows_rebuild_it() -> None:
     ax.set_title('Two neurons with the rule give the wanted shape exactly',
                  fontsize=12.5, weight='bold')
     ax.legend(fontsize=9.4, frameon=False, loc='upper left')
-    _save(fig, ONE, 'two-elbows-rebuild-it.svg')
+    _save(fig, ACT, 'two-elbows-rebuild-it.svg')
 
 
 # ==========================================================================
-# 01_one-neuron.md  --  section 6: the rectified linear unit
+# 06_activation-functions.md  --  section 2: the rectified linear unit
 # ==========================================================================
 
 CHECK: list[float] = [-2.0, -1.0, -0.5, 0.0, 0.5, 0.725, 1.0, 2.0]
@@ -749,7 +751,7 @@ def relu_curve() -> None:
                  fontsize=12, weight='bold')
     ax.set_ylim(-0.4, 3.3)
     _label(ax, -2.0, 1.5, 'every sum below 0\ngives exactly 0', size=10, color=MUTED)
-    _save(fig, ONE, 'relu-curve.svg')
+    _save(fig, ACT, 'relu-curve.svg')
 
 
 def relu_pieces() -> None:
@@ -784,7 +786,7 @@ def relu_pieces() -> None:
     _label(ax, 0.03, 0.80, 'the dotted lines are the six elbows,\none per neuron',
            size=9.8, color=MUTED, ha='left')
     ax.set_ylim(-0.1, 1.2)
-    _save(fig, ONE, 'relu-pieces.svg')
+    _save(fig, ACT, 'relu-pieces.svg')
 
 
 SIM_NEU: int = 64
@@ -837,7 +839,7 @@ def relu_dead_units() -> None:
            'on which that neuron gave something above 0', size=10, color=MUTED)
     _label(ax, 4.3, -0.1, f'{dead} of the 64 gave 0 every time, so the rule silenced them '
            f'for every reading', size=10.5, color=GRIP)
-    _save(fig, ONE, 'relu-dead-units.svg')
+    _save(fig, ACT, 'relu-dead-units.svg')
 
 
 def relu_slope() -> None:
@@ -862,7 +864,7 @@ def relu_slope() -> None:
     ax.set_ylim(-0.15, 1.3)
     _label(ax, -1.6, 0.18, 'nothing comes out, so\nnothing changes', size=10, color=MUTED)
     _label(ax, 1.6, 0.82, 'the output follows\nthe sum exactly', size=10, color=MUTED)
-    _save(fig, ONE, 'relu-slope.svg')
+    _save(fig, ACT, 'relu-slope.svg')
 
 
 def relu_flat_region() -> None:
@@ -890,11 +892,11 @@ def relu_flat_region() -> None:
                  fontsize=12.5, weight='bold')
     ax.tick_params(labelsize=9.5)
     fig.colorbar(im, ax=ax, label='the output after the rule', shrink=0.88)
-    _save(fig, ONE, 'relu-flat-region.svg')
+    _save(fig, ACT, 'relu-flat-region.svg')
 
 
 # ==========================================================================
-# 01_one-neuron.md  --  section 7: GELU and SiLU
+# 06_activation-functions.md  --  section 3: GELU and SiLU
 # ==========================================================================
 
 def three_rules() -> None:
@@ -933,7 +935,7 @@ def three_rules() -> None:
     axin.grid(True, color=GRID, lw=0.6)
     _label(ax, 2.3, 0.55, f'lowest GELU {g_min:.3f}\nlowest SiLU {s_min:.3f}',
            size=9.5, color=MUTED)
-    _save(fig, ONE, 'three-rules.svg')
+    _save(fig, ACT, 'three-rules.svg')
 
 
 def three_slopes() -> None:
@@ -972,7 +974,7 @@ def three_slopes() -> None:
     ax.set_ylim(-0.25, 1.35)
     _label(ax, 1.9, 0.25, f"SiLU's slope dips to {mins['SiLU'][0]:+.3f} "
            f"near {mins['SiLU'][1]:+.2f}", size=9.8, color=MUTED)
-    _save(fig, ONE, 'three-slopes.svg')
+    _save(fig, ACT, 'three-slopes.svg')
 
 
 def neuron_three_rules() -> None:
@@ -1006,7 +1008,7 @@ def neuron_three_rules() -> None:
     axes[1].set_ylabel('the output, close up', fontsize=10)
     _label(axes[1], 0.90, -0.075, 'GELU and SiLU go a little\nbelow 0 here', size=9.8,
            color=MUTED)
-    _save(fig, ONE, 'neuron-three-rules.svg')
+    _save(fig, ACT, 'neuron-three-rules.svg')
 
 
 def gelu_keeps_a_slope() -> None:
@@ -1033,7 +1035,7 @@ def gelu_keeps_a_slope() -> None:
     _label(ax, 4.3, -0.1, f'the smallest number in the grid is '
            f'{float(size.min()):.2f}, so no neuron has a slope of 0 any more',
            size=10.5, color=MUTED)
-    _save(fig, ONE, 'gelu-keeps-a-slope.svg')
+    _save(fig, ACT, 'gelu-keeps-a-slope.svg')
 
 
 COST_N: int = 1024
@@ -1072,7 +1074,7 @@ def how_often_the_rule_runs() -> None:
     ax.set_title(f'A 1024 into 1024 layer: one use of the rule '
                  f'per {mult_adds // acts:,} multiply-adds',
                  fontsize=11.5, weight='bold')
-    _save(fig, ONE, 'how-often-the-rule-runs.svg')
+    _save(fig, ACT, 'how-often-the-rule-runs.svg')
 
 
 def rule_cost_share() -> None:
@@ -1089,7 +1091,7 @@ def rule_cost_share() -> None:
     ax.set_ylim(0, max(rises) * 1.25)
     ax.set_title('Even a rule that costs 20 multiply-adds adds under 2 per cent',
                  fontsize=11.5, weight='bold')
-    _save(fig, ONE, 'rule-cost-share.svg')
+    _save(fig, ACT, 'rule-cost-share.svg')
 
 
 def gelu_fast(z: Arr | float) -> Arr:
@@ -1101,7 +1103,7 @@ def gelu_fast(z: Arr | float) -> Arr:
 
 
 # ==========================================================================
-# 02_layers-and-depth.md  --  the four-neuron layer both early sections use
+# 07_layers-and-depth.md  --  the four-neuron layer both early sections use
 # ==========================================================================
 
 W1: Arr = np.array([[-2.0, 1.5, 0.8],
@@ -1234,7 +1236,7 @@ def four_features() -> None:
 
 
 # ==========================================================================
-# 02_layers-and-depth.md  --  section 2: fully connected, and what it costs
+# 07_layers-and-depth.md  --  section 2: fully connected, and what it costs
 # ==========================================================================
 
 def fully_connected_count() -> None:
@@ -1356,7 +1358,7 @@ def each_neuron_reads_neighbours() -> None:
 
 
 # ==========================================================================
-# 02_layers-and-depth.md  --  section 3: what each extra layer buys you
+# 07_layers-and-depth.md  --  section 3: what each extra layer buys you
 # ==========================================================================
 
 W_SEC: Arr = np.array([[1.0, -1.0, 0.5, 0.0],
@@ -1615,7 +1617,7 @@ def handle_from_edges() -> None:
 
 
 # ==========================================================================
-# 02_layers-and-depth.md  --  section 4: depth and width
+# 07_layers-and-depth.md  --  section 4: depth and width
 # ==========================================================================
 
 def depth_and_width_named() -> None:
@@ -1829,7 +1831,7 @@ def deep_narrow_wide_shallow() -> None:
 
 
 # ==========================================================================
-# 02_layers-and-depth.md  --  section 5: what depth and width cost
+# 07_layers-and-depth.md  --  section 5: what depth and width cost
 # ==========================================================================
 
 def _stack_params(depth: int, width: int) -> int:
@@ -1963,7 +1965,7 @@ def work_for_many_examples() -> None:
 
 
 # ==========================================================================
-# 02_layers-and-depth.md  --  section 6: residual connections
+# 07_layers-and-depth.md  --  section 6: residual connections
 # ==========================================================================
 
 W2: Arr = np.array([[0.2, -0.3, 0.1, 0.0],

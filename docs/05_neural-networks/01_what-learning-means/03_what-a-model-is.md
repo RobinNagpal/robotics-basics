@@ -236,7 +236,7 @@ one. The number of parameters is the main thing that separates the sag model fro
 models later in this book. A fitted line has 2. A network that reads a 64 by 64
 grey picture has over a million. A large model has billions. Nothing about the idea
 changes across that range, and
-[the shape of the numbers](../02_inside-a-network/03_the-shape-of-the-numbers.md)
+[the shape of the numbers](../02_inside-a-network/09_the-shape-of-the-numbers.md)
 works out where each of those counts comes from, layer by layer, and what each one
 costs to store.
 
@@ -258,7 +258,7 @@ The page before showed that a person had to think for an afternoon to find that
 trick. Here the first and third weights came out with opposite signs and almost the
 same size, which is that same subtraction, found by searching. The model's fourth
 parameter is not a weight, because it multiplies nothing and is simply added at the
-end. [One neuron](../02_inside-a-network/01_one-neuron.md) calls that fourth
+end. [One neuron](../02_inside-a-network/03_one-neuron.md) calls that fourth
 parameter the bias, and this page calls it the offset.
 
 The model and its parameters now have names, so the next question is how the
@@ -327,7 +327,7 @@ That difference also shows up in the amount of arithmetic. One answer is a handf
 of multiplications and additions. A training run repeats that work once for every
 example, and then does the whole thing again for every pass over the data, so it
 costs hundreds of thousands of times more.
-[Why the hardware is built for this one operation](../02_inside-a-network/03_the-shape-of-the-numbers.md)
+[Why the hardware is built for this one operation](../02_inside-a-network/09_the-shape-of-the-numbers.md)
 counts both, with the arithmetic written out.
 
 That ratio is why the two words are kept apart. Training is paid for once, in a
@@ -410,11 +410,11 @@ that trade is priced.
 [Rules against models](04_rules-against-models.md) puts the two ways of building a
 program side by side and says which jobs on a robot arm each one wins.
 
-[One neuron](../02_inside-a-network/01_one-neuron.md) opens a model up and works
+[One neuron](../02_inside-a-network/03_one-neuron.md) opens a model up and works
 out, with real numbers, what the smallest piece inside it does. The straight line
 fitted on this page is that piece with its decision rule removed.
 
-[The shape of the numbers](../02_inside-a-network/03_the-shape-of-the-numbers.md)
+[The shape of the numbers](../02_inside-a-network/09_the-shape-of-the-numbers.md)
 counts the parameters of a real network layer by layer, and turns those counts into
 bytes and into arithmetic.
 

@@ -23,9 +23,9 @@ larger format.
 The page assumes you know what a
 [gradient](../03_how-training-works/03_backpropagation.md) is, what a
 [learning rate](../03_how-training-works/02_gradient-descent.md) does, and what
-a [residual connection](../02_inside-a-network/02_layers-and-depth.md) is. It
+a [residual connection](../02_inside-a-network/07_layers-and-depth.md) is. It
 also uses the words float32, float16 and bfloat16, which
-[the shape of the numbers](../02_inside-a-network/03_the-shape-of-the-numbers.md)
+[the shape of the numbers](../02_inside-a-network/09_the-shape-of-the-numbers.md)
 introduced as the formats a single number can be stored in.
 
 Everything in the pictures was worked out by
@@ -291,7 +291,7 @@ normalisation once it is chosen.
 Section 3 settled which normalisation to use. This section is about where to put
 it. A modern network is a stack of blocks, and each block does not replace what
 came before it. Each block adds to it, which is what the
-[residual connection](../02_inside-a-network/02_layers-and-depth.md) on an
+[residual connection](../02_inside-a-network/07_layers-and-depth.md) on an
 earlier page described. The running total that the blocks keep adding to is
 called the **residual stream**.
 
@@ -526,7 +526,7 @@ lengthen the warmup, or to look again at section 4.
 - [A transformer block](../06_the-transformer/02_a-transformer-block.md) puts
   section 4's pre-norm arrangement together with attention and a feed-forward
   part.
-- [The shape of the numbers](../02_inside-a-network/03_the-shape-of-the-numbers.md)
+- [The shape of the numbers](../02_inside-a-network/09_the-shape-of-the-numbers.md)
   covers section 5's number formats in more detail, and what a matrix multiply
   costs.
 - [Making a model smaller and faster](../07_pretraining-and-adapting/04_making-a-model-smaller-and-faster.md)

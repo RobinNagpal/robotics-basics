@@ -1,7 +1,7 @@
 # The score of being wrong
 
 The page before this one, [what a network can
-learn](../02_inside-a-network/04_what-a-network-can-learn.md), showed that a
+learn](../02_inside-a-network/10_what-a-network-can-learn.md), showed that a
 network with enough layers and enough weights can be shaped to fit almost any
 pattern. That page did not say how anybody finds the right values for those
 weights. This page begins that answer, because before training can take a single

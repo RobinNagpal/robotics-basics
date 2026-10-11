@@ -1,6 +1,6 @@
 # Layers, depth and width
 
-The page before this one, [one neuron](01_one-neuron.md), worked a single neuron
+The page before this one, [one neuron](03_one-neuron.md), worked a single neuron
 out by hand. Three readings from a robot arm were each multiplied by a weight,
 the results and a bias were added together to make 0.725, and a rule decided what
 came out. This page comes next because one neuron is not a model. It gives one
@@ -15,7 +15,7 @@ The **depth** of a network is how many layers it has, one after another. Choosin
 the width and the depth is most of what a person actually decides when they build
 a network, so this page shows what each of the two choices gives you.
 
-This page is for a reader who has read [one neuron](01_one-neuron.md) and is
+This page is for a reader who has read [one neuron](03_one-neuron.md) and is
 comfortable with a weighted sum, a bias and the rectified linear unit. Training
 is still not explained here, because the chapter [how training
 works](../03_how-training-works/01_the-score-of-being-wrong.md) does that. The
@@ -173,7 +173,7 @@ parameters in all, which is 4.4 times fewer than the 272 above.
 
 That second arrangement, repeated with the same weights at every position, is
 called a convolution, and it is the subject of [what a network can
-learn](04_what-a-network-can-learn.md). All this page says about it is that a
+learn](10_what-a-network-can-learn.md). All this page says about it is that a
 fully connected layer is the general case, and that the special layers are
 savings made by knowing something about the input.
 
@@ -200,14 +200,14 @@ after the rule their outputs are 0.160, 0.840 and 0.000. The camera readings of
 0.42, 0.55 and 0.30 appear nowhere in that arithmetic, because the second layer
 never sees them.
 
-The page before this one showed, in [why multiplying and adding is not
-enough](01_one-neuron.md#5-why-multiplying-and-adding-is-not-enough), that two
-layers with nothing between them collapse into one layer, so everything in this section assumes that the rule is
-applied after each layer.
+[Activation functions](06_activation-functions.md) showed, in [why multiplying
+and adding is not enough](06_activation-functions.md#1-why-multiplying-and-adding-is-not-enough),
+that two layers with nothing between them collapse into one layer, so everything
+in this section assumes that the rule is applied after each layer.
 
 To see what the second layer adds, it helps to count bends. A bend is a place
-where a line changes direction. The page before showed, in [why multiplying and
-adding is not enough](01_one-neuron.md#5-why-multiplying-and-adding-is-not-enough),
+where a line changes direction. [Activation functions](06_activation-functions.md)
+showed, in [the rectified linear unit](06_activation-functions.md#2-the-rectified-linear-unit),
 that each neuron with the rule has one such place of its own.
 
 The picture below sweeps the patch brightness from 0 to 1 and draws what one
@@ -591,11 +591,11 @@ of those ideas further.
 
 Each page below picks up one idea from this page and explains it in more depth.
 
-- [The shape of the numbers](03_the-shape-of-the-numbers.md) is the next page,
+- [The shape of the numbers](09_the-shape-of-the-numbers.md) is the next page,
   and it explains how [the weight
   grid](#1-a-layer-is-many-neurons-reading-the-same-numbers) is stored, what a
   matrix multiply is, and why the hardware that runs models is built around it.
-- [What a network can learn](04_what-a-network-can-learn.md) explains why
+- [What a network can learn](10_what-a-network-can-learn.md) explains why
   stacking these layers can follow any shape at all, and it introduces the
   convolution that [fully connected, and what joining everything
   costs](#2-fully-connected-and-what-joining-everything-costs) compared a fully

@@ -22,7 +22,7 @@ memorising do and what each one costs.
 
 The page assumes you know what a [loss](../03_how-training-works/01_the-score-of-being-wrong.md)
 is, what a [gradient descent step](../03_how-training-works/02_gradient-descent.md)
-does, and what the [weights and layers](../02_inside-a-network/02_layers-and-depth.md)
+does, and what the [weights and layers](../02_inside-a-network/07_layers-and-depth.md)
 of a network are. It also assumes you have met the word
 [generalisation](../01_what-learning-means/03_what-a-model-is.md), which
 means doing well on examples that were not used in training. Generalisation is

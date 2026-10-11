@@ -25,7 +25,7 @@ sound and robot
 states](../05_turning-the-world-into-numbers/02_pictures-sound-and-robot-states.md),
 which explains how a photograph becomes a grid of numbers and what a patch is.
 Two more pages are assumed as well: the convolution from [what a network can
-learn](../02_inside-a-network/04_what-a-network-can-learn.md), and the frozen
+learn](../02_inside-a-network/10_what-a-network-can-learn.md), and the frozen
 pretrained model from [self-supervised
 pretraining](../07_pretraining-and-adapting/01_self-supervised-pretraining.md).
 
@@ -347,7 +347,7 @@ with a single wide window of 7 by 7 pixels, applied to each channel separately.
 Every one of those habits is taken from the transformer block in
 [attention](../06_the-transformer/01_attention.md), and the smooth activation
 rule is the Gaussian error linear unit (GELU) from [one
-neuron](../02_inside-a-network/01_one-neuron.md). The result is cheaper than
+neuron](../02_inside-a-network/03_one-neuron.md). The result is cheaper than
 the older design, as the next picture shows. Each bar is one block's arithmetic
 on the same grid, and the parameter count is written inside the bar.
 

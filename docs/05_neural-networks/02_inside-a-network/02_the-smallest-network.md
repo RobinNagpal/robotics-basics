@@ -12,12 +12,6 @@ The order matters here. Starting with the simplest network and making it more
 complicated only when it has to be is not just how this page is written; it is how
 networks are actually designed. If the simplest thing does the job, you stop.
 
-This page is for a reader who has read [neural networks and
-neurons](01_networks-and-neurons.md) and can multiply and add. The arithmetic is
-all small enough to check by hand, and every number in every picture was worked
-out and printed by `docs/diagrams/inside_a_network_0.py`. The weights were chosen
-by hand rather than trained, so that you can see what each one is doing.
-
 When you reach the end you will know what the smallest possible network looks
 like, why it is the same thing as a model you have already met under another name,
 what adding one layer in the middle changes, and what that layer costs in numbers

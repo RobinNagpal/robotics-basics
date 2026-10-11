@@ -18,16 +18,6 @@ The **depth** of a network is how many layers it has, one after another. Choosin
 the width and the depth is most of what a person actually decides when they build
 a network, so this page shows what each of the two choices gives you.
 
-This page is for a reader who has read [one neuron](03_one-neuron.md) and is
-comfortable with a weighted sum, a bias and the rectified linear unit. Training
-is still not explained here, because the chapter [how training
-works](../03_how-training-works/01_the-score-of-being-wrong.md) does that. The
-same made-up moment of the same grasp runs through the page, with the same three
-readings of 0.42, 0.55 and 0.30. Every number in every picture was worked out and
-printed by `docs/diagrams/inside_a_network_1.py`. Where many weights are needed
-at once, they are drawn at random from a fixed starting point so that the picture
-can be made again, and the page says so each time.
-
 When you reach the end you will know what a layer is, what makes a layer fully
 connected, why a second layer is not the same thing as a wider first one, what
 depth and width each add, and what one small change makes a deep stack trainable

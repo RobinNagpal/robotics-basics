@@ -13,13 +13,6 @@ it works. [One neuron](03_one-neuron.md) answered that in full. The interesting
 question is why one neuron in a layer ends up answering something different from
 the one beside it, when both read exactly the same numbers.
 
-This page is for a reader who has read [a network on a
-robot](04_a-network-on-a-robot.md). You need nothing beyond multiplying and
-adding. Every number here was worked out and printed by
-`docs/diagrams/inside_a_network_0.py`, and the weights were chosen by hand so that
-each neuron has a description you can read; in a trained network nobody can say in
-advance what any neuron will answer.
-
 When you reach the end you will have followed one neuron of a working network from
 its three inputs to its one output, you will know which part of a neuron decides
 what it is for, and you will know what a weight of zero means.

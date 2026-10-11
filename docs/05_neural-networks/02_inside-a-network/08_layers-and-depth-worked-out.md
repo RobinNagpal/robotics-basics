@@ -15,10 +15,8 @@ it is simple enough to do in your head once you have done it on paper a few time
 Everything here is multiplication and addition, so no step needs anything you have
 not already used on the pages before.
 
-This page is for a reader who has read [layers, depth and
-width](07_layers-and-depth.md). Every number in every picture was worked out and
-printed by `docs/diagrams/inside_a_network_1.py`, and the parameter counts were
-checked a second time against PyTorch, which reports the same numbers.
+The parameter counts on this page were checked a second time against PyTorch,
+which reports the same numbers.
 
 When you reach the end you will be able to count the parameters of a network from
 its shape alone, you will know where the number of inputs comes from when a

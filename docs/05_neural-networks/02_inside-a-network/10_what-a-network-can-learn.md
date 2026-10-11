@@ -17,23 +17,9 @@ why is a fully connected layer a bad choice for a photo, counted in weights? Fou
 what is the convolution that replaces it, worked out number by number on a real small
 grid?
 
-This page is for a reader who has already read [one neuron](03_one-neuron.md),
-[layers and depth](07_layers-and-depth.md) and
-[the shape of the numbers](09_the-shape-of-the-numbers.md). It therefore assumes you
-know what a neuron, a weight, a bias, a rectified linear unit (ReLU), a layer, width,
-depth, a tensor and a matrix multiply are.
-
-One thing is deliberately missing from this page. This page shows fits that are
-already good, without ever saying how a network finds the weights that make them
-good. Finding the weights is the whole of the next chapter, which begins with
-[the score of being wrong](../03_how-training-works/01_the-score-of-being-wrong.md).
-The fits below were worked out by solving a small system of equations, and not by
-training. That is an honest difference, and the page says so again where it matters.
-
-Every number in the pictures was worked out by the script
-[`inside_a_network_2.py`](../../diagrams/inside_a_network_2.py), which prints them
-all. The curve being matched is made up, chosen because it bends in several places,
-and the readings taken from it are simulated.
+The fits on this page were worked out by solving a small system of equations, not
+by training. The curve being matched is made up, chosen because it bends in several
+places, and the readings taken from it are simulated.
 
 ## Contents
 

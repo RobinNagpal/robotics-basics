@@ -333,6 +333,9 @@ Plain English, in complete sentences.
 - Explain a term where it first appears, in ordinary words.
 - Say things in the order they happen.
 - Every document opens with a real introduction: what it answers, who it is for.
+  Say who a chapter is for once, on its first page, together with anything true of
+  every page in it, such as which script printed the numbers. Later pages assume
+  the reader came in order and do not repeat it.
 - A table needs a sentence before it saying how to read it.
 
 Tell the reader why each section is there, at both ends of the step into it.

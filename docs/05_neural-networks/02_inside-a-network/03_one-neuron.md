@@ -8,14 +8,6 @@ It is worked out here in full with real numbers, so that nothing in the rest of
 the chapter stays a word you have to accept without checking it. Everything is worked out on one
 made-up moment of one grasp, in which a robot arm is reaching for a cup.
 
-This page is for a reader who knows what a model is. If you came straight to this
-page, [from a model to a neuron](#1-from-a-model-to-a-neuron) repeats the part you
-need: what a model is, how a model relates to a neuron, and where the inputs come
-from. You need to be able to multiply, to add, and to read a graph that has two
-axes. You do not need to know anything about training, because the numbers on this
-page were chosen by hand so that you can watch what they do. Every number in every
-picture was worked out and printed by `docs/diagrams/inside_a_network_1.py`.
-
 When you reach the end of this page you will know which four numbers one neuron
 owns, what each of those numbers changes, and at which reading the neuron stops
 answering. The page ends on a limit that no choice of those four numbers can pass,

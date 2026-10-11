@@ -10,12 +10,9 @@ to the weighted sum before the neuron hands its answer on, and it is called an
 **activation function**. The number that comes out of it is the neuron's
 **activation**, which is where the rule gets its name.
 
-This page is for a reader who has followed one neuron through its arithmetic. You
-need to be able to multiply, to add, and to read a graph that has two axes. You do
-not need to know how training works, although this page says in several places
-what a rule does to training, because the choice between one rule and another is
-mostly a choice about how well training goes. Every number in every picture was
-worked out and printed by `docs/diagrams/inside_a_network_1.py`.
+This page says in several places what a rule does to training, even though
+training is explained only in the next chapter, because the choice between one
+rule and another is mostly a choice about how well training goes.
 
 When you reach the end of this page you will know why a network built only from
 multiplying and adding collapses into a single straight line however many layers

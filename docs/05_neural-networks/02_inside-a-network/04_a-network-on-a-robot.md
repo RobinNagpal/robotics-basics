@@ -13,12 +13,8 @@ seeing once that nothing mysterious happens in between: a sensor reading becomes
 number, numbers become features, features become one answer, and a program on the
 robot acts on that answer.
 
-This page is for a reader who has read [the smallest
-network](02_the-smallest-network.md) and [one neuron](03_one-neuron.md). The
-network here is the two-layer one from the smallest network, with the same
-weights, so nothing new has to be set up. Every number in every picture was worked
-out and printed by `docs/diagrams/inside_a_network_0.py`, and the weights were
-chosen by hand rather than trained.
+The network here is the two-layer one from the smallest network, with the same
+weights, so nothing new has to be set up.
 
 When you reach the end you will have followed one moment from three sensors to one
 decision, you will know what each of the four features is saying about the arm,

@@ -17,6 +17,16 @@ one page of the chapter with no arithmetic on it. The arithmetic starts on [the
 smallest network](02_the-smallest-network.md) and does not stop until the chapter
 ends.
 
+The pages after this one are written to be read in order, and each assumes the
+pages before it. Three things are true of all of them, so they are said here once
+rather than on every page. Every number in every picture was worked out and printed
+by one of the scripts in `docs/diagrams/` whose names begin with
+`inside_a_network_`, so you can run the script and check it. The weights were
+chosen by hand rather than trained, so that you can see what each one does, and a
+page says so at the point where it uses weights found any other way. No page here
+explains training, because that is the next chapter, which begins with [the score
+of being wrong](../03_how-training-works/01_the-score-of-being-wrong.md).
+
 When you reach the end of this page you will be able to say what a neural network
 is in one sentence, you will know why there is anything at all between the
 readings and the answer, you will know what a neuron, a layer, a weight and a bias

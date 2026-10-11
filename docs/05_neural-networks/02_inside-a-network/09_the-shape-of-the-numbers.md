@@ -19,19 +19,8 @@ layers holds? Third, why are graphics cards built for exactly that one operation
 why do examples go through a layer in groups? Fourth, how many
 bits does one number get, and how many gigabytes does a model then need?
 
-This page is for a reader who has already read [one neuron](03_one-neuron.md) and
-[layers and depth](07_layers-and-depth.md). It therefore assumes you know what a
-neuron, a weight, a bias, an activation function, a rectified linear unit (ReLU), a
-layer, depth and width are. It assumes nothing about how computers store numbers.
-The only arithmetic here is multiplying, adding and counting.
-
-Nothing on this page is about learning. How a network is told that it is wrong
-belongs to the next chapter, which opens with
-[the score of being wrong](../03_how-training-works/01_the-score-of-being-wrong.md).
-Every number in the pictures was worked out by the script
-[`inside_a_network_2.py`](../../diagrams/inside_a_network_2.py). That script prints
-every number it draws, so you can check them. The small numbers in the worked
-examples are made up, because small numbers are easier to follow by hand.
+This page assumes nothing about how computers store numbers. The small numbers in
+the worked examples are made up, because small numbers are easier to follow by hand.
 
 ## Contents
 

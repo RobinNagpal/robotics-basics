@@ -25,7 +25,7 @@ sound and robot
 states](../05_turning-the-world-into-numbers/02_pictures-sound-and-robot-states.md),
 which explains how a photograph becomes a grid of numbers and what a patch is.
 Two more pages are assumed as well: the convolution from [what a network can
-learn](../02_inside-a-network/10_what-a-network-can-learn.md), and the frozen
+learn](../02_inside-a-network/11_what-a-network-can-learn.md), and the frozen
 pretrained model from [self-supervised
 pretraining](../07_pretraining-and-adapting/01_self-supervised-pretraining.md).
 

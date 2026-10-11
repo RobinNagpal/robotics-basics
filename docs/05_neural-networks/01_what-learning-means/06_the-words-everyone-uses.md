@@ -161,9 +161,9 @@ networks were asked to match, and the shape that two of them actually produced.
 
 The one-layer network rounds off every bend in the target and ends up almost
 straight. The three-layer network follows the bends.
-[What a network can learn](../02_inside-a-network/10_what-a-network-can-learn.md)
+[What a network can learn](../02_inside-a-network/11_what-a-network-can-learn.md)
 explains why stacking layers has that effect, and
-[layers and depth](../02_inside-a-network/07_layers-and-depth.md) explains what a
+[layers and depth](../02_inside-a-network/08_layers-and-depth.md) explains what a
 layer is. Almost every model that this book describes after chapter 2 is a deep
 model, which is why deep learning and machine learning are so often confused with
 each other.

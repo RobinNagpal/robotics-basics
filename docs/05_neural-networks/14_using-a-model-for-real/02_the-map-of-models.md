@@ -233,7 +233,7 @@ and the page of this book that explains it.
 | Hold 5 newtons against a surface | A written force controller | none | 40 operations | [proportional-integral-derivative (PID) control](../../06_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md) |
 | Move from A to B without hitting anything | A written planner | none | about 2 million operations | [sampling-based planning](../../06_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md) |
 | Stop the arm when something is wrong | Written limits and a watchdog | none | 12 operations | [running and evaluating a model](01_running-and-evaluating-a-model.md) |
-| Name which of twenty known parts is in the bin | A picture classifier | about 20,000 labelled pictures, or a fine-tune of a few hundred | 4.6 thousand million | [what a network can learn](../02_inside-a-network/10_what-a-network-can-learn.md) |
+| Name which of twenty known parts is in the bin | A picture classifier | about 20,000 labelled pictures, or a fine-tune of a few hundred | 4.6 thousand million | [what a network can learn](../02_inside-a-network/11_what-a-network-can-learn.md) |
 | Find an object nobody labelled | An open-vocabulary detector | already trained; you write a text prompt | 39.1 thousand million | [open-vocabulary vision](../09_models-that-see/03_open-vocabulary-vision.md) |
 | Measure how far away each pixel is | A depth model | already trained | 46.7 thousand million | [depth and 3D](../09_models-that-see/04_depth-and-3d.md) |
 | Pick a cloth out of a pile | A diffusion policy | 200 to 2,000 demonstrations you record | 44.2 thousand million | [diffusion and flow policies](../12_models-that-act/02_diffusion-and-flow-policies.md) |

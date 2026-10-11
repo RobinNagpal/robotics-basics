@@ -39,7 +39,7 @@ for a cup, and the question is whether closing the gripper now would hold. The a
 reports three numbers at this moment: the distance to the cup is 0.42, the gripper
 opening is 0.55, and the brightness of the patch where the cup should be is 0.30.
 All three have been scaled to sit between 0 and 1, which [one
-neuron](03_one-neuron.md#2-what-one-neuron-is-made-of) explains, so that no
+neuron](02_the-grasp-example.md#2-the-three-readings) explains, so that no
 reading counts for more simply because of the unit it was measured in.
 
 The picture below draws the whole network.
@@ -52,7 +52,7 @@ number between 0 and 1, so that total is passed through a rule that squeezes any
 number into that range. The rule is called the **sigmoid**, and all you need to
 know here is its shape: a large negative number comes out near 0, a large positive
 number comes out near 1, and 0 comes out as exactly one half.
-[Activation functions](06_activation-functions.md) returns to these rules
+[Activation functions](07_activation-functions.md) returns to these rules
 properly. The total of +0.725 comes out as 0.674, so this network says the grasp
 has about a two in three chance of holding.
 
@@ -134,7 +134,7 @@ middle, four neurons each look at the readings differently, and the answer is
 built from their four verdicts instead of from the readings directly.
 
 That is the whole reason for the middle, and [what a network can
-learn](10_what-a-network-can-learn.md) is where it is shown rather than asserted.
+learn](11_what-a-network-can-learn.md) is where it is shown rather than asserted.
 The one thing to carry forward is that the four features are not written down
 anywhere by a person. Training sets the twelve weights and four biases that
 produce them, and whatever those weights end up being is what the features mean.
@@ -164,8 +164,8 @@ a middle of four neurons made the network five times larger.
 That ratio is the trade that the rest of the chapter keeps returning to. A middle
 gives the network somewhere to build a description of the input, and it is paid
 for in numbers owned, in memory and in arithmetic. [Layers, depth and
-width](07_layers-and-depth.md) takes the trade seriously, and [layers, depth and
-width, worked out](08_layers-and-depth-worked-out.md) counts it exactly.
+width](08_layers-and-depth.md) takes the trade seriously, and [layers, depth and
+width, worked out](09_layers-and-depth-worked-out.md) counts it exactly.
 
 One honest note about the sizes here. Four neurons is not a realistic middle; it
 is a middle small enough to print. A layer in a working model usually holds
@@ -179,10 +179,10 @@ following while the numbers are still small.
 
 - [One neuron](03_one-neuron.md) is the next page, and it opens one of the circles
   in these pictures and works all of its arithmetic out by hand.
-- [A network on a robot](04_a-network-on-a-robot.md) follows this same two-layer
+- [A network on a robot](05_a-network-on-a-robot.md) follows this same two-layer
   network through one moment with every number written out, and says what each
   part of it means for the arm.
-- [Activation functions](06_activation-functions.md) explains the rule at the end
+- [Activation functions](07_activation-functions.md) explains the rule at the end
   of each neuron, including the sigmoid used on this page, and shows why a network
   with no such rule collapses back to the network with no middle.
 - [What a model is](../01_what-learning-means/03_what-a-model-is.md) is where the

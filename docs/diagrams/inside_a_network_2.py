@@ -1,7 +1,7 @@
 """Generate the diagrams for the last two pages of docs/05_neural-networks/02_inside-a-network/.
 
-    09_the-shape-of-the-numbers.md  -> images/inside-a-network/the-shape-of-the-numbers/
-    10_what-a-network-can-learn.md  -> images/inside-a-network/what-a-network-can-learn/
+    10_the-shape-of-the-numbers.md  -> images/inside-a-network/the-shape-of-the-numbers/
+    11_what-a-network-can-learn.md  -> images/inside-a-network/what-a-network-can-learn/
 
 Run with:  python3 ../docs/diagrams/inside_a_network_2.py
 Add --png <folder> to also write PNG copies for checking by eye.

@@ -39,8 +39,8 @@ numbers take, the line between yes and no stays straight. Many jobs on a robot
 need an answer that rises and then falls, and a straight line cannot give one.
 This section is here because that limit is the reason a neuron has a rule at the
 end. You saw the rule
-in [what one neuron is made of](03_one-neuron.md#2-what-one-neuron-is-made-of), and you saw the sag model in
-[from a model to a neuron](03_one-neuron.md#1-from-a-model-to-a-neuron) work without one. This section shows what the
+in [what one neuron is made of](03_one-neuron.md#1-what-one-neuron-is-made-of), and you saw the fitted line of
+[what a model is](../01_what-learning-means/03_what-a-model-is.md) work without one. This section shows what the
 rule is for, and [the rectified linear unit](#2-the-rectified-linear-unit) then describes the rule itself.
 The answer comes in three steps. First, many jobs need an output that bends, and one
 neuron without the rule can only draw a straight line. Second, putting more
@@ -93,11 +93,11 @@ the second weight.
 The picture below draws both of those roads across the whole sweep of distances,
 and it adds a third line in which the rule is applied between the two neurons.
 
-![Two plain layers and one equivalent neuron drawn as the same straight line, with a third line that bends at 0.25 metres](../../images/inside-a-network/activation-functions/collapse-curves.svg)
+![Two plain layers and one equivalent neuron drawn as the same straight line, with a third line that bends at a distance of 0.25](../../images/inside-a-network/activation-functions/collapse-curves.svg)
 
 Across the whole sweep the two plain layers and the single neuron never differ by
 more than 0.0000000000000009, which is as close as the computer can measure. The
-third line, which has the rule between the two neurons, bends at 0.250 metres and
+third line, which has the rule between the two neurons, bends at a distance of 0.250 and
 is a different shape altogether.
 
 The same collapse happens however many neurons you chain together. This is worth
@@ -174,7 +174,7 @@ This rule looks too simple to do any work. The reason it does so much work is th
 corner at 0. A neuron with this rule is two different things joined at one point,
 because on one side of the corner it ignores its inputs and on the other side it
 follows them exactly. The place where it changes is the point that
-[what changes when a weight or the bias changes](03_one-neuron.md#4-what-changes-when-a-weight-or-the-bias-changes) moved with the bias, and this page calls that point the elbow. Once several
+[what changes when a weight or the bias changes](03_one-neuron.md#3-what-changes-when-a-weight-or-the-bias-changes) moved with the bias, and this page calls that point the elbow. Once several
 neurons each have an elbow in a different place, the elbows can be added together
 into any shape at all.
 
@@ -296,14 +296,14 @@ runs from -0.0908 to +1.0908. Both of the smooth rules dip below 0 on the left,
 GELU down to -0.129 near -1.42 and SiLU down to -0.100 near -2.40.
 
 The picture below puts the three rules back on the neuron from
-[what one neuron is made of](03_one-neuron.md#2-what-one-neuron-is-made-of). The
-left half sweeps the distance from 0 to 1 metre, and the right half is the same
-sweep again with the area around the elbow made larger.
+[what one neuron is made of](03_one-neuron.md#1-what-one-neuron-is-made-of). The
+left half sweeps the scaled distance from 0 to 1, which is 0 to 100
+millimetres, and the right half is the same sweep again with the area around the elbow made larger.
 
-![The neuron's output against distance under all three rules, with a close-up of the elbow at 0.7825 metres beside it](../../images/inside-a-network/activation-functions/neuron-three-rules.svg)
+![The neuron's output against distance under all three rules, with a close-up of the elbow at a distance of 0.7825 beside it](../../images/inside-a-network/activation-functions/neuron-three-rules.svg)
 
-At our reading of 0.42 metres the sum of +0.725 becomes 0.7250 under the
-rectified linear unit, 0.5552 under GELU and 0.4884 under SiLU. At 0.85 metres,
+At our reading of 0.42 the sum of +0.725 becomes 0.7250 under the
+rectified linear unit, 0.5552 under GELU and 0.4884 under SiLU. At a distance of 0.85,
 where the sum is -0.1350, the rectified linear unit gives exactly 0, while GELU
 gives -0.0603 and SiLU gives -0.0630.
 
@@ -359,7 +359,7 @@ work of that layer. So the dearer rule is worth its price whenever it trains
 better.
 
 Those two pictures also introduce the subject of [layers, depth and
-width](07_layers-and-depth.md), which is that a layer of 1,024 neurons holds over
+width](08_layers-and-depth.md), which is that a layer of 1,024 neurons holds over
 a million weights, and that those weights are arranged in a grid which a computer
 multiplies in one go.
 
@@ -399,17 +399,20 @@ into a range would only throw away answers that were correct.
 The second row is the one this chapter has been quietly using. When the answer is
 one probability, the rule is the **sigmoid**, which takes any number at all and
 gives back a number between 0 and 1. [The smallest
-network](02_the-smallest-network.md) and [a network on a
-robot](04_a-network-on-a-robot.md) both ended on it without explaining it, and
+network](04_the-smallest-network.md) and [a network on a
+robot](05_a-network-on-a-robot.md) both ended on it without explaining it, and
 this is that explanation.
 
-The picture below draws the sigmoid, with the three totals those pages produced
-marked on it.
+The picture below draws the sigmoid, with the totals of the three moments of
+[the grasp example](02_the-grasp-example.md#3-three-moments-of-the-reach) marked
+on it.
 
-![The sigmoid drawn as an S-shaped curve rising from 0 to 1, with three points marked: a sum of -1.645 giving 0.162, a sum of +0.725 giving 0.674, and a sum of +1.127 giving 0.755](../../images/inside-a-network/activation-functions/the-sigmoid.svg)
+![The sigmoid drawn as an S-shaped curve rising from 0 to 1, with three points marked: a sum of -3.700 giving 0.024, a sum of -2.355 giving 0.087, and a sum of +1.645 giving 0.838](../../images/inside-a-network/activation-functions/the-sigmoid.svg)
 
 A sum of 0 comes out as exactly 0.500, meaning the network is saying it has no
-idea. A sum of +1.127 comes out as 0.755, and a sum of -1.645 comes out as 0.162.
+idea. The total of +1.645 when the gripper is ready to close comes out as 0.838.
+The total of -2.355 when it is aimed beside the cup comes out as 0.087, and the
+total of -3.700 when it is too far away comes out as 0.024.
 The curve never reaches 0 or 1, however large the sum gets: at -6 it gives 0.0025
 and at +6 it gives 0.9975.
 
@@ -441,10 +444,10 @@ anything in the middle worth thinking about.
 
 ## 5. Where to read next
 
-- [Layers, depth and width](07_layers-and-depth.md) is the next page. It joins
+- [Layers, depth and width](08_layers-and-depth.md) is the next page. It joins
   many neurons, each with the rule from this page at its end, into a layer, and
   then stacks the layers.
-- [What a network can learn](10_what-a-network-can-learn.md) takes the elbows of
+- [What a network can learn](11_what-a-network-can-learn.md) takes the elbows of
   [the rectified linear unit](#2-the-rectified-linear-unit) and shows that enough
   of them will follow any shape at all.
 - [Backpropagation](../03_how-training-works/03_backpropagation.md) explains why
@@ -464,18 +467,18 @@ anything in the middle worth thinking about.
 The three rules are one function call each in PyTorch, which is the library most
 of this book's models are built with. The code below takes the same weighted sum
 of +0.7250 that [one neuron](03_one-neuron.md) worked out, and the sum of -0.1350
-that the same neuron gives at a distance of 0.85 metres, and puts both through all
+that the same neuron gives at a distance of 0.85, and puts both through all
 three rules.
 
 ```python
 import torch
 
-above = torch.tensor([0.7250])                                 # the sum at 0.42 m
+above = torch.tensor([0.7250])                                 # the sum at 0.42
 print(f"{torch.relu(above).item():.4f}")                       # 0.7250
 print(f"{torch.nn.functional.gelu(above).item():.4f}")         # 0.5552
 print(f"{torch.nn.functional.silu(above).item():.4f}")         # 0.4884
 
-below = torch.tensor([-0.1350])                                # the sum at 0.85 m
+below = torch.tensor([-0.1350])                                # the sum at 0.85
 print(f"{torch.relu(below).item():.4f}")                       # 0.0000
 print(f"{torch.nn.functional.gelu(below).item():.4f}")         # -0.0603
 print(f"{torch.nn.functional.silu(below).item():.4f}")         # -0.0630
@@ -493,6 +496,6 @@ after each layer, and the library applies it to every number the layer produced.
 The output rules work the same way: `torch.sigmoid` and
 `torch.nn.functional.softmax` are the two from
 [the rule at the end of the network](#4-the-rule-at-the-end-of-the-network).
-[Layers, depth and width](07_layers-and-depth.md) shows that arrangement, and
-[using it in Python](07_layers-and-depth.md#7-using-it-in-python) on that page
+[Layers, depth and width](08_layers-and-depth.md) shows that arrangement, and
+[using it in Python](08_layers-and-depth.md#7-using-it-in-python) on that page
 builds a stack of layers with a rule between each pair.

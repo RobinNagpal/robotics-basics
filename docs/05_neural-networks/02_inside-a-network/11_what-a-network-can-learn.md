@@ -1,6 +1,6 @@
 # What a network can learn
 
-The page before this one, [the shape of the numbers](09_the-shape-of-the-numbers.md),
+The page before this one, [the shape of the numbers](10_the-shape-of-the-numbers.md),
 showed three things. It showed that a fully connected layer is one matrix multiply.
 It showed that a batch of examples goes through that layer in a single operation. It
 showed that the memory a model needs is its parameter count multiplied by the bytes
@@ -246,7 +246,7 @@ The sections from
 number, which kept the pictures simple. A camera gives 150,528 input numbers instead.
 This section comes now to apply the parameter count of the section before to an input
 of that size. At that size the fully connected layer of
-[layers and depth](07_layers-and-depth.md) stops being a sensible choice, for two
+[layers and depth](08_layers-and-depth.md) stops being a sensible choice, for two
 separate reasons. The first reason is about counting, and the second is about
 position.
 
@@ -437,7 +437,7 @@ So the convolutional stack has 388 times fewer weights and does about a fifth mo
 arithmetic. That is exactly the bargain you want. Weights are what must be stored,
 carried to the robot and learned from examples, so having fewer of them helps three
 times over. Arithmetic is what the hardware of
-[the previous page](09_the-shape-of-the-numbers.md#3-why-the-hardware-is-built-for-this-one-operation)
+[the previous page](10_the-shape-of-the-numbers.md#3-why-the-hardware-is-built-for-this-one-operation)
 is good at, so having a little more of it costs almost nothing.
 
 So where do convolutional networks stand now? They are still the right choice when a
@@ -471,7 +471,7 @@ network finds its weights.
 
 ## 7. Where to read next
 
-- [Questions and answers](11_questions-and-answers.md) is the next page, and it
+- [Questions and answers](12_questions-and-answers.md) is the next page, and it
   closes the chapter by answering the questions the other pages raised without
   stopping for, such as how many layers to use and where the weights come from.
 - [The score of being wrong](../03_how-training-works/01_the-score-of-being-wrong.md)

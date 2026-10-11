@@ -47,9 +47,9 @@ instead of the job, which is what
 is about.
 
 What the chapter can tell you is what each choice buys and what it costs.
-[Layers, depth and width](07_layers-and-depth.md) covers what width and depth each
+[Layers, depth and width](08_layers-and-depth.md) covers what width and depth each
 add, and [layers, depth and width, worked
-out](08_layers-and-depth-worked-out.md#2-what-depth-and-width-cost) counts the
+out](09_layers-and-depth-worked-out.md#2-what-depth-and-width-cost) counts the
 cost: doubling the width of a layer costs about four times as much, while doubling
 the depth costs about twice as much.
 
@@ -64,7 +64,7 @@ For the hidden layers it is a free choice, and the default is easy. Use the
 rectified linear unit unless you have a reason not to; it is simple, it is fast,
 and it works. The models built today mostly use GELU or SiLU instead, which are
 smoothed versions of the same shape that train a little more steadily.
-[Activation functions](06_activation-functions.md) compares all three and says
+[Activation functions](07_activation-functions.md) compares all three and says
 what each costs.
 
 For the output layer it is not a choice at all. The rule has to be able to produce
@@ -90,7 +90,7 @@ A fully connected layer owns one weight for every joining of an input to a neuro
 which is the number of inputs multiplied by the number of neurons, and one bias
 for each neuron. Add that up over the layers and you have the network.
 [Layers, depth and width, worked
-out](08_layers-and-depth-worked-out.md#1-counting-the-numbers-one-network-owns)
+out](09_layers-and-depth-worked-out.md#1-counting-the-numbers-one-network-owns)
 does it on a whole network: 29 numbers in, 16 neurons and 1 out comes to 497
 parameters.
 
@@ -102,7 +102,7 @@ the total and the weights are almost everything.
 
 The count is also the number that decides whether a model fits on the machine you
 have, once you know how many bytes each parameter takes.
-[The shape of the numbers](09_the-shape-of-the-numbers.md) turns the count into
+[The shape of the numbers](10_the-shape-of-the-numbers.md) turns the count into
 gigabytes.
 
 ---
@@ -141,7 +141,7 @@ every multiplication is known, and you can print the value of any neuron for any
 input you like. There is no mystery in the mechanism, and nothing is hidden.
 
 What is hard is saying what a neuron is for. On [one neuron of that
-network](05_one-neuron-of-that-network.md) the four neurons have descriptions you
+network](06_one-neuron-of-that-network.md) the four neurons have descriptions you
 can read, but only because the weights were chosen by hand to make that true.
 Training chooses weights that work, not weights that can be described, so the
 features that come out of a trained layer rarely line up with anything a person
@@ -186,7 +186,7 @@ If the reading is a choice from a short list, such as which of three tools is
 fitted, give each option a number of its own and set the chosen one to 1 and the
 rest to 0. That is called one-hot encoding, and
 [layers, depth and width, worked
-out](08_layers-and-depth-worked-out.md#1-counting-the-numbers-one-network-owns)
+out](09_layers-and-depth-worked-out.md#1-counting-the-numbers-one-network-owns)
 shows it. The reason not to just number the options 1, 2 and 3 is that a single
 number carries an order and a spacing that the options do not have.
 
@@ -197,9 +197,8 @@ numbers](../05_turning-the-world-into-numbers/01_tokens-and-embeddings.md).
 One thing applies to every reading that already is a number. Readings arrive in
 different units, and a reading measured in millimetres would otherwise count for a
 hundred times more than the same thing measured in metres. So readings are scaled
-to a comparable range first, as [one
-neuron](03_one-neuron.md#2-what-one-neuron-is-made-of) does with all three of its
-inputs.
+to a comparable range first, as [the three
+readings](02_the-grasp-example.md#2-the-three-readings) of the grasp example are.
 
 ---
 
@@ -229,7 +228,7 @@ layers had been around for decades without being especially useful. What made th
 work was the arrival of three things at the same time: much more data, hardware
 that could do the arithmetic fast enough, and a few changes that made deep stacks
 trainable at all, of which [residual
-connections](07_layers-and-depth.md#5-residual-connections) is one.
+connections](08_layers-and-depth.md#5-residual-connections) is one.
 
 [The words everyone uses](../01_what-learning-means/06_the-words-everyone-uses.md)
 places both terms next to artificial intelligence, machine learning and foundation

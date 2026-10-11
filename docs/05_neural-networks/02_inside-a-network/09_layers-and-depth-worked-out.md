@@ -1,6 +1,6 @@
 # Layers, depth and width, worked out
 
-The page before this one, [layers, depth and width](07_layers-and-depth.md), said
+The page before this one, [layers, depth and width](08_layers-and-depth.md), said
 what a layer is, what makes it fully connected, and what each extra layer gives
 you. It left one question open on purpose, which is what all of that costs. This
 page answers it with arithmetic rather than with a new idea. First it counts every
@@ -38,7 +38,7 @@ This section comes first because the comparison in the section after it is a
 comparison of counts, and a count means more once you have done one yourself.
 
 The network counted here answers the same question as the one on [a network on a
-robot](04_a-network-on-a-robot.md), which is whether a grasp the arm is about to
+robot](05_a-network-on-a-robot.md), which is whether a grasp the arm is about to
 make will hold, and the answer is still one number between 0 and 1. What is
 different is the size. That network had three readings and four neurons, because
 every one of its numbers had to fit in a picture. This one has the shape a working
@@ -116,7 +116,7 @@ growth properly, for width and for depth together.
 
 ## 2. What depth and width cost
 
-[Layers, depth and width](07_layers-and-depth.md) found that depth and width
+[Layers, depth and width](08_layers-and-depth.md) found that depth and width
 both add detail, and the section before counted one small network exactly. This
 section puts the two together and compares depth against width by what each one
 costs. The cost is easy to count
@@ -143,7 +143,7 @@ count follows the parameter count closely.
 
 The picture below holds the depth at 8 layers and changes the width. On both axes
 an equal step means an equal multiplication, as in the picture of [parameters
-against width](07_layers-and-depth.md#2-fully-connected-and-what-joining-everything-costs).
+against width](08_layers-and-depth.md#2-fully-connected-and-what-joining-everything-costs).
 
 ![A rising line of multiply-adds against width, with the depth held at 8 layers, on multiplying axes](../../images/inside-a-network/layers-and-depth-worked-out/multiply-adds-by-width.svg)
 
@@ -197,13 +197,13 @@ what change made deep stacks trainable.
 
 ## 3. Where to read next
 
-- [The shape of the numbers](09_the-shape-of-the-numbers.md) is the next page, and
+- [The shape of the numbers](10_the-shape-of-the-numbers.md) is the next page, and
   it is where the parameters counted here become real memory. It explains how the
   weights are stored, how many bits each number gets, and why the memory bill is
   not only the weights.
-- [Layers, depth and width](07_layers-and-depth.md) is the page these counts
+- [Layers, depth and width](08_layers-and-depth.md) is the page these counts
   belong to, if you want the ideas again rather than the arithmetic.
-- [What a network can learn](10_what-a-network-can-learn.md) asks what all these
+- [What a network can learn](11_what-a-network-can-learn.md) asks what all these
   parameters actually buy, and shows the shape of job that a fully connected layer
   is the wrong tool for.
 - [Overfitting and generalisation](../04_making-training-work/01_overfitting-and-generalisation.md)
@@ -244,13 +244,13 @@ print(sum(p.numel() for p in net.parameters()))     # 497, the whole network
 Two details in that output are worth reading carefully. The weight grid of the
 hidden layer is printed as 16 by 29 rather than 29 by 16, because PyTorch stores
 one row for each neuron and one column for each input, which is the same grid as
-[the weight grid](07_layers-and-depth.md#1-a-layer-is-many-neurons-reading-the-same-numbers)
+[the weight grid](08_layers-and-depth.md#1-a-layer-is-many-neurons-reading-the-same-numbers)
 on the page before. The order of the two numbers does not change the count, since
 16 times 29 and 29 times 16 are both 464.
 
 The rule after each layer owns nothing at all. `nn.ReLU` and `nn.Sigmoid` appear
 in the list of layers but never in the list of parameters, because
-[activation functions](06_activation-functions.md) apply a fixed rule to each
+[activation functions](07_activation-functions.md) apply a fixed rule to each
 number and have nothing to learn. So every parameter in any network of this kind
 belongs to a `Linear` layer.
 

@@ -1,7 +1,7 @@
 # A network on a robot
 
 [One neuron](03_one-neuron.md) worked one neuron out in full, and [the smallest
-network](02_the-smallest-network.md) put four of them between the readings and the
+network](04_the-smallest-network.md) put four of them between the readings and the
 answer. Both pages were about the machinery. This page is about what the machinery
 is for. It takes one moment of one robot arm, puts it through the whole network
 from the sensors to the answer, and says at every step what the numbers mean for
@@ -73,7 +73,7 @@ The gripper opening comes from the gripper itself, which reports 55 millimetres
 out of the 100 it can open, so the number used is 0.55. The brightness comes from
 a small patch of the camera picture where the cup should be, averaged and divided
 by its largest possible value, which gives 0.30. [One
-neuron](03_one-neuron.md#2-what-one-neuron-is-made-of) works that scaling out in
+neuron](02_the-grasp-example.md#2-the-three-readings) works that scaling out in
 full.
 
 So the arm's state at this moment is the three numbers 0.42, 0.55 and 0.30, in
@@ -103,7 +103,7 @@ That last one matters. The rule at the end of each neuron turns any total below 
 into 0, so the fourth feature is exactly 0.000. The neuron is not saying "a
 little"; it is saying nothing at all about this moment. A quarter of this layer is
 silent here, and that is normal rather than a fault. [Activation
-functions](06_activation-functions.md#2-the-rectified-linear-unit) is where that
+functions](07_activation-functions.md#2-the-rectified-linear-unit) is where that
 rule and its cost are worked out.
 
 So the three readings have become the four features 0.725, 0.490, 0.250 and
@@ -192,12 +192,12 @@ fixed numbers over whatever the sensors currently say.
 
 ## 5. Where to read next
 
-- [One neuron of that network](05_one-neuron-of-that-network.md) is the next page.
+- [One neuron of that network](06_one-neuron-of-that-network.md) is the next page.
   It opens one of the four neurons above and shows why it answers what it answers.
-- [Activation functions](06_activation-functions.md) explains the rule that held
+- [Activation functions](07_activation-functions.md) explains the rule that held
   the fourth feature at 0.000, and why a network without such a rule could not do
   any of this.
-- [Layers, depth and width](07_layers-and-depth.md) takes the layer of four
+- [Layers, depth and width](08_layers-and-depth.md) takes the layer of four
   neurons and asks what happens when it is wider, and when there are more layers
   after it.
 - [The score of being wrong](../03_how-training-works/01_the-score-of-being-wrong.md)

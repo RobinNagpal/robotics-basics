@@ -13,8 +13,9 @@ of the chapter can use them without stopping to explain them.
 This page is for a reader who knows that a model is trained from examples rather
 than written out as rules. You need no mathematics beyond multiplying and adding,
 because nothing here is worked out with numbers. This page is deliberately the
-one page of the chapter with no arithmetic on it. The arithmetic starts on [the
-smallest network](02_the-smallest-network.md) and does not stop until the chapter
+one page of the chapter with no arithmetic on it. The next page, [the grasp
+example](02_the-grasp-example.md), sets out the robot job that every later page
+works on, and the arithmetic starts there and does not stop until the chapter
 ends.
 
 The pages after this one are written to be read in order, and each assumes the
@@ -70,8 +71,8 @@ layer is built from, and it does one multiply-and-add of its own. A layer is a
 group of neurons that all read the same numbers at the same time. So a network is
 built from layers, a layer is built from neurons, and a neuron is a few
 multiplications and an addition. Every one of those claims is worked out with real
-numbers later in the chapter, starting on [the smallest
-network](02_the-smallest-network.md).
+numbers later in the chapter, starting on [one
+neuron](03_one-neuron.md).
 
 The obvious question is why the middle is there at all, since the small model at
 the end could have read the original numbers directly.
@@ -133,7 +134,7 @@ whole reason it is there.
 This also explains why the thing at the end can stay simple. By the time the
 numbers reach it, they are no longer raw readings. They are a description of the
 input, built for the job in hand, and a simple model is enough to answer from a
-good description. [A network on a robot](04_a-network-on-a-robot.md) shows that
+good description. [A network on a robot](05_a-network-on-a-robot.md) shows that
 happening on one grasp, with every number written out.
 
 Before any of that can be worked through, the words have to be nailed down, and
@@ -213,23 +214,26 @@ that follows the last layer is not free, because it has to be able to produce th
 kind of answer the job needs. A job that wants one probability needs a rule that
 can only ever give a number between 0 and 1. A job that wants a plain number, such
 as a distance in millimetres, needs no rule at all.
-[Activation functions](06_activation-functions.md) covers these rules in full.
+[Activation functions](07_activation-functions.md) covers these rules in full.
 
 The rule of thumb for everything else is to start with the simplest network that
 could possibly do the job, and to make it more complicated only when it is not
-good enough. That is why the chapter starts where it does: [the smallest
-network](02_the-smallest-network.md) builds the simplest network there is, which
-has no hidden layer at all, and then adds exactly one.
+good enough. That is why the chapter starts where it does: [one
+neuron](03_one-neuron.md) works out the smallest piece, and [the smallest
+network](04_the-smallest-network.md) builds the smallest network with one hidden
+layer before making it any bigger.
 
 ---
 
 ## 5. Where to read next
 
-- [The smallest network](02_the-smallest-network.md) is the next page. It builds
-  the simplest network that exists, shows what it cannot do, and adds one layer in
-  the middle.
+- [The grasp example](02_the-grasp-example.md) is the next page. It draws the
+  robot arm and the cup that every later page works on, and says which three
+  numbers the arm reports.
 - [One neuron](03_one-neuron.md) opens a single neuron and works all of its
   arithmetic out by hand.
+- [The smallest network](04_the-smallest-network.md) joins four neurons into a
+  network, and then makes it wider and deeper.
 - [The words everyone uses](../01_what-learning-means/06_the-words-everyone-uses.md)
   places neural networks inside the wider set of words, such as artificial
   intelligence, machine learning and deep learning.

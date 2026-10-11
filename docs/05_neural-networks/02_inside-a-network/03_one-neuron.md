@@ -1,107 +1,48 @@
 # One neuron, worked out by hand
 
-The page before this one, [the smallest network](02_the-smallest-network.md),
-drew neurons as circles and told you what each one gives without ever opening one.
-This page opens one. A neuron is the smallest part that a neural network is built
-from, and it is one small piece of arithmetic that owns a few numbers of its own.
-It is worked out here in full with real numbers, so that nothing in the rest of
-the chapter stays a word you have to accept without checking it. Everything is worked out on one
-made-up moment of one grasp, in which a robot arm is reaching for a cup.
+A neural network is a model built from many neurons. The outputs of some neurons
+become the inputs of others, and the whole network is still one formula with
+parameters inside it. A neuron is the smallest piece, and a network is a model
+made by joining many of those pieces together. Every weight and every bias of
+every neuron is one parameter of the model. This page opens one neuron and works
+all of its arithmetic out with real numbers, so that nothing in the rest of the
+chapter stays a word you have to accept without checking it. The pages after it
+join neurons into networks.
 
-When you reach the end of this page you will know which four numbers one neuron
-owns, what each of those numbers changes, and at which reading the neuron stops
-answering. The page ends on a limit that no choice of those four numbers can pass,
-because the line that divides the neuron's yes from its no is always straight.
-[Activation functions](06_activation-functions.md) is the page that passes that
-limit, so this page is what you need before that one.
+You have met a neuron already without the name. The straight line fitted in [what
+a model is](../01_what-learning-means/03_what-a-model-is.md#3-the-model-and-the-numbers-inside-it)
+is a neuron with one input and no rule at the end: its slope is a weight, and its
+offset is a bias. A neuron differs from that line in two ways. It can take several
+inputs, each with its own weight. And it passes its total through a simple rule
+before handing it on.
+
+The neuron here reads the three readings of the first moment of [the grasp
+example](02_the-grasp-example.md#3-three-moments-of-the-reach), in which the
+gripper is ready to close on a cup. When you reach the end of this page you will
+know which four numbers one neuron owns, what each of those numbers changes, and
+at which reading the neuron stops answering. The page ends on a limit that no
+choice of those four numbers can pass, because the line that divides the neuron's
+yes from its no is always straight. [Activation
+functions](07_activation-functions.md) is the page that passes that limit, so this
+page is what you need before that one.
 
 ## Contents
 
-1. [From a model to a neuron](#1-from-a-model-to-a-neuron)
-2. [What one neuron is made of](#2-what-one-neuron-is-made-of)
-3. [The weighted sum, line by line](#3-the-weighted-sum-line-by-line)
-4. [What changes when a weight or the bias changes](#4-what-changes-when-a-weight-or-the-bias-changes)
-5. [Where to read next](#5-where-to-read-next)
-6. [Using it in Python](#6-using-it-in-python)
+1. [What one neuron is made of](#1-what-one-neuron-is-made-of)
+2. [The weighted sum, line by line](#2-the-weighted-sum-line-by-line)
+3. [What changes when a weight or the bias changes](#3-what-changes-when-a-weight-or-the-bias-changes)
+4. [Where to read next](#4-where-to-read-next)
+5. [Using it in Python](#5-using-it-in-python)
 
 ---
 
-## 1. From a model to a neuron
+## 1. What one neuron is made of
 
-This section connects the word model to the word neuron, and it says where the
-numbers that go into a neuron come from. The earlier page
-[what a model is](../01_what-learning-means/03_what-a-model-is.md) covers models
-in full, with every step worked out. This section repeats only the part that this
-page needs.
-
-A **model** is a formula with adjustable numbers inside it, together with the
-values that those numbers have been given. You hand the model some numbers, it
-does its arithmetic, and it hands back an answer. The numbers you hand it are its
-**inputs**, and the answer is its **output**. The adjustable numbers inside it are
-its **parameters**, and finding good values for them is called **training**.
-
-The earlier page built the smallest useful model. A robot arm bends a little when
-a mass hangs on its wrist, so the tool tip sits lower than the controller expects.
-That bending is called sag. Somebody measured the sag for six masses and fitted a
-straight line to the measurements. The result was the formula
-sag = 1.4 x mass + 0.5. Its input is the mass in kilograms. Its output is the drop
-of the tool tip in millimetres. Its two parameters are 1.4 and 0.5.
-
-That formula already has the shape of a neuron. The picture below redraws it in
-the shape that the rest of this page uses for a neuron. Read it from left to
-right.
-
-![The input 1.75 kilograms multiplied by a weight of +1.40 to give +2.450, added to a bias of +0.50 to make 2.950, passed out with no rule as an output of 2.95 millimetres](../../images/inside-a-network/one-neuron/sag-model-as-a-neuron.svg)
-
-The input of 1.75 kg is multiplied by 1.4, which gives 2.45. Then 0.5 is added,
-which gives 2.95. So the model predicts a drop of 2.95 mm. A number that
-multiplies an input is called a **weight**. A number that is added at the end,
-whatever the input is, is called a **bias**. So the slope of the sag line is a
-weight, and its offset is a bias.
-
-A neuron does the same arithmetic with two changes. First, it can take several
-inputs, and each input gets its own weight. Second, it passes its total through a
-simple rule before it hands the total on. The sag model has no rule, which is why
-the picture says "no rule here". The section
-[why multiplying and adding is not enough](06_activation-functions.md#1-why-multiplying-and-adding-is-not-enough) explains why a neuron needs one.
-
-A **neural network** is a model built from many neurons. The outputs of some
-neurons become the inputs of others, and the whole network is still one formula
-with parameters inside it. So the relation between the two words is this. A
-neuron is the smallest piece, and a network is a model made by joining many of
-those pieces together. Every weight and every bias of every neuron is one
-parameter of the model. The page after this one,
-[layers and depth](07_layers-and-depth.md), shows how the neurons are joined.
-
-The inputs come from outside the model, because a model never reads a sensor
-itself. A program on the robot reads the sensors at one moment. It turns each
-reading into one number, and it puts those numbers in a fixed order. That ordered
-list of numbers is what arrives at the model, and each number in the list is one
-input. The order matters, because the first weight always multiplies the first
-number in the list. If the program swapped two readings, each weight would
-multiply the wrong reading. The answer would be wrong, and nothing would report an
-error.
-
-For the sag model the list holds one number, which is the mass. The neuron on the
-rest of this page reads three numbers. They come from three sensors on an arm at
-the moment it reaches for a cup. The next section,
-[what one neuron is made of](#2-what-one-neuron-is-made-of), shows those three readings and the four
-numbers the neuron owns, because both have to be known before any arithmetic can
-start.
-
-
----
-
-## 2. What one neuron is made of
-
-The section before this one showed that a neuron is the sag model with more
-inputs and a rule at the end. Before you can watch a neuron work, you need to know
-what goes into it and which numbers belong to it, and this section lays both out.
-The smallest function of that kind that is worth looking at is one neuron with
-three inputs. The numbers that go into a neuron are called its **inputs**. The
-single number that comes out of it is called its **output**. Between the inputs
-and the output there are only four numbers, and those four numbers belong to the
-neuron itself.
+Before you can watch a neuron work, you need to know what goes into it and which
+numbers belong to it, and this section lays both out. The numbers that go into a
+neuron are called its **inputs**. The single number that comes out of it is called
+its **output**. Between the inputs and the output there are only four numbers, and
+those four numbers belong to the neuron itself.
 
 The picture below follows one set of three inputs through the whole neuron, from
 left to right, and shows every number on the way.
@@ -113,29 +54,10 @@ three numbers -2.00, +1.50 and +0.80. The three results and one more number,
 +0.50, are added together, and they make 0.725. The rule at the end passes 0.725
 through without changing it, because 0.725 is above 0.
 
-Those three readings come from a robot arm that is about to close its gripper on
-a cup. The first reading is the distance from the gripper to the cup in metres,
-and a depth camera has measured it as 0.42. A depth camera is a camera that
-reports how far away each point in front of it is. The second reading is how far
-open the gripper is, and the gripper reports it as 55 millimetres. The third
-reading is how bright the small patch of the camera picture is at the place where
-the cup should be.
-
-Those three readings arrive in three different units. A neuron cannot do anything
-sensible with a 0.42 standing next to a 55, because the number that makes the
-second reading count would have to be a hundred times smaller than the number
-that makes the first one count. So each reading is first turned into a number
-between 0 and 1, and that step is called scaling.
-
-The picture below shows the three readings on three rows, and each row shows how
-one raw reading becomes a scaled number.
-
-![Three rows: 0.42 m passed through unchanged, 55 mm divided by 100 to give 0.55, and a 4 by 4 grid of pixel values whose average of 76.5 is divided by 255 to give 0.30](../../images/inside-a-network/one-neuron/scaling-the-readings.svg)
-
-The distance is already between 0 and 1, so it goes in as it is. The gripper
-opening of 55 millimetres is divided by 100, because the jaws open to 100
-millimetres at most. The sixteen pixel values in the patch add up to 1,224, so
-their average is 76.5 out of a possible 255. Dividing 76.5 by 255 gives 0.300.
+The three inputs are the scaled readings of the arm: the distance to the cup, the
+gripper opening and the brightness straight ahead. [The three
+readings](02_the-grasp-example.md#2-the-three-readings) says what each one measures
+and how it was scaled to sit between 0 and 1.
 
 So the three numbers that reach the neuron are 0.42, 0.55 and 0.30. Now the four
 numbers that the neuron owns come in. Each input has one number of its own, which
@@ -173,17 +95,17 @@ neuron has 50 weights of its own. Training then sets those weights. When trainin
 leaves a neuron's weight on one reading close to 0, that neuron in effect ignores
 that reading. So the combination of readings that each neuron responds to is found
 by training, and no person chooses it. [Layers, depth and
-width](07_layers-and-depth.md) describes this layout, which is called a [fully
-connected layer](07_layers-and-depth.md#2-fully-connected-and-what-joining-everything-costs).
+width](08_layers-and-depth.md) describes this layout, which is called a [fully
+connected layer](08_layers-and-depth.md#2-fully-connected-and-what-joining-everything-costs).
 
 The inputs and the four numbers are now all on the table. The next section,
-[the weighted sum](#3-the-weighted-sum-line-by-line), puts them together into the one number the neuron
+[the weighted sum](#2-the-weighted-sum-line-by-line), puts them together into the one number the neuron
 works with.
 
 
 ---
 
-## 3. The weighted sum, line by line
+## 2. The weighted sum, line by line
 
 The section before gave the three inputs and the four numbers of the neuron, so
 the neuron can now do its first job. Everything else on this page changes one of
@@ -222,25 +144,25 @@ readings push the total up and which one pulls it down.
 Only the distance pulls this sum down, because it is the only reading with a
 minus weight. The opening pushes the sum up the hardest, by +0.825.
 
-The table and the bars describe one moment, with the arm standing still at 0.42
-metres. A robot does not stand still, so the useful question is how the sum
+The table and the bars describe one moment, with the cup standing still 42
+millimetres from the palm. A robot does not stand still, so the useful question is how the sum
 changes as the readings change. The answer tells you where the neuron says yes
 and where it says no, and that dividing point is what the rest of this page is
 about. The next two pictures answer that question, first for one reading and then
 for two.
 
 The next picture holds the opening at 0.55 and the brightness at 0.30, and it
-moves the distance from 0 to 1 metre. Only one input changes, and that input is
+moves the scaled distance from 0 to 1, which is from 0 to 100 millimetres. Only one input changes, and that input is
 multiplied by one fixed weight, so the answer has to be a straight line. The line
-falls by exactly 2.00 for every extra metre, because the weight on the distance
+falls by exactly 2.00 for every 1.00 of scaled distance, because the weight on the distance
 is -2.00.
 
-![A straight line of the weighted sum against distance, starting at 1.565 at 0 metres and crossing 0 at 0.7825 metres](../../images/inside-a-network/one-neuron/sum-against-distance.svg)
+![A straight line of the weighted sum against distance, starting at 1.565 at a distance of 0 and crossing 0 at a distance of 0.7825](../../images/inside-a-network/one-neuron/sum-against-distance.svg)
 
-At 0 metres the sum is 1.565. At our reading of 0.42 metres it is 0.725. It
-crosses 0 at 0.7825 metres, and after that point the rule holds the output at 0.
+At a distance of 0 the sum is 1.565. At our reading of 0.42 it is 0.725. It
+crosses 0 at 0.7825, which is about 78 millimetres, and after that point the rule holds the output at 0.
 
-That crossing point at 0.7825 metres is the distance at which this neuron stops
+That crossing point at 0.7825 is the distance at which this neuron stops
 answering. A neuron reads all of its readings at once, though, so one reading at a
 time does not show the whole decision. When two readings move together, the place
 where the sum crosses 0 is no longer a single point. It becomes a line across the
@@ -253,20 +175,20 @@ black line marks every pair where the sum is exactly 0.
 ![A coloured map of the weighted sum over distance and gripper opening, with a straight black line marking where the sum is 0](../../images/inside-a-network/one-neuron/sum-over-two-readings.svg)
 
 Over the whole square the sum runs from -1.260 to +2.240. The line where the sum
-is exactly 0 reaches an opening of 0.84 at a distance of 1 metre, and it leaves
+is exactly 0 reaches an opening of 0.84 at a distance of 1, and it leaves
 the square through the bottom edge. Our own reading sits well inside the part
 where the sum is above 0.
 
 The straightness of that line is the most important limit of a single neuron,
-and [why multiplying and adding is not enough](06_activation-functions.md#1-why-multiplying-and-adding-is-not-enough) returns to it. Before that,
-the next section, [what changes when a weight or the bias changes](#4-what-changes-when-a-weight-or-the-bias-changes), moves
+and [why multiplying and adding is not enough](07_activation-functions.md#1-why-multiplying-and-adding-is-not-enough) returns to it. Before that,
+the next section, [what changes when a weight or the bias changes](#3-what-changes-when-a-weight-or-the-bias-changes), moves
 that line by changing the neuron's four numbers, because those four numbers are
 the only thing training can change.
 
 
 ---
 
-## 4. What changes when a weight or the bias changes
+## 3. What changes when a weight or the bias changes
 
 The section before ended with a straight line that divides yes from no. This
 section asks what moves that line. The question matters because training, which
@@ -298,32 +220,35 @@ without tilting it. The picture below shows this with only the distance moving.
 
 ![Three lines of the output against distance, for the biases +0.50, 0.00 and -1.00, each reaching 0 at a different distance](../../images/inside-a-network/one-neuron/moving-the-bias.svg)
 
-With the bias +0.50 the output reaches 0 at 0.7825 metres. With 0.00 it reaches 0
-at 0.5325 metres. With -1.00 it reaches 0 at only 0.0325 metres. So a lower bias
+With the bias +0.50 the output reaches 0 at a distance of 0.7825, which is about
+78 millimetres. With 0.00 it reaches 0 at 0.5325, about 53 millimetres. With -1.00
+it reaches 0 at only 0.0325, about 3 millimetres. So a lower bias
 makes the neuron stop answering at a shorter distance.
 
 Those four numbers are the only freedom this neuron has. Whatever you do to them,
-the dividing line stays straight. That is where this page stops and the next one
-starts, because [why multiplying and adding is not
-enough](06_activation-functions.md#1-why-multiplying-and-adding-is-not-enough)
+the dividing line stays straight. That is where this page stops. [Why multiplying
+and adding is not
+enough](07_activation-functions.md#1-why-multiplying-and-adding-is-not-enough)
 shows why a straight line is a problem, and why the rule at the end of the neuron
-is the thing that solves it.
+is the thing that solves it. Before that, [the smallest
+network](04_the-smallest-network.md) joins four neurons like this one into a
+network.
 
 
 ---
 
-## 5. Where to read next
+## 4. Where to read next
 
-- [A network on a robot](04_a-network-on-a-robot.md) is the next page. It puts
-  this neuron back among the other three and follows one whole grasp from the
-  sensors to the decision.
-- [Activation functions](06_activation-functions.md) takes the straight dividing
+- [The smallest network](04_the-smallest-network.md) is the next page. It puts
+  this neuron in a layer with three others and works the same moment through the
+  whole network.
+- [Activation functions](07_activation-functions.md) takes the straight dividing
   line that this page ended on and shows the one small rule that lets a neuron
   bend it.
-- [Layers, depth and width](07_layers-and-depth.md) joins many copies of this
+- [Layers, depth and width](08_layers-and-depth.md) joins many copies of this
   neuron into a layer, stacks those layers, and explains what each extra layer
   adds and what it costs.
-- [The shape of the numbers](09_the-shape-of-the-numbers.md) explains how these
+- [The shape of the numbers](10_the-shape-of-the-numbers.md) explains how these
   weights are stored and multiplied, and why the hardware is built the way it is.
 - [The score of being wrong](../03_how-training-works/01_the-score-of-being-wrong.md)
   starts the chapter that searches for the weights and biases this page chose by
@@ -334,13 +259,13 @@ is the thing that solves it.
 
 ---
 
-## 6. Using it in Python
+## 5. Using it in Python
 
 Everything on this page is one line of PyTorch, which is the library most of this
 book's models are built with. The code below builds the same neuron as
-[what one neuron is made of](#2-what-one-neuron-is-made-of), puts the same three
+[what one neuron is made of](#1-what-one-neuron-is-made-of), puts the same three
 readings through it, and checks the arithmetic of
-[the weighted sum](#3-the-weighted-sum-line-by-line).
+[the weighted sum](#2-the-weighted-sum-line-by-line).
 
 ```python
 import torch
@@ -361,17 +286,17 @@ The class is called `nn.Linear` and not `nn.Neuron`, because it is written to ho
 a whole layer of neurons at once. Asking for one output is how you get a single
 neuron out of it. The library gives you the weights, the bias, the multiplying and
 the adding, so you never write the arithmetic of
-[the weighted sum](#3-the-weighted-sum-line-by-line) yourself.
+[the weighted sum](#2-the-weighted-sum-line-by-line) yourself.
 
 Each number is printed to four decimal places on purpose. PyTorch works in a
 number format called float32, which keeps only about seven digits, so the full
 printout would end in digits that depend on the order in which the machine added
-things up. The page [the shape of the numbers](09_the-shape-of-the-numbers.md)
+things up. The page [the shape of the numbers](10_the-shape-of-the-numbers.md)
 explains that format and the smaller ones that models are run in.
 
 What you have to decide is none of the arithmetic and all of the shape. You choose
 how many inputs the layer takes and how many neurons it has, which
-[layers, depth and width](07_layers-and-depth.md) is about. You also choose which
-rule to apply after it, which [activation functions](06_activation-functions.md)
+[layers, depth and width](08_layers-and-depth.md) is about. You also choose which
+rule to apply after it, which [activation functions](07_activation-functions.md)
 weighs up. You do not choose the weights or the bias, because training chooses
 those.

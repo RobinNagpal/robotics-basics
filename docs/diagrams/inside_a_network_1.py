@@ -4,17 +4,17 @@ Each document's pictures go to a folder named after it, under
 docs/images/inside-a-network/:
 
     03_one-neuron.md                   -> one-neuron/
-    06_activation-functions.md         -> activation-functions/
-    07_layers-and-depth.md             -> layers-and-depth/
-    08_layers-and-depth-worked-out.md  -> layers-and-depth-worked-out/
+    07_activation-functions.md         -> activation-functions/
+    08_layers-and-depth.md             -> layers-and-depth/
+    09_layers-and-depth-worked-out.md  -> layers-and-depth-worked-out/
 
 Run with:  python3 inside_a_network_1.py
 Add --png <folder> to also write PNG copies for checking by eye.
 
 Every number drawn in a picture is worked out in this file and printed, so the
 documents quote the same values. The worked neuron reads three made-up
-sensor values for one moment of one grasp: a distance of 0.42 m from a depth
-camera, a gripper opening of 55 mm, and the average brightness of a 4 by 4
+sensor values for one moment of one grasp: a distance of 42 mm from a camera on
+the wrist, a gripper opening of 55 mm, and the average brightness of a 4 by 4
 patch of pixels, which is set out in the file. The weights and biases of that
 neuron, and of the four-neuron layer on the second page, were chosen by hand so
 that the arithmetic is small enough to follow; they were not trained. Where a
@@ -181,17 +181,18 @@ PATCH: NDArray[np.int64] = np.array([[71, 80, 69, 88],
                                      [83, 61, 90, 74],
                                      [79, 72, 86, 67]], dtype=np.int64)
 
-DIST_M: float = 0.42        # metres, straight from the depth camera
+DIST_MM: float = 42.0       # millimetres from the palm to the cup, from the wrist camera
 OPEN_MM: float = 55.0       # millimetres, the gripper's own reading
 PATCH_MEAN: float = float(PATCH.mean())
 BRIGHT: float = round(PATCH_MEAN / 255.0, 3)
 
+DIST_M: float = DIST_MM / 100.0     # the scaled distance; the name is kept for the plots
 X: Arr = np.array([DIST_M, OPEN_MM / 100.0, BRIGHT])
 W: Arr = np.array([-2.0, 1.5, 0.8])
 BIAS: float = 0.5
 
 SHORT: list[str] = ['distance', 'opening', 'brightness']
-LONG: list[str] = ['distance to the object (m)',
+LONG: list[str] = ['distance to the cup / 100',
                    'gripper opening / 100',
                    'patch brightness / 255']
 
@@ -217,54 +218,7 @@ def report_core() -> None:
     print(f'sum of the three products {PROD.sum():+.3f}; plus bias -> {SUM:.3f}')
     print(f'ReLU output {OUT:.3f}; GELU {float(gelu(SUM)):.4f}; SiLU {float(silu(SUM)):.4f}')
     print(f'the two fixed products add to {OTHER_TWO:.3f}, '
-          f'so the sum is 0 at a distance of {ZERO_D:.4f} m')
-
-
-# ==========================================================================
-# 03_one-neuron.md  --  section 1: from a model to a neuron
-# ==========================================================================
-
-SAG_MASS: float = 1.75      # kg, the new input from the page "What a model is"
-SAG_W: float = 1.4          # the fitted slope, which is a weight
-SAG_B: float = 0.5          # the fitted offset, which is a bias
-
-
-def sag_model_as_a_neuron() -> None:
-    """The fitted line sag = 1.4 x mass + 0.5, drawn in the shape of a neuron."""
-    prod = SAG_MASS * SAG_W
-    total = prod + SAG_B
-    print('--- the sag model as a neuron ------------------------------------')
-    print(f'{SAG_MASS} kg x {SAG_W:+.2f} = {prod:+.3f}; plus bias {SAG_B:+.2f} -> {total:.3f} mm')
-    fig, ax = plt.subplots(figsize=(13.0, 4.6), facecolor='white')
-    _axes(ax, (0, 27), (0, 9.6))
-    _label(ax, 13.5, 9.1, 'The sag model from the earlier page, drawn as a neuron with one input',
-           size=13, weight='bold')
-    y = 5.6
-    cx, bx, sx = 2.6, 5.4, 15.0
-    _label(ax, cx, y + 1.5, 'input: mass (kg)', size=10, color=MUTED)
-    ax.add_patch(plt.Circle((cx, y), 0.9, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
-                            zorder=4))
-    _label(ax, cx, y, f'{SAG_MASS:.2f}', size=11.5, family=MONO)
-    ax.plot([cx + 0.9, bx], [y, y], color=MUTED, lw=1.3, zorder=2)
-    _box(ax, bx, y - 0.5, 2.2, 1.0, face='white', edge=JOINT)
-    _label(ax, bx + 1.1, y, f'{SAG_W:+.2f}', size=11.5, family=MONO)
-    _label(ax, bx + 1.1, y + 1.5, 'weight (slope)', size=10, color=JOINT, weight='bold')
-    _label(ax, bx + 2.5, y, f'= {prod:+.3f}', size=11, family=MONO, ha='left')
-    ax.plot([10.5, sx - 1.55], [y, y], color=MUTED, lw=1.3, zorder=2)
-    ax.add_patch(plt.Circle((sx, y), 1.55, facecolor=JOINT, edgecolor=INK, lw=1.2, zorder=4))
-    _label(ax, sx, y + 0.45, 'add up', size=10.5, weight='bold')
-    _label(ax, sx, y - 0.35, f'{total:.3f}', size=12, family=MONO)
-    _box(ax, sx - 1.3, 0.6, 2.6, 1.1, face='white', edge=SLIDE)
-    _label(ax, sx, 1.15, f'{SAG_B:+.2f}', size=11.5, family=MONO)
-    _label(ax, sx + 1.6, 1.15, 'bias (offset)', size=10, weight='bold', color=SLIDE, ha='left')
-    _arrow(ax, (sx, 1.75), (sx, y - 1.6), color=SLIDE, lw=1.6)
-    _arrow(ax, (sx + 1.6, y), (22.6, y))
-    _label(ax, 19.6, y + 0.7, 'no rule here', size=9.8, color=MUTED)
-    ax.add_patch(plt.Circle((24.0, y), 1.1, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
-                            zorder=4))
-    _label(ax, 24.0, y, f'{total:.2f}', size=11.5, family=MONO)
-    _label(ax, 24.0, y + 1.6, 'output: drop (mm)', size=10, color=MUTED)
-    _save(fig, ONE, 'sag-model-as-a-neuron.svg')
+          f'so the sum is 0 at a distance of {ZERO_D:.4f}')
 
 
 # ==========================================================================
@@ -278,7 +232,7 @@ def neuron_parts() -> None:
     _label(ax, 16, 12.3, 'One neuron: multiply, add, add the bias, then apply the rule',
            size=13, weight='bold')
     ys = [9.0, 6.0, 3.0]
-    names = ['distance to object (m)', 'gripper opening /100', 'patch brightness /255']
+    names = ['distance to cup /100', 'gripper opening /100', 'patch brightness /255']
     cx, bx, sx = 6.9, 9.4, 19.2
     sy = 6.0
     _label(ax, 2.0, 11.0, 'reading', size=10.5, weight='bold', color=MUTED)
@@ -315,52 +269,6 @@ def neuron_parts() -> None:
            f'= {SUM:.3f}, which is above 0, so the output is {OUT:.3f}',
            size=10.5, color=MUTED, family=MONO)
     _save(fig, ONE, 'neuron-parts.svg')
-
-
-def scaling_the_readings() -> None:
-    """Where the three input numbers come from, including the 4 by 4 patch of pixels."""
-    print('--- the three readings ------------------------------------------')
-    print(f'distance {DIST_M} m goes in unchanged; opening {OPEN_MM:.0f} mm / 100 = '
-          f'{OPEN_MM / 100:.2f}; patch sum {PATCH.sum()} over 16 pixels = {PATCH_MEAN:.1f}, '
-          f'/255 = {PATCH_MEAN / 255:.4f} -> {BRIGHT:.3f}')
-    fig, ax = plt.subplots(figsize=(13.5, 7.4), facecolor='white')
-    _axes(ax, (0, 27), (0.9, 15.1))
-    _label(ax, 13.5, 14.5, 'The three readings, and how each one becomes a number near 1',
-           size=13, weight='bold')
-    rows = [(12.6, 'depth camera', f'{DIST_M} m', 'already between 0 and 1,\nso it goes in as it is',
-             f'{X[0]:.2f}', LINK),
-            (9.6, 'gripper', f'{OPEN_MM:.0f} mm', 'the jaws open to 100 mm,\nso divide by 100',
-             f'{X[1]:.2f}', JOINT)]
-    for y, src, raw, how, val, col in rows:
-        _label(ax, 0.1, y, src, size=10.5, ha='left', weight='bold', color=MUTED)
-        _box(ax, 5.0, y - 0.6, 3.0, 1.2, face='white', edge=col)
-        _label(ax, 6.5, y, raw, size=11.5, family=MONO)
-        _arrow(ax, (8.2, y), (10.0, y), color=MUTED, lw=1.4)
-        _label(ax, 10.3, y, how, size=9.8, ha='left')
-        _arrow(ax, (18.4, y), (20.2, y), color=MUTED, lw=1.4)
-        _box(ax, 20.4, y - 0.6, 2.6, 1.2, face=LINK_PALE, edge=LINK)
-        _label(ax, 21.7, y, val, size=11.5, family=MONO)
-    _label(ax, 0.1, 6.4, 'camera patch', size=10.5, ha='left', weight='bold', color=MUTED)
-    x0, y0 = 4.0, 2.0
-    for r in range(4):
-        for c in range(4):
-            v = int(PATCH[r, c])
-            shade = v / 255.0
-            ax.add_patch(Rectangle((x0 + c, y0 + (3 - r)), 1, 1,
-                                   facecolor=(shade, shade, shade), edgecolor=GRID, lw=0.8,
-                                   zorder=3))
-            _label(ax, x0 + c + 0.5, y0 + (3 - r) + 0.5, str(v), size=10, color='white',
-                   family=MONO)
-    _label(ax, x0 + 2, y0 - 0.7, '16 pixels, 0 is black and 255 is white', size=9.5, color=MUTED)
-    _arrow(ax, (x0 + 4.2, y0 + 2), (10.0, y0 + 2), color=MUTED, lw=1.4)
-    _label(ax, 10.3, y0 + 2.3, f'add the 16 values: {PATCH.sum()}', size=9.8, ha='left')
-    _label(ax, 10.3, y0 + 1.3, f'divide by 16: {PATCH_MEAN:.1f}, then by 255',
-           size=9.8, ha='left')
-    _arrow(ax, (18.4, y0 + 2), (20.2, y0 + 2), color=MUTED, lw=1.4)
-    _box(ax, 20.4, y0 + 1.4, 2.6, 1.2, face=LINK_PALE, edge=LINK)
-    _label(ax, 21.7, y0 + 2, f'{BRIGHT:.2f}', size=11.5, family=MONO)
-    _label(ax, 21.7, 13.8, 'the three inputs', size=10.5, weight='bold', color=LINK)
-    _save(fig, ONE, 'scaling-the-readings.svg')
 
 
 # ==========================================================================
@@ -424,7 +332,7 @@ def sum_against_distance() -> None:
     s = neuron_sum(d)
     print('--- the sum as the distance changes -----------------------------')
     for dd in (0.0, 0.2, 0.42, 0.6, ZERO_D, 0.9):
-        print(f'  distance {dd:6.4f} m -> sum {float(neuron_sum(dd)):+.4f} '
+        print(f'  distance {dd:6.4f} -> sum {float(neuron_sum(dd)):+.4f} '
               f'-> output {float(relu(neuron_sum(dd))):.4f}')
     fig, ax = plt.subplots(figsize=(10.5, 5.4), facecolor='white')
     _plain(ax)
@@ -432,17 +340,17 @@ def sum_against_distance() -> None:
     ax.plot(d, relu(s), color=GRIP, lw=2.4, ls='--', label='output (after the rule)')
     ax.axhline(0, color=INK, lw=1.1)
     ax.plot([DIST_M], [SUM], 'o', color=JOINT, ms=11, mec=INK, zorder=6)
-    ax.annotate(f'our reading: {DIST_M} m -> {SUM:.3f}', xy=(DIST_M, SUM),
+    ax.annotate(f'our reading: {DIST_M} -> {SUM:.3f}', xy=(DIST_M, SUM),
                 xytext=(DIST_M + 0.07, SUM + 0.45), fontsize=10.5,
                 arrowprops=dict(arrowstyle='-|>', color=INK, lw=1.3))
     ax.plot([ZERO_D], [0.0], 'o', color=PURPLE, ms=10, mec=INK, zorder=6)
-    ax.annotate(f'the sum reaches 0 at {ZERO_D:.4f} m', xy=(ZERO_D, 0.0),
+    ax.annotate(f'the sum reaches 0 at {ZERO_D:.4f}', xy=(ZERO_D, 0.0),
                 xytext=(0.40, -0.52), fontsize=10.5,
                 arrowprops=dict(arrowstyle='-|>', color=INK, lw=1.3))
-    ax.set_xlabel('distance to the object (m), with the opening at 0.55 and the brightness at 0.30',
+    ax.set_xlabel('distance to the cup / 100 mm, with the opening at 0.55 and the brightness at 0.30',
                   fontsize=10)
     ax.set_ylabel('the neuron', fontsize=10)
-    ax.set_title('With only the distance moving, the sum falls by 2.00 for every extra metre',
+    ax.set_title('With only the distance moving, the sum falls by 2.00 for every extra 100 mm',
                  fontsize=12.5, weight='bold')
     ax.legend(fontsize=9.8, frameon=False, loc='upper right')
     ax.set_ylim(-0.7, 1.9)
@@ -457,8 +365,8 @@ def sum_over_two_readings() -> None:
     s = W[0] * dd + W[1] * gg + W[2] * BRIGHT + BIAS
     g_at = lambda dv: (-W[0] * dv - W[2] * BRIGHT - BIAS) / W[1]
     print('--- the sum over two readings -----------------------------------')
-    print(f'the dividing line runs from opening {g_at(0.0):+.4f} at 0 m to '
-          f'{g_at(1.0):+.4f} at 1 m; sum range {s.min():+.3f} to {s.max():+.3f}')
+    print(f'the dividing line runs from opening {g_at(0.0):+.4f} at distance 0 to '
+          f'{g_at(1.0):+.4f} at distance 1; sum range {s.min():+.3f} to {s.max():+.3f}')
     fig, ax = plt.subplots(figsize=(8.6, 6.4), facecolor='white')
     im = ax.pcolormesh(dd, gg, s, cmap='RdYlBu', shading='auto', vmin=-2.0, vmax=2.0)
     cs = ax.contour(dd, gg, s, levels=[0.0], colors=[INK], linewidths=2.6)
@@ -466,7 +374,7 @@ def sum_over_two_readings() -> None:
     ax.plot([DIST_M], [X[1]], 'o', color='white', ms=12, mec=INK, mew=1.6, zorder=6)
     ax.annotate(f'our reading -> {SUM:.3f}', xy=(DIST_M, X[1]), xytext=(0.07, 0.82),
                 fontsize=10.5, arrowprops=dict(arrowstyle='-|>', color=INK, lw=1.3))
-    ax.set_xlabel('distance to the object (m)', fontsize=10)
+    ax.set_xlabel('distance to the cup / 100 mm', fontsize=10)
     ax.set_ylabel('gripper opening / 100', fontsize=10)
     ax.set_title('One neuron splits the readings with a straight line, never a curve',
                  fontsize=12.5, weight='bold')
@@ -499,7 +407,7 @@ def weight_size_lines() -> None:
     _label(ax, DIST_M + 0.04, X[1] + 0.05, 'our reading', size=10, ha='left')
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
-    ax.set_xlabel('distance to the object (m)', fontsize=10)
+    ax.set_xlabel('distance to the cup / 100 mm', fontsize=10)
     ax.set_ylabel('gripper opening / 100', fontsize=10)
     ax.set_title('A bigger weight on the distance tilts the switch-on line towards upright',
                  fontsize=12.5, weight='bold')
@@ -519,11 +427,11 @@ def moving_the_bias() -> None:
         cross = (OTHER_TWO + b) / 2.0
         ax.plot(d, out, color=col, lw=2.4, label=f'bias {b:+.2f}')
         ax.plot([cross], [0.0], 'o', color=col, ms=9, mec=INK, zorder=6)
-        print(f'  bias {b:+.2f}: output at 0.42 m is {float(relu(neuron_sum(0.42, b=b))):.3f}, '
-              f'and the output reaches 0 at {cross:.4f} m')
-    ax.set_xlabel('distance to the object (m)', fontsize=10)
+        print(f'  bias {b:+.2f}: output at 0.42 is {float(relu(neuron_sum(0.42, b=b))):.3f}, '
+              f'and the output reaches 0 at {cross:.4f}')
+    ax.set_xlabel('distance to the cup / 100 mm', fontsize=10)
     ax.set_ylabel("the neuron's output after the rule", fontsize=10)
-    ax.set_title('The bias moves the elbow: where the neuron falls silent, in metres',
+    ax.set_title('The bias moves the elbow: the distance where the neuron falls silent',
                  fontsize=12.5, weight='bold')
     ax.legend(fontsize=9.8, frameon=False, loc='upper right')
     ax.set_ylim(-0.12, 1.75)
@@ -533,7 +441,7 @@ def moving_the_bias() -> None:
 
 
 # ==========================================================================
-# 06_activation-functions.md  --  section 1: why a weighted sum is not enough
+# 07_activation-functions.md  --  section 1: why a weighted sum is not enough
 # ==========================================================================
 
 CH_W: list[float] = [-2.0, 3.0, 0.5]
@@ -635,8 +543,8 @@ def collapse_curves() -> None:
     print('--- the collapse drawn ------------------------------------------')
     print(f'biggest gap between the two plain layers and the single neuron: {gap:.2e}')
     print(f'with the rule in the middle the output is {float(_chain(0.0, 2, True)):+.3f} '
-          f'at 0 m and {float(_chain(0.42, 2, True)):+.3f} at 0.42 m, and it bends at '
-          f'{CH_B[0] / -CH_W[0]:.3f} m')
+          f'at 0 and {float(_chain(0.42, 2, True)):+.3f} at 0.42, and it bends at '
+          f'{CH_B[0] / -CH_W[0]:.3f}')
     fig, ax = plt.subplots(figsize=(10.5, 5.6), facecolor='white')
     _plain(ax)
     ax.plot(d, pair, color=LINK, lw=5.0, alpha=0.4, label='two plain layers, one after the other')
@@ -646,12 +554,12 @@ def collapse_curves() -> None:
             label='the same two layers with the rule between them')
     ax.axhline(0, color=INK, lw=1.0)
     ax.axvline(CH_B[0] / -CH_W[0], color=MUTED, lw=1.0, ls=':')
-    ax.set_xlabel('distance to the object (m)', fontsize=10)
+    ax.set_xlabel('distance to the cup / 100 mm', fontsize=10)
     ax.set_ylabel('what comes out of the second layer', fontsize=10)
     ax.set_title(f'Without the rule the two layers lie exactly on one straight line '
                  f'(biggest gap {gap:.0e})', fontsize=12, weight='bold')
     ax.legend(fontsize=9.8, frameon=False, loc='lower left')
-    _label(ax, CH_B[0] / -CH_W[0] + 0.02, 1.0, 'the bend the rule makes,\nat 0.25 m',
+    _label(ax, CH_B[0] / -CH_W[0] + 0.02, 1.0, 'the bend the rule makes,\nat 0.25',
            size=9.8, color=MUTED, ha='left')
     _save(fig, ACT, 'collapse-curves.svg')
 
@@ -676,7 +584,7 @@ def three_plain_layers() -> None:
         rows.append([f'layer {i + 1}', f'{CH_W[i]:+.2f}', f'{CH_B[i]:+.2f}', f'{vals[i + 1]:+.3f}'])
     rows.append(['all three at once', f'{cw:+.2f}', f'{cb:+.2f}', f'{DIST_M * cw + cb:+.3f}'])
     bottom = _table(ax, 3.0, 8.6, [6.4, 3.4, 3.4, 5.2], rows, row_h=1.2, size=11)
-    _label(ax, 12.2, bottom - 0.8, f'the reading going in is {DIST_M} m, and both roads '
+    _label(ax, 12.2, bottom - 0.8, f'the reading going in is {DIST_M}, and both roads '
            f'end at {DIST_M * cw + cb:+.3f}', size=11)
     _label(ax, 12.2, bottom - 1.7, f'the three weights multiply: {CH_W[0]:+.2f} x '
            f'{CH_W[1]:+.2f} x {CH_W[2]:+.2f} = {cw:+.2f}', size=10, color=MUTED)
@@ -736,7 +644,7 @@ def two_elbows_rebuild_it() -> None:
 
 
 # ==========================================================================
-# 06_activation-functions.md  --  section 2: the rectified linear unit
+# 07_activation-functions.md  --  section 2: the rectified linear unit
 # ==========================================================================
 
 CHECK: list[float] = [-2.0, -1.0, -0.5, 0.0, 0.5, 0.725, 1.0, 2.0]
@@ -899,7 +807,7 @@ def relu_flat_region() -> None:
                 fontsize=10.5, arrowprops=dict(arrowstyle='-|>', color=INK, lw=1.3))
     _label(ax, 0.79, 0.22, f'output exactly 0\non {share:.1f}% of the square', size=10.5,
            color=INK)
-    ax.set_xlabel('distance to the object (m)', fontsize=10)
+    ax.set_xlabel('distance to the cup / 100 mm', fontsize=10)
     ax.set_ylabel('gripper opening / 100', fontsize=10)
     ax.set_title('The rule leaves a flat grey part where this neuron says nothing',
                  fontsize=12.5, weight='bold')
@@ -909,7 +817,7 @@ def relu_flat_region() -> None:
 
 
 # ==========================================================================
-# 06_activation-functions.md  --  section 3: GELU and SiLU
+# 07_activation-functions.md  --  section 3: GELU and SiLU
 # ==========================================================================
 
 def three_rules() -> None:
@@ -997,12 +905,12 @@ def neuron_three_rules() -> None:
     print('--- our neuron under the three rules ----------------------------')
     for dd in (0.42, ZERO_D, 0.85, 0.95):
         sv = float(neuron_sum(dd))
-        print(f'  at {dd:.4f} m the sum is {sv:+.4f} -> ' +
+        print(f'  at {dd:.4f} the sum is {sv:+.4f} -> ' +
               ', '.join(f'{nm} {float(f(sv)):+.4f}' for nm, f in ACTS.items()))
     fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.2), facecolor='white')
     for ax in axes:
         _plain(ax)
-        ax.set_xlabel('distance to the object (m)', fontsize=10)
+        ax.set_xlabel('distance to the cup / 100 mm', fontsize=10)
     for nm, f in ACTS.items():
         axes[0].plot(d, f(s), color=ACT_COLOUR[nm], lw=2.4, label=nm,
                      ls='-' if nm != 'SiLU' else '--')
@@ -1017,7 +925,7 @@ def neuron_three_rules() -> None:
     axes[1].set_ylim(-0.12, 0.30)
     axes[1].axhline(0, color=INK, lw=1.0)
     axes[1].axvline(ZERO_D, color=MUTED, lw=1.0, ls=':')
-    axes[1].set_title(f'close up on the elbow at {ZERO_D:.4f} m', fontsize=12, weight='bold')
+    axes[1].set_title(f'close up on the elbow at {ZERO_D:.4f}', fontsize=12, weight='bold')
     axes[1].set_ylabel('the output, close up', fontsize=10)
     _label(axes[1], 0.90, -0.075, 'GELU and SiLU go a little\nbelow 0 here', size=9.8,
            color=MUTED)
@@ -1116,14 +1024,15 @@ def gelu_fast(z: Arr | float) -> Arr:
 
 
 # ==========================================================================
-# 06_activation-functions.md  --  section 4: the rule at the end of the network
+# 07_activation-functions.md  --  section 4: the rule at the end of the network
 # ==========================================================================
 
-# The three totals this chapter has already worked out, so the sigmoid is shown
-# turning numbers the reader has met into the answers they have already seen.
-ENDS: list[tuple[str, float]] = [('one neuron, at 0.42 m', SUM),
-                                 ('the whole network, at 0.42 m', 1.127),
-                                 ('the whole network, at 0.85 m', -1.645)]
+# The totals the whole network gives at the three moments of 02_the-grasp-example.md,
+# worked out in inside_a_network_0.py, so the sigmoid is shown turning numbers the
+# reader has met into the answers they have already seen.
+ENDS: list[tuple[str, float]] = [('ready to close', 1.645),
+                                 ('aimed beside the cup', -2.355),
+                                 ('too far away', -3.700)]
 # A gripper choosing one of three tools, as an example of an answer that picks one
 # possibility out of several. The three totals were chosen by hand.
 PICK_NAMES: list[str] = ['two-finger gripper', 'vacuum cup', 'parallel jaw']
@@ -1178,7 +1087,7 @@ def which_rule_at_the_end() -> None:
 
 
 # ==========================================================================
-# 07_layers-and-depth.md  --  the four-neuron layer both early sections use
+# 08_layers-and-depth.md  --  the four-neuron layer both early sections use
 # ==========================================================================
 
 W1: Arr = np.array([[-2.0, 1.5, 0.8],
@@ -1311,7 +1220,7 @@ def four_features() -> None:
 
 
 # ==========================================================================
-# 07_layers-and-depth.md  --  section 2: fully connected, and what it costs
+# 08_layers-and-depth.md  --  section 2: fully connected, and what it costs
 # ==========================================================================
 
 def fully_connected_count() -> None:
@@ -1433,7 +1342,7 @@ def each_neuron_reads_neighbours() -> None:
 
 
 # ==========================================================================
-# 07_layers-and-depth.md  --  section 3: what each extra layer buys you
+# 08_layers-and-depth.md  --  section 3: what each extra layer buys you
 # ==========================================================================
 
 W_SEC: Arr = np.array([[1.0, -1.0, 0.5, 0.0],
@@ -1692,7 +1601,7 @@ def handle_from_edges() -> None:
 
 
 # ==========================================================================
-# 07_layers-and-depth.md  --  section 4: depth and width
+# 08_layers-and-depth.md  --  section 4: depth and width
 # ==========================================================================
 
 def depth_and_width_named() -> None:
@@ -1906,7 +1815,7 @@ def deep_narrow_wide_shallow() -> None:
 
 
 # ==========================================================================
-# 08_layers-and-depth-worked-out.md  --  section 1: counting one network by hand
+# 09_layers-and-depth-worked-out.md  --  section 1: counting one network by hand
 # ==========================================================================
 
 # A made-up but ordinary arm. Most of what it reports is already a number. One
@@ -1989,7 +1898,7 @@ def count_the_network() -> None:
 
 
 # ==========================================================================
-# 08_layers-and-depth-worked-out.md  --  section 2: what depth and width cost
+# 09_layers-and-depth-worked-out.md  --  section 2: what depth and width cost
 # ==========================================================================
 
 def _stack_params(depth: int, width: int) -> int:
@@ -2123,7 +2032,7 @@ def work_for_many_examples() -> None:
 
 
 # ==========================================================================
-# 07_layers-and-depth.md  --  section 6: residual connections
+# 08_layers-and-depth.md  --  section 6: residual connections
 # ==========================================================================
 
 W2: Arr = np.array([[0.2, -0.3, 0.1, 0.0],
@@ -2309,9 +2218,7 @@ def main() -> None:
         PNG_DIR = pathlib.Path(sys.argv[2])
         PNG_DIR.mkdir(parents=True, exist_ok=True)
     report_core()
-    sag_model_as_a_neuron()
     neuron_parts()
-    scaling_the_readings()
     weighted_sum_lines()
     contribution_bars()
     sum_against_distance()

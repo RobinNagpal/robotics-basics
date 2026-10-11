@@ -1,7 +1,7 @@
 # Layers, depth and width
 
 [One neuron](03_one-neuron.md) worked a single neuron out by hand, and
-[activation functions](06_activation-functions.md) added the rule that lets it
+[activation functions](07_activation-functions.md) added the rule that lets it
 bend. Three readings from a robot arm were each multiplied by a weight, the
 results and a bias were added together to make 0.725, and the rule decided what
 came out. This page comes next because one neuron is still not a model. It gives one
@@ -10,7 +10,7 @@ puts many neurons side by side into a **layer**, stacks layers one after another
 and answers the question that follows from doing so, which is what each extra
 layer gives you. What it costs you is arithmetic on the same example, and that is
 worked out on the page after this one, [layers, depth and width, worked
-out](08_layers-and-depth-worked-out.md).
+out](09_layers-and-depth-worked-out.md).
 
 Three words do most of the work on this page. A layer is a group of neurons that
 all read the same numbers. The **width** of a layer is how many neurons it has.
@@ -168,7 +168,7 @@ parameters in all, which is 4.4 times fewer than the 272 above.
 
 That second arrangement, repeated with the same weights at every position, is
 called a convolution, and it is the subject of [what a network can
-learn](10_what-a-network-can-learn.md). All this page says about it is that a
+learn](11_what-a-network-can-learn.md). All this page says about it is that a
 fully connected layer is the general case, and that the special layers are
 savings made by knowing something about the input.
 
@@ -195,14 +195,14 @@ after the rule their outputs are 0.160, 0.840 and 0.000. The camera readings of
 0.42, 0.55 and 0.30 appear nowhere in that arithmetic, because the second layer
 never sees them.
 
-[Activation functions](06_activation-functions.md) showed, in [why multiplying
-and adding is not enough](06_activation-functions.md#1-why-multiplying-and-adding-is-not-enough),
+[Activation functions](07_activation-functions.md) showed, in [why multiplying
+and adding is not enough](07_activation-functions.md#1-why-multiplying-and-adding-is-not-enough),
 that two layers with nothing between them collapse into one layer, so everything
 in this section assumes that the rule is applied after each layer.
 
 To see what the second layer adds, it helps to count bends. A bend is a place
-where a line changes direction. [Activation functions](06_activation-functions.md)
-showed, in [the rectified linear unit](06_activation-functions.md#2-the-rectified-linear-unit),
+where a line changes direction. [Activation functions](07_activation-functions.md)
+showed, in [the rectified linear unit](07_activation-functions.md#2-the-rectified-linear-unit),
 that each neuron with the rule has one such place of its own.
 
 The picture below sweeps the patch brightness from 0 to 1 and draws what one
@@ -405,7 +405,7 @@ something built to ask about. Real models use plenty of both.
 Both depth and width add detail, so the question that follows is what each one
 costs, because cost is what decides between them. That is arithmetic rather than
 a new idea, so it is worked out on the next page, in [what depth and width
-cost](08_layers-and-depth-worked-out.md#2-what-depth-and-width-cost). The short
+cost](09_layers-and-depth-worked-out.md#2-what-depth-and-width-cost). The short
 version, which the section below needs, is that a wider layer costs four times as
 much for each doubling and a deeper stack only twice as much, so adding layers is
 the cheaper way to buy detail.
@@ -513,13 +513,13 @@ of those ideas further.
 
 Each page below picks up one idea from this page and explains it in more depth.
 
-- [Layers, depth and width, worked out](08_layers-and-depth-worked-out.md) is the
+- [Layers, depth and width, worked out](09_layers-and-depth-worked-out.md) is the
   next page. It counts the parameters and the arithmetic of the layers on this
   page, which is how the choice between depth and width is actually made.
-- [The shape of the numbers](09_the-shape-of-the-numbers.md) explains how [the weight
+- [The shape of the numbers](10_the-shape-of-the-numbers.md) explains how [the weight
   grid](#1-a-layer-is-many-neurons-reading-the-same-numbers) is stored, what a
   matrix multiply is, and why the hardware that runs models is built around it.
-- [What a network can learn](10_what-a-network-can-learn.md) explains why
+- [What a network can learn](11_what-a-network-can-learn.md) explains why
   stacking these layers can follow any shape at all, and it introduces the
   convolution that [fully connected, and what joining everything
   costs](#2-fully-connected-and-what-joining-everything-costs) compared a fully
@@ -544,7 +544,7 @@ A layer, a stack of layers and a residual block are each a few lines of PyTorch.
 The code below builds [the layer of four
 neurons](#1-a-layer-is-many-neurons-reading-the-same-numbers) with the same
 weights, counts its parameters, counts a bigger stack from [what depth and width
-cost](08_layers-and-depth-worked-out.md#2-what-depth-and-width-cost), and wraps a block in the addition of
+cost](09_layers-and-depth-worked-out.md#2-what-depth-and-width-cost), and wraps a block in the addition of
 [residual connections](#5-residual-connections).
 
 ```python
@@ -581,13 +581,13 @@ class Block(nn.Module):                     # the residual block: one block
 The library gives you the weight grid, the bias, the multiplying and the adding,
 and `nn.Sequential` gives you the stacking. So a network of 8 layers is one line,
 and its parameter count comes back as 8,396,800, which is the number [what depth
-and width cost](08_layers-and-depth-worked-out.md#2-what-depth-and-width-cost) counted. The residual block needs a class of its own only because
+and width cost](09_layers-and-depth-worked-out.md#2-what-depth-and-width-cost) counted. The residual block needs a class of its own only because
 `nn.Sequential` passes each output straight on and has nowhere to keep the input.
 
 What you decide is the shape. You choose the width of each layer and how many
 layers there are, which [depth and width, and what each one
 changes](#4-depth-and-width-and-what-each-one-changes) and [what depth and width
-cost](08_layers-and-depth-worked-out.md#2-what-depth-and-width-cost) weighed up. You choose whether the
+cost](09_layers-and-depth-worked-out.md#2-what-depth-and-width-cost) weighed up. You choose whether the
 layers are fully connected or one of the special kinds that the next pages
 describe. You also choose whether to wrap each layer in a residual addition, and
 for anything deeper than a few layers the answer is yes.

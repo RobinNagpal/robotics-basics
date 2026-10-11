@@ -236,7 +236,7 @@ one. The number of parameters is the main thing that separates the sag model fro
 models later in this book. A fitted line has 2. A network that reads a 64 by 64
 grey picture has over a million. A large model has billions. Nothing about the idea
 changes across that range, and
-[the shape of the numbers](../02_inside-a-network/09_the-shape-of-the-numbers.md)
+[the shape of the numbers](../02_inside-a-network/10_the-shape-of-the-numbers.md)
 works out where each of those counts comes from, layer by layer, and what each one
 costs to store.
 
@@ -327,7 +327,7 @@ That difference also shows up in the amount of arithmetic. One answer is a handf
 of multiplications and additions. A training run repeats that work once for every
 example, and then does the whole thing again for every pass over the data, so it
 costs hundreds of thousands of times more.
-[Why the hardware is built for this one operation](../02_inside-a-network/09_the-shape-of-the-numbers.md)
+[Why the hardware is built for this one operation](../02_inside-a-network/10_the-shape-of-the-numbers.md)
 counts both, with the arithmetic written out.
 
 That ratio is why the two words are kept apart. Training is paid for once, in a
@@ -414,7 +414,7 @@ program side by side and says which jobs on a robot arm each one wins.
 out, with real numbers, what the smallest piece inside it does. The straight line
 fitted on this page is that piece with its decision rule removed.
 
-[The shape of the numbers](../02_inside-a-network/09_the-shape-of-the-numbers.md)
+[The shape of the numbers](../02_inside-a-network/10_the-shape-of-the-numbers.md)
 counts the parameters of a real network layer by layer, and turns those counts into
 bytes and into arithmetic.
 

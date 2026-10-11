@@ -28,7 +28,7 @@ layers, and with what that choice costs them.
 The page is written for a reader who has read the three pages before it in this
 chapter, so it does not explain attention, the block, the causal mask or the
 key-value cache again. It also assumes that you have met the
-[convolution](../02_inside-a-network/10_what-a-network-can-learn.md), which was
+[convolution](../02_inside-a-network/11_what-a-network-can-learn.md), which was
 introduced as the first special layer. By the end of the page you will know what
 a convolution and a recurrent network each fail at, what the three costs of
 attention are in numbers, and what each known repair buys and gives up.

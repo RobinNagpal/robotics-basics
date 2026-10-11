@@ -19,7 +19,7 @@ where robotics differs from everything else, because every robot example costs a
 person time at a real arm.
 
 The reader is assumed to have read two earlier pages. [The shape of the
-numbers](../02_inside-a-network/09_the-shape-of-the-numbers.md) explains what a
+numbers](../02_inside-a-network/10_the-shape-of-the-numbers.md) explains what a
 matrix multiply is and what float32 and bfloat16 mean. [The training
 loop](../03_how-training-works/04_the-training-loop.md) explains gradients and the
 optimiser. Every number here is worked out in

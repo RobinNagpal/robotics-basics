@@ -1,7 +1,7 @@
 # The shape of the numbers
 
-[Layers, depth and width](07_layers-and-depth.md) put neurons into layers, and
-[layers, depth and width, worked out](08_layers-and-depth-worked-out.md) counted
+[Layers, depth and width](08_layers-and-depth.md) put neurons into layers, and
+[layers, depth and width, worked out](09_layers-and-depth-worked-out.md) counted
 what those layers own. Both described a fully connected layer as a group of
 neurons that all read the same inputs. That description is true, but it hides
 something a programmer needs. It never says how the numbers are arranged inside
@@ -644,7 +644,7 @@ only run, and the list below says where each count is taken further.
 This page counted what a network holds and what it costs to run. Each page below takes
 one of those counts further.
 
-- [What a network can learn](10_what-a-network-can-learn.md) is the next page, and
+- [What a network can learn](11_what-a-network-can-learn.md) is the next page, and
   it uses the shapes and the matrix multiply from here to ask what a stack of layers
   can actually fit, and why a photo needs a different kind of layer.
 - [The score of being wrong](../03_how-training-works/01_the-score-of-being-wrong.md)

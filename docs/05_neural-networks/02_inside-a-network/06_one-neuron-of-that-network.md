@@ -1,6 +1,6 @@
 # One neuron of that network
 
-[A network on a robot](04_a-network-on-a-robot.md) followed one moment of a grasp
+[A network on a robot](05_a-network-on-a-robot.md) followed one moment of a grasp
 through a whole network, and treated each of the four neurons in the middle as a
 box with a description on it. This page opens one of those boxes. It takes a
 single neuron out of that same network, works its arithmetic out line by line on
@@ -112,7 +112,7 @@ weight to zero and moves on.
 That last point is the one to carry into the rest of the chapter. In a real
 network there is no step where somebody decides which readings each neuron should
 look at. Every neuron is joined to every reading, which is what [fully
-connected](07_layers-and-depth.md#2-fully-connected-and-what-joining-everything-costs)
+connected](08_layers-and-depth.md#2-fully-connected-and-what-joining-everything-costs)
 means, and training then decides which of those joins matter by making some
 weights large and leaving others near zero. The weights on this page were set by
 hand so that the four neurons have descriptions you can read. In a trained network
@@ -124,12 +124,12 @@ of them would be, and often nobody can say afterwards either.
 
 ## 4. Where to read next
 
-- [Activation functions](06_activation-functions.md) is the next page. It takes
+- [Activation functions](07_activation-functions.md) is the next page. It takes
   the rule at the end of this neuron, which passed +0.490 through unchanged, and
   shows why a network without it would collapse into one straight line.
 - [One neuron](03_one-neuron.md) is the full treatment of a single neuron, with
   the dividing line it draws and what moves that line.
-- [Layers, depth and width](07_layers-and-depth.md) asks what happens when a layer
+- [Layers, depth and width](08_layers-and-depth.md) asks what happens when a layer
   has far more than four neurons in it, and what a second layer reads.
 - [Backpropagation](../03_how-training-works/03_backpropagation.md) is how the
   weights compared on this page would actually be found.

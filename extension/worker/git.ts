@@ -30,16 +30,16 @@ export function pullLatest(): string | null {
 
 export const status = () => git('status');
 
-// Pushes what Claude committed for one page, and returns the short hash of the
+// Pushes what Claude committed for one batch, and returns the short hash of the
 // last commit, or null when there was nothing to push. Claude is asked to commit
 // its work; anything it changed but left uncommitted is committed here, so no
 // edit is lost. main may have moved while Claude worked, so the commits are
 // rebased onto it first. If that fails, the error is thrown and the clone is
 // left as it is, for the next run's pull to sort out.
-export function pushPage(page: string): string | null {
+export function pushBatch(what: string): string | null {
   if (git('status', '--porcelain')) {
     git('add', '-A');
-    git('commit', '-q', '-m', `Address reader feedback on ${page}`);
+    git('commit', '-q', '-m', `Address reader feedback on ${what}`);
   }
   git('fetch', '-q', 'origin', 'main');
   if (git('rev-list', '--count', 'origin/main..HEAD') === '0') return null;

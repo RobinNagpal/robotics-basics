@@ -54,6 +54,18 @@ The popup opens from the toolbar icon. It shows who is signed in, whether the la
 sync worked, and the highlights. The two lists at the top choose a book and a
 chapter.
 
+The popup is also where feedback is asked for. A comment does nothing on its own:
+it sits in the browser and on the server until somebody chooses it. Every comment
+that has not been asked for yet has a tick box, and the bar above the list sends
+the ticked ones with one press of **Address feedback**. The bar counts what is
+ticked, and **Select all** ticks every comment the current book and chapter
+filters show. A comment with no text has no tick box, because it asks nothing, and
+neither has one that is already on its way to Claude or has come back answered.
+A comment that has been edited and not yet synced has no tick box either: the
+server queues a comment by its id, so it has to hold the comment's new text
+before the comment can be asked for. The next sync, which happens by itself,
+gives it the tick box back.
+
 ## Signing in with an API key
 
 The popup asks for two things before it does anything else: the server URL and an
@@ -127,13 +139,23 @@ worker hands the comments to Claude Code and records what Claude did with each o
 ### Status and response
 
 Each comment carries two fields that say what has happened to it. The status is one
-of four values:
+of six values, and a comment moves through them in order:
 
-- `open`: the comment is waiting for Claude.
+- `new`: the comment has been made and nothing has been asked of it. This is where
+  every comment starts, and where an edited comment goes back to.
+- `queued`: somebody ticked it in the popup and pressed **Address feedback**. It is
+  waiting for the worker's next run.
+- `working`: the worker has taken it into a batch and is about to invoke Claude
+  Code. A comment in this state is being worked on right now.
 - `changed`: Claude changed the docs to answer it.
 - `answered`: Claude replied without changing the docs, for a question or for a
   comment it decided the docs already meet.
 - `failed`: the run went wrong, and the response says how.
+
+The three statuses in the middle of that list are what make the work happen in
+batches rather than continuously. Before them, a reader can leave twenty comments
+over an afternoon and nothing is spent on any of them. The reader then decides
+which ones to send, and sends those together.
 
 The response is what Claude says about the comment, written for the person who
 left it, in 3 to 8 short lines. Claude sends the lines as a list, and the schema
@@ -141,38 +163,57 @@ allows only 3 to 7 of them, so a longer reply is refused rather than cut short
 afterwards. The worker adds an eighth line naming the commit when the docs changed. The popup and the comment box on the page show the status and the
 response under the comment.
 
-Only the worker writes these two fields. The API sets a new comment to `open` and
-ignores whatever the browser sends for them. If someone edits the text of a
-comment, the API sets it back to `open` and clears the response, because the edited
-comment is new feedback.
+The browser never writes these two fields in a sync; the API replaces whatever a
+sync carries for them. A new comment is set to `new`, and a comment whose text is
+edited goes back to `new` with its response cleared, because the edited comment is
+new feedback and has to be asked for again.
+
+There is one status change the extension does make, and it has an endpoint of its
+own rather than riding on a sync. `POST /queue` takes a list of comment ids and
+moves each one from `new` to `queued`. It refuses to move anything else, so the
+extension cannot pull a comment out of a running batch or write an outcome. A
+comment that is no longer `new` when the request arrives, because somebody else
+queued it or it has already been answered, is counted as skipped and left as it
+is. So pressing the button twice queues nothing the second time. Everything from
+`working` onwards is written only by the worker.
 
 ### What the worker does
 
-The worker is a long-running TypeScript program in `worker/`. On a schedule it does
-one run, and a run has these steps:
+The worker is a long-running TypeScript program in `worker/`. On a schedule it
+looks for a queued batch and addresses the whole batch in one go. The schedule is
+how often it looks, not how often it works: a run with an empty queue reads the
+bucket, finds nothing and stops, which costs one listing and no model call. A run
+has these steps:
 
-1. It reads every comment from the bucket, and keeps the ones that are `open` and
-   have some text. A highlight with no comment asks nothing, so it is left alone.
+1. It reads every comment from the bucket and keeps the ones that have some text
+   and are `queued`. It keeps the ones marked `working` as well, because only one
+   run uses the session at a time, so a comment still `working` when a run starts
+   was left there by a run that died before it could record an outcome.
 2. It compacts the Claude Code session. Compacting replaces the conversation so far
    with a summary of it, so the session keeps what it learned about the docs
    without growing every run.
-3. It works through the comments a page at a time, starting with the page whose
-   oldest comment was written first. For each page, it first brings its clone up
-   to the latest `main` with `git pull --rebase`, which keeps any commits of its
-   own on top. If git cannot pull, because of leftover edits, a rebase that
-   stopped part-way or a conflict, the worker gives Claude git's error and asks it
-   to put the clone into a state where the pull works, keeping real work. Then it
-   pulls again. If that still fails, the page's comments stay open for the next
-   run. On the latest `main`, it gives Claude all of that page's comments in one
-   turn, so the page is changed in one go. Claude finds the source file, decides what each comment
-   needs, makes the changes under the rules in `CLAUDE.md`, and commits them, but
-   does not push.
-4. When Claude has finished the page, the worker pushes. It commits anything
+3. It brings its clone up to the latest `main` with `git pull --rebase`, which
+   keeps any commits of its own on top. If git cannot pull, because of leftover
+   edits, a rebase that stopped part-way or a conflict, the worker gives Claude
+   git's error and asks it to put the clone into a state where the pull works,
+   keeping real work. Then it pulls again. If that still fails, the batch stays
+   queued for the next run.
+4. It marks every comment in the batch `working`. This is the last thing that
+   happens before Claude Code is invoked, so anybody watching the popup sees the
+   batch change from queued to working at the moment the work starts. A comment
+   that was edited or deleted in the moment between being read and being marked
+   drops out of the batch and keeps the status it had, so Claude is never shown
+   stale text.
+5. It gives Claude the whole batch in one turn, with the comments grouped by the
+   page they are on. Claude finds each source file, decides what each comment
+   needs, makes the changes under the rules in `CLAUDE.md`, and commits as it
+   finishes each page, but does not push.
+6. When Claude has finished the batch, the worker pushes once. It commits anything
    Claude changed but left uncommitted, rebases the commits onto `main`, and
-   pushes them. If the push fails, the comments stay open and the commits stay in
-   the clone. The next run's pull puts them on top of `main`, or asks Claude to,
-   and Claude then finds its work already done and replies.
-5. Only then does it record a reply for each comment. Claude replies in a fixed
+   pushes them. If the push fails, the batch stays `working` and the commits stay
+   in the clone. The next run's pull puts them on top of `main`, or asks Claude
+   to, and Claude then finds its work already done and replies.
+7. Only then does it record a reply for each comment. Claude replies in a fixed
    shape, which Claude Code checks against a schema: one entry for each comment's
    ID, with a status and a response of 3 to 7 short lines. For a comment that
    changed the docs, the worker adds one more line naming the pushed commit,
@@ -181,7 +222,13 @@ one run, and a run has these steps:
    change is already on `main`. A comment Claude gave no reply to, or says it
    changed when nothing was committed, is marked `failed`.
 
-Steps 2 to 5 happen only when there is open feedback, so a quiet run costs nothing.
+One batch is one Claude turn, which is what makes it a batch: Claude sees every
+selected comment at once, so it can change two pages consistently and commit the
+lot together. The cost of that is the turn's length. A batch that takes longer
+than `TIMEOUT_MINUTES` is stopped, and then every comment in it is marked
+`failed`, where page-at-a-time work would have kept the pages that had already
+finished. So the size of a batch is a judgement the reader makes when ticking the
+boxes, and a very large selection is better sent as two.
 
 Only one run uses the session at a time. A run holds a lock file while it works,
 in `worker/.state/run.lock`, whether the schedule started it or `npm run once` did.
@@ -199,9 +246,10 @@ Every later turn resumes the session by that ID. This works like one long
 conversation that is summarised every run, rather than a new conversation for each
 comment.
 
-The worker writes an outcome only if the comment is still there, still `open`, and
-still says what Claude was shown. A comment edited while Claude worked on it stays
-`open`, and the next run picks up the new text.
+The worker writes an outcome only if the comment is still there, still `working`,
+and still says what Claude was shown. A comment edited while Claude worked on it
+is left as the edit made it, which is `new`, so the reader can read the new text
+and ask for it again.
 
 Claude works in a clone of the repository that exists only for the worker, so it
 never edits files that a person is editing. The clone is made once, the first time
@@ -245,9 +293,10 @@ npm run logs      # watch it
 
 The keys come from `terraform output -raw worker_access_key_id` and
 `terraform output -raw worker_secret_access_key` in `terraform/`. `SCHEDULE` in
-`.env` sets how often it runs. It is every two minutes while the worker is being
-tested. To change it to every thirty minutes, set `SCHEDULE=*/30 * * * *` and run
-`npm run restart`. To start the worker again after the machine restarts, run
+`.env` sets how often it looks for a queued batch, which is not how often it
+works, because a run with nothing queued does nothing. A short pattern such as
+`*/2 * * * *` makes the button feel immediate; `*/30 * * * *` means a batch may
+wait half an hour. Change it and run `npm run restart`. To start the worker again after the machine restarts, run
 `npx pm2 save` and then `npx pm2 startup`, and run the command it prints.
 
 The clone needs whatever `CLAUDE.md` asks Claude to use. Copy the repository's
@@ -321,10 +370,39 @@ button that copies it, because the popup asks for it.
 The page cannot install the extension in one click. Chrome allows a one-click
 install only from the Chrome Web Store, and it refuses to install an extension
 file downloaded from any other website. So the page offers the zip, and the reader
-loads it with **Load unpacked** in developer mode. Publishing the extension in the
-Chrome Web Store, as an unlisted item that only people with the link can find,
-would give a real one-click install. That costs a one-time developer fee and a
-review of every new version, which takes from a day to a few days.
+loads it with **Load unpacked** in developer mode. The section below says what it
+would take to get a one-click install, and a one-click update with it.
+
+### Updating an installed copy
+
+A new version of the extension replaces the zip at the same address, so the page
+always offers the current build. Chrome does not fetch it by itself, though, and
+this is worth being plain about, because there are three different answers and
+only one of them is one click.
+
+Chrome updates an extension on its own only when it knows an update address for
+it, and it accepts an update address only from the Chrome Web Store or from an
+extension that a device policy installed. An extension loaded with **Load
+unpacked** has neither, so Chrome never updates it. What it does do is read the
+folder again when it is reloaded, which is why the install page says to unzip the
+new version over the old folder and press the reload arrow. That arrow is the one
+click available today.
+
+Two routes give a real automatic update, and both are a bigger change than a
+reload:
+
+- The **Chrome Web Store**, as an unlisted item that only people with the link can
+  find. This gives a one-click install and then updates with no clicks at all,
+  because Chrome checks the store for every installed extension a few times a
+  day. It costs a one-time developer fee and a review of every new version, which
+  takes from a day to a few days, so a fix is not live the moment it is pushed.
+- A **device policy**, which is how a company installs an extension without the
+  store. The extension is packed as a `.crx` with a fixed key, an update manifest
+  naming its version and address sits beside it in the same bucket, and each
+  machine gets one policy file saying to install it from there. Chrome then
+  installs and updates it by itself from our own bucket, with no store and no
+  review. It costs a one-time administrator step on every machine that wants the
+  extension, which only makes sense for machines somebody already administers.
 
 The page and the zip are kept in a private bucket, and CloudFront serves them over
 HTTPS, in the same way as the docs site. The zip always has the same name,
@@ -409,9 +487,13 @@ flush its cache, and nothing else.
 - `ui/lib/store.ts` reads and writes the browser copy, and holds the server URL and
   the API key.
 - `ui/lib/auth.ts` checks the server URL and the key with the API, and signs out.
+- `ui/lib/queue.ts` asks the API to queue a batch of comments.
+- `ui/lib/types.ts` holds how each status reads to the reader, and the rule for
+  which comments can be ticked.
 - `api/` is the API, as a package of its own, and the folder its deploy watches.
 - `api/types.ts` is what the API stores, which the extension imports too.
-- `api/app.ts` is the API: the key check, `GET /me` and `POST /sync`.
+- `api/app.ts` is the API: the key check, `GET /me`, `POST /sync` and
+  `POST /queue`.
 - `api/keys.ts` reads the keys from Parameter Store.
 - `api/store.ts` reads and writes the page files in S3.
 - `api/lambda.ts` and `api/local.ts` run the API on Lambda and on your own
@@ -420,10 +502,11 @@ flush its cache, and nothing else.
 - `ui/scripts/build-install.ts` builds the install page and the zip.
 - `worker/index.ts` is the feedback worker: the schedule and one run.
 - `worker/claude.ts` runs one turn of the Claude Code session.
-- `worker/prompt.ts` is what Claude is told about a page's comments, and the
+- `worker/prompt.ts` is what Claude is told about a batch of comments, and the
   shape of its replies.
-- `worker/feedback.ts` reads the open comments and records each outcome.
-- `worker/git.ts` pulls the latest `main` into the clone before each page and
+- `worker/feedback.ts` reads the queued comments, marks a batch `working`, and
+  records each outcome.
+- `worker/git.ts` pulls the latest `main` into the clone before a batch and
   pushes after it.
 - `worker/ecosystem.config.cjs` tells PM2 how to run the worker.
 - `terraform/` creates the AWS resources.

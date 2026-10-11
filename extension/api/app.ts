@@ -1,5 +1,13 @@
 import { Hono } from 'hono';
-import { validPage, type Highlight, type HighlightRef } from './types';
+import {
+  isFeedback,
+  QUEUE_FROM,
+  QUEUE_TO,
+  statusOf,
+  validPage,
+  type Highlight,
+  type HighlightRef,
+} from './types';
 import { nameForKey } from './keys';
 import { pageKeyOf, readAll, updatePage } from './store';
 
@@ -24,24 +32,24 @@ app.post('/sync', async (c) => {
   const { upserts = [], deletes = [] } = await c.req.json<{ upserts: Highlight[]; deletes: HighlightRef[] }>();
   if (![...upserts, ...deletes].every(validPage)) return c.json({ error: 'Bad book, chapter or page' }, 400);
 
-  // Group the changes by page, so each page file is read and written once.
-  const byPage = new Map<string, { upserts: Highlight[]; deletes: Set<string> }>();
-  const slot = (k: string) => byPage.get(k) ?? byPage.set(k, { upserts: [], deletes: new Set() }).get(k)!;
+  const pages = new Map<string, { upserts: Highlight[]; deletes: Set<string> }>();
+  const slot = (k: string) => pages.get(k) ?? pages.set(k, { upserts: [], deletes: new Set() }).get(k)!;
   for (const h of upserts) slot(pageKeyOf(h)).upserts.push({ ...h, author: c.get('name') });
   for (const d of deletes) slot(pageKeyOf(d)).deletes.add(d.id);
 
   await Promise.all(
-    [...byPage].map(([key, change]) =>
+    [...pages].map(([key, change]) =>
       updatePage(key, (items) => {
         const byId = new Map(items.filter((h) => !change.deletes.has(h.id)).map((h) => [h.id, h]));
         for (const h of change.upserts) {
           const old = byId.get(h.id);
-          // The status and Claude's response belong to the worker, so whatever the
-          // browser sends for them is replaced.
-          if (!old) byId.set(h.id, { ...h, status: 'open', claudeResponse: '', respondedAt: undefined });
+          // The status and Claude's response belong to the server, so whatever
+          // the browser sends for them is replaced. A new comment waits until
+          // somebody queues it.
+          if (!old) byId.set(h.id, { ...h, status: 'new', claudeResponse: '', respondedAt: undefined });
           else if (old.updatedAt < h.updatedAt) {
-            // A changed comment is new feedback, so it goes back to Claude.
-            const reopened = h.note !== old.note ? { status: 'open' as const, claudeResponse: '', respondedAt: undefined } : {};
+            // A changed comment is new feedback, so it has to be queued again.
+            const reopened = h.note !== old.note ? { status: 'new' as const, claudeResponse: '', respondedAt: undefined } : {};
             byId.set(h.id, { ...old, color: h.color, note: h.note, updatedAt: h.updatedAt, ...reopened });
           }
         }
@@ -50,4 +58,36 @@ app.post('/sync', async (c) => {
     ),
   );
   return c.json(await readAll());
+});
+
+// Asks for a batch of comments to be addressed. This is the one status change
+// the extension makes: it moves a comment from 'new' to 'queued', and the
+// feedback worker takes every queued comment on its next run. A comment that is
+// not 'new' any more is left alone and counted as skipped, so pressing the
+// button twice queues nothing the second time.
+app.post('/queue', async (c) => {
+  const { refs = [] } = await c.req.json<{ refs: HighlightRef[] }>();
+  if (!refs.every(validPage)) return c.json({ error: 'Bad book, chapter or page' }, 400);
+
+  // Grouped by page, so each page file is read and written once.
+  const wantedByPage = new Map<string, Set<string>>();
+  for (const r of refs) {
+    const key = pageKeyOf(r);
+    wantedByPage.set(key, (wantedByPage.get(key) ?? new Set()).add(r.id));
+  }
+
+  let queued = 0;
+  await Promise.all(
+    [...wantedByPage].map(([key, wanted]) =>
+      updatePage(key, (items) =>
+        items.map((h) => {
+          // A highlight with no comment asks nothing, so it cannot be queued.
+          if (!wanted.has(h.id) || statusOf(h) !== QUEUE_FROM || !isFeedback(h)) return h;
+          queued++;
+          return { ...h, status: QUEUE_TO };
+        }),
+      ),
+    ),
+  );
+  return c.json({ queued, skipped: refs.length - queued });
 });

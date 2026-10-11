@@ -5,17 +5,19 @@ import { join } from 'node:path';
 const env = process.env;
 
 export const config = {
-  // How often to look for new feedback, as a cron pattern. Every 2 minutes while
-  // testing; '*/30 * * * *' is every 30 minutes.
-  schedule: env.SCHEDULE ?? '*/30 * * * *',
+  // How often to look for a batch somebody has asked for, as a cron pattern.
+  // This is not how often the worker works: a run with nothing queued reads the
+  // bucket and stops. '*/2 * * * *' is every 2 minutes, which makes the button
+  // in the extension feel immediate; '*/30 * * * *' is every 30 minutes.
+  schedule: env.SCHEDULE ?? '*/2 * * * *',
   // The clone of this repository that Claude works in. It is separate from any
   // clone a person works in, so the two never edit the same files.
   repoDir: env.REPO_DIR ?? join(homedir(), 'feedback-worker', 'robotics-basics'),
   repoUrl: env.REPO_URL ?? 'git@github.com:RobinNagpal/robotics-basics.git',
   claudeBin: env.CLAUDE_BIN ?? 'claude',
   model: env.CLAUDE_MODEL || undefined,
-  // One Claude turn that takes longer than this is stopped, and that page's
-  // feedback marked failed.
+  // One Claude turn that takes longer than this is stopped, and every comment in
+  // that batch is marked failed. A larger batch needs a longer limit.
   timeoutMinutes: Number(env.TIMEOUT_MINUTES ?? 60),
   // A run that is due while another is still working waits this long for it to
   // finish, and is skipped if it is still going.

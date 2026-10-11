@@ -1,12 +1,11 @@
 import { Cron } from 'croner';
-import { pageKeyOf } from '../api/store';
 import type { Highlight } from '../api/types';
 import { runTurn } from './claude';
 import { config } from './config';
-import { openFeedback, record } from './feedback';
-import { ensureClone, pullLatest, pushPage, status } from './git';
+import { byPage, claim, queuedFeedback, record } from './feedback';
+import { ensureClone, pullLatest, pushBatch, status } from './git';
 import { acquire } from './lock';
-import { pagePrompt, repairPrompt, RESULT_SCHEMA, type Reply } from './prompt';
+import { batchPrompt, repairPrompt, RESULT_SCHEMA, type Reply } from './prompt';
 import { loadSession, saveSession, type State } from './session';
 
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
@@ -15,17 +14,12 @@ const firstLine = (e: unknown) => {
   return String(err.stderr || err.message || e).trim().split('\n')[0];
 };
 
-// One run: find the open feedback, compact the session, then work through it a
-// page at a time, oldest page first.
+// One run: take every comment a reader has queued, and address the whole lot as
+// one batch. Nothing is addressed unless somebody asked for it in the extension,
+// so a run with an empty queue costs nothing.
 async function cycle() {
-  const pending = await openFeedback();
-  if (!pending.length) return log('no open feedback');
-
-  // openFeedback returns the oldest comment first, so the pages come out in the
-  // order their first comment was written.
-  const pages = new Map<string, Highlight[]>();
-  for (const h of pending) pages.set(pageKeyOf(h), [...(pages.get(pageKeyOf(h)) ?? []), h]);
-  log(`${pending.length} open feedback on ${pages.size} page(s)`);
+  const queued = await queuedFeedback();
+  if (!queued.length) return log('nothing queued');
 
   const session = loadSession();
   // Compacting replaces the conversation so far with a summary of it. The
@@ -35,7 +29,20 @@ async function cycle() {
     log(r.isError ? `compact failed: ${r.text}` : 'session compacted');
   }
 
-  for (const comments of pages.values()) await addressPage(session, comments);
+  // A clone that cannot be brought up to date leaves the batch queued, and the
+  // next run tries again.
+  if (!(await latest(session))) return log('skipped: the clone could not pull main');
+
+  // Marking the batch 'working' is the last thing before Claude is invoked, so
+  // anyone watching the extension sees the batch change from queued to working
+  // at the moment the work starts. A comment edited in that moment drops out of
+  // the batch and keeps the status it had.
+  const batch = await claim(queued);
+  if (!batch.length) return log('nothing left to do: every queued comment changed while the run started');
+  const pages = [...byPage(batch).values()];
+  log(`addressing ${batch.length} comment(s) on ${pages.length} page(s) as one batch`);
+
+  await addressBatch(session, batch, pages);
 }
 
 // Every turn goes to the one session, and the first turn creates it.
@@ -48,8 +55,8 @@ async function turn(session: State, prompt: string, schema?: object) {
   return r;
 }
 
-// Makes sure the clone is on the latest main before Claude works on a page. When
-// git cannot pull, Claude is asked to put the clone right, and the pull is tried
+// Makes sure the clone is on the latest main before Claude works. When git
+// cannot pull, Claude is asked to put the clone right, and the pull is tried
 // once more. Returns false if the clone still cannot be brought up to date.
 async function latest(session: State) {
   ensureClone();
@@ -63,41 +70,39 @@ async function latest(session: State) {
   return !error;
 }
 
-// Claude makes every change one page needs in one turn and commits it. Then the
-// worker pushes, and only after that records each comment's reply, so a comment
-// marked 'changed' is one whose change is already on main.
-async function addressPage(session: State, comments: Highlight[]) {
-  const page = `${comments[0].book}/${comments[0].chapter}/${comments[0].page}`;
-  // A clone that cannot be brought up to date leaves the comments open, and the
-  // next run tries again.
-  if (!(await latest(session))) return log(`${page}: skipped, the clone could not pull main`);
+// Claude makes every change the batch needs in one turn and commits it. Then the
+// worker pushes once, and only after that records each comment's reply, so a
+// comment marked 'changed' is one whose change is already on main.
+async function addressBatch(session: State, batch: Highlight[], pages: Highlight[][]) {
+  const what = pages.length === 1 ? `${pages[0][0].book}/${pages[0][0].chapter}/${pages[0][0].page}` : `${pages.length} pages`;
 
-  log(`addressing ${comments.length} comment(s) on ${page}`);
   let replies: Reply[];
   try {
-    const r = await turn(session, pagePrompt(comments), RESULT_SCHEMA);
+    const r = await turn(session, batchPrompt(pages), RESULT_SCHEMA);
     const out = r.structured as { replies: Reply[] } | undefined;
     if (r.isError || !out) throw new Error(r.text || 'Claude gave no structured result');
     replies = out.replies;
-    log(`${page}: Claude finished, $${r.costUsd?.toFixed(2) ?? '?'}`);
+    log(`Claude finished the batch, $${r.costUsd?.toFixed(2) ?? '?'}`);
   } catch (e) {
-    log(`${page}: failed: ${firstLine(e)}`);
-    for (const h of comments) await record(h, 'failed', `The run failed: ${firstLine(e)}`).catch((e2) => log('could not record failure', e2));
+    log(`the batch failed: ${firstLine(e)}`);
+    for (const h of batch) {
+      await record(h, 'failed', `The run failed: ${firstLine(e)}`).catch((e2) => log('could not record failure', e2));
+    }
     return;
   }
 
-  // A push that fails leaves the comments open. Claude's commits stay in the
+  // A push that fails leaves the batch 'working'. Claude's commits stay in the
   // clone, the next run's pull puts them on top of main or asks Claude to, and
   // Claude then finds its own work already done and replies.
   let commit: string | null;
   try {
-    commit = pushPage(page);
-    log(`${page}: ${commit ? `pushed ${commit}` : 'nothing to push'}`);
+    commit = pushBatch(what);
+    log(commit ? `pushed ${commit}` : 'nothing to push');
   } catch (e) {
-    return log(`${page}: push failed, the comments stay open: ${firstLine(e)}`);
+    return log(`push failed, the batch stays in progress: ${firstLine(e)}`);
   }
 
-  for (const h of comments) {
+  for (const h of batch) {
     const reply = replies.find((x) => x.id === h.id);
     let state: Reply['status'] | 'failed' = reply?.status ?? 'failed';
     let response = reply?.response.join('\n') ?? 'Claude gave no reply to this comment.';

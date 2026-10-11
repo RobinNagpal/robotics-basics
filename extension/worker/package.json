@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "check": "tsc --noEmit",
+    "test": "node --import tsx --test feedback.test.ts",
     "once": "tsx --env-file=.env index.ts --once",
     "start": "pm2 start ecosystem.config.cjs",
     "stop": "pm2 stop feedback-worker",

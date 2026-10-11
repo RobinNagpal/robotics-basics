@@ -238,13 +238,13 @@ after that. Only one run waits at a time, so a long run does not collect a queue
 waiting runs on a short schedule. The lock file holds the process ID of the run
 that made it, so a file left by a process that died is recognised and removed. One
 Claude turn may take up to an hour too (`TIMEOUT_MINUTES`). A turn that takes
-longer is stopped, and its page's comments are marked `failed`.
+longer is stopped, and every comment in that batch is marked `failed`.
 
 Every run uses the same Claude Code session. The first run creates it with an ID
 the worker chooses, and the worker keeps that ID in `worker/.state/session.json`.
 Every later turn resumes the session by that ID. This works like one long
 conversation that is summarised every run, rather than a new conversation for each
-comment.
+batch.
 
 The worker writes an outcome only if the comment is still there, still `working`,
 and still says what Claude was shown. A comment edited while Claude worked on it
@@ -256,6 +256,34 @@ never edits files that a person is editing. The clone is made once, the first ti
 it is needed, and is kept and pulled from then on. Nobody is there to answer a permission
 prompt, so it runs with every permission. That is why it gets a clone of its own,
 and why the comments are only ever written by someone holding an API key.
+
+### The test
+
+The statuses above are the part of the worker worth testing, because what can go
+wrong in them is a rule about which comment may change state, and a broken rule
+is quiet: a comment is worked on twice, or an answer lands on words the comment
+no longer says, and nothing reports an error. So `worker/feedback.test.ts` runs
+those functions against a store held in memory, of the same shape as the S3 one.
+That is the only reason `queuedFeedback`, `claim`, `record` and `byPage` take a
+store as a last parameter: the real store is the default, so the worker calls
+them without mentioning it, and the test hands in its own.
+
+```bash
+cd worker
+npm test     # node's own test runner, through tsx; no test framework to install
+```
+
+The seven tests are the seven rules: a run takes the comments that were asked for
+and the ones a dead run left behind, oldest first; a comment stored before
+queueing existed reads as `new`; claiming marks exactly the batch and groups it by
+page file; a comment whose text changed between being read and being claimed drops
+out, whether it went back to `new` or was asked for again; an outcome is written
+once and only while the comment is still being worked on; and an outcome is
+refused for a comment edited while Claude worked.
+
+Each test was checked by breaking the rule it covers and seeing it fail, which is
+the only way to know a test of a guard is doing anything. Six rules were broken
+one at a time and every one was caught.
 
 ### Why these tools
 
@@ -286,6 +314,7 @@ cd worker
 npm install
 cd ../api && npm install && cd ../worker   # the worker uses the API's S3 code
 cp .env.example .env                       # then fill it in
+npm test          # the status changes, against a store held in memory
 npm run once      # one run now, to see that it works
 npm run start     # start it under PM2
 npm run logs      # watch it
@@ -506,6 +535,8 @@ flush its cache, and nothing else.
   shape of its replies.
 - `worker/feedback.ts` reads the queued comments, marks a batch `working`, and
   records each outcome.
+- `worker/feedback.test.ts` tests those status changes against a store held in
+  memory.
 - `worker/git.ts` pulls the latest `main` into the clone before a batch and
   pushes after it.
 - `worker/ecosystem.config.cjs` tells PM2 how to run the worker.

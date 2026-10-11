@@ -27,6 +27,29 @@ function assetUrl(docsRel: string): string {
   return '/docs-assets/' + docsRel.split('/').map(encodeURIComponent).join('/');
 }
 
+/**
+ * The embed address for a YouTube watch link, keeping its start time, or null
+ * if the link is not a YouTube video. Accepts youtube.com/watch?v= and youtu.be/.
+ */
+function youtubeEmbed(href: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(href);
+  } catch {
+    return null;
+  }
+  const host = url.hostname.replace(/^(www\.|m\.)/, '');
+  let id: string | null = null;
+  if (host === 'youtube.com' && url.pathname === '/watch') id = url.searchParams.get('v');
+  else if (host === 'youtu.be') id = url.pathname.slice(1);
+  if (!id || !/^[\w-]{11}$/.test(id)) return null;
+  // t is either plain seconds ("3959", "3959s") or "1h5m59s".
+  const t = url.searchParams.get('t') ?? '';
+  const parts = t.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$/);
+  const start = parts ? Number(parts[1] ?? 0) * 3600 + Number(parts[2] ?? 0) * 60 + Number(parts[3] ?? 0) : 0;
+  return `https://www.youtube-nocookie.com/embed/${id}` + (start > 0 ? `?start=${start}` : '');
+}
+
 function isExternal(href: string): boolean {
   return /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('//');
 }
@@ -34,8 +57,9 @@ function isExternal(href: string): boolean {
 /**
  * Adapts the rendered doc to the site without touching its words:
  * rewrites links between docs to site URLs, points images at the docs folder,
- * lifts the H1 into the page header, collects the table of contents, and wraps
- * tables and lone images so they lay out well.
+ * lifts the H1 into the page header, collects the table of contents, wraps
+ * tables and lone images so they lay out well, and embeds the YouTube videos a
+ * doc asks for.
  */
 function rehypeDocs(opts: { rel: string; urlByRel: Map<string, string>; toc: TocItem[] }) {
   const dir = posix.dirname(opts.rel);
@@ -76,9 +100,46 @@ function rehypeDocs(opts: { rel: string; urlByRel: Map<string, string>; toc: Toc
       }
 
       // A paragraph holding only an image becomes a figure with its alt text as caption.
+      // A paragraph holding only a YouTube link titled "embed", written
+      // [Title](https://www.youtube.com/watch?v=... "embed"), becomes the video
+      // itself with the link as its caption. On GitHub it stays a plain link.
       if (tag === 'p') {
         const meaningful = node.children.filter((c) => !(c.type === 'text' && !c.value.trim()));
         const img = meaningful.length === 1 ? meaningful[0] : undefined;
+        if (img && img.type === 'element' && img.tagName === 'a' && img.properties?.title === 'embed') {
+          const href = String(img.properties.href ?? '');
+          const src = youtubeEmbed(href);
+          if (src) {
+            const title = textOf(img).trim();
+            delete img.properties.title;
+            node.tagName = 'figure';
+            node.properties = { className: ['doc-figure', 'doc-video'] };
+            node.children = [
+              {
+                type: 'element',
+                tagName: 'div',
+                properties: { className: ['video-frame'] },
+                children: [
+                  {
+                    type: 'element',
+                    tagName: 'iframe',
+                    properties: {
+                      src,
+                      title,
+                      loading: 'lazy',
+                      allow: 'accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+                      allowFullScreen: true,
+                      referrerPolicy: 'strict-origin-when-cross-origin',
+                    },
+                    children: [],
+                  },
+                ],
+              },
+              { type: 'element', tagName: 'figcaption', properties: {}, children: [img] },
+            ];
+          }
+          return;
+        }
         if (img && img.type === 'element' && img.tagName === 'img') {
           const alt = String(img.properties?.alt ?? '').trim();
           node.tagName = 'figure';

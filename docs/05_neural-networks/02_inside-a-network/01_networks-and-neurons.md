@@ -241,3 +241,5 @@ layer before making it any bigger.
   this one assumes, if parameters, training and inference are not yet familiar.
 - [The score of being wrong](../03_how-training-works/01_the-score-of-being-wrong.md)
   starts the chapter that explains how the weights and biases are actually found.
+- [Helpful resources](00_helpful-resources.md) lists videos by other people that
+  explain the same ideas, for a reader who wants a second explanation.

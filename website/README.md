@@ -44,6 +44,10 @@ The doc content is not changed. When a doc is rendered, the site:
 - serves images from `docs/` through `/docs-assets/...`
 - shows links to code elsewhere in the repo as labelled text rather than
   broken links
+- shows a YouTube video on the page when a paragraph holds only a link to it
+  with the title `embed`, written
+  `[Title](https://www.youtube.com/watch?v=... "embed")`; a `t=` start time is
+  kept, and on GitHub the line stays a plain link
 
 ## Features
 

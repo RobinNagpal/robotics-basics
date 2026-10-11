@@ -11,8 +11,8 @@ in full with real numbers, so that nothing here stays a word you have to accept
 without checking it.
 
 This page is for a reader who has read the chapter before it. If you came
-straight to this page, section 1 repeats the part of that chapter you need: what a
-model is, how a model relates to a neuron, and where the inputs come from. You
+straight to this page, [from a model to a neuron](#1-from-a-model-to-a-neuron) repeats the part of that
+chapter you need: what a model is, how a model relates to a neuron, and where the inputs come from. You
 need to be able to multiply, to add, and to read a graph that has two axes. You do not need to
 know anything about training, because the numbers on this page were chosen by
 hand so that you can watch what they do. Everything is worked out on one made-up
@@ -74,7 +74,8 @@ weight, and its offset is a bias.
 A neuron does the same arithmetic with two changes. First, it can take several
 inputs, and each input gets its own weight. Second, it passes its total through a
 simple rule before it hands the total on. The sag model has no rule, which is why
-the picture says "no rule here". Section 5 explains why a neuron needs one.
+the picture says "no rule here". The section
+[why multiplying and adding is not enough](#5-why-multiplying-and-adding-is-not-enough) explains why a neuron needs one.
 
 A **neural network** is a model built from many neurons. The outputs of some
 neurons become the inputs of others, and the whole network is still one formula
@@ -95,14 +96,18 @@ error.
 
 For the sag model the list holds one number, which is the mass. The neuron on the
 rest of this page reads three numbers. They come from three sensors on an arm at
-the moment it reaches for a cup. Section 2 shows those three readings and how each
-one is turned into a number before it arrives.
+the moment it reaches for a cup. The next section,
+[what one neuron is made of](#2-what-one-neuron-is-made-of), shows those three readings and the four
+numbers the neuron owns, because both have to be known before any arithmetic can
+start.
 
 ---
 
 ## 2. What one neuron is made of
 
-The section before this one described a model as a function with numbers inside it.
+The section before this one showed that a neuron is the sag model with more
+inputs and a rule at the end. Before you can watch a neuron work, you need to know
+what goes into it and which numbers belong to it, and this section lays both out.
 The smallest function of that kind that is worth looking at is one neuron with
 three inputs. The numbers that go into a neuron are called its **inputs**. The
 single number that comes out of it is called its **output**. Between the inputs
@@ -182,12 +187,18 @@ by training, and no person chooses it. The next page describes this layout, whic
 is called a [fully connected
 layer](02_layers-and-depth.md#2-fully-connected-and-what-joining-everything-costs).
 
+The inputs and the four numbers are now all on the table. The next section,
+[the weighted sum](#3-the-weighted-sum-line-by-line), puts them together into the one number the neuron
+works with.
+
 ---
 
 ## 3. The weighted sum, line by line
 
-The three inputs and the four numbers of the neuron are now all known, so the
-neuron can do its first job. That job is to work out the **weighted sum**, which
+The section before gave the three inputs and the four numbers of the neuron, so
+the neuron can now do its first job. Everything else on this page changes one of
+these numbers and watches what happens to the result, so this calculation is the
+one to follow closely. That job is to work out the **weighted sum**, which
 means multiplying each input by its own weight, adding those results together,
 and then adding the bias. The whole calculation is short enough to write out
 completely.
@@ -221,11 +232,18 @@ readings push the total up and which one pulls it down.
 Only the distance pulls this sum down, because it is the only reading with a
 minus weight. The opening pushes the sum up the hardest, by +0.825.
 
-So far the arm has stood still at 0.42 metres. The next picture holds the opening
-at 0.55 and the brightness at 0.30, and it moves the distance from 0 to 1 metre.
-Only one input changes, and that input is multiplied by one fixed weight, so the
-answer has to be a straight line. The line falls by exactly 2.00 for every extra
-metre, because the weight on the distance is -2.00.
+The table and the bars describe one moment, with the arm standing still at 0.42
+metres. A robot does not stand still, so the useful question is how the sum
+changes as the readings change. The answer tells you where the neuron says yes
+and where it says no, and that dividing point is what the rest of this page is
+about. The next two pictures answer that question, first for one reading and then
+for two.
+
+The next picture holds the opening at 0.55 and the brightness at 0.30, and it
+moves the distance from 0 to 1 metre. Only one input changes, and that input is
+multiplied by one fixed weight, so the answer has to be a straight line. The line
+falls by exactly 2.00 for every extra metre, because the weight on the distance
+is -2.00.
 
 ![A straight line of the weighted sum against distance, starting at 1.565 at 0 metres and crossing 0 at 0.7825 metres](../../images/inside-a-network/one-neuron/sum-against-distance.svg)
 
@@ -233,10 +251,10 @@ At 0 metres the sum is 1.565. At our reading of 0.42 metres it is 0.725. It
 crosses 0 at 0.7825 metres, and after that point the rule holds the output at 0.
 
 That crossing point at 0.7825 metres is the distance at which this neuron stops
-answering, and the next section moves that point on purpose. Two readings can be
-moved at the same time instead of one. When they are, the place where the sum
-crosses 0 is no longer a single point, because it becomes a straight line across
-the picture.
+answering. A neuron reads all of its readings at once, though, so one reading at a
+time does not show the whole decision. When two readings move together, the place
+where the sum crosses 0 is no longer a single point. It becomes a line across the
+picture, with yes on one side of it and no on the other.
 
 The picture below sweeps the distance along the bottom and the gripper opening up
 the side. The colour gives the weighted sum at each pair of readings, and the
@@ -249,29 +267,31 @@ is exactly 0 reaches an opening of 0.84 at a distance of 1 metre, and it leaves
 the square through the bottom edge. Our own reading sits well inside the part
 where the sum is above 0.
 
-The straightness of that line is the most important limit of a single neuron, and
-section 5 returns to it. Before that, the next section shows what the four
-numbers the neuron owns actually control.
+The straightness of that line is the most important limit of a single neuron,
+and [why multiplying and adding is not enough](#5-why-multiplying-and-adding-is-not-enough) returns to it. Before that,
+the next section, [what changes when a weight or the bias changes](#4-what-changes-when-a-weight-or-the-bias-changes), moves
+that line by changing the neuron's four numbers, because those four numbers are
+the only thing training can change.
 
 ---
 
 ## 4. What changes when a weight or the bias changes
+
+The section before ended with a straight line that divides yes from no. This
+section asks what moves that line. The question matters because training, which
+the next chapter explains, does nothing except change weights and biases. So what
+these four numbers control is everything that training can do to one neuron.
 
 This section changes one of the four numbers at a time and shows what the neuron
 does differently. There are three things to see. The sign of a weight decides
 what the neuron is for. The size of a weight decides how much the neuron cares
 about that reading. The bias decides where the neuron stops answering.
 
-Start with the sign. The picture below shows the calculation of the section
-before twice, with the same three readings. The only difference is that the
-weight on the distance is -2.00 on the left and +2.00 on the right.
-
-![Two tables of the same three readings; the left table uses the weight -2.00 and reaches +0.725, and the right table uses +2.00 and reaches +2.405](../../images/inside-a-network/one-neuron/flipping-one-weight.svg)
-
-With -2.00 the sum is +0.725. With +2.00 the sum is +2.405. With the minus weight
-the neuron answers whether the arm is close to the object. With the plus weight
-it answers whether the arm is far from it. The robot did not change, and only one
-weight did.
+Start with the sign. Keep the same three readings, and change the weight on the
+distance from -2.00 to +2.00. The distance row then gives +0.840 instead of
+-0.840, and the sum rises from +0.725 to +2.405. With the minus weight the neuron
+answers whether the arm is close to the object. With the plus weight it answers
+whether the arm is far from it. The robot did not change, and only one weight did.
 
 Now the size. The picture below draws the line where the sum is exactly 0, for
 three sizes of the weight on the distance. The other numbers stay as they were.
@@ -292,17 +312,22 @@ at 0.5325 metres. With -1.00 it reaches 0 at only 0.0325 metres. So a lower bias
 makes the neuron stop answering at a shorter distance.
 
 Those four numbers are the only freedom this neuron has. Whatever you do to them,
-the dividing line stays straight. The next section shows why that is a problem,
-and why the rule at the end of the neuron is the thing that solves it.
+the dividing line stays straight. The next section,
+[why multiplying and adding is not enough](#5-why-multiplying-and-adding-is-not-enough), shows why a straight line is a
+problem, and why the rule at the end of the neuron is the thing that solves it.
 
 ---
 
 ## 5. Why multiplying and adding is not enough
 
-Section 2 said that a neuron ends with a simple rule, and section 1 showed the sag
-model working with no rule at all. So it is fair to ask what the rule is for. This
-section answers that question before section 6 describes the rule itself. The
-answer comes in three steps. First, many jobs need an output that bends, and one
+The section before ended on a limit. Whatever values the four numbers take, the
+line between yes and no stays straight. Many jobs on a robot need an answer that
+rises and then falls, and a straight line cannot give one. This section is here
+because that limit is the reason a neuron has a rule at the end. You saw the rule
+in [what one neuron is made of](#2-what-one-neuron-is-made-of), and you saw the sag model in
+[from a model to a neuron](#1-from-a-model-to-a-neuron) work without one. This section shows what the
+rule is for, and [the rectified linear unit](#6-the-rectified-linear-unit) then describes the rule itself.
+The answer comes in three steps. First, many jobs need an output that bends, and one
 neuron without the rule can only draw a straight line. Second, putting more
 neurons in a row does not fix this if nothing comes between them. Third, the rule
 between them does fix it.
@@ -388,13 +413,16 @@ anywhere between the two lines is zero.
 
 That is what the rule at the end of each neuron is for. Without it, any number of
 neurons collapses into one straight line. With it, a few neurons can bend the line
-into the shape a job needs. The next section looks at that rule properly.
+into the shape a job needs. The next section, [the rectified linear unit](#6-the-rectified-linear-unit),
+looks at that rule properly, because you need to know exactly what it does before
+you can see what it costs.
 
 ---
 
 ## 6. The rectified linear unit
 
-The rule that section 5 kept putting between the layers has a name. It is called
+The section before showed that a rule between neurons is what lets them bend.
+This section looks at that rule itself, starting with the simplest one. It is called
 the **activation function**, which means a rule that is applied to the weighted
 sum to give the neuron's output. The number that comes out of it is called the
 neuron's **activation**. The simplest one, and the one networks have used the
@@ -429,8 +457,8 @@ Our own neuron had a sum of +0.725, which is the sixth row, so its output is
 This rule looks too simple to do any work. The reason it does so much work is the
 corner at 0. A neuron with this rule is two different things joined at one point,
 because on one side of the corner it ignores its inputs and on the other side it
-follows them exactly. The place where it changes is the point that section 4
-moved with the bias, and this page calls that point the elbow. Once several
+follows them exactly. The place where it changes is the point that
+[what changes when a weight or the bias changes](#4-what-changes-when-a-weight-or-the-bias-changes) moved with the bias, and this page calls that point the elbow. Once several
 neurons each have an elbow in a different place, the elbows can be added together
 into any shape at all.
 
@@ -444,7 +472,8 @@ Six neurons with elbows at 0.08, 0.25, 0.42, 0.58, 0.75 and 0.92 follow the
 smooth curve to within 0.107 everywhere. Twelve of them bring that largest gap
 down to 0.030.
 
-That is the answer to the question section 5 raised. A network can bend because
+That is the answer to the question that
+[why multiplying and adding is not enough](#5-why-multiplying-and-adding-is-not-enough) raised. A network can bend because
 each neuron can switch itself off, and a network with more neurons can bend in
 more places. What this costs is that half of every neuron's range gives nothing
 at all.
@@ -490,16 +519,20 @@ nothing at all. To the right of 0 the slope is 1, which means the output follows
 the sum exactly. At the point 0 itself there is no single slope, because the rule
 jumps from one value to the other.
 
-That flat left half and that jump at 0 are the two things the newer rules in the
-next section change.
+That flat left half and that jump at 0 are the two weak points of this rule. The
+next section, [GELU and SiLU](#7-gelu-and-silu-and-why-networks-use-them-now), describes the newer rules that fix both, and
+those are the rules you will find inside most models built today.
 
 ---
 
 ## 7. GELU and SiLU, and why networks use them now
 
-The rectified linear unit has those two awkward places, so two smoother rules
-have taken over much of its work in the models built today. Both of them keep its
-shape and round off its corner. They are the **Gaussian error linear unit**,
+The section before ended on two weak points of the rectified linear unit: a flat
+half where training gets no direction, and a jump at 0. This section is here
+because the models you will meet later in this book mostly use a rule that fixes
+those two points. Two smoother rules have taken over much of the rectified linear
+unit's work in the models built today. Both of them keep its shape and round off
+its corner. They are the **Gaussian error linear unit**,
 shortened to GELU, and the **sigmoid linear unit**, shortened to SiLU and also
 called swish. The rectified linear unit switches flatly between 0 and 1: it
 multiplies the sum either by 0 or by 1 and by nothing in between. GELU and SiLU
@@ -511,7 +544,7 @@ inside it repeats the left half of the same picture at a larger size.
 ![The three rules drawn on one set of axes, with an inset showing the left half close up, where GELU and SiLU dip below 0](../../images/inside-a-network/one-neuron/three-rules.svg)
 
 The table below gives what each rule produces for the same eight sums that
-section 6 used. Read one row at a time: the first column is the sum going in, and
+[the rectified linear unit](#6-the-rectified-linear-unit) used. Read one row at a time: the first column is the sum going in, and
 the other three columns are what each rule gives for that sum.
 
 | sum going in | ReLU | GELU | SiLU |
@@ -545,7 +578,8 @@ between them. GELU's slope runs from -0.0852 at -2 to +1.0852 at +2, and SiLU's
 runs from -0.0908 to +1.0908. Both of the smooth rules dip below 0 on the left,
 GELU down to -0.129 near -1.42 and SiLU down to -0.100 near -2.40.
 
-The picture below puts the three rules back on the neuron from section 2. The
+The picture below puts the three rules back on the neuron from
+[what one neuron is made of](#2-what-one-neuron-is-made-of). The
 left half sweeps the distance from 0 to 1 metre, and the right half is the same
 sweep again with the area around the elbow made larger.
 
@@ -556,7 +590,8 @@ rectified linear unit, 0.5552 under GELU and 0.4884 under SiLU. At 0.85 metres,
 where the sum is -0.1350, the rectified linear unit gives exactly 0, while GELU
 gives -0.0603 and SiLU gives -0.0630.
 
-The dead units of section 6 are the clearest case where that difference matters.
+The dead units of [the rectified linear unit](#6-the-rectified-linear-unit) are the clearest case where
+that difference matters.
 The picture below takes the same 64 simulated neurons and the same 200 simulated
 moments, replaces the rule with GELU, and writes in each square the average size
 of the slope that neuron gets. The 25 neurons that the rectified linear unit had
@@ -606,7 +641,8 @@ Even a rule that costs as much as 20 multiply-adds adds only 1.95 per cent to th
 work of that layer. So the dearer rule is worth its price whenever it trains
 better.
 
-Those two pictures also introduce the subject of the next page, which is that a
+Those two pictures also introduce the subject of the next page,
+[layers and depth](02_layers-and-depth.md), which is that a
 layer of 1,024 neurons holds over a million weights, and that those weights are
 arranged in a grid which a computer multiplies in one go.
 
@@ -620,12 +656,13 @@ arranged in a grid which a computer multiplies in one go.
 - [The shape of the numbers](03_the-shape-of-the-numbers.md) explains how those
   weights are stored and multiplied, and why the hardware is built the way it
   is.
-- [What a network can learn](04_what-a-network-can-learn.md) picks up section 5
-  and shows why stacking layers with a rule between them can follow any shape.
+- [What a network can learn](04_what-a-network-can-learn.md) picks up
+  [why multiplying and adding is not enough](#5-why-multiplying-and-adding-is-not-enough) and shows why stacking layers with a rule between them can follow any shape.
 - [The score of being wrong](../03_how-training-works/01_the-score-of-being-wrong.md)
   starts the chapter that finds the weights and biases this page chose by hand.
 - [Backpropagation](../03_how-training-works/03_backpropagation.md) explains why
-  the slopes drawn in sections 5 and 6 matter so much.
+  the slopes drawn in [the rectified linear unit](#6-the-rectified-linear-unit) and
+  [GELU and SiLU](#7-gelu-and-silu-and-why-networks-use-them-now) matter so much.
 - [Inside a neural network](../../07_learned-models/01_what-models-are/03_inside-a-neural-network.md)
   is the short version of the same ideas in the catalogue of models, and it
   carries on into the layer types used for pictures and sentences.
@@ -635,29 +672,29 @@ arranged in a grid which a computer multiplies in one go.
 ## 9. Using it in Python
 
 Everything on this page is one line of PyTorch, which is the library most of this
-book's models are built with. The code below builds the same neuron as section 2,
-puts the same three readings through it, and checks the arithmetic of sections 2,
-5 and 6.
+book's models are built with. The code below builds the same neuron as
+[what one neuron is made of](#2-what-one-neuron-is-made-of), puts the same three readings through it, and
+checks the arithmetic of [the weighted sum](#3-the-weighted-sum-line-by-line) and of the three rules.
 
 ```python
 import torch
 from torch import nn
 
-neuron = nn.Linear(in_features=3, out_features=1)   # section 2: 3 weights + 1 bias
+neuron = nn.Linear(in_features=3, out_features=1)   # 3 weights + 1 bias
 with torch.no_grad():                               # fix them by hand, as this page did
     neuron.weight.copy_(torch.tensor([[-2.0, 1.5, 0.8]]))
     neuron.bias.copy_(torch.tensor([0.5]))
 
 readings = torch.tensor([[0.42, 0.55, 0.30]])       # the three scaled readings
-total = neuron(readings)                            # section 3: the weighted sum
+total = neuron(readings)                            # the weighted sum
 print(f"{total.item():.4f}")                        # 0.7250
 print(sum(p.numel() for p in neuron.parameters()))  # 4
 
-print(f"{torch.relu(total).item():.4f}")                      # section 6: 0.7250
-print(f"{torch.nn.functional.gelu(total).item():.4f}")        # section 7: 0.5552
-print(f"{torch.nn.functional.silu(total).item():.4f}")        # section 7: 0.4884
+print(f"{torch.relu(total).item():.4f}")                      # ReLU: 0.7250
+print(f"{torch.nn.functional.gelu(total).item():.4f}")        # GELU: 0.5552
+print(f"{torch.nn.functional.silu(total).item():.4f}")        # SiLU: 0.4884
 
-below = torch.tensor([-0.135])                      # the sum at 0.85 m, from section 7
+below = torch.tensor([-0.135])                      # the sum at 0.85 m
 print(f"{torch.relu(below).item():.4f}")                      # 0.0000
 print(f"{torch.nn.functional.gelu(below).item():.4f}")        # -0.0603
 ```
@@ -665,8 +702,8 @@ print(f"{torch.nn.functional.gelu(below).item():.4f}")        # -0.0603
 The class is called `nn.Linear` and not `nn.Neuron`, because it is written to
 hold a whole layer of neurons at once. Asking for one output is how you get a
 single neuron out of it. The library gives you the weights, the bias, the
-multiplying and the adding, so you never write the arithmetic of section 3
-yourself.
+multiplying and the adding, so you never write the arithmetic of
+[the weighted sum](#3-the-weighted-sum-line-by-line) yourself.
 
 Each number is printed to four decimal places on purpose. PyTorch works in a
 number format called float32, which keeps only about seven digits, so the full
@@ -677,6 +714,6 @@ ones that models are run in.
 
 What you have to decide is none of the arithmetic and all of the shape. You
 choose how many inputs the layer takes and how many neurons it has, which the
-next page is about. You also choose which rule to apply after it, which section 7
-weighed up. You do not choose the weights or the bias, because training chooses
+next page is about. You also choose which rule to apply after it, which
+[GELU and SiLU](#7-gelu-and-silu-and-why-networks-use-them-now) weighed up. You do not choose the weights or the bias, because training chooses
 those.

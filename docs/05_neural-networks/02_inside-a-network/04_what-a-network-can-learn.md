@@ -4,8 +4,10 @@ The page before this one, [the shape of the numbers](03_the-shape-of-the-numbers
 showed three things. It showed that a fully connected layer is one matrix multiply.
 It showed that a batch of examples goes through that layer in a single operation. It
 showed that the memory a model needs is its parameter count multiplied by the bytes
-each parameter takes. All three of those facts are about cost. This page is about
-what you get for the cost.
+each parameter takes. All three of those facts are about cost. This page comes next
+because, once you know what a network costs, the next question is what it buys. This
+page answers that question: what a stack of layers can learn, and where the fully
+connected layer stops being the right shape.
 
 This page answers four questions. First, why does stacking layers with a simple
 non-linear rule between them let a network match any shape at all, when one layer on
@@ -117,16 +119,17 @@ The gap closes, but it does not close evenly. With no bends the gap is 0.391. Wi
 one bend placed in the middle it is 0.365. With two bends it is 0.358. With three
 bends it drops to 0.139. The first two bends barely help, because they are in the
 wrong places. That is worth noticing rather than hiding, because where the bends go
-is one of the things training has to find out. The next section shows what happens
-when there are so many bends that their placement stops mattering as much.
+is one of the things training has to find out. Since each neuron buys one bend, the
+next section asks what a great many bends buy.
 
 ---
 
 ## 2. Enough bends will follow any shape
 
-Section 1 bought one bend for each neuron. So the obvious next question is what a
-great many bends buy. The answer is the property that makes neural networks worth
-using at all.
+The section before showed that
+[one neuron buys exactly one bend](#1-a-straight-line-cannot-bend-and-one-neuron-can),
+so this section adds many neurons and measures the fit. The answer is the property
+that makes neural networks worth using at all.
 
 ![Three plots showing the curve matched with 4, 16 and 64 bends, with average gaps 0.0860, 0.0058 and 0.0004](../../images/inside-a-network/what-a-network-can-learn/wider-fits.svg)
 
@@ -167,14 +170,18 @@ Only the weights after the bends were worked out properly, by solving a small sy
 of equations. A real network does something quite different. In a real network the
 bend of each neuron moves as that neuron's own weight and bias change, so training
 adjusts how many bends there are and where every one of them sits at the same time.
+More bends always closed the gap here, so the next section asks whether more neurons
+are always better.
 
 ---
 
 ## 3. Capacity: too little, about right, and too much
 
-Section 2 said that more neurons means a smaller gap. That sounds like an argument
-for always using more neurons. This section is the argument against, and it starts
-with two words that the rest of the book uses constantly.
+The section before showed that
+[enough bends will follow any shape](#2-enough-bends-will-follow-any-shape), so more
+neurons means a smaller gap. That sounds like an argument for always using more
+neurons. This section comes now to make the argument against, and it starts with two
+words that the rest of the book uses constantly.
 
 The **parameter count** of a network is simply how many weights and biases it holds.
 It follows from the widths and the number of layers by plain arithmetic, so there is
@@ -239,14 +246,20 @@ plot is overfitting. Overfitting is the subject of
 [overfitting and generalisation](../04_making-training-work/01_overfitting-and-generalisation.md),
 which also explains why the honest way to measure a model is on readings it has never
 seen. For this page the lesson is narrower. Capacity is something to choose, and not
-something to maximise.
+something to maximise. The next section asks what that choice costs when the input is
+a photo, because the parameter count of a fully connected layer grows with the number
+of inputs.
 
 ---
 
 ## 4. Why a fully connected layer is the wrong shape for a photo
 
-Sections 1 to 3 used one input number, which kept the pictures simple. A camera gives
-150,528 input numbers instead. At that size the fully connected layer of
+The sections from
+[one bend per neuron](#1-a-straight-line-cannot-bend-and-one-neuron-can) to
+[choosing capacity](#3-capacity-too-little-about-right-and-too-much) used one input
+number, which kept the pictures simple. A camera gives 150,528 input numbers instead.
+This section comes now to apply the parameter count of the section before to an input
+of that size. At that size the fully connected layer of
 [layers and depth](02_layers-and-depth.md) stops being a sensible choice, for two
 separate reasons. The first reason is about counting, and the second is about
 position.
@@ -291,14 +304,18 @@ So a weight that learned to recognise the block in the first position does nothi
 whatever in the second position. The network therefore has to learn the same thing
 again for every position the block might appear in. The filter in the right-hand
 column behaves differently. It gives exactly the same six numbers in both rows, simply
-moved to a new place.
+moved to a new place. The next section asks what that filter actually computes,
+because it is the layer that solves both the counting problem and the position
+problem.
 
 ---
 
 ## 5. The convolution, worked out number by number
 
-Section 4 named a layer that fixes both problems, without saying what that layer
-does. So this section works it out in full. A **convolution** slides a small grid of
+The section before showed
+[why a fully connected layer is the wrong shape for a photo](#4-why-a-fully-connected-layer-is-the-wrong-shape-for-a-photo),
+and it named a layer that fixes both problems without saying what that layer does. So
+this section works it out in full. A **convolution** slides a small grid of
 weights over a larger grid of numbers. At every position it multiplies each number
 under the small grid by the weight on top of it, and then adds the results together.
 That total is one number of the answer. The small grid of weights is called a
@@ -363,13 +380,17 @@ move the window two places at a time instead of one, which is called the stride.
 gives a 3 by 3 answer here, so 9 squares are worked out instead of 25. On a large
 picture a stride of two gives about a quarter of the squares and therefore about a
 quarter of the arithmetic, because it halves the answer in both directions. Those
-three choices appear in every convolutional layer anyone writes.
+three choices appear in every convolutional layer anyone writes. One layer sees only
+a 3 by 3 window, so the next section asks what a stack of such layers can see.
 
 ---
 
 ## 6. The convolutional neural network, and where it still earns its place
 
-Section 5 described one convolutional layer. A network built mainly from such layers
+The section before worked out
+[one convolution, number by number](#5-the-convolution-worked-out-number-by-number).
+This section stacks those layers, because one window is far smaller than any object
+in a photo. A network built mainly from such layers
 is called a **convolutional neural network**, which is often shortened to CNN.
 Stacking those layers is what turns a detector of edges into a detector of objects.
 The reason is that each layer looks at the answers of the layer before it, rather than
@@ -413,7 +434,8 @@ using 295,168. The four stages together hold 388,416 parameters, which is 1.55
 megabytes. The pattern is that the grids get smaller while the number of grids grows,
 and that is the usual shape of a picture network.
 
-Now set that whole stack against the one fully connected layer of section 4. The two
+Now set that whole stack against the one fully connected layer that
+[a photo made so costly](#4-why-a-fully-connected-layer-is-the-wrong-shape-for-a-photo). The two
 charts below compare them, first on the weights they hold and then on the arithmetic
 they do.
 
@@ -456,6 +478,9 @@ no built-in idea that nearby pixels belong together. Its arithmetic also grows w
 the square of the number of patches, so doubling the patches along each side
 multiplies the work by sixteen.
 
+Every fit on this page was already good, so the reading below starts with how a
+network finds its weights.
+
 ---
 
 ## 7. Where to read next
@@ -464,10 +489,12 @@ multiplies the work by sixteen.
   is the next page and opens the next chapter, giving the number that says how wrong
   an answer is, which this page kept calling the gap.
 - [Gradient descent](../03_how-training-works/02_gradient-descent.md) then explains
-  how the weights and bends of section 1 are actually found, instead of being solved
-  for or tried one by one.
+  how the weights and
+  [the bends that each neuron buys](#1-a-straight-line-cannot-bend-and-one-neuron-can)
+  are actually found, instead of being solved for or tried one by one.
 - [Overfitting and generalisation](../04_making-training-work/01_overfitting-and-generalisation.md)
-  takes section 3 further and says how to tell honestly whether a model has too much
+  takes [capacity, too little and too much](#3-capacity-too-little-about-right-and-too-much)
+  further and says how to tell honestly whether a model has too much
   capacity.
 - [Attention](../06_the-transformer/01_attention.md) is the operation that replaced
   the convolution at the top end of vision, worked out with real numbers.
@@ -490,11 +517,11 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-# sections 1 and 2: one hidden layer of ReLU neurons, one bend for each neuron
+# bends: one hidden layer of ReLU neurons, one bend for each neuron
 net = nn.Sequential(nn.Linear(1, 16), nn.ReLU(), nn.Linear(16, 1))
 print(sum(p.numel() for p in net.parameters()))   # 49 parameters, 16 bends
 
-# section 4: the two choices of first layer for one colour photo
+# the wrong shape for a photo: the two choices of first layer for one colour photo
 photo = torch.zeros(1, 3, 224, 224)
 dense = nn.Linear(3 * 224 * 224, 1000)
 print(sum(p.numel() for p in dense.parameters()))  # 150529000
@@ -502,7 +529,7 @@ conv = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3, padding=1)
 print(sum(p.numel() for p in conv.parameters()))   # 1792
 print(conv(photo).shape)                           # torch.Size([1, 64, 224, 224])
 
-# section 5: the worked example, with the filter set by hand instead of learned
+# the convolution: the worked example, with the filter set by hand instead of learned
 grid = torch.full((1, 1, 7, 7), 2.0)
 grid[0, 0, 1:5, 2:6] = 8.0
 edge = torch.tensor([[1.0, 0.0, -1.0]] * 3).reshape(1, 1, 3, 3)
@@ -510,7 +537,7 @@ answer = F.conv2d(grid, edge)
 print(answer.shape)                                # torch.Size([1, 1, 5, 5])
 print(answer[0, 0, 1])                             # tensor([-18., -18., 0., 0., 18.])
 
-# section 5 again: padding keeps the size, a stride of two shrinks it further
+# the size of the answer: padding keeps the size, a stride of two shrinks it further
 print(F.conv2d(grid, edge, padding=1).shape)       # torch.Size([1, 1, 7, 7])
 print(F.conv2d(grid, edge, stride=2).shape)        # torch.Size([1, 1, 3, 3])
 ```
@@ -518,17 +545,22 @@ print(F.conv2d(grid, edge, stride=2).shape)        # torch.Size([1, 1, 3, 3])
 The library gives you the layers and the arithmetic. It also starts every weight at a
 small random number, so that the neurons differ from one another from the beginning.
 `nn.Conv2d` holds the filters, does the sliding at whatever speed the card allows, and
-takes the padding and the stride of section 5 as ordinary arguments.
+takes the padding and the stride of
+[the worked convolution](#5-the-convolution-worked-out-number-by-number) as ordinary
+arguments.
 
 One small honesty is worth stating. What the libraries call a convolution does not
 flip the filter, although the mathematical operation of that name does. So what they
 compute is strictly a cross-correlation. Nothing changes because of this, since the
 filter's numbers are learned either way round.
 
-What you still decide is everything section 3 was about. You choose the width and the
-depth, which together fix the parameter count and therefore the capacity, and section
-3 showed that more is not better. You choose the filter size, the stride and the
-padding, which fix how fast the grid shrinks and how far one late number can see, as
-section 6 counted. You also choose whether a convolution is the right layer at all.
+What you still decide is everything
+[the section on capacity](#3-capacity-too-little-about-right-and-too-much) was about.
+You choose the width and the depth, which together fix the parameter count and
+therefore the capacity, and that section showed that more is not better. You choose
+the filter size, the stride and the padding, which fix how fast the grid shrinks and
+how far one late number can see, as
+[the count of stacked convolutions](#6-the-convolutional-neural-network-and-where-it-still-earns-its-place)
+showed. You also choose whether a convolution is the right layer at all.
 For a small fast model on a robot it usually is. For a large model that must relate
 distant parts of a picture it usually is not.

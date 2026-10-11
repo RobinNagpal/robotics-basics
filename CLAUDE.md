@@ -335,6 +335,20 @@ Plain English, in complete sentences.
 - Every document opens with a real introduction: what it answers, who it is for.
 - A table needs a sentence before it saying how to read it.
 
+Tell the reader why each section is there, at both ends of the step into it.
+
+- End every section with one sentence that names the next section's question and
+  says why this section leads to it.
+- Open every section with one sentence that says why it comes next and how it
+  uses what the section before it found.
+- A reader who lands on any heading should be able to answer "why am I reading
+  this now?" from those two sentences alone.
+
+Refer to another section by a link with words that say what is there, such as
+"[the weighted sum](#3-the-weighted-sum-line-by-line)", and never by a bare
+"section 3" or "section 3 above". Numbers change when sections move, and a bare
+number does not tell the reader what they would find there.
+
 When explaining a tool or a framework, answer four questions: what it is, what it
 does for you, **why this one rather than the obvious alternative**, and what it
 costs you. Naming the rejected alternative is the part that carries the value.

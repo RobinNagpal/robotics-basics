@@ -3,8 +3,8 @@
 The page before this one, [one neuron](01_one-neuron.md), worked a single neuron
 out by hand. Three readings from a robot arm were each multiplied by a weight,
 the results and a bias were added together to make 0.725, and a rule decided what
-came out. One neuron is not a model, though. It gives one number, and it can only
-ever draw a straight line across its readings. This page puts many neurons side
+came out. This page comes next because one neuron is not a model. It gives one
+number, and it can only ever draw a straight line across its readings. This page puts many neurons side
 by side into a **layer**, stacks layers one after another, and answers the two
 questions that follow from doing so. Those questions are what each extra layer
 gives you, and what it costs you.
@@ -44,7 +44,8 @@ them costs in memory and in arithmetic.
 
 ## 1. A layer is many neurons reading the same numbers
 
-The neuron on the page before this one answered one question about the grasp, and
+The layer comes first because every later idea on this page is built from it. The
+neuron on the page before this one answered one question about the grasp, and
 a robot needs more than one answer. So the first step is to put several neurons
 side by side and to give all of them the same three readings. That group of
 neurons is a **layer**. The only new idea in it is that each neuron keeps its own
@@ -108,12 +109,16 @@ In this layer the weights were chosen by hand, so that each neuron has a
 description you can read. In a trained network nobody chooses them, so nobody can
 say in advance what each feature will mean.
 
+This layer joined every reading to every neuron, so the next section asks what
+that arrangement is called and what it costs as the layer grows.
+
 ---
 
 ## 2. Fully connected, and what joining everything costs
 
-The layer in section 1 joined every reading to every neuron, and that arrangement
-has a name. It is called a **fully connected** layer, and it is also called a
+This section comes now because [the layer of four
+neurons](#1-a-layer-is-many-neurons-reading-the-same-numbers) joined every
+reading to every neuron, and that arrangement has a name. It is called a **fully connected** layer, and it is also called a
 dense layer or a linear layer. It is the plainest layer there is, because it
 assumes nothing about what the inputs mean and it lets every neuron look at every
 one of them.
@@ -128,8 +133,8 @@ biases, which makes 16 parameters. Six inputs into eight neurons would be 48
 weights plus 8 biases, which makes 56. So the count is the number of inputs
 multiplied by the number of neurons, plus one more for each neuron.
 
-That multiplication is the whole cost of a fully connected layer. The layer in
-section 1 is small enough to draw, but the layers in real models take hundreds or
+That multiplication is the whole cost of a fully connected layer. [The layer of
+four neurons](#1-a-layer-is-many-neurons-reading-the-same-numbers) is small enough to draw, but the layers in real models take hundreds or
 thousands of numbers in, and then the count grows quickly.
 
 The picture below holds the number of inputs at 1,024 and changes the number of
@@ -172,17 +177,21 @@ learn](04_what-a-network-can-learn.md). All this page says about it is that a
 fully connected layer is the general case, and that the special layers are
 savings made by knowing something about the input.
 
+This section counted what one layer costs, so the next section asks what a
+second layer could give you that is worth paying that cost again.
+
 ---
 
 ## 3. What a second layer gives you
 
-Section 2 counted what one layer costs, which raises the question of why anybody
-would use more than one layer. The answer is that the second layer does not read
+With the cost of one layer counted, the question now is why anybody would use
+more than one layer. The answer is that the second layer does not read
 the readings. It reads the features that the first layer made, and that is a
 different thing to read.
 
 The picture below shows this directly. The four circles on the left are the four
-features from section 1, and three new neurons read them.
+features from [the first
+layer](#1-a-layer-is-many-neurons-reading-the-same-numbers), and three new neurons read them.
 
 ![Four feature circles of 0.725, 0.490, 0.250 and 0.000 joined to three neuron boxes, which give 0.160, 0.840 and 0.000](../../images/inside-a-network/layers-and-depth/second-layer-reads-features.svg)
 
@@ -191,13 +200,15 @@ after the rule their outputs are 0.160, 0.840 and 0.000. The camera readings of
 0.42, 0.55 and 0.30 appear nowhere in that arithmetic, because the second layer
 never sees them.
 
-The page before this one showed that two layers with nothing between them
-collapse into one layer, so everything in this section assumes that the rule is
+The page before this one showed, in [why multiplying and adding is not
+enough](01_one-neuron.md#5-why-multiplying-and-adding-is-not-enough), that two
+layers with nothing between them collapse into one layer, so everything in this section assumes that the rule is
 applied after each layer.
 
 To see what the second layer adds, it helps to count bends. A bend is a place
-where a line changes direction, and section 5 of the page before showed that each
-neuron with the rule has one such place of its own.
+where a line changes direction. The page before showed, in [why multiplying and
+adding is not enough](01_one-neuron.md#5-why-multiplying-and-adding-is-not-enough),
+that each neuron with the rule has one such place of its own.
 
 The picture below sweeps the patch brightness from 0 to 1 and draws what one
 layer of two neurons gives.
@@ -293,12 +304,15 @@ looking at the picture, because it only looked at what the first stage said. Tha
 is what an extra layer gives you. It does not give you more lines across the
 readings. It gives you questions asked about the answers to earlier questions.
 
+A second layer adds bends and new questions, so the next section asks how far
+that goes as you add more layers or more neurons in each one.
+
 ---
 
 ## 4. Depth and width, and what each one changes
 
-Section 3 showed what a second layer does, and the next question is how far that
-goes. Answering it means measuring the two words in this page's title. The depth
+This section comes now because the second layer added something, and the next
+step is to measure how much more layers and wider layers each add. Answering it means measuring the two words in this page's title. The depth
 is how many layers a network has, and the width is how many neurons each layer
 has.
 
@@ -315,8 +329,9 @@ vision models often have dozens of layers and the largest language models have
 around a hundred.
 
 One way to measure what a network can do is to count the straight pieces its
-answer is made of, because section 3 showed that a network changes direction only
-where a neuron has a bend. In the pictures below a single reading is swept from -1 to +1. The weights
+answer is made of, because [what a second layer gives
+you](#3-what-a-second-layer-gives-you) showed that a network changes direction
+only where a neuron has a bend. In the pictures below a single reading is swept from -1 to +1. The weights
 are drawn at random from a fixed starting point, the pieces are counted by the
 script on a sweep of 6,001 points, and each number is the average over five
 networks of the same shape.
@@ -384,19 +399,23 @@ Four layers of 8 neurons have 241 parameters and make 27 pieces. One layer of 64
 neurons has 193 parameters and makes 49 pieces. So on this measure the wide flat
 network is ahead, with fewer parameters.
 
-What the deep network has instead is what section 3 showed, which is layers that
-ask questions about earlier answers. That advantage only appears once training
+What the deep network has instead is what [the stages that found the
+handle](#3-what-a-second-layer-gives-you) showed, which is layers that ask
+questions about earlier answers. That advantage only appears once training
 has chosen the weights, and these weights were not trained. So the short answer
 is this. Width
 gives a layer more different features at the same stage. Depth gives later stages
 something built to ask about. Real models use plenty of both.
 
+Both depth and width add detail, so the next section asks what each one costs,
+because cost is what decides between them.
+
 ---
 
 ## 5. What depth and width cost
 
-Section 4 found that both depth and width add detail, so the way to choose
-between them is to look at what each one costs. The cost is easy to count
+The section before found that depth and width both add detail, so this section
+compares them by what each one costs. The cost is easy to count
 exactly. Take a stack in which every layer has the same width, so that each layer
 takes that many numbers in and gives that many out. The parameters in one layer
 are then the width multiplied by itself, plus one bias for each neuron. The
@@ -419,7 +438,8 @@ and added to a running total. There is one multiply-add for every weight, so thi
 count follows the parameter count closely.
 
 The picture below holds the depth at 8 layers and changes the width. On both axes
-an equal step means an equal multiplication, as in the picture of section 2.
+an equal step means an equal multiplication, as in the picture of [parameters
+against width](#2-fully-connected-and-what-joining-everything-costs).
 
 ![A rising line of multiply-adds against width, with the depth held at 8 layers, on multiplying axes](../../images/inside-a-network/layers-and-depth/multiply-adds-by-width.svg)
 
@@ -465,14 +485,15 @@ training goes over the whole set of examples many times rather than once.
 So the honest summary is that a wider layer costs four times as much for each
 doubling, and a deeper stack twice as much, in memory and in work alike. That
 would suggest adding layers, which is the cheaper of the two. For a long time
-nobody could train a very deep stack at all, though, and the next section is
-about the change that fixed it.
+nobody could train a very deep stack at all, though, so the next section asks
+what change made deep stacks trainable.
 
 ---
 
 ## 6. Residual connections
 
-Section 5 ended with a problem that is worth stating properly. When deep networks
+This section comes now because adding layers is the cheaper choice, and that
+choice only works if a deep stack can be trained. When deep networks
 were first built, making a plain stack deeper than a few dozen layers made it
 worse rather than better. It was worse even on the examples it had been trained
 on, which is not the usual failure of a model that has too many parameters. The
@@ -488,7 +509,8 @@ together.
 
 ![Four numbers entering a block, the block's four answers, and the two sets added together, with a line carrying the input straight to the end](../../images/inside-a-network/layers-and-depth/residual-block-numbers.svg)
 
-The four features from section 1 were 0.725, 0.490, 0.250 and 0.000. They go into
+The four features from [the first
+layer](#1-a-layer-is-many-neurons-reading-the-same-numbers) were 0.725, 0.490, 0.250 and 0.000. They go into
 a small block, which answers 0.073, 0.046, 0.052 and 0.212. The output is the two
 sets added together, which is 0.798, 0.536, 0.302 and 0.212.
 
@@ -560,20 +582,30 @@ transformer block that the chapter [the
 transformer](../06_the-transformer/02_a-transformer-block.md) explains part by
 part.
 
+This page has now built layers, stacks and blocks, so the pages below take each
+of those ideas further.
+
 ---
 
 ## 7. Where to read next
 
+Each page below picks up one idea from this page and explains it in more depth.
+
 - [The shape of the numbers](03_the-shape-of-the-numbers.md) is the next page,
-  and it explains how the weight grid of section 1 is stored, what a matrix
-  multiply is, and why the hardware that runs models is built around it.
+  and it explains how [the weight
+  grid](#1-a-layer-is-many-neurons-reading-the-same-numbers) is stored, what a
+  matrix multiply is, and why the hardware that runs models is built around it.
 - [What a network can learn](04_what-a-network-can-learn.md) explains why
   stacking these layers can follow any shape at all, and it introduces the
-  convolution that section 2 compared a fully connected layer against.
-- [A transformer block](../06_the-transformer/02_a-transformer-block.md) is the
-  block of section 6 as it is actually built today, with attention inside it.
+  convolution that [fully connected, and what joining everything
+  costs](#2-fully-connected-and-what-joining-everything-costs) compared a fully
+  connected layer against.
+- [A transformer block](../06_the-transformer/02_a-transformer-block.md) is [the
+  residual block](#6-residual-connections) as it is actually built today, with
+  attention inside it.
 - [Normalisation and stability](../04_making-training-work/02_normalisation-and-stability.md)
-  explains the rescaling step that keeps the numbers of section 6 from growing.
+  explains the rescaling step that keeps the numbers in [the residual
+  stack](#6-residual-connections) from growing.
 - [Backpropagation](../03_how-training-works/03_backpropagation.md) explains the
   training problem that residual connections were invented to solve.
 - [Inside a neural network](../../07_learned-models/01_what-models-are/03_inside-a-neural-network.md)
@@ -585,33 +617,35 @@ part.
 ## 8. Using it in Python
 
 A layer, a stack of layers and a residual block are each a few lines of PyTorch.
-The code below builds the layer of section 1 with the same weights, counts its
-parameters, counts a bigger stack from section 5, and wraps a block in the
-residual addition of section 6.
+The code below builds [the layer of four
+neurons](#1-a-layer-is-many-neurons-reading-the-same-numbers) with the same
+weights, counts its parameters, counts a bigger stack from [what depth and width
+cost](#5-what-depth-and-width-cost), and wraps a block in the addition of
+[residual connections](#6-residual-connections).
 
 ```python
 import torch
 from torch import nn
 
-layer = nn.Linear(3, 4)                     # section 1: four neurons, three inputs each
+layer = nn.Linear(3, 4)                     # the first layer: four neurons, three inputs each
 with torch.no_grad():                       # the same weights this page used
     layer.weight.copy_(torch.tensor([[-2.0, 1.5, 0.8], [2.0, -1.0, 0.0],
                                      [0.0, 2.0, -1.5], [-1.0, -1.0, 1.0]]))
     layer.bias.copy_(torch.tensor([0.5, 0.2, -0.4, 0.3]))
 
 readings = torch.tensor([[0.42, 0.55, 0.30]])
-sums = layer(readings)[0]                   # section 1: the four weighted sums
+sums = layer(readings)[0]                   # the first layer: the four weighted sums
 print([f"{v:.3f}" for v in sums])           # ['0.725', '0.490', '0.250', '-0.370']
 print([f"{v:.3f}" for v in torch.relu(sums)])   # ['0.725', '0.490', '0.250', '0.000']
 print(sum(p.numel() for p in layer.parameters()))   # 16
 
-layers = []                                 # section 5: a stack of 8 layers of 1024
+layers = []                                 # the cost: a stack of 8 layers of 1024
 for _ in range(8):
     layers += [nn.Linear(1024, 1024), nn.ReLU()]
 stack = nn.Sequential(*layers)
 print(sum(p.numel() for p in stack.parameters()))   # 8396800
 
-class Block(nn.Module):                     # section 6: one residual block
+class Block(nn.Module):                     # the residual block: one block
     def __init__(self, width):
         super().__init__()
         self.inner = nn.Sequential(nn.Linear(width, width), nn.ReLU())
@@ -622,12 +656,14 @@ class Block(nn.Module):                     # section 6: one residual block
 
 The library gives you the weight grid, the bias, the multiplying and the adding,
 and `nn.Sequential` gives you the stacking. So a network of 8 layers is one line,
-and its parameter count comes back as 8,396,800, which is the number section 5
-counted. The residual block needs a class of its own only because
+and its parameter count comes back as 8,396,800, which is the number [what depth
+and width cost](#5-what-depth-and-width-cost) counted. The residual block needs a class of its own only because
 `nn.Sequential` passes each output straight on and has nowhere to keep the input.
 
 What you decide is the shape. You choose the width of each layer and how many
-layers there are, which sections 4 and 5 weighed up. You choose whether the
+layers there are, which [depth and width, and what each one
+changes](#4-depth-and-width-and-what-each-one-changes) and [what depth and width
+cost](#5-what-depth-and-width-cost) weighed up. You choose whether the
 layers are fully connected or one of the special kinds that the next pages
 describe. You also choose whether to wrap each layer in a residual addition, and
 for anything deeper than a few layers the answer is yes.

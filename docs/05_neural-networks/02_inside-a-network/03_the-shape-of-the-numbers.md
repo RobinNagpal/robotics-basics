@@ -4,7 +4,9 @@ The page before this one, [layers and depth](02_layers-and-depth.md), put neuron
 into layers. It described a fully connected layer as a group of neurons that all
 read the same inputs. That description is true, but it hides something a programmer
 needs. It never says how the numbers are arranged inside the computer. It also never
-says what single piece of arithmetic the layer performs.
+says what single piece of arithmetic the layer performs. This page comes next because
+a program cannot build the layers of that page until it knows those two things. The
+question it answers is what a layer looks like to the computer, and what that costs.
 
 This page answers four questions, in this order. First, what is the one word that
 covers a single number, a list, a grid and a stack of grids, and how is the
@@ -69,7 +71,8 @@ numbers the tensor holds in all.
 The table below lists five shapes that a robot model really handles. Read it one row
 at a time. Each row gives a shape, says what that shape holds, counts the numbers in
 it, and turns that count into bytes. A byte is the unit computers measure memory in,
-and here every number takes four bytes. Section 5 explains why four.
+and here every number takes four bytes.
+[How many bits one number gets](#5-how-many-bits-one-number-gets) explains why four.
 
 ![A table of five shapes: (7,), (32, 7), (3, 224, 224), (8, 3, 224, 224) and (8, 128, 768), with what each one holds, how many numbers it holds and how many bytes that is](../../images/inside-a-network/the-shape-of-the-numbers/real-shapes.svg)
 
@@ -108,15 +111,16 @@ The grid position at row 1 and column 2 lands at place 1 x 6 + 2 = 8 in the line
 Each row of that grid is six places long. So stepping along a row moves one place,
 and stepping down a column skips six places. Row 1 and column 2 therefore sits at
 place 1 x 6 + 2, which is place 8. Row 3 and column 5 sits at place 3 x 6 + 5, which
-is place 23. Now that the numbers have a name and an arrangement, the next section
-can say what a layer does to them.
+is place 23. The next section asks what a fully connected layer does to these
+numbers, and it needs the shapes from this section to write the answer down.
 
 ---
 
 ## 2. A fully connected layer is a matrix multiply
 
-Section 1 gave the arrangement. This section says what the arrangement is for,
-because a fully connected layer turns out to be one single operation on two tensors,
+This section comes now because a layer's work can only be stated once its numbers
+have a shape, and [the shape of a tensor](#1-one-word-for-a-number-a-list-a-grid-and-a-stack)
+supplies that. This section says what the arrangement is for, because a fully connected layer turns out to be one single operation on two tensors,
 rather than a crowd of separate neurons. That operation is called a **matrix
 multiply**. Here the word matrix means nothing more than a grid of numbers, which is
 a tensor of shape `(rows, columns)`.
@@ -208,8 +212,9 @@ parameters. The model holds 32 + 9 = 41 parameters in all.
 
 The same sum on a bigger model gives a much bigger answer, and nothing else about it
 changes. Take a network that reads a 64 by 64 grey picture through two layers of 256
-neurons and gives one number. The picture is flattened into a list first, as section
-1 described, so the first layer has 64 x 64 = 4,096 inputs. The chart below does the
+neurons and gives one number. The picture is flattened into a list first, by the
+[reshaping described earlier](#1-one-word-for-a-number-a-list-a-grid-and-a-stack),
+so the first layer has 64 x 64 = 4,096 inputs. The chart below does the
 sum one layer at a time.
 
 ![A horizontal bar chart of three layers, with the first at 1,048,832 parameters dwarfing the second at 65,792 and the third at 257, and the arithmetic written beside each bar](../../images/inside-a-network/the-shape-of-the-numbers/parameters-layer-by-layer.svg)
@@ -270,14 +275,17 @@ working out which way to move each parameter, and this page has no formula for t
 so it gives no total for a whole training run.
 [Gradient descent](../03_how-training-works/02_gradient-descent.md) and
 [the training loop](../03_how-training-works/04_the-training-loop.md) are where that
-part is counted.
+part is counted. All of this arithmetic is one matrix multiply repeated, so the next
+section asks why graphics cards are built for exactly that operation.
 
 ---
 
 ## 3. Why the hardware is built for this one operation
 
-Section 2 showed that a layer is one matrix multiply. This section explains why that
-is good news for the machine. The reason is that a matrix multiply does a great deal
+This section comes now because
+[a fully connected layer is a matrix multiply](#2-a-fully-connected-layer-is-a-matrix-multiply),
+and nearly all of a network's arithmetic is therefore that one operation. This section
+explains why that is good news for the machine. The reason is that a matrix multiply does a great deal
 of arithmetic on very few numbers. Moving numbers about is the slow part of a
 computer, rather than the arithmetic itself, so an operation that moves few numbers
 and computes a lot is the kind of operation hardware designers want.
@@ -349,13 +357,16 @@ The share rises because the matrix multiplies grow with the width multiplied by
 itself, while the bias additions and the ReLU comparisons grow only with the width.
 So making models bigger makes the one operation matter more, not less. There is one
 thing that spoils this bargain, and that is a multiply too small to be worth the trip
-to memory. Avoiding small multiplies is what the batch is for.
+to memory. The next section asks how to keep every multiply large, and its answer
+is the batch.
 
 ---
 
 ## 4. The batch, and why examples travel in groups
 
-Section 3 left a problem. A matrix multiply pays for itself when it is large, but one
+This section comes now because
+[the work the machine gets per number fetched](#3-why-the-hardware-is-built-for-this-one-operation)
+left a problem. A matrix multiply pays for itself when it is large, but one
 example through one layer is not large. The reason is that one example is a list
 rather than a grid, so the multiply has only one row to work on. The answer is to
 stack several examples together into a grid and send them through in one operation.
@@ -430,15 +441,16 @@ an answer. An arm that must decide thirty times a second is in a different posit
 It holds exactly one camera picture at the moment it must decide, so its batch is 1,
 and its card therefore spends most of its time fetching weights. That is the main
 reason the same model is far less efficient on a robot than in a laboratory. The
-usual way to repair it is to make each weight smaller, which is the subject of the
-next section.
+usual repair is to make each weight smaller, so the next section asks how many bits
+one number really needs.
 
 ---
 
 ## 5. How many bits one number gets
 
-Section 4 ended with the weights dominating the traffic. So this section asks how big
-one weight has to be. Every number so far has been counted as four bytes, and four is
+This section comes now because
+[the batch](#4-the-batch-and-why-examples-travel-in-groups) left the weights as most
+of the memory traffic on a robot. So this section asks how big one weight has to be. Every number so far has been counted as four bytes, and four is
 a choice rather than a law. A **byte** is eight bits, and a bit is one position
 holding either 0 or 1. So the real question is how those bits are divided up inside
 one number.
@@ -519,20 +531,23 @@ A card today stores the weights at two bytes a number, adds the products up in a
 
 That arrangement has a name, which is mixed precision, and
 [normalisation and stability](../04_making-training-work/02_normalisation-and-stability.md)
-covers it in full. What choosing two bytes a number buys is the subject of the last
-section, because it halves every figure in the bill.
+covers it in full. The next section asks how many gigabytes a whole model needs, and
+the bytes per number from this section are one half of that sum.
 
 ---
 
 ## 6. The memory bill, in gigabytes
 
-Section 5 gave the size of one number, and section 2 gave a way of counting the
-numbers in a layer. Put those two together and you can settle how much memory a model
+This section comes last because it needs two earlier results.
+[How many bits one number gets](#5-how-many-bits-one-number-gets) gave the size of one
+number, and [a fully connected layer is a matrix multiply](#2-a-fully-connected-layer-is-a-matrix-multiply)
+gave a way of counting the numbers in a layer. Put those two together and you can settle how much memory a model
 needs. That figure decides whether a model will run on a particular robot at all. The
 sum is as simple as it looks. It is the parameter count multiplied by the bytes each
 parameter takes.
 
-The chart below does that sum for one model at the four formats of section 5.
+The chart below does that sum for one model at
+[the four number formats](#5-how-many-bits-one-number-gets).
 
 ![A bar chart of the weights of a 7 billion parameter model at float32, bfloat16, float16 and int8, at 28, 14, 14 and 7 gigabytes](../../images/inside-a-network/the-shape-of-the-numbers/memory-bill.svg)
 
@@ -582,13 +597,14 @@ given.
 
 The same sum is worth doing at the small end of the scale as well, because it shows
 where a file size starts to matter at all. The table below prices the four models
-that section 2 counted. Read it one row at a time. Each row is one model, the second
-column is its parameter count from section 2, and the last three columns are that
-count multiplied by 4, by 2 and by 1.
+counted under
+[a fully connected layer is a matrix multiply](#2-a-fully-connected-layer-is-a-matrix-multiply).
+Read it one row at a time. Each row is one model, the second column is its parameter
+count, and the last three columns are that count multiplied by 4, by 2 and by 1.
 
 ![A table of four models, a fitted straight line, a tiny network, a 64 by 64 picture network and a stack of 48 blocks, with the bytes each one takes at four, two and one byte a parameter](../../images/inside-a-network/the-shape-of-the-numbers/four-models-in-bytes.svg)
 
-The four models of section 2, each priced at four bytes, two bytes and one byte a parameter.
+The four models counted earlier on this page, each priced at four bytes, two bytes and one byte a parameter.
 
 Two of those rows are worth working through. The picture network holds 1,114,881
 parameters, so at four bytes each it takes 1,114,881 x 4 = 4,459,524 bytes. Divide
@@ -614,8 +630,9 @@ parameters and a thousand million.
 
 Two honest warnings go with this sum. The first warning is that the weights are not
 the whole bill, because the numbers passing through the layers need room as well, as
-section 4 showed. The picture below puts those two parts of the bill side by side for
-the small picture network of section 4.
+[the batch](#4-the-batch-and-why-examples-travel-in-groups) showed. The picture below
+puts those two parts of the bill side by side for the small picture network used
+there.
 
 ![One stacked bar for the small picture network at a batch of 32: the weights at 1.55 megabytes under the numbers passing through at 115.6 megabytes](../../images/inside-a-network/the-shape-of-the-numbers/weights-are-not-the-bill.svg)
 
@@ -625,11 +642,15 @@ The second warning is that training needs several times the memory of merely run
 the model. Training keeps extra numbers for every parameter, and
 [the training loop](../03_how-training-works/04_the-training-loop.md) explains which
 ones and why. So treat the parameter count multiplied by the bytes as the floor of
-the bill, rather than as the total.
+the bill, rather than as the total. That completes the counting for a network that is
+only run, and the list below says where each count is taken further.
 
 ---
 
 ## 7. Where to read next
+
+This page counted what a network holds and what it costs to run. Each page below takes
+one of those counts further.
 
 - [What a network can learn](04_what-a-network-can-learn.md) is the next page, and
   it uses the shapes and the matrix multiply from here to ask what a stack of layers
@@ -638,14 +659,16 @@ the bill, rather than as the total.
   opens the next chapter with the number that says how wrong an answer is, which is
   the thing this page deliberately left out.
 - [Normalisation and stability](../04_making-training-work/02_normalisation-and-stability.md)
-  returns to the number formats of section 5 and explains mixed precision.
+  returns to [the number formats](#5-how-many-bits-one-number-gets) and explains mixed
+  precision.
 - [Pictures, sound and robot states](../05_turning-the-world-into-numbers/02_pictures-sound-and-robot-states.md)
-  takes the shapes of section 1 further, to depth pictures, point clouds and gripper
-  states.
+  takes [the shapes of tensors](#1-one-word-for-a-number-a-list-a-grid-and-a-stack)
+  further, to depth pictures, point clouds and gripper states.
 - [Scale, data and compute](../07_pretraining-and-adapting/02_scale-data-and-compute.md)
   takes this counting up to whole training runs and explains what a graphics card is.
 - [Running a model on a robot](../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md)
-  is the catalogue page for the practical side of section 6.
+  is the catalogue page for the practical side of
+  [the memory bill](#6-the-memory-bill-in-gigabytes).
 
 ---
 
@@ -658,45 +681,48 @@ order. Every number in a comment is the number that the line really prints.
 ```python
 import torch
 
-# section 1: eight colour photos as one tensor, and what its shape means
+# tensors and shapes: eight colour photos as one tensor, and what its shape means
 photos = torch.zeros(8, 3, 224, 224)
 print(photos.shape)                            # torch.Size([8, 3, 224, 224])
 print(photos.numel())                          # 1204224
 print(photos.element_size(), photos.dtype)     # 4 torch.float32
 print(photos.numel() * photos.element_size())  # 4816896 bytes, which is 4.82 MB
 
-# section 1 again: reshaping keeps the numbers and changes only the counting
+# reshaping keeps the numbers and changes only the counting
 print(photos.reshape(8, -1).shape)             # torch.Size([8, 150528])
 
-# section 2: a fully connected layer is the matrix multiply plus the biases
+# a fully connected layer is the matrix multiply plus the biases
 layer = torch.nn.Linear(768, 3072)
 print(layer.weight.shape)                      # torch.Size([3072, 768])
 print(sum(p.numel() for p in layer.parameters()))   # 2362368
 
-# section 4: the batch is the first number of the shape, and goes through at once
+# the batch is the first number of the shape, and goes through at once
 print(layer(torch.zeros(32, 768)).shape)       # torch.Size([32, 3072])
 
-# section 5: the same layer with two bytes a number instead of four
+# number formats: the same layer with two bytes a number instead of four
 small = layer.half()
 print(small.weight.dtype, small.weight.element_size())  # torch.float16 2
 print(sum(p.numel() for p in small.parameters()) * 2)   # 4724736 bytes
 
-# section 6: the memory bill for a model of seven billion parameters
+# the memory bill for a model of seven billion parameters
 print(7_000_000_000 * 2 / 1e9)                 # 14.0 gigabytes at two bytes each
 ```
 
 The library does the hard parts for you. It keeps the shape and the format of every
-tensor and checks them at each step, so the refusal in section 2 arrives as a
+tensor and checks them at each step, so [the refusal when shapes do not match](#2-a-fully-connected-layer-is-a-matrix-multiply) arrives as a
 readable message rather than as nonsense in the answer. It owns the blocked matrix
-multiply of section 3, which was written by hand for each kind of card by the people
+multiply described under
+[why the hardware is built for this one operation](#3-why-the-hardware-is-built-for-this-one-operation), which was written by hand for each kind of card by the people
 who made the card. It also carries the batch through every layer without you writing
 a loop over examples, which is why `layer(batch)` reads the same whether the batch is
 1 or 1,024.
 
 What you still decide is the three things this page measured. You choose the batch,
-trading the memory of section 4 against the traffic saving of the same section, and
+trading the memory it takes against the traffic it saves, both measured under
+[the batch](#4-the-batch-and-why-examples-travel-in-groups), and
 on a robot that choice is often forced to 1. You choose the number format, trading
-the memory of section 6 against the rounding of section 5, which in practice means
+[the memory bill](#6-the-memory-bill-in-gigabytes) against
+[the rounding of each format](#5-how-many-bits-one-number-gets), which in practice means
 bfloat16 for almost everything and int8 only after measuring what it costs. You also
 choose the shapes, because the width of a layer sets both the parameter count and the
 multiply-add count.

@@ -464,37 +464,6 @@ def sum_over_two_readings() -> None:
 # 01_one-neuron.md  --  section 4: changing a weight, changing the bias
 # ==========================================================================
 
-def flipping_one_weight() -> None:
-    """The same readings with the distance weight flipped from -2.00 to +2.00."""
-    w2 = W.copy()
-    w2[0] = -W[0]
-    prod2 = X * w2
-    sum2 = float(prod2.sum() + BIAS)
-    print('--- flipping the distance weight --------------------------------')
-    print(f'with {W[0]:+.2f} the sum is {SUM:+.3f} and the output {OUT:.3f}')
-    print(f'with {w2[0]:+.2f} the sum is {sum2:+.3f} and the output {float(relu(sum2)):.3f}')
-    fig, ax = plt.subplots(figsize=(13.5, 5.8), facecolor='white')
-    _axes(ax, (0, 27), (0, 11.4), equal=False)
-    _label(ax, 13.5, 10.8, 'Flipping one weight from minus to plus: the same readings, '
-           'a different answer', size=13, weight='bold')
-    for x0, ws, ps, tot, col, head in ((0.8, W, PROD, SUM, GRIP, 'weight on distance -2.00'),
-                                       (14.2, w2, prod2, sum2, SLIDE,
-                                        'weight on distance +2.00')):
-        _label(ax, x0 + 5.8, 9.8, head, size=11.5, weight='bold', color=col)
-        rows = [['reading', 'value', 'weight', 'product']]
-        for nm, a, w, p in zip(SHORT, X, ws, ps):
-            rows.append([nm, f'{a:.2f}', f'{w:+.2f}', f'{p:+.3f}'])
-        rows.append(['bias', '-', f'{BIAS:+.2f}', f'{BIAS:+.3f}'])
-        rows.append(['sum', '', '', f'{tot:+.3f}'])
-        bottom = _table(ax, x0, 9.0, [3.6, 2.6, 2.6, 2.8], rows, row_h=1.1, size=10.8,
-                        head_face=LINK_PALE)
-        _label(ax, x0 + 5.8, bottom - 0.75, f'the rule gives {float(relu(tot)):.3f}',
-               size=11.5, color=col, weight='bold')
-    _label(ax, 13.5, 0.35, 'the first neuron answers "near, open and bright"; the second one '
-           'answers "far, open and bright"', size=10, color=MUTED)
-    _save(fig, ONE, 'flipping-one-weight.svg')
-
-
 def weight_size_lines() -> None:
     """How the size of one weight tilts the line where the neuron switches on."""
     d = np.linspace(0.0, 1.0, 201)
@@ -2187,7 +2156,6 @@ def main() -> None:
     contribution_bars()
     sum_against_distance()
     sum_over_two_readings()
-    flipping_one_weight()
     weight_size_lines()
     moving_the_bias()
     two_plain_layers()

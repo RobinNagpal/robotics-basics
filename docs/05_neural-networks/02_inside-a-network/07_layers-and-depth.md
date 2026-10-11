@@ -94,8 +94,10 @@ Four neurons reading three numbers need 4 times 3 weights, which is 12 weights.
 Each neuron also has one bias, which is 4 more numbers. So the whole layer owns
 16 numbers, and those numbers are called its parameters.
 
-The four numbers that come out of the layer are called the layer's **features**.
-A feature is a number worked out from the readings that says something useful
+The four numbers that come out of the layer are the layer's **features**, the
+word [neural networks and
+neurons](01_networks-and-neurons.md#2-why-there-is-anything-in-the-middle)
+introduced for a number worked out from the readings that says something useful
 about them. The point of having four features is that each one describes the
 moment in a different way, so together they say more than any one of them could.
 
@@ -524,8 +526,7 @@ Each page below picks up one idea from this page and explains it in more depth.
 - [Layers, depth and width, worked out](08_layers-and-depth-worked-out.md) is the
   next page. It counts the parameters and the arithmetic of the layers on this
   page, which is how the choice between depth and width is actually made.
-- [The shape of the numbers](09_the-shape-of-the-numbers.md) is the next page,
-  and it explains how [the weight
+- [The shape of the numbers](09_the-shape-of-the-numbers.md) explains how [the weight
   grid](#1-a-layer-is-many-neurons-reading-the-same-numbers) is stored, what a
   matrix multiply is, and why the hardware that runs models is built around it.
 - [What a network can learn](10_what-a-network-can-learn.md) explains why

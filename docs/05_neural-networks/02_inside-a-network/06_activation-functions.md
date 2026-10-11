@@ -1,9 +1,10 @@
 # Activation functions
 
 A neuron multiplies each of its inputs by a weight, adds those results together
-and adds a bias. The page before this one, [one neuron](03_one-neuron.md), worked
-all of that out by hand, and it ended on a limit: whatever values a neuron's
-weights and bias take, the line that divides its yes from its no stays straight.
+and adds a bias. [One neuron](03_one-neuron.md) worked all of that out by hand,
+and the two pages since have used the result without questioning it. All three
+ended on the same limit: whatever values a neuron's weights and bias take, the
+line that divides its yes from its no stays straight.
 This page is about the one small rule that removes that limit. The rule is applied
 to the weighted sum before the neuron hands its answer on, and it is called an
 **activation function**. The number that comes out of it is the neuron's

@@ -1,11 +1,14 @@
 # The shape of the numbers
 
-The page before this one, [layers and depth](07_layers-and-depth.md), put neurons
-into layers. It described a fully connected layer as a group of neurons that all
-read the same inputs. That description is true, but it hides something a programmer
-needs. It never says how the numbers are arranged inside the computer. It also never
-says what single piece of arithmetic the layer performs. This page comes next because
-a program cannot build the layers of that page until it knows those two things. The
+[Layers, depth and width](07_layers-and-depth.md) put neurons into layers, and
+[layers, depth and width, worked out](08_layers-and-depth-worked-out.md) counted
+what those layers own. Both described a fully connected layer as a group of
+neurons that all read the same inputs. That description is true, but it hides
+something a programmer needs. It never says how the numbers are arranged inside
+the computer. It also never says what single piece of arithmetic the layer
+performs. This page comes next because a program cannot build those layers until
+it knows those two things, and because the parameter counts of the page before
+only become real memory once you know how many bytes one number takes. The
 question it answers is what a layer looks like to the computer, and what that costs.
 
 This page answers four questions, in this order. First, what is the one word that

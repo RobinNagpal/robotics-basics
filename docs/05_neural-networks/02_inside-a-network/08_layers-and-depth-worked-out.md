@@ -37,10 +37,15 @@ four times as much while doubling the depth costs only twice as much.
 ## 1. Counting the numbers one network owns
 
 This section comes first because the comparison in the section after it is a
-comparison of counts, and a count means more once you have done one yourself. The
-network counted here answers one question about the arm, which is whether a grasp
-it is about to make will hold. The answer is one number between 0 and 1, read as
-how likely the grasp is to hold.
+comparison of counts, and a count means more once you have done one yourself.
+
+The network counted here answers the same question as the one on [a network on a
+robot](04_a-network-on-a-robot.md), which is whether a grasp the arm is about to
+make will hold, and the answer is still one number between 0 and 1. What is
+different is the size. That network had three readings and four neurons, because
+every one of its numbers had to fit in a picture. This one has the shape a working
+arm would actually give it, which is large enough that counting its numbers is
+worth doing and small enough that you can still do the counting by hand.
 
 Before any counting can start, the number of inputs has to be settled, and that is
 not simply the number of things the arm reports. A layer multiplies each input by

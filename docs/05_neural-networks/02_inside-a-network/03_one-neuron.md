@@ -1,9 +1,11 @@
 # One neuron, worked out by hand
 
-A neuron is the smallest part that a neural network is built from, and it is one
-small piece of arithmetic that owns a few numbers of its own. This page opens one
-neuron and works it out in full with real numbers, so that nothing here stays a
-word you have to accept without checking it. Everything is worked out on one
+The page before this one, [the smallest network](02_the-smallest-network.md),
+drew neurons as circles and told you what each one gives without ever opening one.
+This page opens one. A neuron is the smallest part that a neural network is built
+from, and it is one small piece of arithmetic that owns a few numbers of its own.
+It is worked out here in full with real numbers, so that nothing in the rest of
+the chapter stays a word you have to accept without checking it. Everything is worked out on one
 made-up moment of one grasp, in which a robot arm is reaching for a cup.
 
 This page is for a reader who knows what a model is. If you came straight to this
@@ -320,9 +322,12 @@ is the thing that solves it.
 
 ## 5. Where to read next
 
-- [Activation functions](06_activation-functions.md) is the next page. It takes
-  the straight dividing line that this page ended on and shows the one small rule
-  that lets a neuron bend it.
+- [A network on a robot](04_a-network-on-a-robot.md) is the next page. It puts
+  this neuron back among the other three and follows one whole grasp from the
+  sensors to the decision.
+- [Activation functions](06_activation-functions.md) takes the straight dividing
+  line that this page ended on and shows the one small rule that lets a neuron
+  bend it.
 - [Layers, depth and width](07_layers-and-depth.md) joins many copies of this
   neuron into a layer, stacks those layers, and explains what each extra layer
   adds and what it costs.

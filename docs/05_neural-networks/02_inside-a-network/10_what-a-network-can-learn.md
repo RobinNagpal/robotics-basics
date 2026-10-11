@@ -485,9 +485,12 @@ network finds its weights.
 
 ## 7. Where to read next
 
+- [Questions and answers](11_questions-and-answers.md) is the next page, and it
+  closes the chapter by answering the questions the other pages raised without
+  stopping for, such as how many layers to use and where the weights come from.
 - [The score of being wrong](../03_how-training-works/01_the-score-of-being-wrong.md)
-  is the next page and opens the next chapter, giving the number that says how wrong
-  an answer is, which this page kept calling the gap.
+  opens the next chapter, giving the number that says how wrong an answer is,
+  which this page kept calling the gap.
 - [Gradient descent](../03_how-training-works/02_gradient-descent.md) then explains
   how the weights and
   [the bends that each neuron buys](#1-a-straight-line-cannot-bend-and-one-neuron-can)

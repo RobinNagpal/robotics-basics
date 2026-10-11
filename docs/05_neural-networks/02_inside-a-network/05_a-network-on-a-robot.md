@@ -1,196 +1,175 @@
 # A network on a robot
 
-[One neuron](03_one-neuron.md) worked one neuron out in full, and [the smallest
-network](04_the-smallest-network.md) put four of them between the readings and the
-answer. Both pages were about the machinery. This page is about what the machinery
-is for. It takes one moment of one robot arm, puts it through the whole network
-from the sensors to the answer, and says at every step what the numbers mean for
-the arm rather than only what they are.
+[The smallest network](04_the-smallest-network.md) worked one moment of the grasp
+through a network of four neurons and one neuron at the end, and it got the answer
+0.838. That page was about the arithmetic. This page is about whether the answer
+is any good. A network is only useful if it gives the right answer at every moment
+of the reach, so this page puts all three moments of [the grasp
+example](02_the-grasp-example.md#3-three-moments-of-the-reach) through the same
+network and compares each answer with the one a person watching would give.
 
-The reason to do this now, before the chapter goes any further, is that a network
-is easy to follow as arithmetic and hard to connect to a machine. It is worth
-seeing once that nothing mysterious happens in between: a sensor reading becomes a
-number, numbers become features, features become one answer, and a program on the
-robot acts on that answer.
+The network is the one from the smallest network, with the same weights, so
+nothing new has to be set up. Only the readings change from one moment to the
+next.
 
-The network here is the two-layer one from the smallest network, with the same
-weights, so nothing new has to be set up.
-
-When you reach the end you will have followed one moment from three sensors to one
-decision, you will know what each of the four features is saying about the arm,
-and you will have seen the same network answer differently when the arm moves.
+When you reach the end you will know what each of the four features says about
+the arm, how the features move when the arm moves, and how the same fixed
+twenty-one numbers give a high probability at one moment and a low one at the
+others.
 
 ## Contents
 
-1. [The question the network is asked](#1-the-question-the-network-is-asked)
-2. [From the arm's readings to four features](#2-from-the-arms-readings-to-four-features)
-3. [From four features to one answer](#3-from-four-features-to-one-answer)
-4. [The same network at a different moment](#4-the-same-network-at-a-different-moment)
-5. [Where to read next](#5-where-to-read-next)
+1. [What each of the four features says](#1-what-each-of-the-four-features-says)
+2. [Ready to close](#2-ready-to-close)
+3. [Too far away](#3-too-far-away)
+4. [Aimed beside the cup](#4-aimed-beside-the-cup)
+5. [What the network amounts to](#5-what-the-network-amounts-to)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
-## 1. The question the network is asked
+## 1. What each of the four features says
 
-Everything on this page depends on the question being a real one, so it is worth
-stating carefully before any arithmetic starts.
+The three moments differ in which features rise and which fall, so this section
+first says what each feature is watching for. The weights of each neuron are in
+[the layer, worked out](04_the-smallest-network.md#2-the-layer-worked-out).
 
-A robot arm is reaching for a cup on a table. The gripper is open and moving
-towards it. At some moment the controller has to decide whether to close the
-gripper, and closing it at the wrong moment is expensive: too early and the
-gripper shuts on air, too late and it pushes the cup over. So the question is
-whether closing now would result in a grasp that holds.
+The first neuron has a minus weight on the distance and plus weights on the
+opening and the brightness. So it is large when the cup is near, the gripper is
+open and the cup is straight ahead. It answers "near, open and bright", and it is
+the one feature that speaks for closing.
 
-Nobody can write that rule down. The right moment depends on how far away the cup
-is, on how wide the gripper is open, on whether the thing in front of the gripper
-is really the cup, and on how those three combine. That combination is exactly the
-kind of thing the chapter [where rules stop
-working](../01_what-learning-means/02_where-rules-stop-working.md) says a model is
-for.
+The second neuron has a plus weight on the distance and a minus weight on the
+opening. So it is large when the cup is far away or the gripper is nearly shut. It
+answers "far and closed".
 
-The network is asked for one number between 0 and 1, read as how likely the grasp
-is to hold. A program on the robot, not the network, decides what to do with that
-number: close above some level, keep moving below it. The network makes no
-decision and moves nothing. It answers a question, and a plain program written by
-a person acts on the answer. That division is worth remembering, because it is how
-nearly every learned model sits inside a working robot.
+The third neuron has a plus weight on the opening and a minus weight on the
+brightness. So it is large when the gripper is open but nothing bright is
+straight ahead. It answers "open but not bright". That is the sign of a gripper
+aimed at empty table.
 
-Three readings go in, and
-[from the arm's readings to four features](#2-from-the-arms-readings-to-four-features)
-follows them.
+The fourth neuron would answer "far, closed and bright". None of the three moments
+has all three of those, so it stays at 0 in every one of them.
 
----
+The neuron at the end has a weight of +5.00 on the first feature and minus weights
+on the other three. So the first feature pushes the answer up, and the others
+pull it down. The third has the largest minus weight, -8.00, because an open
+gripper with nothing in front of it is the clearest sign that closing would miss.
 
-## 2. From the arm's readings to four features
-
-This section is the first half of the network, and it is where the readings stop
-being readings. Before anything can be multiplied, each sensor has to give one
-number, and the three numbers have to be on a comparable scale.
-
-The distance to the cup comes from a depth camera, which is a camera that reports
-how far away each point in front of it is. At this moment it reads 0.42 metres.
-The gripper opening comes from the gripper itself, which reports 55 millimetres
-out of the 100 it can open, so the number used is 0.55. The brightness comes from
-a small patch of the camera picture where the cup should be, averaged and divided
-by its largest possible value, which gives 0.30. [One
-neuron](02_the-grasp-example.md#2-the-three-readings) works that scaling out in
-full.
-
-So the arm's state at this moment is the three numbers 0.42, 0.55 and 0.30, in
-that fixed order. The order matters and never changes, because the first weight of
-every neuron always multiplies the first number. If the program ever swapped two
-readings, every weight would be multiplying the wrong thing, and nothing would
-report an error.
-
-The picture below follows those three numbers through the whole network, so you
-can see both halves at once before reading about either.
-
-![Three readings entering four neuron boxes, each box showing its sum and its output and labelled with what it answers, and the four outputs joining one box that gives a sum of +1.127 and an answer of 0.755](../../images/inside-a-network/a-network-on-a-robot/the-whole-network.svg)
-
-Each of the four neurons reads all three numbers and gives one number back, so the
-layer turns three numbers into four. Those four are the features. What makes this
-example readable is that the weights were chosen by hand so that each neuron has a
-description a person can state, which is not true of a trained network.
-
-The first neuron has a minus weight on distance and plus weights on opening and
-brightness, so it answers how near, open and bright this moment is. Its sum is
-+0.725. The second has the opposite weights on the first two, so it answers how
-far and closed the arm is, and its sum is +0.490. The third watches for a wide
-gripper with nothing bright in front of it, and gives +0.250. The fourth, which
-would answer about being far, closed and bright, reaches -0.370.
-
-That last one matters. The rule at the end of each neuron turns any total below 0
-into 0, so the fourth feature is exactly 0.000. The neuron is not saying "a
-little"; it is saying nothing at all about this moment. A quarter of this layer is
-silent here, and that is normal rather than a fault. [Activation
-functions](07_activation-functions.md#2-the-rectified-linear-unit) is where that
-rule and its cost are worked out.
-
-So the three readings have become the four features 0.725, 0.490, 0.250 and
-0.000, and the second half of the network never sees the arm again. What that
-second half does with them is
-[from four features to one answer](#3-from-four-features-to-one-answer).
+With that in mind, [ready to close](#2-ready-to-close) runs the first moment.
 
 ---
 
-## 3. From four features to one answer
+## 2. Ready to close
 
-This section is the other half. The output neuron reads only the four features,
-and its job is to weigh them against each other.
+This is the moment the smallest network already worked out, shown here as one
+picture so that the other two moments can be set beside it. The arm is drawn at
+this moment in [the grasp
+example](02_the-grasp-example.md#3-three-moments-of-the-reach): the cup is between
+the fingers, 42 millimetres from the palm.
 
-Its four weights say which features count for the grasp and which count against
-it. The first feature, near and open and bright, is the one that speaks in favour,
-so its weight is the largest at +2.40. The other three count against, with weights
-of -1.20, -0.50 and -0.80. The bias is +0.10.
+The picture below follows the readings 0.42, 0.55 and 0.30 through the whole
+network. Each neuron's box gives its sum and what the rule leaves of it, and the
+box on the right gives the total and the answer.
 
-The picture below is that arithmetic as a table. Read one row at a time: the
-feature, what it answers, its value, its weight, and the product of the last two.
+![The readings 0.42, 0.55 and 0.30 entering four neuron boxes that give 0.725, 0.490, 0.250 and 0.000, and the four outputs joining one box that gives a sum of +1.645 and an answer of 0.838](../../images/inside-a-network/a-network-on-a-robot/network-ready-to-close.svg)
 
-![A table with one row for each feature giving its value, its weight and their product, a row for the bias, and a last row giving the sum of +1.127](../../images/inside-a-network/a-network-on-a-robot/four-features-into-one-answer.svg)
+The first feature is 0.725, so the one feature that speaks for closing is strong.
+The second is 0.490 and the third is 0.250, so the features that speak against are
+weak. The total is +1.645, and the answer is 0.838. A person watching would say
+closing now should hold, and the network agrees.
 
-The first feature contributes +1.740, which is almost everything. The second takes
-away 0.588 and the third takes away 0.125. The fourth takes away nothing at all,
-because its value is 0, and that is worth noticing: a silent feature cannot push
-the answer in either direction however large its weight is. Adding the bias gives
-a total of +1.127.
-
-That total is then squeezed into a probability by the sigmoid, which gives 0.755.
-So the network's answer is that this grasp has about a three in four chance of
-holding, and a program on the robot decides whether three in four is good enough
-to close on.
-
-It is worth seeing what the whole network amounts to. Twenty-one numbers, sixteen
-in the layer and five in the output neuron, turned three sensor readings into one
-decision. No part of it is more than multiplication, addition and two simple
-rules. The thing that would make it useful on a real arm is not more cleverness in
-any step; it is having far more readings, far more neurons, and weights found by
-training instead of chosen by hand.
-
-A single moment proves little, though, so
-[the same network at a different moment](#4-the-same-network-at-a-different-moment)
-moves the arm and asks the same question again.
+The next question is whether the network says no when it should, and [too far
+away](#3-too-far-away) moves the arm back to find out.
 
 ---
 
-## 4. The same network at a different moment
+## 3. Too far away
 
-This section asks what happens when the arm is somewhere else. Nothing about the
-network changes. The weights, the biases and the shape all stay exactly as they
-were, and only the readings move.
+The moment before showed the network saying yes. This section moves the arm back,
+so that closing would obviously fail, and checks that the network says no.
 
-The arm is now further away, at 0.85 metres instead of 0.42, with the gripper
-opening and the brightness unchanged. That is a moment where closing the gripper
-would obviously be wrong, so a network worth anything should say so.
+The cup's near side is now 85 millimetres from the palm, beyond the ends of the
+fingers. The opening and the brightness are the same as before. The picture below
+follows the readings 0.85, 0.55 and 0.30 through the same network.
 
-The picture below gives the four features at both moments side by side.
+![The readings 0.85, 0.55 and 0.30 entering the same four neuron boxes, which now give 0.000, 1.350, 0.250 and 0.000, and a sum of -3.700 with an answer of 0.024](../../images/inside-a-network/a-network-on-a-robot/network-too-far-away.svg)
 
-![A bar chart of the four features at 0.42 metres and at 0.85 metres, where features 1 and 4 fall to zero at the further distance while feature 2 rises from 0.490 to 1.350](../../images/inside-a-network/a-network-on-a-robot/features-at-two-moments.svg)
+The first feature has fallen from 0.725 to 0.000. The cup is no longer near, so
+the first neuron's sum drops below 0, to -0.135, and the rule turns it into 0. The
+second feature has risen from 0.490 to 1.350, because it watches for a cup that is
+far away. The third is unchanged at 0.250, because it reads only the opening and
+the brightness, and neither moved.
 
-The first feature falls from 0.725 to 0.000, because the arm is no longer near.
-The second rises from 0.490 to 1.350, because it answers how far and closed the
-arm is, and the arm is now much further. The third is unchanged at 0.250, which
-makes sense: it asks about the gripper and the brightness, and neither of those
-moved. The fourth stays at 0.000.
+The feature that spoke for closing is now silent, and a feature that speaks
+against it has nearly tripled. The total falls to -3.700, and the answer is 0.024.
+The network says the grasp would almost certainly fail, which is right.
 
-Those four numbers then go through the same output neuron. The one feature that
-spoke in favour has gone silent, and the one that speaks against has nearly
-tripled, so the total falls from +1.127 to -1.645.
+The distance alone told those two moments apart. [Aimed beside the
+cup](#4-aimed-beside-the-cup) is a moment where the distance is no help at all.
 
-The picture below gives the answer at both moments.
+---
 
-![A bar chart of the network's answer at the two moments, 0.755 at 0.42 metres and 0.162 at 0.85 metres](../../images/inside-a-network/a-network-on-a-robot/the-answer-at-two-moments.svg)
+## 4. Aimed beside the cup
 
-The answer falls from 0.755 to 0.162. The same twenty-one numbers that said the
-grasp would probably hold now say it probably would not, and nothing was changed
-to make that happen.
+The two moments before differed in their distance. This section uses a moment
+with the same distance as the one where closing works, to check that the network
+is not just reading the distance.
 
+The cup is as close as in the first moment, but it is off to one side, outside the
+fingers. The centre of the camera picture falls on the dark table, so the
+brightness drops from 0.30 to 0.05. The picture below follows the readings 0.42,
+0.55 and 0.05 through the same network.
+
+![The readings 0.42, 0.55 and 0.05 entering the same four neuron boxes, which now give 0.525, 0.490, 0.625 and 0.000, and a sum of -2.355 with an answer of 0.087](../../images/inside-a-network/a-network-on-a-robot/network-aimed-beside-the-cup.svg)
+
+The first feature has fallen a little, from 0.725 to 0.525, because the brightness
+counted in its favour and the brightness has dropped. The second is unchanged at
+0.490, because it reads only the distance and the opening. The third feature has
+risen from 0.250 to 0.625. That is the "open but not bright" neuron noticing that
+nothing is straight ahead.
+
+The neuron at the end weighs the third feature at -8.00, so its rise of 0.375 pulls
+the total down by 3.000. The total falls to -2.355, and the answer is 0.087. The
+network says closing would probably miss, which is right. It got there because one
+of its neurons watches the brightness, and a network that read only the distance
+would have said yes here.
+
+Three moments and three right answers is enough to see what the network as a
+whole is, and [what the network amounts to](#5-what-the-network-amounts-to) steps
+back to say it.
+
+---
+
+## 5. What the network amounts to
+
+The three sections before each looked at one moment. This section puts the three
+answers side by side.
+
+The picture below gives the network's answer at each of the three moments.
+
+![A bar chart of the network's answer at the three moments: 0.838 when ready to close, 0.024 when too far away, and 0.087 when aimed beside the cup](../../images/inside-a-network/a-network-on-a-robot/the-answer-at-three-moments.svg)
+
+The answer is 0.838 when the gripper is ready to close, 0.024 when it is too far
+away, and 0.087 when it is aimed beside the cup. A program on the robot reads that
+number and decides. If it closes the gripper whenever the answer is above one half,
+it closes at the first moment and at neither of the others, which is what a person
+would have done.
+
+Nothing was changed between the three moments. The same twenty-one numbers,
+sixteen in the layer and five in the neuron at the end, gave all three answers.
 That is what a model is, seen from the robot's side. The numbers inside it are
-fixed once training ends, and the whole of its behaviour comes from running those
-fixed numbers over whatever the sensors currently say.
+fixed once training ends, and all of its behaviour comes from running those fixed
+numbers over whatever the sensors currently say.
+
+These twenty-one numbers were chosen by hand to make three moments come out right.
+A network on a real arm would have to be right at thousands of moments, which is
+why it would have far more readings and far more neurons, and why its weights would
+be found by training on recorded grasps rather than picked by a person.
 
 ---
 
-## 5. Where to read next
+## 6. Where to read next
 
 - [One neuron of that network](06_one-neuron-of-that-network.md) is the next page.
   It opens one of the four neurons above and shows why it answers what it answers.

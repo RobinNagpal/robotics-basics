@@ -19,17 +19,19 @@ worked out and printed by `docs/diagrams/inside_a_network_1.py`.
 
 When you reach the end of this page you will know why a network built only from
 multiplying and adding collapses into a single straight line however many layers
-it has, what the rule at the end of each neuron adds, and why the models built
-today mostly use a smoothed version of the simplest rule rather than the simplest
-rule itself.
+it has, what the rule at the end of each neuron adds, why the models built today
+mostly use a smoothed version of the simplest rule rather than the simplest rule
+itself, and why the rule after the very last layer is not a choice at all but is
+decided by the kind of answer the job needs.
 
 ## Contents
 
 1. [Why multiplying and adding is not enough](#1-why-multiplying-and-adding-is-not-enough)
 2. [The rectified linear unit](#2-the-rectified-linear-unit)
 3. [GELU and SiLU, and why networks use them now](#3-gelu-and-silu-and-why-networks-use-them-now)
-4. [Where to read next](#4-where-to-read-next)
-5. [Using it in Python](#5-using-it-in-python)
+4. [The rule at the end of the network](#4-the-rule-at-the-end-of-the-network)
+5. [Where to read next](#5-where-to-read-next)
+6. [Using it in Python](#6-using-it-in-python)
 
 ---
 
@@ -359,15 +361,88 @@ Even a rule that costs as much as 20 multiply-adds adds only 1.95 per cent to th
 work of that layer. So the dearer rule is worth its price whenever it trains
 better.
 
-Those two pictures also introduce the subject of the next page,
-[layers and depth](07_layers-and-depth.md), which is that a
-layer of 1,024 neurons holds over a million weights, and that those weights are
-arranged in a grid which a computer multiplies in one go.
+Those two pictures also introduce the subject of [layers, depth and
+width](07_layers-and-depth.md), which is that a layer of 1,024 neurons holds over
+a million weights, and that those weights are arranged in a grid which a computer
+multiplies in one go.
+
+Everything so far has been about the rule inside a network, where you are free to
+choose. [The rule at the end of the network](#4-the-rule-at-the-end-of-the-network)
+deals with the last layer, where you are not.
 
 
 ---
 
-## 4. Where to read next
+## 4. The rule at the end of the network
+
+The three sections before this one were all about the rule that follows a hidden
+layer, and for those layers the rule is a free choice: you weigh the rectified
+linear unit against GELU and SiLU and pick one. This section is here because the
+last layer is not like that. The rule after the output layer is decided by the
+job, not by you, and picking it wrongly produces answers that cannot mean what
+they are supposed to mean.
+
+The reason is simple. A rule is the last thing that touches a number before
+anybody reads it, so the rule decides which answers are even possible. The
+rectified linear unit can give 7.3. If the answer is supposed to be a probability,
+7.3 is not a wrong probability; it is not a probability at all. So the question to
+ask is what the answer has to look like, and the rule follows from that.
+
+The table below gives the four cases you will meet. Read it a row at a time: the
+first column is what the job needs, the second is the rule that produces it, and
+the third says why that rule and not another.
+
+![A table of four cases: any number at all needs no rule, one probability needs the sigmoid, one of several possibilities needs softmax, and several numbers at once need no rule](../../images/inside-a-network/activation-functions/which-rule-at-the-end.svg)
+
+The first row is the easiest and the one people forget. If the answer is a plain
+measurement, such as how many millimetres the tool tip has dropped, then no rule
+belongs at the end at all. Any number is a valid answer, so squeezing the output
+into a range would only throw away answers that were correct.
+
+The second row is the one this chapter has been quietly using. When the answer is
+one probability, the rule is the **sigmoid**, which takes any number at all and
+gives back a number between 0 and 1. [The smallest
+network](02_the-smallest-network.md) and [a network on a
+robot](04_a-network-on-a-robot.md) both ended on it without explaining it, and
+this is that explanation.
+
+The picture below draws the sigmoid, with the three totals those pages produced
+marked on it.
+
+![The sigmoid drawn as an S-shaped curve rising from 0 to 1, with three points marked: a sum of -1.645 giving 0.162, a sum of +0.725 giving 0.674, and a sum of +1.127 giving 0.755](../../images/inside-a-network/activation-functions/the-sigmoid.svg)
+
+A sum of 0 comes out as exactly 0.500, meaning the network is saying it has no
+idea. A sum of +1.127 comes out as 0.755, and a sum of -1.645 comes out as 0.162.
+The curve never reaches 0 or 1, however large the sum gets: at -6 it gives 0.0025
+and at +6 it gives 0.9975.
+
+That last fact has a consequence worth knowing. The curve is nearly flat at both
+ends, so once a sum is past about 6 in either direction, making it larger changes
+the answer hardly at all. The interesting part of the sigmoid is the middle, and a
+network whose sums all land far out at the ends has stopped saying anything
+useful. The same flatness is what
+[the rectified linear unit](#2-the-rectified-linear-unit) ran into on its left
+half, and for the same reason: a flat rule gives training nothing to work with.
+
+The third row covers an answer that picks one of several named possibilities, such
+as which of three tools to fit. The output layer then has one neuron for each
+possibility, and the rule is **softmax**, which turns their totals into shares
+that add up to 1. With totals of +0.40, +2.10 and -0.70 the three shares come out
+as 0.147, 0.804 and 0.049, which add to exactly 1.000. Reading them as
+probabilities is only honest because they add up, and that is the whole reason
+softmax exists rather than using a sigmoid on each neuron separately.
+
+The fourth row is the case where the answer is several ordinary numbers at once,
+such as three coordinates for where to put the gripper. Those are measurements,
+not shares, so nothing should tie them together and no rule belongs at the end.
+
+So the habit worth building is to settle the shape of the answer first. That fixes
+how many neurons the output layer has and which rule follows it, and only then is
+anything in the middle worth thinking about.
+
+---
+
+## 5. Where to read next
 
 - [Layers, depth and width](07_layers-and-depth.md) is the next page. It joins
   many neurons, each with the rule from this page at its end, into a layer, and
@@ -387,7 +462,7 @@ arranged in a grid which a computer multiplies in one go.
 
 ---
 
-## 5. Using it in Python
+## 6. Using it in Python
 
 The three rules are one function call each in PyTorch, which is the library most
 of this book's models are built with. The code below takes the same weighted sum
@@ -418,6 +493,9 @@ is about.
 
 In a real model you rarely call these functions by name on their own. You put one
 after each layer, and the library applies it to every number the layer produced.
+The output rules work the same way: `torch.sigmoid` and
+`torch.nn.functional.softmax` are the two from
+[the rule at the end of the network](#4-the-rule-at-the-end-of-the-network).
 [Layers, depth and width](07_layers-and-depth.md) shows that arrangement, and
 [using it in Python](07_layers-and-depth.md#7-using-it-in-python) on that page
 builds a stack of layers with a rule between each pair.

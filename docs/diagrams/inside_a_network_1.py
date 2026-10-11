@@ -157,6 +157,17 @@ def silu(z: Arr | float) -> Arr:
     return za / (1.0 + np.exp(-za))
 
 
+def sigmoid(z: Arr | float) -> Arr:
+    """The rule used at the end of a network whose answer is one probability."""
+    return 1.0 / (1.0 + np.exp(-np.asarray(z, dtype=float)))
+
+
+def softmax(z: Arr) -> Arr:
+    """The rule used when the answer picks one of several named possibilities."""
+    e = np.exp(np.asarray(z, dtype=float) - np.max(z))
+    return e / e.sum()
+
+
 ACTS: dict[str, object] = {'ReLU': relu, 'GELU': gelu, 'SiLU': silu}
 ACT_COLOUR: dict[str, str] = {'ReLU': LINK, 'GELU': GRIP, 'SiLU': SLIDE}
 
@@ -1102,6 +1113,68 @@ def gelu_fast(z: Arr | float) -> Arr:
     return 0.5 * za * (1.0 + np.tanh(math.sqrt(2.0 / math.pi) * (za + 0.044715 * za ** 3)))
 
 
+
+
+# ==========================================================================
+# 06_activation-functions.md  --  section 4: the rule at the end of the network
+# ==========================================================================
+
+# The three totals this chapter has already worked out, so the sigmoid is shown
+# turning numbers the reader has met into the answers they have already seen.
+ENDS: list[tuple[str, float]] = [('one neuron, at 0.42 m', SUM),
+                                 ('the whole network, at 0.42 m', 1.127),
+                                 ('the whole network, at 0.85 m', -1.645)]
+# A gripper choosing one of three tools, as an example of an answer that picks one
+# possibility out of several. The three totals were chosen by hand.
+PICK_NAMES: list[str] = ['two-finger gripper', 'vacuum cup', 'parallel jaw']
+PICK_SUMS: Arr = np.array([0.4, 2.1, -0.7])
+
+
+def report_ends() -> None:
+    print('--- the rule at the end -----------------------------------------')
+    for name, z in ENDS:
+        print(f'  {name:30s} sum {z:+.3f} -> sigmoid {float(sigmoid(z)):.3f}')
+    for z in (-6.0, -2.0, 0.0, 2.0, 6.0):
+        print(f'  sigmoid({z:+.1f}) = {float(sigmoid(z)):.4f}')
+    sm = softmax(PICK_SUMS)
+    for nm, z, p in zip(PICK_NAMES, PICK_SUMS, sm):
+        print(f'  {nm:20s} sum {z:+.2f} -> share {p:.3f}')
+    print(f'  the three shares add to {sm.sum():.3f}')
+
+
+def the_sigmoid() -> None:
+    """The rule that squeezes any number into the range 0 to 1."""
+    fig, ax = plt.subplots(figsize=(7.2, 3.4))
+    z = np.linspace(-6, 6, 601)
+    ax.plot(z, sigmoid(z), color=LINK, lw=2.2)
+    ax.axhline(0.0, color=GRID, lw=0.9)
+    ax.axhline(1.0, color=GRID, lw=0.9)
+    for name, zz in ENDS:
+        ax.plot([zz], [float(sigmoid(zz))], 'o', color=GRIP, ms=7, zorder=5)
+        ax.annotate(f'{float(sigmoid(zz)):.3f}', (zz, float(sigmoid(zz))),
+                    textcoords='offset points', xytext=(8, -12), fontsize=9.5,
+                    family=MONO, color=GRIP)
+    ax.set_xlabel('the weighted sum going in', fontsize=9.5)
+    ax.set_ylabel('the answer coming out', fontsize=9.5)
+    ax.set_ylim(-0.08, 1.08)
+    _plain(ax)
+    fig.tight_layout()
+    _save(fig, ACT, 'the-sigmoid.svg')
+
+
+def which_rule_at_the_end() -> None:
+    """What the answer has to look like, and the rule that follows from it."""
+    rows = [['what the answer has to be', 'rule at the end', 'why'],
+            ['any number at all', 'no rule', 'every number is allowed'],
+            ['one probability', 'sigmoid', 'gives only numbers from 0 to 1'],
+            ['one of several possibilities', 'softmax',
+             'gives one share each, adding to 1'],
+            ['several numbers at once', 'no rule',
+             'each is a plain number of its own']]
+    fig, ax = plt.subplots(figsize=(9.2, 2.4))
+    _axes(ax, (0, 10.6), (0.15, 4.4), equal=False)
+    _table(ax, 0.15, 4.3, [3.7, 2.0, 4.6], rows, row_h=0.82, mono_from=9, size=10.5)
+    _save(fig, ACT, 'which-rule-at-the-end.svg')
 
 
 # ==========================================================================
@@ -2262,6 +2335,9 @@ def main() -> None:
     gelu_keeps_a_slope()
     how_often_the_rule_runs()
     rule_cost_share()
+    report_ends()
+    the_sigmoid()
+    which_rule_at_the_end()
     report_layer()
     one_layer_four_neurons()
     layer_arithmetic()

@@ -3,9 +3,10 @@
 Each document's pictures go to a folder named after it, under
 docs/images/inside-a-network/:
 
-    03_one-neuron.md            -> one-neuron/
-    06_activation-functions.md  -> activation-functions/
-    07_layers-and-depth.md      -> layers-and-depth/
+    03_one-neuron.md                   -> one-neuron/
+    06_activation-functions.md         -> activation-functions/
+    07_layers-and-depth.md             -> layers-and-depth/
+    08_layers-and-depth-worked-out.md  -> layers-and-depth-worked-out/
 
 Run with:  python3 inside_a_network_1.py
 Add --png <folder> to also write PNG copies for checking by eye.
@@ -58,6 +59,7 @@ MONO: str = 'DejaVu Sans Mono'
 ONE: str = 'one-neuron'
 ACT: str = 'activation-functions'
 LAY: str = 'layers-and-depth'
+WRK: str = 'layers-and-depth-worked-out'
 
 Arr = NDArray[np.float64]
 
@@ -1831,7 +1833,90 @@ def deep_narrow_wide_shallow() -> None:
 
 
 # ==========================================================================
-# 07_layers-and-depth.md  --  section 5: what depth and width cost
+# 08_layers-and-depth-worked-out.md  --  section 1: counting one network by hand
+# ==========================================================================
+
+# A made-up but ordinary arm. Most of what it reports is already a number. One
+# reading is not: which tool is fitted is a choice from a short list, and a
+# choice has to become numbers before a layer can multiply it by anything.
+PLAIN_READINGS: int = 26
+TOOLS: list[str] = ['two-finger gripper', 'vacuum cup', 'parallel jaw']
+FITTED: int = 1                                     # the vacuum cup, in this moment
+N_IN: int = PLAIN_READINGS + len(TOOLS)
+HIDDEN: int = 16                                    # the width chosen for the hidden layer
+N_OUT: int = 1                                       # one number out: will this grasp hold
+
+
+def layer_count(n_in: int, n_out: int) -> tuple[int, int, int]:
+    """The weights, the biases and the parameters of one fully connected layer."""
+    return n_in * n_out, n_out, n_in * n_out + n_out
+
+
+def report_worked() -> None:
+    print('--- counting the worked network ---------------------------------')
+    print(f'{PLAIN_READINGS} readings are already numbers; one more says which of '
+          f'{len(TOOLS)} tools is fitted')
+    print(f'that one reading becomes {len(TOOLS)} numbers, so the network takes '
+          f'{N_IN} numbers in')
+    total = 0
+    for name, a, b in (('hidden', N_IN, HIDDEN), ('output', HIDDEN, N_OUT)):
+        w, bi, t = layer_count(a, b)
+        total += t
+        print(f'  {name:6s} layer: {a} x {b} = {w} weights + {bi} biases = {t} parameters')
+    print(f'  the whole network owns {total} parameters')
+    wide = 1024
+    w1, b1, t1 = layer_count(N_IN, wide)
+    w2, b2, t2 = layer_count(wide, N_OUT)
+    print(f'  the same two layers with a hidden width of {wide:,} own '
+          f'{t1 + t2:,} parameters')
+
+
+def one_hot_reading() -> None:
+    """One choice from a list of three becoming three numbers, two of them 0."""
+    fig, ax = plt.subplots(figsize=(8.4, 3.1))
+    _axes(ax, (0, 10.5), (0.7, 4.3), equal=False)
+
+    _box(ax, 0.2, 2.5, 3.0, 1.0, face='#fdf1dc', edge=JOINT)
+    _label(ax, 1.7, 3.15, 'which tool is fitted', size=10.5)
+    _label(ax, 1.7, 2.8, TOOLS[FITTED], size=10.5, weight='bold', color=JOINT)
+    _label(ax, 1.7, 2.1, 'one reading, not a number', size=9.5, color=MUTED)
+
+    _arrow(ax, (3.35, 3.0), (4.55, 3.0), color=MUTED, lw=1.6)
+    for i, tool in enumerate(TOOLS):
+        y = 3.75 - i * 0.75
+        on = i == FITTED
+        _box(ax, 4.7, y - 0.28, 0.56, 0.56,
+             face='#dff0df' if on else 'white', edge=SLIDE if on else GRID)
+        _label(ax, 4.98, y, '1' if on else '0', size=11,
+               weight='bold' if on else 'normal', family=MONO,
+               color=SLIDE if on else MUTED)
+        _label(ax, 5.45, y, tool, size=9.5, ha='left', color=INK if on else MUTED)
+    _label(ax, 4.98, 1.75, f'{len(TOOLS)} numbers, one of them 1', size=9.5, color=MUTED,
+           ha='center')
+
+    ax.plot([9.0, 9.35, 9.35, 9.0], [3.95, 3.95, 0.95, 0.95], color=MUTED, lw=1.2)
+    _label(ax, 9.55, 2.45, f'{N_IN}\nnumbers\nin', size=10.5, ha='left', color=INK)
+    _label(ax, 6.9, 1.0, f'the other {PLAIN_READINGS} readings go in as they are',
+           size=9.5, color=MUTED)
+    _save(fig, WRK, 'one-hot-reading.svg')
+
+
+def count_the_network() -> None:
+    """The parameters of the 29 -> 16 -> 1 network, counted layer by layer."""
+    wh, bh, th = layer_count(N_IN, HIDDEN)
+    wo, bo, to = layer_count(HIDDEN, N_OUT)
+    rows = [['layer', 'numbers in', 'neurons', 'weights', 'biases', 'parameters'],
+            ['hidden', str(N_IN), str(HIDDEN), f'{N_IN} x {HIDDEN} = {wh}', str(bh), str(th)],
+            ['output', str(HIDDEN), str(N_OUT), f'{HIDDEN} x {N_OUT} = {wo}', str(bo), str(to)],
+            ['whole network', '', '', str(wh + wo), str(bh + bo), str(th + to)]]
+    fig, ax = plt.subplots(figsize=(9.2, 2.2))
+    _axes(ax, (0, 10.4), (0.15, 3.8), equal=False)
+    _table(ax, 0.1, 3.7, [2.3, 1.7, 1.3, 2.1, 1.1, 1.6], rows, row_h=0.88, mono_from=1)
+    _save(fig, WRK, 'count-the-network.svg')
+
+
+# ==========================================================================
+# 08_layers-and-depth-worked-out.md  --  section 2: what depth and width cost
 # ==========================================================================
 
 def _stack_params(depth: int, width: int) -> int:
@@ -1871,7 +1956,7 @@ def parameters_and_memory() -> None:
     ax.set_title('Parameters in the stack, and what they weigh at 4 bytes each',
                  fontsize=12.5, weight='bold')
     fig.colorbar(im, ax=ax, label='parameters (log scale)', shrink=0.85)
-    _save(fig, LAY, 'parameters-and-memory.svg')
+    _save(fig, WRK, 'parameters-and-memory.svg')
 
 
 def multiply_adds_by_width() -> None:
@@ -1892,7 +1977,7 @@ def multiply_adds_by_width() -> None:
     ax.set_xlabel('width, with the depth held at 8', fontsize=10)
     ax.set_ylabel('multiply-adds for one example', fontsize=10)
     ax.set_title('Doubling the width multiplies the work by 4', fontsize=12.5, weight='bold')
-    _save(fig, LAY, 'multiply-adds-by-width.svg')
+    _save(fig, WRK, 'multiply-adds-by-width.svg')
 
 
 def multiply_adds_by_depth() -> None:
@@ -1912,7 +1997,7 @@ def multiply_adds_by_depth() -> None:
     ax.set_xlabel('depth, with the width held at 1024', fontsize=10)
     ax.set_ylabel('multiply-adds for one example', fontsize=10)
     ax.set_title('Doubling the depth multiplies the work by 2', fontsize=12.5, weight='bold')
-    _save(fig, LAY, 'multiply-adds-by-depth.svg')
+    _save(fig, WRK, 'multiply-adds-by-depth.svg')
 
 
 def what_doubling_costs() -> None:
@@ -1937,7 +2022,7 @@ def what_doubling_costs() -> None:
     _table(ax, 1.0, 8.2, [5.0, 5.2, 4.2, 5.4, 3.6], rows, row_h=1.3, size=10.5)
     _label(ax, 12.0, 1.9, 'each layer here takes its own width in and gives its own width out, '
            'and the memory is at 4 bytes for each number', size=10, color=MUTED)
-    _save(fig, LAY, 'what-doubling-costs.svg')
+    _save(fig, WRK, 'what-doubling-costs.svg')
 
 
 def work_for_many_examples() -> None:
@@ -1961,7 +2046,7 @@ def work_for_many_examples() -> None:
     ax.set_title('The work grows with the examples as well as with the shape',
                  fontsize=12.5, weight='bold')
     ax.set_xlabel('how many readings go through the stack', fontsize=10)
-    _save(fig, LAY, 'work-for-many-examples.svg')
+    _save(fig, WRK, 'work-for-many-examples.svg')
 
 
 # ==========================================================================
@@ -2201,6 +2286,9 @@ def main() -> None:
     depth_width_grid()
     pieces_follow_total_neurons()
     deep_narrow_wide_shallow()
+    report_worked()
+    one_hot_reading()
+    count_the_network()
     parameters_and_memory()
     multiply_adds_by_width()
     multiply_adds_by_depth()

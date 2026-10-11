@@ -418,5 +418,5 @@ is about.
 In a real model you rarely call these functions by name on their own. You put one
 after each layer, and the library applies it to every number the layer produced.
 [Layers, depth and width](07_layers-and-depth.md) shows that arrangement, and
-[using it in Python](07_layers-and-depth.md#8-using-it-in-python) on that page
+[using it in Python](07_layers-and-depth.md#7-using-it-in-python) on that page
 builds a stack of layers with a rule between each pair.

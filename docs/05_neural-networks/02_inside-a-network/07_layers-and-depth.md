@@ -1,13 +1,16 @@
 # Layers, depth and width
 
-The page before this one, [one neuron](03_one-neuron.md), worked a single neuron
-out by hand. Three readings from a robot arm were each multiplied by a weight,
-the results and a bias were added together to make 0.725, and a rule decided what
-came out. This page comes next because one neuron is not a model. It gives one
-number, and it can only ever draw a straight line across its readings. This page puts many neurons side
-by side into a **layer**, stacks layers one after another, and answers the two
-questions that follow from doing so. Those questions are what each extra layer
-gives you, and what it costs you.
+[One neuron](03_one-neuron.md) worked a single neuron out by hand, and
+[activation functions](06_activation-functions.md) added the rule that lets it
+bend. Three readings from a robot arm were each multiplied by a weight, the
+results and a bias were added together to make 0.725, and the rule decided what
+came out. This page comes next because one neuron is still not a model. It gives one
+number, and it can only ever draw a straight line across its readings. This page
+puts many neurons side by side into a **layer**, stacks layers one after another,
+and answers the question that follows from doing so, which is what each extra
+layer gives you. What it costs you is arithmetic on the same example, and that is
+worked out on the page after this one, [layers, depth and width, worked
+out](08_layers-and-depth-worked-out.md).
 
 Three words do most of the work on this page. A layer is a group of neurons that
 all read the same numbers. The **width** of a layer is how many neurons it has.
@@ -25,9 +28,10 @@ printed by `docs/diagrams/inside_a_network_1.py`. Where many weights are needed
 at once, they are drawn at random from a fixed starting point so that the picture
 can be made again, and the page says so each time.
 
-When you reach the end you will know what a layer is, why a second layer is not
-the same as a wider first one, what depth and width each add, and what each of
-them costs in memory and in arithmetic.
+When you reach the end you will know what a layer is, what makes a layer fully
+connected, why a second layer is not the same thing as a wider first one, what
+depth and width each add, and what one small change makes a deep stack trainable
+at all.
 
 ## Contents
 
@@ -35,10 +39,9 @@ them costs in memory and in arithmetic.
 2. [Fully connected, and what joining everything costs](#2-fully-connected-and-what-joining-everything-costs)
 3. [What a second layer gives you](#3-what-a-second-layer-gives-you)
 4. [Depth and width, and what each one changes](#4-depth-and-width-and-what-each-one-changes)
-5. [What depth and width cost](#5-what-depth-and-width-cost)
-6. [Residual connections](#6-residual-connections)
-7. [Where to read next](#7-where-to-read-next)
-8. [Using it in Python](#8-using-it-in-python)
+5. [Residual connections](#5-residual-connections)
+6. [Where to read next](#6-where-to-read-next)
+7. [Using it in Python](#7-using-it-in-python)
 
 ---
 
@@ -407,93 +410,20 @@ is this. Width
 gives a layer more different features at the same stage. Depth gives later stages
 something built to ask about. Real models use plenty of both.
 
-Both depth and width add detail, so the next section asks what each one costs,
-because cost is what decides between them.
+Both depth and width add detail, so the question that follows is what each one
+costs, because cost is what decides between them. That is arithmetic rather than
+a new idea, so it is worked out on the next page, in [what depth and width
+cost](08_layers-and-depth-worked-out.md#2-what-depth-and-width-cost). The short
+version, which the section below needs, is that a wider layer costs four times as
+much for each doubling and a deeper stack only twice as much, so adding layers is
+the cheaper way to buy detail.
 
 ---
 
-## 5. What depth and width cost
+## 5. Residual connections
 
-The section before found that depth and width both add detail, so this section
-compares them by what each one costs. The cost is easy to count
-exactly. Take a stack in which every layer has the same width, so that each layer
-takes that many numbers in and gives that many out. The parameters in one layer
-are then the width multiplied by itself, plus one bias for each neuron. The
-parameters in the stack are that number multiplied by the depth.
-
-The picture below is a grid of those counts. Each row is one depth and each
-column is one width. Each cell holds two numbers: the parameters in millions, and
-what they weigh in memory at 4 bytes for each number.
-
-![A grid of parameter counts and memory sizes for depths 2 to 16 down the side and widths 256 to 2,048 across the top](../../images/inside-a-network/layers-and-depth/parameters-and-memory.svg)
-
-Two layers of 256 neurons come to 131,584 parameters, which is 0.5 megabytes.
-Sixteen layers of 2,048 neurons come to 67,141,632 parameters, which is 269
-megabytes. So the same grid covers a model that fits anywhere and a model that
-has to be thought about.
-
-The other cost is the arithmetic done every time a reading goes through, which is
-counted in multiply-adds. One multiply-add is one weight multiplied by one number
-and added to a running total. There is one multiply-add for every weight, so this
-count follows the parameter count closely.
-
-The picture below holds the depth at 8 layers and changes the width. On both axes
-an equal step means an equal multiplication, as in the picture of [parameters
-against width](#2-fully-connected-and-what-joining-everything-costs).
-
-![A rising line of multiply-adds against width, with the depth held at 8 layers, on multiplying axes](../../images/inside-a-network/layers-and-depth/multiply-adds-by-width.svg)
-
-Eight layers of 1,024 neurons do 8,388,608 multiply-adds for one reading, and
-eight layers of 2,048 do 33,554,432. So doubling the width multiplies the work by
-4.
-
-The picture below holds the width at 1,024 neurons and changes the depth instead.
-
-![A rising line of multiply-adds against depth, with the width held at 1,024 neurons, on multiplying axes](../../images/inside-a-network/layers-and-depth/multiply-adds-by-depth.svg)
-
-Sixteen layers of 1,024 neurons do 16,777,216 multiply-adds, which is twice what
-eight layers do. So doubling the depth multiplies the work by 2.
-
-The two results are easier to compare as numbers. Width is multiplied
-in twice, once because each neuron has more inputs and once because there are
-more neurons. Depth is multiplied in only once.
-
-The picture below is a table of three stacks. Read each row from left to right:
-the stack, its parameters, how that compares with the first row, its
-multiply-adds, and its memory.
-
-![A table of three stacks with their parameters, their multiply-adds and their memory](../../images/inside-a-network/layers-and-depth/what-doubling-costs.svg)
-
-Doubling the width from 1,024 to 2,048 takes the stack from 8,396,800 to
-33,570,816 parameters, which is 4.0 times as many. Doubling the depth from 8
-layers to 16 takes it to 16,793,600, which is 2.0 times as many.
-
-Time is the last cost, and it cannot be given in seconds here, because seconds
-depend on the computer and on how many readings are handled at once. What can be
-given exactly is the work, and the work grows with the number of readings as well
-as with the shape of the network.
-
-The picture below counts the multiply-adds for one reading, for 32 readings and
-for 10,000 readings through the same stack of 8 layers of 1,024 neurons.
-
-![Three bars on a tenfold scale of multiply-adds for 1 reading, 32 readings and 10,000 readings](../../images/inside-a-network/layers-and-depth/work-for-many-examples.svg)
-
-One moment of one grasp costs 8,388,608 multiply-adds through this stack. 32
-moments at once cost 268,435,456. 10,000 moments cost 83,886,080,000, and
-training goes over the whole set of examples many times rather than once.
-
-So the honest summary is that a wider layer costs four times as much for each
-doubling, and a deeper stack twice as much, in memory and in work alike. That
-would suggest adding layers, which is the cheaper of the two. For a long time
-nobody could train a very deep stack at all, though, so the next section asks
-what change made deep stacks trainable.
-
----
-
-## 6. Residual connections
-
-This section comes now because adding layers is the cheaper choice, and that
-choice only works if a deep stack can be trained. When deep networks
+This section comes now because adding layers is the cheaper choice, as the
+sentence above said, and that choice only works if a deep stack can be trained. When deep networks
 were first built, making a plain stack deeper than a few dozen layers made it
 worse rather than better. It was worse even on the examples it had been trained
 on, which is not the usual failure of a model that has too many parameters. The
@@ -587,10 +517,13 @@ of those ideas further.
 
 ---
 
-## 7. Where to read next
+## 6. Where to read next
 
 Each page below picks up one idea from this page and explains it in more depth.
 
+- [Layers, depth and width, worked out](08_layers-and-depth-worked-out.md) is the
+  next page. It counts the parameters and the arithmetic of the layers on this
+  page, which is how the choice between depth and width is actually made.
 - [The shape of the numbers](09_the-shape-of-the-numbers.md) is the next page,
   and it explains how [the weight
   grid](#1-a-layer-is-many-neurons-reading-the-same-numbers) is stored, what a
@@ -601,11 +534,11 @@ Each page below picks up one idea from this page and explains it in more depth.
   costs](#2-fully-connected-and-what-joining-everything-costs) compared a fully
   connected layer against.
 - [A transformer block](../06_the-transformer/02_a-transformer-block.md) is [the
-  residual block](#6-residual-connections) as it is actually built today, with
+  residual block](#5-residual-connections) as it is actually built today, with
   attention inside it.
 - [Normalisation and stability](../04_making-training-work/02_normalisation-and-stability.md)
   explains the rescaling step that keeps the numbers in [the residual
-  stack](#6-residual-connections) from growing.
+  stack](#5-residual-connections) from growing.
 - [Backpropagation](../03_how-training-works/03_backpropagation.md) explains the
   training problem that residual connections were invented to solve.
 - [Inside a neural network](../../07_learned-models/01_what-models-are/03_inside-a-neural-network.md)
@@ -614,14 +547,14 @@ Each page below picks up one idea from this page and explains it in more depth.
 
 ---
 
-## 8. Using it in Python
+## 7. Using it in Python
 
 A layer, a stack of layers and a residual block are each a few lines of PyTorch.
 The code below builds [the layer of four
 neurons](#1-a-layer-is-many-neurons-reading-the-same-numbers) with the same
 weights, counts its parameters, counts a bigger stack from [what depth and width
-cost](#5-what-depth-and-width-cost), and wraps a block in the addition of
-[residual connections](#6-residual-connections).
+cost](08_layers-and-depth-worked-out.md#2-what-depth-and-width-cost), and wraps a block in the addition of
+[residual connections](#5-residual-connections).
 
 ```python
 import torch
@@ -657,13 +590,13 @@ class Block(nn.Module):                     # the residual block: one block
 The library gives you the weight grid, the bias, the multiplying and the adding,
 and `nn.Sequential` gives you the stacking. So a network of 8 layers is one line,
 and its parameter count comes back as 8,396,800, which is the number [what depth
-and width cost](#5-what-depth-and-width-cost) counted. The residual block needs a class of its own only because
+and width cost](08_layers-and-depth-worked-out.md#2-what-depth-and-width-cost) counted. The residual block needs a class of its own only because
 `nn.Sequential` passes each output straight on and has nowhere to keep the input.
 
 What you decide is the shape. You choose the width of each layer and how many
 layers there are, which [depth and width, and what each one
 changes](#4-depth-and-width-and-what-each-one-changes) and [what depth and width
-cost](#5-what-depth-and-width-cost) weighed up. You choose whether the
+cost](08_layers-and-depth-worked-out.md#2-what-depth-and-width-cost) weighed up. You choose whether the
 layers are fully connected or one of the special kinds that the next pages
 describe. You also choose whether to wrap each layer in a residual addition, and
 for anything deeper than a few layers the answer is yes.

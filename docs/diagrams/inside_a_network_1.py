@@ -564,6 +564,64 @@ def collapse_curves() -> None:
     _save(fig, ACT, 'collapse-curves.svg')
 
 
+STRAIGHT_C: float = 0.5     # a rule that is itself a straight line: c x sum + d
+STRAIGHT_D: float = 0.2
+
+
+def a_straight_rule_collapses() -> None:
+    """A rule that is itself a straight line between the two layers changes nothing."""
+    d = np.linspace(0.0, 1.0, 401)
+    first = d * CH_W[0] + CH_B[0]
+    pair = (first * STRAIGHT_C + STRAIGHT_D) * CH_W[1] + CH_B[1]
+    cw = CH_W[1] * STRAIGHT_C * CH_W[0]
+    cb = CH_W[1] * (STRAIGHT_C * CH_B[0] + STRAIGHT_D) + CH_B[1]
+    single = d * cw + cb
+    gap = float(np.max(np.abs(pair - single)))
+    at = (DIST_M * CH_W[0] + CH_B[0]) * STRAIGHT_C + STRAIGHT_D
+    print('--- a straight rule between the layers --------------------------')
+    print(f'rule: {STRAIGHT_C:.2f} x sum {STRAIGHT_D:+.2f}; at {DIST_M:.2f} the first layer '
+          f'gives {DIST_M * CH_W[0] + CH_B[0]:+.3f}, the rule gives {at:+.3f}, '
+          f'the second layer gives {at * CH_W[1] + CH_B[1]:+.3f}')
+    print(f'one neuron with weight {cw:+.2f} and bias {cb:+.2f} gives {DIST_M * cw + cb:+.3f}; '
+          f'biggest gap {gap:.2e}')
+    fig, ax = plt.subplots(figsize=(10.5, 5.6), facecolor='white')
+    _plain(ax)
+    ax.plot(d, pair, color=LINK, lw=5.0, alpha=0.4,
+            label=f'two layers with the rule {STRAIGHT_C:.1f} x sum {STRAIGHT_D:+.1f} between them')
+    ax.plot(d, single, color=GRIP, lw=2.0, ls='--',
+            label=f'one neuron, weight {cw:+.2f}, bias {cb:+.2f}')
+    ax.axhline(0, color=INK, lw=1.0)
+    ax.set_xlabel('distance to the cup / 100 mm', fontsize=10)
+    ax.set_ylabel('what comes out of the second layer', fontsize=10)
+    ax.set_title('A rule that is a straight line still leaves one straight line',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='lower left')
+    _save(fig, ACT, 'a-straight-rule-collapses.svg')
+
+
+def the_step_rule() -> None:
+    """The step rule bends, but its slope is 0 everywhere training could use it."""
+    print('--- the step rule -----------------------------------------------')
+    for c in (-1.0, -0.1, 0.1, 1.0):
+        print(f'  in {c:+.3f} -> out {1.0 if c > 0 else 0.0:.0f}')
+    fig, ax = plt.subplots(figsize=(9.6, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot([-3, 0], [0, 0], color=LINK, lw=2.8)
+    ax.plot([0, 3], [1, 1], color=LINK, lw=2.8)
+    ax.plot([0], [0], 'o', color=LINK, ms=9, zorder=6)
+    ax.plot([0], [1], 'o', color='white', mec=LINK, ms=9, mew=2, zorder=6)
+    ax.axhline(0, color=INK, lw=1.0)
+    ax.axvline(0, color=INK, lw=1.0)
+    _label(ax, -1.5, 0.22, 'slope 0', size=10.5, color=MUTED)
+    _label(ax, 1.5, 1.22, 'slope 0', size=10.5, color=MUTED)
+    ax.set_xlabel('the weighted sum going in', fontsize=10)
+    ax.set_ylabel('the output coming out', fontsize=10)
+    ax.set_title('The step rule: 0 below 0, 1 above, and flat on both sides',
+                 fontsize=12, weight='bold')
+    ax.set_ylim(-0.4, 1.6)
+    _save(fig, ACT, 'the-step-rule.svg')
+
+
 def three_plain_layers() -> None:
     """Three plain layers collapse in the same way, to one weight and one bias."""
     vals = [DIST_M]
@@ -2231,6 +2289,8 @@ def main() -> None:
     three_plain_layers()
     a_bend_is_needed()
     two_elbows_rebuild_it()
+    a_straight_rule_collapses()
+    the_step_rule()
     relu_curve()
     relu_pieces()
     relu_flat_region()

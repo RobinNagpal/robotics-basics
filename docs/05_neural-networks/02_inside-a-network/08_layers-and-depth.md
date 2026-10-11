@@ -202,7 +202,7 @@ in this section assumes that the rule is applied after each layer.
 
 To see what the second layer adds, it helps to count bends. A bend is a place
 where a line changes direction. [Activation functions](07_activation-functions.md)
-showed, in [the rectified linear unit](07_activation-functions.md#2-the-rectified-linear-unit),
+showed, in [the rectified linear unit](07_activation-functions.md#3-the-rectified-linear-unit),
 that each neuron with the rule has one such place of its own.
 
 The picture below sweeps the patch brightness from 0 to 1 and draws what one

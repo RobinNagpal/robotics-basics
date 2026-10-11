@@ -24,11 +24,12 @@ decided by the kind of answer the job needs.
 ## Contents
 
 1. [Why multiplying and adding is not enough](#1-why-multiplying-and-adding-is-not-enough)
-2. [The rectified linear unit](#2-the-rectified-linear-unit)
-3. [GELU and SiLU, and why networks use them now](#3-gelu-and-silu-and-why-networks-use-them-now)
-4. [The rule at the end of the network](#4-the-rule-at-the-end-of-the-network)
-5. [Where to read next](#5-where-to-read-next)
-6. [Using it in Python](#6-using-it-in-python)
+2. [What any rule has to have](#2-what-any-rule-has-to-have)
+3. [The rectified linear unit](#3-the-rectified-linear-unit)
+4. [GELU and SiLU, and why networks use them now](#4-gelu-and-silu-and-why-networks-use-them-now)
+5. [The rule at the end of the network](#5-the-rule-at-the-end-of-the-network)
+6. [Where to read next](#6-where-to-read-next)
+7. [Using it in Python](#7-using-it-in-python)
 
 ---
 
@@ -41,7 +42,9 @@ This section is here because that limit is the reason a neuron has a rule at the
 end. You saw the rule
 in [what one neuron is made of](03_one-neuron.md#1-what-one-neuron-is-made-of), and you saw the fitted line of
 [what a model is](../01_what-learning-means/03_what-a-model-is.md) work without one. This section shows what the
-rule is for, and [the rectified linear unit](#2-the-rectified-linear-unit) then describes the rule itself.
+rule is for with worked numbers. [What any rule has to have](#2-what-any-rule-has-to-have)
+then says which rules can do the job, and [the rectified linear unit](#3-the-rectified-linear-unit)
+describes the simplest of them.
 The answer comes in three steps. First, many jobs need an output that bends, and one
 neuron without the rule can only draw a straight line. Second, putting more
 neurons in a row does not fix this if nothing comes between them. Third, the rule
@@ -128,17 +131,114 @@ anywhere between the two lines is zero.
 
 That is what the rule at the end of each neuron is for. Without it, any number of
 neurons collapses into one straight line. With it, a few neurons can bend the line
-into the shape a job needs. The next section, [the rectified linear unit](#2-the-rectified-linear-unit),
-looks at that rule properly, because you need to know exactly what it does before
-you can see what it costs.
+into the shape a job needs. Everything in this section used particular numbers and one
+particular rule, so [what any rule has to have](#2-what-any-rule-has-to-have) does the
+same working with letters, to find out which rules would do the same job.
+
+---
+
+## 2. What any rule has to have
+
+The section before showed the collapse and its cure with particular numbers. This
+section does the same working with letters in place of the numbers, so that it holds
+for every weight and every bias. From that it says which properties a rule needs,
+and which it does not.
+
+Write a neuron with one input as a weight times the input, plus a bias. Call the
+first neuron's weight and bias w1 and b1, and the second neuron's w2 and b2. The
+first neuron reads the distance d, and the second reads what the first gives. The
+lines below follow the arithmetic through, one step per line.
+
+```
+first neuron:    s = w1 x d + b1
+second neuron:   y = w2 x s + b2
+put s in:        y = w2 x (w1 x d + b1) + b2
+multiply out:    y = (w2 x w1) x d + (w2 x b1 + b2)
+```
+
+The last line has the shape of one neuron. Its weight is w2 x w1, and its bias is
+w2 x b1 + b2. No step in that working depended on which numbers the letters stand
+for. Putting in w1 = -2.00, b1 = +0.50, w2 = 3.00 and b2 = -0.40 gives the weight
+-6.00 and the bias +1.10 from the section before. A neuron with several inputs
+works the same way, with one weight for each input. So does a chain of three
+neurons, or a thousand, because each step takes a straight line and gives back a
+straight line.
+
+Now put a rule between the two neurons, and call it f. The second neuron then gives
+y = w2 x f(w1 x d + b1) + b2. Whether the pair still collapses into one neuron
+depends only on f.
+
+Suppose f is itself a straight line, such as f(s) = 0.5 x s + 0.2. Then f is one
+more multiply and one more add, and the working above absorbs it. The pair becomes
+one neuron with the weight w2 x 0.5 x w1 and the bias w2 x (0.5 x b1 + 0.2) + b2.
+The picture below draws that with the same two neurons as before.
+
+![Two layers with the straight rule 0.5 x sum + 0.2 between them, drawn as the same straight line as one neuron with the weight -3.00 and the bias +0.95](../../images/inside-a-network/activation-functions/a-straight-rule-collapses.svg)
+
+The two layers with the straight rule between them lie exactly on the line of one
+neuron with the weight -3.00 and the bias +0.95. At a distance of 0.42 both give
+-0.310. So a rule that is a straight line changes nothing, whatever its two numbers
+are.
+
+That gives the first property, and it is the one that matters most. The rule must
+not be a straight line. A rule like that is called **nonlinear**. One corner is
+enough. The rectified linear unit is two straight pieces joined at 0, and that
+corner stops the working above, because f(w1 x d + b1) can no longer be written as
+one multiply and one add.
+
+Being nonlinear is very nearly enough. In 1993, Moshe Leshno, Vladimir Lin, Allan
+Pinkus and Shimon Schocken proved that one layer of neurons, added up at the end,
+can follow any shape without breaks over a limited range of readings, as closely as
+you ask. It needs enough neurons, and a rule that is not a polynomial. A polynomial
+is a rule built only from powers of the sum, such as s x s. A rule like that keeps
+the whole network a polynomial with a fixed highest power, and that limits its
+shapes however many neurons it has. The proof also asks that the rule never runs
+off to infinity at any one sum, and every rule on this page meets that. The six and
+twelve elbows in [the rectified linear unit](#3-the-rectified-linear-unit) are a
+small case of this result.
+
+That result says good weights exist. It says nothing about how to find them. The
+training methods in the next chapter find them by moving each weight a little in
+the direction that improves the answer. They learn that direction from the slope of
+the rule, which is how much the output moves when the sum moves a little. So the
+second property is that the rule has a slope that is not 0 over a useful part of
+its range.
+
+The step rule shows why this is a separate property. It gives 0 for any sum at or
+below 0, and 1 for any sum above. The picture below draws it.
+
+![The step rule, flat at 0 up to a sum of 0 and flat at 1 after it, with the slope marked as 0 on both flat parts](../../images/inside-a-network/activation-functions/the-step-rule.svg)
+
+The step rule is not a straight line, so it has the first property. But it is flat
+on both sides of the jump, so its slope is 0 everywhere except at the jump, where
+it has no slope at all. Moving a weight a little changes nothing that the step
+gives, so training gets no direction. The earliest artificial neurons, in the
+1950s, used this rule. Networks with several layers moved to rules with a slope in the
+1980s, once training by slopes arrived, for exactly this reason.
+
+A third property is worth having but is not required. The rule should be cheap to
+work out, because it runs once for every neuron. [GELU and
+SiLU](#4-gelu-and-silu-and-why-networks-use-them-now) shows that this matters less
+than it seems.
+
+Some properties look necessary and are not. The rule does not have to stay inside
+a range, because the rectified linear unit grows without limit. It does not have to
+be smooth, because the rectified linear unit has a corner. It does not have to rise
+all the way, because GELU and SiLU dip below 0 and come back up. Those differences
+decide how well training goes, not whether a network can bend.
+
+So every rule in use is nonlinear and has a slope over most of its range. The rules
+differ in where they bend and what slope they give. [The rectified linear
+unit](#3-the-rectified-linear-unit) looks at the simplest rule with both
+properties, and at the places where its slope gives out.
 
 
 ---
 
-## 2. The rectified linear unit
+## 3. The rectified linear unit
 
-The section before showed that a rule between neurons is what lets them bend.
-This section looks at that rule itself, starting with the simplest one. It is called
+The section before said that a rule needs a bend and a slope. This section looks
+at the simplest rule that has both. It is called
 the **activation function**, which means a rule that is applied to the weighted
 sum to give the neuron's output. The number that comes out of it is called the
 neuron's **activation**. The simplest one, and the one networks have used the
@@ -236,13 +336,13 @@ the sum exactly. At the point 0 itself there is no single slope, because the rul
 jumps from one value to the other.
 
 That flat left half and that jump at 0 are the two weak points of this rule. The
-next section, [GELU and SiLU](#3-gelu-and-silu-and-why-networks-use-them-now), describes the newer rules that fix both, and
+next section, [GELU and SiLU](#4-gelu-and-silu-and-why-networks-use-them-now), describes the newer rules that fix both, and
 those are the rules you will find inside most models built today.
 
 
 ---
 
-## 3. GELU and SiLU, and why networks use them now
+## 4. GELU and SiLU, and why networks use them now
 
 The section before ended on two weak points of the rectified linear unit: a flat
 half where training gets no direction, and a jump at 0. This section is here
@@ -261,7 +361,7 @@ inside it repeats the left half of the same picture at a larger size.
 ![The three rules drawn on one set of axes, with an inset showing the left half close up, where GELU and SiLU dip below 0](../../images/inside-a-network/activation-functions/three-rules.svg)
 
 The table below gives what each rule produces for the same eight sums that
-[the rectified linear unit](#2-the-rectified-linear-unit) used. Read one row at a time: the first column is the sum going in, and
+[the rectified linear unit](#3-the-rectified-linear-unit) used. Read one row at a time: the first column is the sum going in, and
 the other three columns are what each rule gives for that sum.
 
 | sum going in | ReLU | GELU | SiLU |
@@ -307,7 +407,7 @@ rectified linear unit, 0.5552 under GELU and 0.4884 under SiLU. At a distance of
 where the sum is -0.1350, the rectified linear unit gives exactly 0, while GELU
 gives -0.0603 and SiLU gives -0.0630.
 
-The dead units of [the rectified linear unit](#2-the-rectified-linear-unit) are the clearest case where
+The dead units of [the rectified linear unit](#3-the-rectified-linear-unit) are the clearest case where
 that difference matters.
 The picture below takes the same 64 simulated neurons and the same 200 simulated
 moments, replaces the rule with GELU, and writes in each square the average size
@@ -364,15 +464,15 @@ a million weights, and that those weights are arranged in a grid which a compute
 multiplies in one go.
 
 Everything so far has been about the rule inside a network, where you are free to
-choose. [The rule at the end of the network](#4-the-rule-at-the-end-of-the-network)
+choose. [The rule at the end of the network](#5-the-rule-at-the-end-of-the-network)
 deals with the last layer, where you are not.
 
 
 ---
 
-## 4. The rule at the end of the network
+## 5. The rule at the end of the network
 
-The three sections before this one were all about the rule that follows a hidden
+The four sections before this one were all about the rule that follows a hidden
 layer, and for those layers the rule is a free choice: you weigh the rectified
 linear unit against GELU and SiLU and pick one. This section is here because the
 last layer is not like that. The rule after the output layer is decided by the
@@ -421,7 +521,7 @@ ends, so once a sum is past about 6 in either direction, making it larger change
 the answer hardly at all. The interesting part of the sigmoid is the middle, and a
 network whose sums all land far out at the ends has stopped saying anything
 useful. The same flatness is what
-[the rectified linear unit](#2-the-rectified-linear-unit) ran into on its left
+[the rectified linear unit](#3-the-rectified-linear-unit) ran into on its left
 half, and for the same reason: a flat rule gives training nothing to work with.
 
 The third row covers an answer that picks one of several named possibilities, such
@@ -442,17 +542,17 @@ anything in the middle worth thinking about.
 
 ---
 
-## 5. Where to read next
+## 6. Where to read next
 
 - [Layers, depth and width](08_layers-and-depth.md) is the next page. It joins
   many neurons, each with the rule from this page at its end, into a layer, and
   then stacks the layers.
 - [What a network can learn](11_what-a-network-can-learn.md) takes the elbows of
-  [the rectified linear unit](#2-the-rectified-linear-unit) and shows that enough
+  [the rectified linear unit](#3-the-rectified-linear-unit) and shows that enough
   of them will follow any shape at all.
 - [Backpropagation](../03_how-training-works/03_backpropagation.md) explains why
-  the slopes drawn in [the rectified linear unit](#2-the-rectified-linear-unit)
-  and [GELU and SiLU](#3-gelu-and-silu-and-why-networks-use-them-now) matter so
+  the slopes drawn in [the rectified linear unit](#3-the-rectified-linear-unit)
+  and [GELU and SiLU](#4-gelu-and-silu-and-why-networks-use-them-now) matter so
   much, because those slopes are what training reads.
 - [Normalisation and stability](../04_making-training-work/02_normalisation-and-stability.md)
   deals with the other half of keeping a deep network trainable, which is holding
@@ -462,7 +562,7 @@ anything in the middle worth thinking about.
 
 ---
 
-## 6. Using it in Python
+## 7. Using it in Python
 
 The three rules are one function call each in PyTorch, which is the library most
 of this book's models are built with. The code below takes the same weighted sum
@@ -488,14 +588,14 @@ The first three numbers are the three rules disagreeing mildly about a sum that 
 above 0, and the last three are the same rules disagreeing about a sum that is
 below it. The rectified linear unit throws the negative sum away completely, while
 the two smooth rules keep a small part of it, and that small part is the whole
-difference that [GELU and SiLU](#3-gelu-and-silu-and-why-networks-use-them-now)
+difference that [GELU and SiLU](#4-gelu-and-silu-and-why-networks-use-them-now)
 is about.
 
 In a real model you rarely call these functions by name on their own. You put one
 after each layer, and the library applies it to every number the layer produced.
 The output rules work the same way: `torch.sigmoid` and
 `torch.nn.functional.softmax` are the two from
-[the rule at the end of the network](#4-the-rule-at-the-end-of-the-network).
+[the rule at the end of the network](#5-the-rule-at-the-end-of-the-network).
 [Layers, depth and width](08_layers-and-depth.md) shows that arrangement, and
 [using it in Python](08_layers-and-depth.md#7-using-it-in-python) on that page
 builds a stack of layers with a rule between each pair.

@@ -2,7 +2,7 @@ import { Cron } from 'croner';
 import type { Highlight } from '../api/types';
 import { runTurn } from './claude';
 import { config } from './config';
-import { byPage, claim, queuedFeedback, record } from './feedback';
+import { byPage, claim, giveBack, queuedFeedback, record } from './feedback';
 import { ensureClone, pullLatest, pushBatch, status } from './git';
 import { acquire } from './lock';
 import { batchPrompt, repairPrompt, RESULT_SCHEMA, type Reply } from './prompt';
@@ -72,7 +72,9 @@ async function latest(session: State) {
 
 // Claude makes every change the batch needs in one turn and commits it. Then the
 // worker pushes once, and only after that records each comment's reply, so a
-// comment marked 'changed' is one whose change is already on main.
+// comment marked 'changed' is one whose change is already on main. Nothing is
+// pushed until Claude has replied in the shape the worker asked for, so a turn
+// that ends any other way leaves its commits in the clone for the next run.
 async function addressBatch(session: State, batch: Highlight[], pages: Highlight[][]) {
   const what = pages.length === 1 ? `${pages[0][0].book}/${pages[0][0].chapter}/${pages[0][0].page}` : `${pages.length} pages`;
 
@@ -84,10 +86,16 @@ async function addressBatch(session: State, batch: Highlight[], pages: Highlight
     replies = out.replies;
     log(`Claude finished the batch, $${r.costUsd?.toFixed(2) ?? '?'}`);
   } catch (e) {
+    // The batch is not thrown away. Everything in it goes back in the queue, so
+    // the next run takes it again, and anything Claude did commit in the clone
+    // is pushed by that run. Only a comment that has used up its tries is
+    // marked failed here.
     log(`the batch failed: ${firstLine(e)}`);
-    for (const h of batch) {
-      await record(h, 'failed', `The run failed: ${firstLine(e)}`).catch((e2) => log('could not record failure', e2));
-    }
+    const back = await giveBack(batch, `The run failed: ${firstLine(e)}`).catch((e2) => {
+      log('could not give the batch back, so it stays in progress for the next run', e2);
+      return null;
+    });
+    if (back) log(`${back.retrying.length} comment(s) queued again for the next run, ${back.givenUp.length} given up on`);
     return;
   }
 

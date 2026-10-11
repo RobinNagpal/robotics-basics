@@ -11,11 +11,19 @@
 export const STATUSES = ['new', 'queued', 'working', 'changed', 'answered', 'failed'] as const;
 export type FeedbackStatus = (typeof STATUSES)[number];
 
-// The statuses the browser may ask for, and what the comment has to be in now.
+// The statuses a reader may ask to have addressed, and what asking sets them to.
 // Everything else is the worker's to write. Queueing is the one status change a
-// reader makes, so it is the one the API accepts from the extension.
-export const QUEUE_FROM: FeedbackStatus = 'new';
+// reader makes, so it is the one the API accepts from the extension. A comment
+// that failed is in the list too, because a failure is usually one run that went
+// wrong rather than a comment nothing can answer, so asking again is reasonable.
+export const QUEUEABLE: FeedbackStatus[] = ['new', 'failed'];
 export const QUEUE_TO: FeedbackStatus = 'queued';
+
+// How many runs may try one comment before the worker gives up on it. A run that
+// fails puts its whole batch back to 'queued', so the next run tries it again
+// without anybody asking. This number is what stops a comment that fails every
+// time from being retried for ever and holding up every batch behind it.
+export const MAX_ATTEMPTS = 3;
 
 export interface Highlight {
   id: string;
@@ -37,6 +45,10 @@ export interface Highlight {
   status?: FeedbackStatus;
   claudeResponse?: string;
   respondedAt?: number;
+  // How many runs have taken this comment. The worker counts a try the moment it
+  // starts one, so a run that dies without writing anything is still counted.
+  // Asking for the comment again sets it back to nought.
+  attempts?: number;
 }
 
 // A comment made before the status field existed has none, and one made before

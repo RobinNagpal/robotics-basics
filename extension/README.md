@@ -150,7 +150,9 @@ of six values, and a comment moves through them in order:
 - `changed`: Claude changed the docs to answer it.
 - `answered`: Claude replied without changing the docs, for a question or for a
   comment it decided the docs already meet.
-- `failed`: the run went wrong, and the response says how.
+- `failed`: the run went wrong three times, and the response says how. A comment
+  only reaches this state after the worker has given up retrying it, and a reader
+  can tick it and send it again, which starts it over with a full set of tries.
 
 The three statuses in the middle of that list are what make the work happen in
 batches rather than continuously. Before them, a reader can leave twenty comments
@@ -170,12 +172,14 @@ new feedback and has to be asked for again.
 
 There is one status change the extension does make, and it has an endpoint of its
 own rather than riding on a sync. `POST /queue` takes a list of comment ids and
-moves each one from `new` to `queued`. It refuses to move anything else, so the
-extension cannot pull a comment out of a running batch or write an outcome. A
-comment that is no longer `new` when the request arrives, because somebody else
-queued it or it has already been answered, is counted as skipped and left as it
-is. So pressing the button twice queues nothing the second time. Everything from
-`working` onwards is written only by the worker.
+moves each one to `queued`. Only a comment that is `new`, or one the worker gave
+up on and marked `failed`, may be moved, and asking for a failed comment again
+clears the message from the run that failed and gives it its tries back. The
+endpoint refuses to move anything else, so the extension cannot pull a comment
+out of a running batch or write an outcome. A comment the request cannot move,
+because somebody else queued it or it has already been answered, is counted as
+skipped and left as it is. So pressing the button twice queues nothing the second
+time. Everything from `working` onwards is written only by the worker.
 
 ### What the worker does
 
@@ -198,12 +202,15 @@ has these steps:
    git's error and asks it to put the clone into a state where the pull works,
    keeping real work. Then it pulls again. If that still fails, the batch stays
    queued for the next run.
-4. It marks every comment in the batch `working`. This is the last thing that
-   happens before Claude Code is invoked, so anybody watching the popup sees the
-   batch change from queued to working at the moment the work starts. A comment
-   that was edited or deleted in the moment between being read and being marked
-   drops out of the batch and keeps the status it had, so Claude is never shown
-   stale text.
+4. It marks every comment in the batch `working`, and counts one try against
+   each of them. This is the last thing that happens before Claude Code is
+   invoked, so anybody watching the popup sees the batch change from queued to
+   working at the moment the work starts. A comment that was edited or deleted in
+   the moment between being read and being marked drops out of the batch and
+   keeps the status it had, so Claude is never shown stale text. The try is
+   counted here, as the work starts, rather than when the run ends, because a run
+   that is killed never reaches its end; otherwise a comment that somehow stops
+   every run would be taken for ever.
 5. It gives Claude the whole batch in one turn, with the comments grouped by the
    page they are on. Claude finds each source file, decides what each comment
    needs, makes the changes under the rules in `CLAUDE.md`, and commits as it
@@ -222,13 +229,43 @@ has these steps:
    change is already on `main`. A comment Claude gave no reply to, or says it
    changed when nothing was committed, is marked `failed`.
 
+#### When a run fails
+
+A run can fail before it reads Claude's reply. Claude Code may be stopped by the
+timeout, or it may end its turn with an explanation instead of the reply the
+schema asks for, which is what happens if it hands the work to subagents and then
+waits on them. In that case the worker does not throw the batch away. It puts
+every comment in the batch back to `queued`, so the next run takes the same batch
+again. The reader sees the comments go back to waiting, and nothing has to be
+ticked again.
+
+A retry also rescues the work itself. The push happens only after the reply has
+been read, so a turn that ends the wrong way leaves Claude's commits in the clone
+with nothing pushed. The next run pulls, rebases those commits onto `main`, asks
+Claude again, and pushes them when it succeeds. Claude finds most of the work
+already done in its own clone, so the retry is usually quick.
+
+Retrying cannot go on for ever, because a comment that stops every run would hold
+up every batch queued behind it. So each comment has a budget of three tries
+(`MAX_ATTEMPTS` in `api/types.ts`), counted at step 4. When the last one is spent,
+the comment is marked `failed` with the reason and the number of tries, and the
+worker leaves it alone. From there it is the reader's decision: ticking it in the
+popup and pressing the button again gives it a fresh three.
+
+One rule holds through all of this, as it does everywhere else in the worker. A
+comment is only written while it still says what the run read and is still
+`working`. So a comment the reader rewrote while the failed run was going is not
+put back in the queue. The edit left it at `new`, which is where it stays, and the
+reader asks for the new words when they want them.
+
 One batch is one Claude turn, which is what makes it a batch: Claude sees every
 selected comment at once, so it can change two pages consistently and commit the
 lot together. The cost of that is the turn's length. A batch that takes longer
-than `TIMEOUT_MINUTES` is stopped, and then every comment in it is marked
-`failed`, where page-at-a-time work would have kept the pages that had already
-finished. So the size of a batch is a judgement the reader makes when ticking the
-boxes, and a very large selection is better sent as two.
+than `TIMEOUT_MINUTES` is stopped, and then the whole batch is retried, where
+page-at-a-time work would have kept the pages that had already finished. A batch
+too large to finish inside the limit is therefore retried until its tries run out
+and then fails as a whole. So the size of a batch is a judgement the reader makes
+when ticking the boxes, and a very large selection is better sent as two.
 
 Only one run uses the session at a time. A run holds a lock file while it works,
 in `worker/.state/run.lock`, whether the schedule started it or `npm run once` did.
@@ -238,7 +275,7 @@ after that. Only one run waits at a time, so a long run does not collect a queue
 waiting runs on a short schedule. The lock file holds the process ID of the run
 that made it, so a file left by a process that died is recognised and removed. One
 Claude turn may take up to an hour too (`TIMEOUT_MINUTES`). A turn that takes
-longer is stopped, and every comment in that batch is marked `failed`.
+longer is stopped, and its batch goes back in the queue to be tried again.
 
 Every run uses the same Claude Code session. The first run creates it with an ID
 the worker chooses, and the worker keeps that ID in `worker/.state/session.json`.
@@ -264,9 +301,9 @@ wrong in them is a rule about which comment may change state, and a broken rule
 is quiet: a comment is worked on twice, or an answer lands on words the comment
 no longer says, and nothing reports an error. So `worker/feedback.test.ts` runs
 those functions against a store held in memory, of the same shape as the S3 one.
-That is the only reason `queuedFeedback`, `claim`, `record` and `byPage` take a
-store as a last parameter: the real store is the default, so the worker calls
-them without mentioning it, and the test hands in its own.
+That is the only reason `queuedFeedback`, `claim`, `giveBack`, `record` and
+`byPage` take a store as a last parameter: the real store is the default, so the
+worker calls them without mentioning it, and the test hands in its own.
 
 ```bash
 cd worker
@@ -533,7 +570,8 @@ flush its cache, and nothing else.
 - `worker/claude.ts` runs one turn of the Claude Code session.
 - `worker/prompt.ts` is what Claude is told about a batch of comments, and the
   shape of its replies.
-- `worker/feedback.ts` reads the queued comments, marks a batch `working`, and
+- `worker/feedback.ts` reads the queued comments, marks a batch `working`, gives a
+  failed batch back to the queue, and
   records each outcome.
 - `worker/feedback.test.ts` tests those status changes against a store held in
   memory.

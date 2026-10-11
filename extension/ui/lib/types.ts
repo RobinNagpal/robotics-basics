@@ -1,4 +1,4 @@
-import { isFeedback, statusOf, type FeedbackStatus, type Highlight } from '../../api/types';
+import { isFeedback, QUEUEABLE, statusOf, type FeedbackStatus, type Highlight } from '../../api/types';
 
 // The shapes the API stores, the rule for a valid page, and how a stored status
 // is read all belong to the API.
@@ -29,7 +29,12 @@ export const statusLabel = (h: Highlight) => {
   return s ? LABELS[s] : '';
 };
 
-// A comment can be asked for only while it is new, and only once the server has
-// it, because the server queues by id and would otherwise not find it. One
-// waiting to be sent is queued after the next sync, which happens by itself.
-export const canQueue = (h: LocalHighlight) => shownStatus(h) === 'new' && !h.dirty && !h.deleted;
+// A comment can be asked for while it is waiting, and again after a run failed,
+// because a failure is usually one bad run rather than a comment nothing can
+// answer. The server has to have the comment first, because it queues by id and
+// would otherwise not find it. One waiting to be sent is queued after the next
+// sync, which happens by itself.
+export const canQueue = (h: LocalHighlight) => {
+  const s = shownStatus(h);
+  return s !== null && QUEUEABLE.includes(s) && !h.dirty && !h.deleted;
+};

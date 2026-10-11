@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import {
   isFeedback,
-  QUEUE_FROM,
   QUEUE_TO,
+  QUEUEABLE,
   statusOf,
   validPage,
   type Highlight,
@@ -46,10 +46,11 @@ app.post('/sync', async (c) => {
           // The status and Claude's response belong to the server, so whatever
           // the browser sends for them is replaced. A new comment waits until
           // somebody queues it.
-          if (!old) byId.set(h.id, { ...h, status: 'new', claudeResponse: '', respondedAt: undefined });
+          if (!old) byId.set(h.id, { ...h, status: 'new', attempts: 0, claudeResponse: '', respondedAt: undefined });
           else if (old.updatedAt < h.updatedAt) {
             // A changed comment is new feedback, so it has to be queued again.
-            const reopened = h.note !== old.note ? { status: 'new' as const, claudeResponse: '', respondedAt: undefined } : {};
+            const reopened =
+              h.note !== old.note ? { status: 'new' as const, attempts: 0, claudeResponse: '', respondedAt: undefined } : {};
             byId.set(h.id, { ...old, color: h.color, note: h.note, updatedAt: h.updatedAt, ...reopened });
           }
         }
@@ -61,10 +62,10 @@ app.post('/sync', async (c) => {
 });
 
 // Asks for a batch of comments to be addressed. This is the one status change
-// the extension makes: it moves a comment from 'new' to 'queued', and the
-// feedback worker takes every queued comment on its next run. A comment that is
-// not 'new' any more is left alone and counted as skipped, so pressing the
-// button twice queues nothing the second time.
+// the extension makes: it moves a comment to 'queued', and the feedback worker
+// takes every queued comment on its next run. Only a comment that is waiting or
+// has failed can be queued; anything else is left alone and counted as skipped,
+// so pressing the button twice queues nothing the second time.
 app.post('/queue', async (c) => {
   const { refs = [] } = await c.req.json<{ refs: HighlightRef[] }>();
   if (!refs.every(validPage)) return c.json({ error: 'Bad book, chapter or page' }, 400);
@@ -82,9 +83,12 @@ app.post('/queue', async (c) => {
       updatePage(key, (items) =>
         items.map((h) => {
           // A highlight with no comment asks nothing, so it cannot be queued.
-          if (!wanted.has(h.id) || statusOf(h) !== QUEUE_FROM || !isFeedback(h)) return h;
+          if (!wanted.has(h.id) || !QUEUEABLE.includes(statusOf(h)) || !isFeedback(h)) return h;
           queued++;
-          return { ...h, status: QUEUE_TO };
+          // Asking is a fresh start, so a comment that failed before gets its
+          // full count of tries back and loses the message from the run that
+          // failed. The reader then sees it waiting rather than failed.
+          return { ...h, status: QUEUE_TO, attempts: 0, claudeResponse: '', respondedAt: undefined };
         }),
       ),
     ),

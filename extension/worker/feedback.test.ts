@@ -5,8 +5,8 @@
 // writing of a file. Run them with `npm test`.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { statusOf, type Highlight } from '../api/types';
-import { byPage, claim, queuedFeedback, record, type Store } from './feedback';
+import { MAX_ATTEMPTS, statusOf, type Highlight } from '../api/types';
+import { byPage, claim, giveBack, queuedFeedback, record, type Store } from './feedback';
 
 // A store of the same shape as the API's, holding the page files in an object.
 // It sorts on write, as the real one does, so the order a test reads back is the
@@ -45,8 +45,9 @@ function bucket() {
   });
 }
 
-const statusIn = (store: ReturnType<typeof memory>, id: string) =>
-  Object.values(store.pages).flat().find((h) => h.id === id)?.status;
+const find = (store: ReturnType<typeof memory>, id: string) =>
+  Object.values(store.pages).flat().find((h) => h.id === id);
+const statusIn = (store: ReturnType<typeof memory>, id: string) => find(store, id)?.status;
 
 test('a run takes the comments that were asked for, and nothing else', async () => {
   const store = bucket();
@@ -127,4 +128,60 @@ test('an outcome is refused for a comment edited while Claude worked', async () 
   // the reader's new text waits to be asked for again.
   assert.equal(await record(target, 'answered', 'The docs are right here.', store), false);
   assert.equal(statusIn(store, 'asked'), 'new');
+});
+
+test('claiming counts one try against every comment it takes', async () => {
+  const store = bucket();
+  // The count has to be raised as the work starts, not when it ends, because a
+  // run that is killed never gets to write anything down. So the count is what
+  // the next run reads, and nothing can be taken for ever.
+  const batch = await claim(await queuedFeedback(store), store);
+  for (const h of batch) assert.equal(find(store, h.id)?.attempts, 1);
+  // The batch handed to the caller carries the new count, so the run that failed
+  // knows how many tries this comment has already had.
+  assert.deepEqual(batch.map((h) => h.attempts), batch.map(() => 1));
+  // A second run over the same comments counts a second try.
+  const again = await claim(await queuedFeedback(store), store);
+  for (const h of again) assert.equal(find(store, h.id)?.attempts, 2);
+});
+
+test('a batch that failed goes back in the queue, and the next run takes it', async () => {
+  const store = bucket();
+  const batch = await claim(await queuedFeedback(store), store);
+  const back = await giveBack(batch, 'The run failed: Claude gave no structured result', store);
+  // Nothing is lost and nothing is marked failed, because one try is not enough
+  // to say a comment cannot be addressed.
+  assert.deepEqual(back.retrying.map((h) => h.id), ['asked2', 'leftover', 'asked']);
+  assert.deepEqual(back.givenUp, []);
+  // This is the part that makes it a retry: the next run reads the same batch.
+  assert.deepEqual((await queuedFeedback(store)).map((h) => h.id), ['asked2', 'leftover', 'asked']);
+  for (const h of back.retrying) assert.equal(statusIn(store, h.id), 'queued');
+});
+
+test('a comment is given up on once it has used up its tries', async () => {
+  const store = memory({ 'feedback/b/c/p.json': [comment({ id: 'doomed', status: 'queued', attempts: MAX_ATTEMPTS - 1 })] });
+  const batch = await claim(await queuedFeedback(store), store);
+  const back = await giveBack(batch, 'The run failed: Claude was stopped after 60 minutes', store);
+  // The last try is spent, so retrying again would hold up every later batch
+  // behind work that fails every time.
+  assert.deepEqual(back.retrying, []);
+  assert.deepEqual(back.givenUp.map((h) => h.id), ['doomed']);
+  assert.equal(statusIn(store, 'doomed'), 'failed');
+  // The reader is told why, and that asking again is possible.
+  assert.match(find(store, 'doomed')!.claudeResponse!, /stopped after 60 minutes/);
+  assert.match(find(store, 'doomed')!.claudeResponse!, new RegExp(`tried ${MAX_ATTEMPTS} times`));
+  // A comment given up on is not taken by the next run.
+  assert.deepEqual(await queuedFeedback(store), []);
+});
+
+test('a comment edited while the failed run ran is not put back in the queue', async () => {
+  const store = memory({ 'feedback/b/c/p.json': [comment({ id: 'edited', status: 'queued' })] });
+  const batch = await claim(await queuedFeedback(store), store);
+  store.pages['feedback/b/c/p.json'] = [comment({ id: 'edited', status: 'new', note: 'rewritten', attempts: 0 })];
+  // Queueing it again would ask Claude to address words the reader has replaced,
+  // so the edit stands and the reader asks for the new text when they want it.
+  const back = await giveBack(batch, 'The run failed', store);
+  assert.deepEqual(back.retrying, []);
+  assert.deepEqual(back.givenUp, []);
+  assert.equal(statusIn(store, 'edited'), 'new');
 });

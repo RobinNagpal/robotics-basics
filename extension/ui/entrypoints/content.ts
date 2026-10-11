@@ -1,5 +1,5 @@
 import { highlights, pageKey, remove, save, user, visible } from '@/lib/store';
-import { COLORS, shownStatus, statusLabel, validPage, type Highlight } from '@/lib/types';
+import { COLORS, QUEUEABLE, shownStatus, statusLabel, validPage, type Highlight } from '@/lib/types';
 
 // The parts of a docs page that can be highlighted: the page title, which the
 // site puts in the header above the text, and the text itself with its headings.
@@ -117,7 +117,11 @@ export default defineContentScript({
       pop.replaceChildren(
         note,
         ...answer,
-        ...(status === 'new' ? [div('dh-hint', [text('Open the extension to select this comment and address it.')])] : []),
+        // Nothing happens to a comment until a reader asks for it, and a comment
+        // that failed can be asked for again, so both say where to do that.
+        ...(status && QUEUEABLE.includes(status)
+          ? [div('dh-hint', [text(`Open the extension to select this comment and ${status === 'failed' ? 'try again' : 'address it'}.`)])]
+          : []),
         div('dh-row', [
           ...COLORS.map((color) => button('', () => save((h = { ...h, color })), color)),
           button('Delete', () => (remove(h.id), (pop.style.display = 'none'))),

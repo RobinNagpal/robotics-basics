@@ -82,6 +82,8 @@ Decide what each comment needs.
 
 ${many ? 'Work through the pages one at a time, and commit each page as you finish it, with a message that says what changed and why. ' : 'When you have finished, commit your changes with a message that says what changed and why. '}Do not push. The program that runs you pushes every commit of this turn when you finish, and that replaces the rule in CLAUDE.md to push after every change.
 
+Do all of this work yourself in this one turn, and do not start subagents for it. The reply below has to be the last thing this turn produces, and a turn that waits on other agents can end with an explanation of what the agents did instead, which the program cannot read.
+
 Then reply with one entry for every comment above, using its id:
 - status: "changed" if you changed the docs for that comment, or "answered" if you did not.
 - response: ${MIN_LINES} to ${MAX_LINES} lines written for the reader who left that comment, each line one short sentence. If you changed the docs, say what you changed and why. If you did not, give your answer. Do not give a commit hash; the program adds it. Keep to what the reader needs, and leave out the steps you took.`;

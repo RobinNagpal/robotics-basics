@@ -12,7 +12,8 @@ is separate from the [six answers of the camera
 work](../../08_seeing-the-glasses/04_the-six-solutions/01_how-the-six-compare.md): **every
 one of them needs it and none of them differs in it.** By the end of this
 document you will understand why choosing where a glass should end up
-is not a learning problem at all but plain geometry, four methods that solve
+is not a learning problem at all but plain geometry, what each condition on
+the answer looks like when it is broken, four methods that solve
 that geometry and what each one is good for, why the answer is computed once
 and handed to all six rather than left to each, how the same computation
 produces the least movement the task could possibly need — which turns out to
@@ -27,12 +28,13 @@ needs and the measurements `look()` hands over, and both are explained there.
 
 1. [Introduction](#1-introduction)
 2. [The question, written out](#2-the-question-written-out)
-3. [Four ways to place the discs](#3-four-ways-to-place-the-discs)
-4. [Why this is shared and not a solution](#4-why-this-is-shared-and-not-a-solution)
-5. [The displacement floor](#5-the-displacement-floor)
-6. [Two cautions](#6-two-cautions)
-7. [What the layout does not tell you](#7-what-the-layout-does-not-tell-you)
-8. [Where to go next](#8-where-to-go-next)
+3. [Each condition, drawn](#3-each-condition-drawn)
+4. [Four ways to place the discs](#4-four-ways-to-place-the-discs)
+5. [Why this is shared and not a solution](#5-why-this-is-shared-and-not-a-solution)
+6. [The displacement floor](#6-the-displacement-floor)
+7. [Two cautions](#7-two-cautions)
+8. [What the layout does not tell you](#8-what-the-layout-does-not-tell-you)
+9. [Where to go next](#9-where-to-go-next)
 
 ## 2. The question, written out
 
@@ -42,51 +44,19 @@ nothing has been knocked over. That is a statement about **where the glasses
 are**, so before anything can be pushed, somebody has to decide where each glass
 is supposed to go.
 
-Written out, the decision has four conditions it must satisfy, and one thing it
-should make as small as possible.
+Written out, the decision has three conditions it must satisfy, and one thing
+it should make as small as possible:
 
-**Every glass has its clear room.** The open jaw needs about 70 mm from a
-glass's middle outwards before it fits round it, and a neighbour is in the way
-when any part of the neighbour lies inside that circle. So for two glasses the
-distance between their middles has to be at least 70 mm plus half the
-neighbour's width at its widest. Because both of them have to be grippable, the
-pair needs 70 mm plus half the **wider** of the two, which means a wide glass
-crowds a narrow neighbour before the narrow one crowds it. [The
-problem](01_what-is-asked-for.md) is explicit that the room is counted in to the neighbour's
-**edge** rather than out from each middle, and that this is what makes the test
-on a pair asymmetric. The layout has to use that edge version, because a
-condition that only looks at the distance between two middles misses exactly the
-case where a narrow glass is crowded by a wide neighbour that is not crowded
-itself.
+- every glass has its clear room;
+- every glass stands inside the glass zone, and so also within reach and clear
+  of the rack;
+- every glass keeps a usable line of sight from the side;
+- and the glasses move as little as possible.
 
-![Two glasses 112 mm apart, a wide one and a narrow one, each drawn with the room it needs clear: the wide glass has its room and the narrow one does not, at the same distance between middles.](../../images/pushing-the-glasses-apart/the-target-layout/layout-room-is-asymmetric.png)
+[Each condition, drawn](#3-each-condition-drawn) gives every one of them its
+own picture and says what goes wrong when it is broken.
 
-The picture above is that case drawn. Both glasses stand 112 mm apart, which is
-one distance and not two, and yet the wide glass has its room while the narrow
-one does not. That happens because what a glass needs clear depends on how wide
-its **neighbour** is: the narrow glass needs 70 mm plus half of 105, which is
-122.5 mm, and the wide one needs 70 mm plus half of 65, which is 102.5 mm. Any
-gap between those two numbers crowds one glass and not the other.
-
-**Every glass stands inside the glass zone**, the 320 by 360 mm rectangle of
-table where glasses are allowed to be, and **outside the rack**, the 60 by
-40 mm rectangle where they are eventually stood upside down.
-
-**Every glass stays within reach.** The arm works comfortably between 300 and
-780 mm from its base, and a glass pushed outside that ring cannot be picked up
-later even if it is perfectly clear of its neighbours.
-
-**Every glass keeps a usable line of sight from the side.** Measuring a glass
-means standing the camera 380 mm out from it, 120 mm above the table, looking
-level, and the arm is offered nine places on that circle, 40° apart. At least
-one of those nine has to have no other glass standing in it.
-
-**And the glasses move as little as possible.** Every millimetre pushed is a
-millimetre in which something can be knocked over, so of all the arrangements
-that satisfy the four conditions above, the wanted one is the arrangement
-nearest to where the glasses already are.
-
-Now look at what those four conditions and that one preference need to know.
+Now look at what those three conditions and that one preference need to know.
 They need where each glass stands and how wide it is, both of which `look()`
 reports. They need the
 gripper's clear room, the glass zone, the rack and the reach, all of which the
@@ -98,7 +68,92 @@ clear room, none leaves the rectangle, and the total sliding is least. That is
 a geometry exercise, it has no unknowns in it, and it can be solved completely
 before the arm touches anything.
 
-## 3. Four ways to place the discs
+A list of conditions is hard to picture from words alone, so the next section
+draws each one in turn.
+
+## 3. Each condition, drawn
+
+The previous section listed what the layout must satisfy, and this section
+shows each condition as a picture of a table that breaks it, so that the issue
+can be seen rather than worked out from numbers.
+
+### Every glass has its clear room
+
+![Two glasses 112 mm apart, a wide one and a narrow one, each drawn with the room it needs clear: the wide glass has its room and the narrow one does not, at the same distance between middles.](../../images/pushing-the-glasses-apart/the-target-layout/layout-room-is-asymmetric.png)
+
+The picture shows a wide glass and a narrow glass standing 112 mm apart. The
+dashed circle round each glass is the room it needs clear before the open jaw
+fits round it. The wide glass's circle has nothing in it, so the wide glass can
+be gripped. The narrow glass's circle reaches into the wide glass, so the
+narrow glass cannot.
+
+**The issue is that one gap can crowd one glass and not the other.** The room a
+glass needs is counted from its own middle out to its neighbour's edge, so it
+grows with the neighbour's width. A wide neighbour reaches further into the gap
+than a narrow one does. A layout that only checked the distance between two
+middles would call this pair fine, and the narrow glass would still be
+ungrippable. So the layout checks every glass against the edge of every
+neighbour. [The gap that
+matters](01_what-is-asked-for.md#6-the-gap-that-matters-is-not-the-gap-between-the-glasses)
+explains where the room comes from.
+
+### Every glass stands inside the glass zone
+
+![The arm's base with the ring of its comfortable reach round it, the glass zone sitting wholly inside that ring, the rack on the far side of the arm, and one glass pushed out over the zone's edge.](../../images/pushing-the-glasses-apart/the-target-layout/layout-where-a-glass-may-stand.png)
+
+The picture shows the table from above with the arm's base in the middle. The
+green ring is where the arm works comfortably. The blue rectangle is the glass
+zone, the stretch of table where glasses are allowed to stand. The small grey
+box is the rack, which stands on the arm's other side.
+
+**The issue is a glass pushed somewhere the rest of the job cannot follow.** The
+red glass has been pushed over the edge of the zone. It may have plenty of
+room there, but the examiner marks a glass that has left the zone as a wrong
+ending, because leaving the zone is how a glass goes off the table or into the
+rack's stretch of it.
+
+The picture also shows why one rectangle is enough. Every corner of the zone is
+between 330 and 777 mm from the arm's base, so the whole zone lies inside the
+reach ring. And the rack never shares a stretch of table with the zone. So in
+this cell a glass inside the zone is also within reach and clear of the rack,
+and the layout needs only the one test.
+
+### Every glass keeps a usable line of sight from the side
+
+![One glass with nine camera places round it on a circle, two neighbours nearby, and the line from each camera place to the glass drawn green when no other glass shares the picture and red when one stands in front of it, beside it or behind it.](../../images/pushing-the-glasses-apart/the-target-layout/layout-a-line-of-sight.png)
+
+Measuring a glass means photographing it from the side. The arm is offered
+nine places for the camera, spread evenly on a circle 380 mm out from the
+glass, 40° apart. The picture shows those nine places round one glass, with two
+neighbours nearby. A place is green when the glass would be alone in its
+picture. It is red when another glass would appear in the same picture, in
+front of the glass, beside it or behind it.
+
+**The issue is a glass that can be gripped but not measured.** When another
+glass shares the picture, the two touch in the camera's view, and the
+measurement reads them as one glass as wide as both. Here three of the nine
+places are clear, which is enough, because the measurement needs only one
+clear view. A layout that left all nine red would leave a glass that has its
+room and still cannot be picked up properly.
+
+### The glasses move as little as possible
+
+![A crowded pair of glasses at the start, then the same pair parted by moving each glass 16 mm, then the same pair parted by moving one glass 150 mm: both endings give each glass its room.](../../images/pushing-the-glasses-apart/the-target-layout/layout-least-movement.png)
+
+The middle row of the picture is a crowded pair: two narrow glasses with only
+5 mm of daylight between them. The top row parts them by moving each one 16 mm.
+The bottom row parts them by pushing one glass 150 mm to open table. Both
+endings satisfy the three conditions above.
+
+**The issue is that many layouts are legal, and they are not equally safe to
+reach.** Every millimetre a glass is pushed is a millimetre in which it can be
+knocked over. So of all the legal layouts, the wanted one is the one nearest to
+where the glasses already stand, which here is the top row.
+
+Those pictures turn the conditions into a precise question, and the next
+section gives four standard ways of answering it.
+
+## 4. Four ways to place the discs
 
 The exercise has several standard solutions, and they are worth knowing
 together because they trade different things against each other. Two words are
@@ -111,7 +166,7 @@ makes the number smooth, which is what lets a method follow its slope downhill,
 and because it dislikes one long push more than it dislikes several short ones.
 
 A **constraint** is a condition the answer is not allowed to break, however
-good its objective would be. Here the constraints are the four conditions
+good its objective would be. Here the constraints are the three conditions
 above: a pair of middles no closer than the required distance, every glass
 inside the zone, outside the rack, inside the reach, and with one of its nine
 side-on viewpoints clear.
@@ -258,7 +313,7 @@ push at a time, which is a different thing: it answers *where can this glass go
 next* rather than *where should every glass finish*. The layout described in
 this document is a design for shared machinery, not code that runs today.
 
-## 4. Why this is shared and not a solution
+## 5. Why this is shared and not a solution
 
 Having seen that the layout is computable, the next question is who should
 compute it, and the answer is that it must not be each solution separately.
@@ -292,7 +347,7 @@ same reason. In both books
 the rule is the same: **the shared part is everything that is not the thing
 being compared.**
 
-## 5. The displacement floor
+## 6. The displacement floor
 
 The layout is useful for aiming, but the more valuable thing comes out of
 computing it, and it is a yardstick.
@@ -330,7 +385,7 @@ fault. The displacement floor is that measurement for this problem: computed
 from perfect information, independent of every method, and the thing that makes
 all the other numbers readable.
 
-## 6. Two cautions
+## 7. Two cautions
 
 The floor is only trustworthy if two mistakes are avoided, and both of them are
 easy to make.
@@ -358,7 +413,7 @@ and the floor, not the pass mark.** Scoring the distance to the targets would
 quietly punish a solution for finding a different good answer, which is the
 opposite of what an examiner is for.
 
-## 7. What the layout does not tell you
+## 8. What the layout does not tell you
 
 The layout settles where the glasses should go and nothing whatever about
 getting them there, and everything it leaves open is the real content of the six
@@ -400,7 +455,7 @@ does not touch.
 So the division is clean. Geometry says where. The six solutions, and only the
 six solutions, say how.
 
-## 8. Where to go next
+## 9. Where to go next
 
 - [The problem](01_what-is-asked-for.md) — why dragging rather than lifting, the three
   distances that matter, and what "done" means.

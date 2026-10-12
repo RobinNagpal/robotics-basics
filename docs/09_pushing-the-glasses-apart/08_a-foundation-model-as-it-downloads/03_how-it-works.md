@@ -145,7 +145,7 @@ both solution 5 and solution 6**, because the pair is only clean while
 everything except the training is held still.
 
 It is also worth noting that this is the step the examiner's own arrangement
-was designed to allow. [The examiner](../02_the-examiner.md) accepts a run of
+was designed to allow. [The examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#6-what-must-come-out) accepts a run of
 waypoints directly, without the push macro, precisely so that a policy which
 thinks in movement is not squeezed into three numbers describing a push. Both
 that path and the rendered view from the top exist in the examiner, and this
@@ -216,7 +216,7 @@ The third place the trade bites is the most interesting, because it is a
 mismatch between what this problem gives a solution and what this model is able
 to accept.
 
-[The examiner](../02_the-examiner.md) is emphatic that the force reading is the
+[The examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#why-the-force-reading-matters) is emphatic that the force reading is the
 single most valuable thing it reports. Friction is never told to any solution
 and nothing in the cell measures it, so how much force it took to start a glass
 moving, and how far the glass travelled for that push, are the only evidence

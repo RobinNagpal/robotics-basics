@@ -131,7 +131,7 @@ comparison with solution 5 is a comparison of.
 
 **This solution contributes action chunks and nothing else.** It does not
 compute where the glasses should end up: that is [the target
-layout](../01_the-problem/02_the-target-layout.md), computed once from the
+layout](../01_the-problem/04_the-target-layout.md), computed once from the
 measurements and handed to all six, so that no solution can look good at
 pushing by having aimed at an easier arrangement. It does not own the topple
 check, the loop of plan, feel and look again, or the macro that turns a

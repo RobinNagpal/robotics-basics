@@ -84,7 +84,7 @@ poor result here is still the most useful thing in this book.
 every glass on the table has about 70 mm of clear room in every direction and
 nothing has been knocked over. Choosing those trajectories is hard because a
 push does not go where it was aimed, for the reasons [pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md) sets out in full.
+toppling](../01_the-problem/05_pushing-without-toppling.md) sets out in full.
 
 Every other solution in this book responds to that by building something.
 Solution 1 builds a rule, solution 2 builds geometry and a ranker, solution 3
@@ -107,7 +107,7 @@ The idea is three steps, and there is nothing else in it.
 
 **First, download the model and show it the table from the top.** The input is
 a picture of the table looking straight down, which [the test
-examiner](../02_the-examiner.md) renders so that the solutions which read
+examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#3-what-look-hands-over) renders so that the solutions which read
 pictures get the same information as the solutions which read numbers. A fixed
 camera 750 mm above the middle of the glass zone, looking straight down, gives
 384 by 384 pixels of red, green and blue, the same frame on every table.

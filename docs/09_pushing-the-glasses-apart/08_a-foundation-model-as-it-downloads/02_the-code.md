@@ -133,7 +133,7 @@ path the examiner itself produced.
 It is worth stating plainly where this solution stops, because the boundary is
 the same for all six and is what makes them comparable.
 
-The input is fixed by [the examiner](../02_the-examiner.md). This solution may
+The input is fixed by [the examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#3-what-look-hands-over). This solution may
 read what `look()` returns and the rendered view of the same table from the
 top. In practice it reads mostly the picture, because the picture is what the
 model takes. It may not read the simulator's record of what was placed, and it

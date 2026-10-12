@@ -153,7 +153,7 @@ is what bounds them.
 
 Every solution is given the same 50 tables holding 251 glasses, of which 193
 have no room at the start, spends the same push budget, and is judged by the
-same scorecard, which [the examiner](../02_the-examiner.md) describes. A table
+same scorecard, which [the examiner](../01_the-problem/03_the-examiner.md) describes. A table
 is **finished** when every glass on it could be picked up, and **wrong** when
 the run ended in a state the cell should never reach.
 

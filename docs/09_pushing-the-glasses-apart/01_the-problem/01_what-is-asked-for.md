@@ -24,14 +24,13 @@ what counts as done, as correct but incomplete, and as wrong.
 1. [Introduction](#1-introduction)
 2. [Why dragging and not lifting](#2-why-dragging-and-not-lifting)
 3. [What is on the table](#3-what-is-on-the-table)
-4. [What goes in](#4-what-goes-in)
-5. [What must come out](#5-what-must-come-out)
-6. [The gap that matters is not the gap between the glasses](#6-the-gap-that-matters-is-not-the-gap-between-the-glasses)
-7. [How low the push has to be, and why it is a property of the glass](#7-how-low-the-push-has-to-be-and-why-it-is-a-property-of-the-glass)
-8. [What else makes this hard](#8-what-else-makes-this-hard)
-9. [What is deliberately not in this problem](#9-what-is-deliberately-not-in-this-problem)
-10. [What "done" means](#10-what-done-means)
-11. [Where to go next](#11-where-to-go-next)
+4. [What goes in and what comes out](#4-what-goes-in-and-what-comes-out)
+5. [The gap that matters is not the gap between the glasses](#5-the-gap-that-matters-is-not-the-gap-between-the-glasses)
+6. [How low the push has to be, and why it is a property of the glass](#6-how-low-the-push-has-to-be-and-why-it-is-a-property-of-the-glass)
+7. [What else makes this hard](#7-what-else-makes-this-hard)
+8. [What is deliberately not in this problem](#8-what-is-deliberately-not-in-this-problem)
+9. [What "done" means](#9-what-done-means)
+10. [Where to go next](#10-where-to-go-next)
 
 ## 2. Why dragging and not lifting
 
@@ -59,121 +58,34 @@ had](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#2-what-i
 — four to six, one known kind, upright and opaque — except that some of them are
 close together. Close enough that the numbers in the next section bite.
 
-## 4. What goes in
+## 4. What goes in and what comes out
 
-Every answer to this problem is given exactly this and nothing more.
+The table above is what an answer works on, and this section says in brief what
+an answer is handed and what it hands back. [What goes in and what comes
+out](02_what-goes-in-and-what-comes-out.md) gives the full detail.
 
-**What the camera work hands over.** For each standing glass: where it stands,
-how tall it is, how wide it is at its widest and at its foot. Every reading
-carries the error the camera work was [measured to
-have](../../08_seeing-the-glasses/11_the-results.md), so nothing here is exact.
+**What goes in** is a reading for each standing glass, saying where it stands,
+how tall it is and how wide it is at its widest and at its foot, each with the
+camera work's measured error. Answers that read pictures also get a view of the
+table from above. And after each push, the answer gets what the jaw felt,
+measured by the force sensor at the arm's wrist. Nothing else goes in: no
+answer may read the simulator's record of what it placed, or the friction it is
+using.
 
-**A view of the table from the top**, for the answers that read pictures rather
-than readings.
-
-**What the jaw felt on the last push.** The jaw comes down behind a glass,
-feels forward until it touches, pushes, and backs off, and it reports what it
-felt on the way. The reading comes from the force sensor at the arm's wrist,
-and [how the jaw's force is measured](#how-the-jaws-force-is-measured) below
-describes it. That force reading matters more than it looks, and [the number
-nobody has](03_pushing-without-toppling.md#4-the-number-nobody-has) says why.
-
-**Nothing else.** In particular, no answer may read the simulator's record of
-what it placed, or the friction it is using. Both exist, and both are how the
-run is marked afterwards.
+**What comes out** is a jaw trajectory, and then another, until the table is
+done or the budget is spent. An answer may describe a push by a few numbers,
+which the examiner expands into a trajectory, or give the waypoints directly.
+And a glass that cannot be moved safely is refused, with the reason.
 
 This matters more here than in the simpler jobs this cell was built for,
 because six quite different methods are compared on this question, and a
-comparison only means something when the question was identical. The [test
-examiner](../02_the-examiner.md) hands exactly this to every one of them.
+comparison only means something when the question was identical. [The
+examiner](03_the-examiner.md) hands exactly this to every one of them.
 
-### How the jaw's force is measured
+What goes in includes each glass's width, and the next section explains why the
+gap that decides gripping is not the plain gap between two glasses.
 
-Of the three inputs, the force reading is the one that comes from touch rather
-than from the camera, so it is worth saying which sensor makes it and how.
-
-**The sensor is a six-axis force-torque sensor between the arm and the
-gripper.** The arm ends in a flat plate called the flange, and the gripper is
-not bolted straight to it. A force sensor sits between the two, so the gripper
-hangs from the arm only through that sensor. Anything that pushes on the jaw
-therefore pushes, through the gripper's body, on the sensor. "Six-axis" means it
-reports six numbers: the force along each of three directions, and the twist
-about each of them. The cell declares this sensor in
-[`arm/gripper.urdf.xacro`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/src/work_cell/work_cell/arm/gripper.urdf.xacro),
-under the name `wrist_force`. In the Gazebo cell it reports 100 times a second,
-in the gripper's own directions. The camera cannot measure a force at all, and
-the cell's two other sensors, the contact sensors in the pads, are read only as
-whether a pad is touching something.
-
-**A real sensor of this kind measures how much a piece of metal bends.** Inside
-it is a stiff metal part that bends by a tiny amount under load, too little to
-see. Strain gauges are glued to that part. A strain gauge is a thin wire pattern
-whose electrical resistance changes as it is stretched, so the bending becomes a
-change in voltage. A calibration made by the maker turns the voltages from all
-the gauges into the three forces and three twists. Because the sensor is in
-effect a very stiff spring, it reads every load below it, including the
-gripper's own weight. That weight is measured once with nothing touching and
-then subtracted, so that what is left is the force from contact.
-[Force and torque at the
-wrist](../../03_frameworks/02_gripping/02_grippers-and-hardware.md#81-force-and-torque-at-the-wrist)
-gives the published figures of one such sensor.
-
-**In the examiner, the force is added up from the physics.** The pushing is
-tested in MuJoCo rather than Gazebo, for reasons [the
-examiner](../02_the-examiner.md) gives, and MuJoCo has no sensor model to read.
-So at every step of the physics, which is every 2 milliseconds, the examiner
-in
-[`bench.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/bench/bench.py)
-finds every contact that involves the jaw, adds up the force of each one, and
-reports the size of the total in newtons. That is what the wrist sensor would
-read once the gripper's weight had been subtracted. It has no noise and no
-drift, which a real sensor has.
-
-**The push uses that number at three moments.** While the jaw comes down at
-200 mm per second, any force above 0.1 newton means it has landed on something,
-and it goes back up. While it feels forward at 10 mm per second, the first force
-above 0.1 newton is the touch, and the push starts from there. The threshold is
-that low because the lightest glass starts to slide under about a quarter of a
-newton, and a higher threshold would push it along without noticing it. While it
-pushes at 20 mm per second, a force above 20 newtons means something is wedged,
-and the push stops. Throughout, the largest force seen is kept, and that is the
-peak force the push reports.
-
-**The distances in the report come from the jaw's position, not from the
-sensor.** The sensor only says *when* the force crossed a threshold. Where the
-jaw was at that moment comes from where the arm had put it, which on the real arm
-is read from the joint encoders, the sensors that measure each joint's angle.
-[Measuring by
-touch](../../02_perception/02_object-perception/02_sensors.md#2-measuring-by-touch)
-explains that division of work.
-
-One caution applies to the real cell. The 0.1 newton touch threshold is about
-the noise level of a typical wrist sensor, whose maker recommends ten times that
-for detecting contact. So on real hardware the feel forward would need a higher
-threshold or a slower approach, and the examiner's clean reading is one of the
-ways it is easier than the world.
-
-So a solution is handed positions and widths, a picture, and these force and
-distance readings, and the next section says what it has to hand back.
-
-## 5. What must come out
-
-**A jaw trajectory**, and then another, until the table is done or the budget
-is spent.
-
-Some answers think in whole pushes — a contact, a direction, a distance — and
-the examiner expands one of those into a trajectory through a macro it owns. Other
-answers produce the trajectory directly, a short run of waypoints at a time.
-Both are allowed, and the examiner treats them alike, because **what is scored is
-the table afterwards rather than the push that changed it**. That is the only
-way a push described by three numbers and a push described by fifty waypoints
-can be compared at all.
-
-**And a refusal, where one is honest.** A glass that tips before it slides, or
-has nowhere clear to go, is reported with the reason rather than attempted. A
-refusal is a result.
-
-## 6. The gap that matters is not the gap between the glasses
+## 5. The gap that matters is not the gap between the glasses
 
 ![The open jaw needs about 70 mm from a glass's middle outwards before it fits round it, so the gap that decides whether a glass can be gripped is the one between a middle and a neighbour's edge rather than the one between two glasses.](../../images/pushing-the-glasses-apart/what-is-asked-for/the-room-a-gripper-needs.png)
 
@@ -205,7 +117,7 @@ belongs to [looking again at what was
 hidden](../../08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md),
 and moving a glass changes it too.
 
-## 7. How low the push has to be, and why it is a property of the glass
+## 6. How low the push has to be, and why it is a property of the glass
 
 ![A push above a certain height on the glass tips it instead of sliding it, and how low that height is follows from the width of the foot the glass stands on and from a friction nothing in the cell can measure.](../../images/pushing-the-glasses-apart/what-is-asked-for/push-low-or-it-topples.png)
 
@@ -253,7 +165,7 @@ limit that is only as good as a guessed number. That is an argument for always
 pushing as low as the gripper can reach, and for watching what actually happens
 rather than trusting the prediction.
 
-## 8. What else makes this hard
+## 7. What else makes this hard
 
 **Where to push it *to*.** The destination has to be clear of every other
 glass, clear of the rack, inside the arm's reach, and inside the part of the
@@ -276,7 +188,7 @@ arrangement, not just the crowded pair.
 a glass with no idea how heavy it is. Too fast is a knock, and a knock on a
 tall glass is the thing this problem exists to avoid.
 
-## 9. What is deliberately not in this problem
+## 8. What is deliberately not in this problem
 
 **Lifting anything.** No grasp, no weighing, no rack.
 
@@ -287,7 +199,7 @@ tall glass is the thing this problem exists to avoid.
 **Tidying.** The glasses do not have to end up anywhere in particular. They have
 to end up far enough apart.
 
-## 10. What "done" means
+## 9. What "done" means
 
 A run is **done** when every glass on the table has at least 70 mm of clear
 room around it, at least one usable viewpoint for a side-on photograph, and
@@ -307,16 +219,19 @@ Scored against the simulator's record, the numbers worth watching are: how many
 glasses ended up grippable, how many pushes it took, how far each glass ended
 up from where the push aimed it, and how many were refused.
 
-## 11. Where to go next
+## 10. Where to go next
 
-Three documents describe what every answer shares, and they are worth reading
+Four documents describe what every answer shares, and they are worth reading
 before any of the six.
 
-- [The examiner](../02_the-examiner.md) — the crowded tables, what an answer is
-  given, and how a run is marked.
-- [The target layout](02_the-target-layout.md) — where the glasses should end up,
+- [What goes in and what comes out](02_what-goes-in-and-what-comes-out.md) —
+  the three calls, what a push reports and how its force is measured, and what
+  an answer hands back.
+- [The examiner](03_the-examiner.md) — the crowded tables, the physics, and how
+  a run is marked.
+- [The target layout](04_the-target-layout.md) — where the glasses should end up,
   which is computed rather than learned, and the least movement the task needs.
-- [Pushing without toppling](03_pushing-without-toppling.md) — the height limit
+- [Pushing without toppling](05_pushing-without-toppling.md) — the height limit
   that decides whether a glass slides or tips, and the loop of plan, feel and
   look again.
 
@@ -324,4 +239,4 @@ Then the six answers themselves:
 
 → [The six solutions](../03_the-six-solutions/01_how-the-six-compare.md)
 
-[The target layout — where the glasses should end up](02_the-target-layout.md) →
+[What goes in and what comes out](02_what-goes-in-and-what-comes-out.md) →

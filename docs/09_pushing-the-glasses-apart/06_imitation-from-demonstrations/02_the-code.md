@@ -202,7 +202,7 @@ One point about the output has to be clear, because it decides what a
 comparison with this solution is a comparison of.
 
 **This solution emits waypoints directly, and nothing expands them.** [The test
-examiner](../02_the-examiner.md) owns a macro that turns a parameterised push into a
+examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#6-what-must-come-out) owns a macro that turns a parameterised push into a
 descent, a feel, a slide, a back-off and a lift, and the solutions that think
 in parameterised pushes go through it. A chunk is already a jaw trajectory, so
 there is nothing for the macro to do. The examiner carries the waypoints out as
@@ -232,10 +232,10 @@ and it is the only reason this solution and its teacher can be set side by side.
 belongs to the policy.** The tables are the examiner's. The measurements are the
 examiner's, carrying the measured error of [telling the glasses
 apart](../../08_seeing-the-glasses/11_the-results.md). The destinations come
-from [the target layout](../01_the-problem/02_the-target-layout.md), computed
+from [the target layout](../01_the-problem/04_the-target-layout.md), computed
 once per arrangement, so every solution that aims at a destination aims at the
 same places. The topple limit and the refusal rule come from [pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md). What this solution
+toppling](../01_the-problem/05_pushing-without-toppling.md). What this solution
 contributes is one mapping — from a picture of the table to a short run of
 waypoints — and nothing else.
 

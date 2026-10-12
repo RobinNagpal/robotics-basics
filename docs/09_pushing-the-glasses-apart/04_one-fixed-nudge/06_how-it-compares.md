@@ -27,7 +27,7 @@ and every refusal has a reason that can be checked with a ruler.
 
 **One run of it is a measurement.** Nothing in it was fitted and nothing in it
 is drawn at random, so it behaves the same way on the hundredth table as on the
-first. The repeats that [the examiner](../02_the-examiner.md) requires of the trained
+first. The repeats that [the examiner](../01_the-problem/03_the-examiner.md) requires of the trained
 solutions, because their training and their actions both vary, are not needed
 here, and that makes it the one solution in the set whose number carries no
 spread.
@@ -68,7 +68,7 @@ failure this creates, and it is also the failure that cannot be recovered,
 because a collision between two upright glasses is how a glass goes over.
 
 **It does not use the shared target layout.** [The target
-layout](../01_the-problem/02_the-target-layout.md) computes where every glass should finish and
+layout](../01_the-problem/04_the-target-layout.md) computes where every glass should finish and
 reports the least travel the task could possibly need, and this method consults
 neither. It pushes away rather than towards, so its total travel will sit well
 above the displacement floor, and reading it against that floor is the clearest
@@ -190,7 +190,7 @@ exactly one place where that could happen, which is the gain, and that is why
 the gain is argued rather than swept over the training tables. The discipline
 also requires that the baseline be measured on the same tables with the same
 scoring as the methods meant to beat it, which is what [the
-examiner](../02_the-examiner.md) is for.
+examiner](../01_the-problem/03_the-examiner.md) is for.
 
 ## 3. Where it sits among the other five
 

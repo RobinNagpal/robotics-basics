@@ -101,7 +101,7 @@ One of those four tests deserves its own section, because it is the one that
 can cause the failure nothing can repair, and because the height it is
 evaluated at is easy to get wrong.
 
-[Pushing without toppling](../01_the-problem/03_pushing-without-toppling.md) sets out the rule in
+[Pushing without toppling](../01_the-problem/05_pushing-without-toppling.md) sets out the rule in
 full, and the short form is that a glass pushed at height `h`, standing on a
 foot `2a` across, on a table it rubs against with friction `μ`, slides while
 
@@ -242,7 +242,7 @@ push happens at x = 430, y = −290".
 **That exclusion is deliberate, and the reason is what a position would teach
 the model.** The examiner's crowded tables are drawn by standing most glasses
 deliberately close to a glass already down and the rest anywhere they fit, as
-[the examiner](../02_the-examiner.md) describes. Over many tables that produces a
+[the examiner](../01_the-problem/03_the-examiner.md) describes. Over many tables that produces a
 distribution: crowds form more often in some parts of the zone than others,
 purely because of where the arm reaches, where the rack sits and how the
 placement rule happens to work. Give the model the position and it will find

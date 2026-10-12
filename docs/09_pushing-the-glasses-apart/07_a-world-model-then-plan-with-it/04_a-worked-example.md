@@ -18,7 +18,7 @@ edge** at 65 mm, not the 50 mm its middle rides at, and for a glass whose foot
 is narrow enough there is no contact height the arm can offer below the limit.
 The only correct answer for such a glass is to refuse, with the reason
 recorded, which marks the run *correct but incomplete* rather than wrong.
-[Pushing without toppling](../01_the-problem/03_pushing-without-toppling.md)
+[Pushing without toppling](../01_the-problem/05_pushing-without-toppling.md)
 sets all of that out once, including what is done when the unknown friction
 leaves the limit undecided, and it is **arithmetic applied before any model is
 consulted** in five of the six solutions. What follows is only what is this
@@ -134,7 +134,7 @@ refusals says why the topple can happen: the model can be confidently wrong, and
 the shared topple gate that would have caught it is not in front of this planner
 yet. Those numbers are read against the other solutions on the shared scorecard,
 and against the displacement floor from [the target
-layout](../01_the-problem/02_the-target-layout.md), which says how little movement
+layout](../01_the-problem/04_the-target-layout.md), which says how little movement
 the task needed in the first place.
 
 ← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

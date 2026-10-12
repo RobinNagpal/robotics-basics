@@ -1,7 +1,7 @@
 # What it is
 
 > **What it uses** — PyTorch, and MuJoCo through [the test
-> examiner](../02_the-examiner.md). The first way is a small network written for this cell
+> examiner](../01_the-problem/03_the-examiner.md). The first way is a small network written for this cell
 > and trained here, five copies of it, with no downloaded weights of any kind.
 > The second way would be TD-MPC2, fetched from its own project, because the
 > library this project uses elsewhere ships the earlier TD-MPC instead.
@@ -79,9 +79,9 @@ own ignorance, which is the most transferable idea here. And what the two ways
 buy against each other: a small hand-built model that can be inspected, against
 a stronger off-the-shelf one that brings a maintained implementation.
 
-Read [the examiner](../02_the-examiner.md) first, because what `look()` hands over
+Read [the examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md) first, because what `look()` hands over
 and what `push()` accepts are assumed throughout, and read [pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md), because the refusal rule this
+toppling](../01_the-problem/05_pushing-without-toppling.md), because the refusal rule this
 solution adds learned evidence to is stated there.
 
 ![Thousands of pushes are made in the simulator and nobody labels any of them, because the answer to every example is what the second look found; five copies of a small network are fitted to say what the table looks like after a push; and before every push the arm makes, candidates are drawn, put to all five, filtered and scored, and only the best one is carried out.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-flow-what-it-does.png)
@@ -96,13 +96,13 @@ solution is aimed at.
 
 Four to six glasses stand on a table, some of them closer together than the
 gripper can work with. The arm has to push them apart without knocking any of
-them over. [The target layout](../01_the-problem/02_the-target-layout.md) has already settled
+them over. [The target layout](../01_the-problem/04_the-target-layout.md) has already settled
 where the glasses should end up, because that is plain geometry with no
 unknowns in it. What is left is the half that has unknowns in it: **what a
 given push will actually do**.
 
 That half is hard for one reason above all others, and [pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md) states it plainly. The rule that
+toppling](../01_the-problem/05_pushing-without-toppling.md) states it plainly. The rule that
 decides whether a glass slides or tips compares the contact height against half
 the foot width divided by the friction coefficient, and **nothing in this cell
 measures friction**. The examiner holds the coefficients privately and never tells

@@ -41,7 +41,7 @@ what that comes to: **0.41 seconds of thinking per push**, against 0.01 for the
 imitation policy, 0.06 and 0.08 for the two geometry solutions, and 0.82 and
 1.07 for the two that run a borrowed model. So this is the dearest of the four
 that are not a foundation model, and it is the reason [the
-examiner](../02_the-examiner.md) puts a compute column on the scorecard. Those
+examiner](../01_the-problem/03_the-examiner.md) puts a compute column on the scorecard. Those
 times were all measured on a machine that was busy with other work, so they are
 good for the order of magnitude and nothing finer. A two-push search would
 multiply this one again. On a real arm 0.41 seconds still sits comfortably
@@ -61,7 +61,7 @@ to meet in either; the only conditions are the libraries' own, and TD-MPC2 is
 MIT.
 
 **Two additions to the examiner, both of which it now has.** [The test
-examiner](../02_the-examiner.md) listed them as missing: repeats with a spread on the
+examiner](../01_the-problem/03_the-examiner.md) listed them as missing: repeats with a spread on the
 scorecard, because one run of a trained solution is not a measurement, and the
 time per push beside the counts. Both are in `bench/scoring.py` today, as
 `Repeats` and as the seconds-per-push the scorecard records. The first way's runner

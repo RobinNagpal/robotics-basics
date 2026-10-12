@@ -59,7 +59,7 @@ in full so that what it buys can be measured rather than assumed.
 **The whole reason this solution exists is that it is one half of a matched
 pair.** [Solution 5](../08_a-foundation-model-as-it-downloads/01_what-it-is.md)
 is this model with no training in this cell. This is the same model with
-training in this cell. The [examiner](../02_the-examiner.md) holds everything
+training in this cell. The [examiner](../01_the-problem/03_the-examiner.md) holds everything
 else still — the same tables in the same order, the same instruction, the same
 joint readings, the same shared checks, the same output of jaw waypoints and
 the same scorecard — and the two solutions use the same library, the same model

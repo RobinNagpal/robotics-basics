@@ -43,7 +43,7 @@ there are four to six of them. The shortfall, the heading and the travel are a
 few arithmetic operations each. The whole decision is a few hundred
 floating-point operations and it finishes in far less time than the arm takes
 to move anywhere. On the compute column that [the
-examiner](../02_the-examiner.md) describes for the scorecard, this solution is
+examiner](../01_the-problem/03_the-examiner.md) describes for the scorecard, this solution is
 the zero the others are read against, and a solution that plans through a
 learned model at run time or evaluates a large neural network sits hundreds or
 thousands of times above it.

@@ -121,7 +121,7 @@ What makes that a problem rather than an exercise is one missing number. A
 pushed glass slides while the jaw touches it below a height set by its own foot
 and by the friction between the glass and the table, and tips above that
 height, which is the whole subject of [pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md). **The friction is never told to any
+toppling](../01_the-problem/05_pushing-without-toppling.md). **The friction is never told to any
 solution and nothing in the cell measures it.** So how far a glass travels for
 a given push is unknown before the push is made, and it stays unknown
 afterwards except through what the table looks like next.

@@ -331,7 +331,7 @@ memory — and no such ability either.
 Now the weaknesses that survive.
 
 **The force reading still has nowhere to go.** [The
-examiner](../02_the-examiner.md) calls the jaw's report of what it felt the only
+examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#why-the-force-reading-matters) calls the jaw's report of what it felt the only
 channel through which friction is observable at all, and this model's inputs
 are a picture, a sentence and the joint readings. Training cannot add a fourth
 input, so that channel stays closed in both halves of the pair. The absorbed
@@ -356,7 +356,7 @@ carries no language machinery at all.
 policy is a function from an observation to an action; there is no field in it
 for a rule, so there is no way to tell it never to topple a glass. The topple
 limit therefore stays where [pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md) puts it, outside all
+toppling](../01_the-problem/05_pushing-without-toppling.md) puts it, outside all
 six solutions. In one respect fine-tuning makes this worse rather than better:
 the teacher refused the glasses it should refuse, so the training set contains
 no example of a glass that must not be pushed, and the policy has never been
@@ -373,14 +373,14 @@ carry a reason.
 **A surprise in the middle of a chunk is still carried out.** Committing to a
 short run of waypoints is what keeps the policy steady over a motion rather
 than wobbling from one step to the next, and it is the reason [the
-examiner](../02_the-examiner.md) accepts waypoints at all instead of forcing
+examiner](../01_the-problem/03_the-examiner.md) accepts waypoints at all instead of forcing
 every solution down to three numbers. The cost of committing is that something
 unexpected during the chunk — a glass that sticks, a neighbour met earlier than
 the readings implied — is met by a policy still executing what it decided
 before. Fine-tuning changes how often a surprise arrives. It does not change
 what happens when one does, and nothing else does either: the early abort that
 would read the jaw's force as the push develops is a design in [pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md) and nothing in the
+toppling](../01_the-problem/05_pushing-without-toppling.md) and nothing in the
 examiner does it. What the examiner does is stop at a jam, which is a much
 higher force than a glass beginning to tip, and `follow()` is explicit that
 below that level the chunk is carried out as it was given. That falls on both
@@ -435,7 +435,7 @@ how this solution is measured at all. A policy of this kind is stochastic:
 asked the same question twice it may act differently, because the action is
 drawn rather than computed. Training itself varies with its own random seed, so
 the same recipe run twice gives two policies of different quality. [The
-examiner](../02_the-examiner.md) requires several training seeds and several
+examiner](../01_the-problem/03_the-examiner.md) requires several training seeds and several
 evaluation runs for exactly this reason, and the scorecard carries the spread.
 **This matters most to this document of any in this book**, because the thing
 being measured is the gap between two solutions, and a gap smaller than either

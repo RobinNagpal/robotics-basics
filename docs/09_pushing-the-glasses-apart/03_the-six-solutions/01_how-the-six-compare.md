@@ -36,7 +36,7 @@ that derives it.
 
 All six are given the same tables, the same measurements of them, the same push
 budget and the same scorecard, which is what lets a gap between two scores be
-read as a statement about the method. [The examiner](../02_the-examiner.md)
+read as a statement about the method. [The examiner](../01_the-problem/03_the-examiner.md)
 describes that arrangement in full and is the page to read before any solution
 document.
 
@@ -49,9 +49,9 @@ outcome is measured identically for all six.
 
 Two parts of the job belong to no solution and are described elsewhere: where
 the glasses should end up, in [the target
-layout](../01_the-problem/02_the-target-layout.md), and the limit that decides
+layout](../01_the-problem/04_the-target-layout.md), and the limit that decides
 whether a glass slides or tips, in [pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md).
+toppling](../01_the-problem/05_pushing-without-toppling.md).
 
 ## 3. What each one is built from
 
@@ -180,7 +180,7 @@ arrangement puts a ceiling on how bad they get. Solution 4 is the exception. It
 holds no friction value to put in the limit and refuses on its own model's
 evidence instead, so there the ceiling comes from the model after all, and the
 one glass it toppled is what that is worth. [Pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md) sets out both
+toppling](../01_the-problem/05_pushing-without-toppling.md) sets out both
 arrangements.
 
 ### Where the demonstrations come from
@@ -203,12 +203,14 @@ in the comparison, not a detail.
 
 ## 7. Where to go next
 
-- [The examiner](../02_the-examiner.md) — the shared input, output and marking.
-  **Read this before any solution document.**
 - [The problem](../01_the-problem/01_what-is-asked-for.md) — what is asked for, and what makes it hard.
-- [The target layout](../01_the-problem/02_the-target-layout.md) — where the glasses should end
+- [What goes in and what comes out](../01_the-problem/02_what-goes-in-and-what-comes-out.md) —
+  what every solution is handed and hands back. **Read this before any solution
+  document.**
+- [The examiner](../01_the-problem/03_the-examiner.md) — the crowded tables, the physics and the marking.
+- [The target layout](../01_the-problem/04_the-target-layout.md) — where the glasses should end
   up, and the least movement the task needs.
-- [Pushing without toppling](../01_the-problem/03_pushing-without-toppling.md) — the limit and
+- [Pushing without toppling](../01_the-problem/05_pushing-without-toppling.md) — the limit and
   the loop, shared by all six.
 - Then the six short pages of this chapter, in order: [one fixed
   nudge](02_one-fixed-nudge.md), [geometry generates, a model
@@ -220,4 +222,4 @@ in the comparison, not a detail.
   link to the chapter that treats it in full.
 - [The results](../10_the-results.md) — the full scorecard, with every column.
 
-← [The examiner — the same question for every answer](../02_the-examiner.md) · [One fixed nudge](02_one-fixed-nudge.md) →
+← [Pushing without toppling](../01_the-problem/05_pushing-without-toppling.md) · [One fixed nudge](02_one-fixed-nudge.md) →

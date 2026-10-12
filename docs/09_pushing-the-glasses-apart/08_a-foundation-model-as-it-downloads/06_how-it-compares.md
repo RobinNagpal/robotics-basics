@@ -108,7 +108,7 @@ one action at a time, which [solution
 3](../06_imitation-from-demonstrations/01_what-it-is.md) explains properly,
 since ACT is named for it. SmolVLA returns 50 at a time. The reason it matters
 here is the contract: because these architectures produce movement in runs,
-[the examiner](../02_the-examiner.md) accepts a run of waypoints directly
+[the examiner](../01_the-problem/03_the-examiner.md) accepts a run of waypoints directly
 instead of demanding three numbers describing a push.
 
 Predicting a run is right when the motion is a smooth committed thing, as a
@@ -116,7 +116,7 @@ push is, because it keeps the policy consistent across the motion instead of
 wobbling from one step to the next. It is wrong when the situation can change
 faster than the run takes to execute, because a committed run cannot react
 inside itself — which is the gap that [the learned early
-abort](../01_the-problem/03_pushing-without-toppling.md) exists to cover, and
+abort](../01_the-problem/05_pushing-without-toppling.md) exists to cover, and
 it is a shared mechanism rather than anything this solution provides.
 
 ### The domain gap, and the honest reading of a failure across one

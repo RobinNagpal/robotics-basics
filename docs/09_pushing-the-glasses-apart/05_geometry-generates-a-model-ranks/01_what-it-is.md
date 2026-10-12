@@ -85,7 +85,7 @@ than wherever it lands on the scorecard.
 candidate and refuses the unsafe ones, and the model only orders what survives.
 So a wrong answer costs one wasted push and nothing worse. It cannot topple a
 glass, because the topple limit described in [pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md) is a refusal
+toppling](../01_the-problem/05_pushing-without-toppling.md) is a refusal
 applied before the model is consulted at all. That is the same position the
 learned ranker in [looking again at what was
 hidden](../../08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md)

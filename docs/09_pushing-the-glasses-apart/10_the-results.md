@@ -12,7 +12,7 @@ The six ways of pushing crowded glasses apart so that each one can then be
 picked up are all tested on the same 50 tables holding 251 glasses, 193 of
 which have no room at the start. Every solution is given the same tables,
 spends the same push budget, and is judged by the same scorecard, which is
-described in [the examiner](02_the-examiner.md).
+described in [the examiner](01_the-problem/03_the-examiner.md).
 None of them saw these tables while it was being built or fitted. Every number
 on this page is read from a solution's own `results.json`.
 
@@ -111,7 +111,7 @@ on the right of the table matter more than the one on the left.
   the ones that reason about toppling use a believed range instead. The examiner
   knows the true value and never shares it.
 - **No early abort.** [Pushing without
-  toppling](01_the-problem/03_pushing-without-toppling.md) argues
+  toppling](01_the-problem/05_pushing-without-toppling.md) argues
   for stopping a push while the glass is still moving. Nothing here implements
   it, and solution 6 is what its absence costs.
 - **One kind of glass per table**, as the cell's own layout produces.

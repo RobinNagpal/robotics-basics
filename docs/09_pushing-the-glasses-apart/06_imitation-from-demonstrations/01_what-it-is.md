@@ -52,7 +52,7 @@ reward, no exploration, no physics, only a large table of situations and the
 action somebody took in each one.
 
 **This is built, and it is worth being exact about which parts.** [The test
-examiner](../02_the-examiner.md) is built, the programmed geometry that picks a
+examiner](../01_the-problem/03_the-examiner.md) is built, the programmed geometry that picks a
 landing spot for one glass at a time is built, and so is the ranker that turns
 that geometry into [geometry generates, a model
 ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md), which is this solution's
@@ -97,7 +97,7 @@ that are left have been refused with a reason. So the thing to be produced is a
 function: from the arrangement of a crowded table, to a motion of the jaw.
 
 That function is hard to write down, and [pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md) says exactly why.
+toppling](../01_the-problem/05_pushing-without-toppling.md) says exactly why.
 The relation between a push and the slide it produces runs through the friction
 between the glass and the table, nothing in this cell measures friction, and
 the examiner never tells any solution what it is. Predicting an outcome
@@ -114,7 +114,7 @@ incomplete.
 
 **This solution attacks the same difficulty from the other end.** Nobody can
 write the function from a crowded table to a good push. But an examiner can tell
-afterwards whether a push was good, because [the examiner](../02_the-examiner.md)
+afterwards whether a push was good, because [the examiner](../01_the-problem/03_the-examiner.md)
 marks the outcome and not the action. So good pushes can be collected even
 though they cannot be derived, and a network can be fitted to the collection.
 The function is not written; it is measured into existence.
@@ -125,7 +125,7 @@ solution different in kind from its teacher rather than merely cheaper.
 **The policy learns the motion, not only the choice.** The teacher emits a
 parameterised push — which glass, where to put the jaw down, which way to
 point, how far to feel, how far to push — and [the test
-examiner](../02_the-examiner.md) owns the macro that expands those numbers into
+examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#6-what-must-come-out) owns the macro that expands those numbers into
 a descent, a feel, a slide, a back-off and a lift. Every parameterised push is
 expanded the same way. A policy that emits waypoints is not limited to motions
 that macro can express. It can slow where a neighbour is close, lean the slide
@@ -163,7 +163,7 @@ the motion committed, and the section on action chunking explains why a push in
 particular needs that.
 
 **The loop is unchanged.** [Pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md) describes the loop every solution
+toppling](../01_the-problem/05_pushing-without-toppling.md) describes the loop every solution
 here runs: plan, feel, look again. This solution replaces the planning step and
 nothing else. That the loop stays is what makes copying survivable at all, for
 a reason the section on compounding error gives.

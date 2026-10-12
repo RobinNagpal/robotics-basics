@@ -53,7 +53,7 @@ multiplied by a fixed gain is a **proportional controller**, and that is the
 whole of this method's cleverness.
 
 Every one of the six solutions runs inside a loop of this shape, because
-[pushing without toppling](../01_the-problem/03_pushing-without-toppling.md) shows that none of
+[pushing without toppling](../01_the-problem/05_pushing-without-toppling.md) shows that none of
 them can do otherwise. What makes this one the control is that in the other
 five the loop surrounds something substantial, and here **the loop is the
 method**. There is nothing inside it to compare.
@@ -109,7 +109,7 @@ while B is not crowded by A. So the method has to evaluate the shortfall in
 both directions for every pair, and a method that compares only the distances
 between middles will call a pair fine when one of the two cannot be gripped.
 This is the same point [the problem](../01_the-problem/01_what-is-asked-for.md) makes with its three
-distances, and [the target layout](../01_the-problem/02_the-target-layout.md) makes again when it
+distances, and [the target layout](../01_the-problem/04_the-target-layout.md) makes again when it
 insists that a layout has to use the edge version of the condition.
 
 **The shortfall is already in the repository.** The function `shortfall()` in
@@ -265,7 +265,7 @@ real code is involved and it would be easy to over-claim.
 - the shared target layout, which this solution does not use in any case;
 - the rendered view of the table from the top, and the path for a chunk of
   waypoints, neither of which this solution needs;
-- the repeats and the compute column that [the examiner](../02_the-examiner.md)
+- the repeats and the compute column that [the examiner](../01_the-problem/03_the-examiner.md)
   describes for the scorecard.
 
 One measurement from the built code is worth quoting, with its attribution

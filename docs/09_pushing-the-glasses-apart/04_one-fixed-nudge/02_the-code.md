@@ -138,7 +138,7 @@ commits to.
 With the method, its loop and its honest extent all stated, what remains is the
 thing it actually hands over, and the examiner is strict about the shape of that.
 
-**The shared output is a jaw trajectory**, as [the examiner](../02_the-examiner.md)
+**The shared output is a jaw trajectory**, as [the examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#6-what-must-come-out)
 explains, and a solution that thinks in whole pushes does not have to produce
 one itself. This solution thinks in whole pushes. What it emits is a
 **parameterised push**: which glass is meant to move, where the fingertips come
@@ -179,7 +179,7 @@ jammed, the most force it felt, and how far it moved after touching. **This
 solution reads almost none of that report.** It uses only whether the jaw
 touched anything at all. That is a deliberate omission rather than an
 oversight, and it is the deepest reason this solution is the floor of the set:
-[the examiner](../02_the-examiner.md) points out that the force reading is the only
+[the examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#why-the-force-reading-matters) points out that the force reading is the only
 channel through which the friction is observable at all, and every solution
 that does better than a blind nudge does so by reading that channel, either by
 reasoning about it or by learning from it. This one throws it away and relies on

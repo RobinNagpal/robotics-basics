@@ -18,7 +18,7 @@ edge** at 65 mm, not the 50 mm its middle rides at, and for a glass whose foot
 is narrow enough there is no contact height the arm can offer below the limit.
 The only correct answer for such a glass is to refuse, with the reason
 recorded, which marks the run *correct but incomplete* rather than wrong.
-[Pushing without toppling](../01_the-problem/03_pushing-without-toppling.md)
+[Pushing without toppling](../01_the-problem/05_pushing-without-toppling.md)
 sets all of that out once, including what is done when the unknown friction
 leaves the limit undecided. It is **arithmetic applied before any model is
 consulted**, in all six solutions: the rule is `slides()` in solution 1's

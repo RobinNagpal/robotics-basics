@@ -342,10 +342,12 @@ said yes on the strength of a number nobody had.
 
 - [The problem](01_what-is-asked-for.md) — why dragging rather than lifting, the distances
   that matter, and what "done" means.
-- [The examiner](../02_the-examiner.md) — the shared input, output and marking.
-- [The target layout](02_the-target-layout.md) — where the glasses should end up,
+- [What goes in and what comes out](02_what-goes-in-and-what-comes-out.md) —
+  what every solution is handed and hands back.
+- [The examiner](03_the-examiner.md) — the crowded tables, the physics and the marking.
+- [The target layout](04_the-target-layout.md) — where the glasses should end up,
   and the least movement the task needs.
 - [The six solutions](../03_the-six-solutions/01_how-the-six-compare.md) — what each one puts between the
   measurements and the pushes.
 
-← [The target layout — where the glasses should end up](02_the-target-layout.md) · [The examiner — the same question for every answer](../02_the-examiner.md) →
+← [The target layout — where the glasses should end up](04_the-target-layout.md) · [The six solutions — same table, six ways to push](../03_the-six-solutions/01_how-the-six-compare.md) →

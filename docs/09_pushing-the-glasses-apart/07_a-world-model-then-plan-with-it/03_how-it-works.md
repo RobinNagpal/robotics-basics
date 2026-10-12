@@ -330,7 +330,7 @@ it that was acted on could possibly have been wrong, and that part is one push
 long.
 
 The programming comparison is given in [pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md) and applies exactly here. A plan
+toppling](../01_the-problem/05_pushing-without-toppling.md) and applies exactly here. A plan
 carried out in full is a loop unrolled into a fixed sequence because you believe
 you know how many times it will run. A receding horizon is a loop that re-reads
 its state every pass. The state here is the arrangement of the table, the

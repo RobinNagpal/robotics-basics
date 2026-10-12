@@ -48,7 +48,7 @@ nothing to keep in step with the cell when the cell changes.
 **What the examiner had to grow.** Two things, and both were gates rather than
 conveniences: the rendered view of the table from the top, and the path that
 accepts a run of waypoints without the push macro. [The test
-examiner](../02_the-examiner.md) provides both, and both are shared with
+examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md) provides both, and both are shared with
 solutions 3 and 6, so the cost was paid once for three solutions rather than
 for this one.
 

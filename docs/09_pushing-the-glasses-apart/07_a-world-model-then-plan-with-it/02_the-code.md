@@ -189,7 +189,7 @@ them.
 ## 2. The pushes are what this contributes
 
 Having chosen a push, this solution hands it over in the form [the test
-examiner](../02_the-examiner.md) defines, and it is worth being exact about where its
+examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#6-what-must-come-out) defines, and it is worth being exact about where its
 contribution stops.
 
 **It emits a parameterised push.** Which glass to move, where the fingertips
@@ -211,13 +211,13 @@ on anything nobody knows. The search chooses the other three.
 ![A push on one glass drawn from above with its five numbers marked: the fingertips come down 20 mm behind the widest edge and the jaw feels forward to 10 mm past the middle, both of which are arithmetic on the measured width, while the heading, the offset across the glass and the travel are the three numbers the search is free to choose.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-pages-what-the-push-says.png)
 
 **The height is not a choice.** [Pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md) settles that for all six: the jaw
+toppling](../01_the-problem/05_pushing-without-toppling.md) settles that for all six: the jaw
 rides as low as the gripper can go, always, so there is nothing to trade and
 nothing to tune. What this solution decides is only whether to push at all, and
 where to.
 
 **What it does not contribute is the destination.** Where the glasses should
-end up is [the target layout](../01_the-problem/02_the-target-layout.md), computed once from the
+end up is [the target layout](../01_the-problem/04_the-target-layout.md), computed once from the
 same measurements and so that no solution aiming at a destination can score
 well by aiming at an easier arrangement.
 
@@ -236,7 +236,7 @@ carries the error measured in [telling the glasses
 apart](../../08_seeing-the-glasses/11_the-results.md).
 
 **Apply the shared topple limit.** The arithmetic in [pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md) is worked out from each glass's
+toppling](../01_the-problem/05_pushing-without-toppling.md) is worked out from each glass's
 measured foot width before anything is asked of the model, and a glass that
 fails it is refused with that reason. This step is the same for all six and is
 the one part of the loop the built planner does not yet have.

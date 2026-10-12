@@ -82,7 +82,7 @@ because the judgement of whether this method is worth its price depends on it.
 **The teacher is [geometry generates, a model
 ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md).** That solution generates
 candidate pushes from geometry — pushes that are legal by construction, aimed
-at destinations [the target layout](../01_the-problem/02_the-target-layout.md)
+at destinations [the target layout](../01_the-problem/04_the-target-layout.md)
 computed — and ranks them with a fitted model, taking the best. Run it on a
 table and it produces a push. Run it on many tables and it produces many
 pushes. Each one is carried out by the examiner, which expands the parameterised
@@ -98,7 +98,7 @@ what earns that solution its place beyond being a baseline.
 teleoperation rig, no operator, no scheduling of a person's hours, and no
 agreement to be reached about what a good push looks like. The examiner is
 MuJoCo, which is fast for exactly this reason, and [the test
-examiner](../02_the-examiner.md) records that a learned approach needs thousands of
+examiner](../01_the-problem/03_the-examiner.md) records that a learned approach needs thousands of
 pushes while Gazebo would run each one at the speed of real time.
 
 **The demonstrations are reproducible.** Every table comes from a single
@@ -170,7 +170,7 @@ than absent. Two are now code and the third is still a prescription.
 
 **Keep the teacher's refusals, as refusals.** A glass the teacher declined to
 push is not a failure and should not be dropped as one; [pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md) is explicit that a
+toppling](../01_the-problem/05_pushing-without-toppling.md) is explicit that a
 refusal is a result. A dataset that silently omits those tables teaches the
 student nothing about them, and silence in a dataset is not a label. **Done**:
 the refusals and their reasons are counted beside the demonstrations.
@@ -270,7 +270,7 @@ is part of the chunk, copied from the teacher's own feel. That is the one place
 where this solution leans on the demonstrations for safety rather than on the
 examiner.
 
-Chunking is also the reason [the examiner](../02_the-examiner.md) accepts
+Chunking is also the reason [the examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#6-what-must-come-out) accepts
 waypoints at all. Requiring every solution to emit the same three or four push
 parameters sounds like the fairest possible rule, and it would be the unfair
 one, because squeezing a chunking policy down to a handful of parameters
@@ -329,7 +329,7 @@ The first stays the size it was. The second grows with the number of
 iterations.
 
 **What mitigates it here is the loop, and the mitigation is substantial.**
-[Pushing without toppling](../01_the-problem/03_pushing-without-toppling.md) describes every
+[Pushing without toppling](../01_the-problem/05_pushing-without-toppling.md) describes every
 solution in this book as acting, measuring what really happened, and then
 deciding again from what it measured. The arm is not following a script of
 pushes; it repeats one step — look at the table, choose one push, make it, look

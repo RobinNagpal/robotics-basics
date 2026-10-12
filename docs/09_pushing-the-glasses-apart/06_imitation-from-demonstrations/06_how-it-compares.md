@@ -222,7 +222,7 @@ learn the push directly? That solution learns how the world changes and
 searches over candidate actions at run time, simulating each one forward before
 committing, so **it can find a push nobody ever demonstrated** — which is
 exactly the thing this solution cannot do. It pays for that on every push, in
-run-time cost that [the examiner](../02_the-examiner.md) puts at hundreds
+run-time cost that [the examiner](../01_the-problem/03_the-examiner.md) puts at hundreds
 or thousands of times the arithmetic a fixed nudge costs, and it pays again in
 needing a model of the world accurate enough to plan against, which is a harder
 thing to learn than a mapping. So the pair trades a ceiling against a cost:

@@ -148,7 +148,7 @@ So **what this solution contributes is the choice of push and nothing else**.
 The trajectory is the examiner's, the physics is MuJoCo's, and the marking reads
 the table afterwards rather than the action, which is what lets a five-number
 push and a chunk of waypoints from a learned policy be compared at all. [The
-examiner](../02_the-examiner.md) states that once so that no solution has to
+examiner](../01_the-problem/03_the-examiner.md#4-the-score-is-the-outcome-not-the-action) states that once so that no solution has to
 argue it again.
 
 The limitation that follows is genuine rather than a formality. A parameterised
@@ -161,7 +161,7 @@ clearest example of what the enumeration costs.
 ## 3. How the concepts fit together
 
 The pieces now join into one loop, and the loop is the one [pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md) describes: plan, feel, look again.
+toppling](../01_the-problem/05_pushing-without-toppling.md) describes: plan, feel, look again.
 
 Before any of it, and once, the model is fitted. Candidates are generated
 geometrically on the training tables, every one of them is executed on the

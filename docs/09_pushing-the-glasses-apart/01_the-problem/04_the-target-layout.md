@@ -20,9 +20,10 @@ produces the least movement the task could possibly need — which turns out to
 be the most valuable thing in here — and what the layout still does not tell
 you.
 
-Read this after [the problem](01_what-is-asked-for.md) and [the test
-examiner](../02_the-examiner.md), because it uses the clear room the gripper
-needs and the measurements `look()` hands over, and both are explained there.
+Read this after [the problem](01_what-is-asked-for.md), which explains the
+clear room the gripper needs, and [what goes in and what comes
+out](02_what-goes-in-and-what-comes-out.md), which explains the measurements
+`look()` hands over.
 
 ## Contents
 
@@ -94,7 +95,7 @@ than a narrow one does. A layout that only checked the distance between two
 middles would call this pair fine, and the narrow glass would still be
 ungrippable. So the layout checks every glass against the edge of every
 neighbour. [The gap that
-matters](01_what-is-asked-for.md#6-the-gap-that-matters-is-not-the-gap-between-the-glasses)
+matters](01_what-is-asked-for.md#5-the-gap-that-matters-is-not-the-gap-between-the-glasses)
 explains where the room comes from.
 
 ### Every glass stands inside the glass zone
@@ -437,7 +438,7 @@ glass over rather than moving it along, that height depends on the glass's own
 base and on the same unknown friction, and for some glasses it is below where
 the gripper can reach — which means the correct answer for those glasses is to
 refuse to push them, however clear their target is. [Pushing without
-toppling](03_pushing-without-toppling.md) is that whole subject.
+toppling](05_pushing-without-toppling.md) is that whole subject.
 
 **Reaching a target takes several pushes, and their errors compose.** Because a
 single push does not land where it was aimed, a glass arrives at its target by
@@ -459,11 +460,13 @@ six solutions, say how.
 
 - [The problem](01_what-is-asked-for.md) — why dragging rather than lifting, the three
   distances that matter, and what "done" means.
-- [The examiner](../02_the-examiner.md) — the shared input, output and marking, and
+- [What goes in and what comes out](02_what-goes-in-and-what-comes-out.md) —
+  what every solution is handed and hands back.
+- [The examiner](03_the-examiner.md) — the crowded tables, the physics and the marking, and
   where the floor sits on the scorecard.
-- [Pushing without toppling](03_pushing-without-toppling.md) — how low a push has
+- [Pushing without toppling](05_pushing-without-toppling.md) — how low a push has
   to be, why that is a property of the glass, and the refusal path.
 - [The six solutions](../03_the-six-solutions/01_how-the-six-compare.md) — what each one puts between the
   measurements and the pushes.
 
-← [Push the glasses apart — what is asked for](01_what-is-asked-for.md) · [Pushing without toppling](03_pushing-without-toppling.md) →
+← [The examiner](03_the-examiner.md) · [Pushing without toppling](05_pushing-without-toppling.md) →

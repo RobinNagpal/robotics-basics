@@ -15,7 +15,7 @@
 > by it.
 > **What it costs** — no labels, no training run, no weights file to keep in step
 > with the cell, and no graphics card of its own. The whole cost is the licence,
-> which [what it needs](05_what-it-needs.md) sets out.
+> which [the licence](03_results-and-comparison.md#6-what-it-costs-to-run-and-the-licence) sets out.
 
 > **The cell is described once, in [the cell](../01_the-cell.md)** — the layout,
 > the two places the camera works from, all four sensors, and the words this
@@ -37,8 +37,8 @@ running it. It collects no labels and trains nothing.
 **It found 6.4 glasses in every 100 put out where the glasses stand apart, and
 2.1 where they crowd. Both are the worst scores in the book by a wide margin.**
 Those numbers are not a disappointment; they are the measurement this solution
-was built to take. [How it compares](06_how-it-compares.md) sets them against the
-other five.
+was built to take. [Results and comparison](03_results-and-comparison.md) explains them and sets
+them against the other five.
 
 The design is worth writing down because of what it does not contain. Every other
 solution that uses a model pays something before it can answer: a set of labelled
@@ -76,7 +76,8 @@ many thousands of times.
 
 **Second, keep the outlines whose name is a drinking vessel**, and drop
 everything else the model named. This step is where the solution fails, and
-[how it works](03_how-it-works.md) is where the measurement of that failure sits.
+[why it failed](03_results-and-comparison.md#2-why-it-failed-the-names-it-reached-for)
+is where the measurement of that failure sits.
 
 The same step applies the bar on confidence. Each outline comes with a score
 between 0 and 1 that says how sure the model is about it. An outline is kept

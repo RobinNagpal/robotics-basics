@@ -166,9 +166,11 @@ everyday object it is looking at. It only has to find instances, and every
 instance it finds is a glass or is nothing.
 
 Everything else about the model is unchanged, including the thing that limits
-it. Its outline is still built coarsely, for reasons described below. Training
+it. Its outline is still built coarsely, as [the results
+page](04_results-and-comparison.md#2-what-training-closed-and-what-it-left)
+explains. Training
 does not make the edge of that outline fine, and the marking shows the cost: its
 masks cover the whole glass and carry 4.6 per cent of pixels that are not the
 glass with them, where a rule written by hand carries none.
 
-← [A borrowed model, as it downloads — results and comparison](../07_a-borrowed-model-as-it-downloads/03_results-and-comparison.md) · [How it works](03_how-it-works.md) →
+← [A borrowed model, as it downloads — results and comparison](../07_a-borrowed-model-as-it-downloads/03_results-and-comparison.md) · [The code](02_the-code.md) →

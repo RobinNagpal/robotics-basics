@@ -31,7 +31,7 @@
 > it costs one large forward pass per chunk, the same as its partner's, so the
 > two cost the same to run and differ only in what it cost to build them. The
 > licence is not the obstacle it was for [the pair that tells the glasses
-> apart](../../08_seeing-the-glasses/08_the-same-model-fine-tuned/05_what-it-needs.md#2-the-licence),
+> apart](../../08_seeing-the-glasses/08_the-same-model-fine-tuned/04_results-and-comparison.md#4-what-it-costs),
 > but a fine-tuned file inherits whatever terms the borrowed file carried, so
 > the terms have to be read before anything leaves this project.
 

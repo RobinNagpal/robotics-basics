@@ -1,5 +1,5 @@
-import { apiKey, apiUrl, highlights, lastSync } from '@/lib/store';
-import type { Highlight, LocalHighlight } from '@/lib/types';
+import { apiKey, apiUrl, batches, highlights, lastSync } from '@/lib/store';
+import type { Batch, Highlight, LocalHighlight } from '@/lib/types';
 
 export default defineBackground(() => {
   browser.alarms.create('sync', { periodInMinutes: 1 });
@@ -20,6 +20,12 @@ export default defineBackground(() => {
 });
 
 let running = false;
+
+async function get<T>(url: string, key: string, path: string): Promise<T> {
+  const res = await fetch(`${url}${path}`, { headers: { Authorization: `Bearer ${key}` } });
+  if (!res.ok) throw new Error(`Server answered ${res.status} for ${path}`);
+  return res.json();
+}
 
 async function sync() {
   const [url, key] = [await apiUrl.getValue(), await apiKey.getValue()];
@@ -55,6 +61,11 @@ async function sync() {
       else if (byId.has(id)) next[id] = byId.get(id)!;
     }
     await highlights.setValue(next);
+
+    // The batches are read in a second request, because they are the server's
+    // own record rather than anything the browser sends up. They are kept in a
+    // store of their own, so the popup can list them without asking.
+    await batches.setValue(await get<Batch[]>(url, key, '/batches'));
     await lastSync.setValue({ at: Date.now() });
   } catch (e) {
     await lastSync.setValue({ at: Date.now(), error: String((e as Error).message ?? e) });

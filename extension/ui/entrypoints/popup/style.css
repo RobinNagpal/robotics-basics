@@ -7,15 +7,38 @@ button { cursor: pointer; }
 .status.err { color: #b91c1c; }
 ul { list-style: none; padding: 0; margin: 0; max-height: 420px; overflow-y: auto; }
 li { border-left: 4px solid; padding: 4px 8px; margin-bottom: 8px; background: #fafafa; }
-li a { color: #111; text-decoration: none; display: block; }
 li small { color: #666; }
-li .note { margin-top: 2px; font-style: italic; }
 li button { float: right; border: 0; background: none; color: #999; }
 .signin { display: flex; flex-direction: column; gap: 6px; }
 .signin button { align-self: flex-end; }
 .error { color: #b91c1c; }
 .signin input { flex: 1; min-width: 0; padding: 4px; font: inherit; }
 li .author { display: block; margin-top: 2px; }
+li .where { display: block; }
+.empty { color: #666; }
+
+/* The two lists: the comments, and the batches of work asked for. */
+.tabs { display: flex; gap: 4px; margin-bottom: 8px; border-bottom: 1px solid #e5e7eb; }
+.tabs .tab { border: 0; background: none; font: inherit; color: #6b7280; padding: 4px 8px; border-bottom: 2px solid transparent; }
+.tabs .tab.on { color: #111; font-weight: 600; border-bottom-color: #2563eb; }
+
+/* One comment holds three kinds of words, and each kind has its own colour: the
+   text from the page in grey, the reader's own comment in amber, and Claude's
+   reply in green. The small label says which is which. */
+li .quote, li .note, li .response {
+  margin-top: 4px; padding: 4px 6px; border-left: 3px solid; border-radius: 0 4px 4px 0; white-space: pre-wrap;
+}
+li .quote { border-color: #94a3b8; background: #f1f5f9; color: #334155; }
+li .note { border-color: #f59e0b; background: #fffbeb; color: #78350f; }
+li .response { border-color: #22c55e; background: #f0fdf4; color: #14532d; }
+/* A run that failed says so in the colour of a failure, not of an answer. */
+li .response.bad { border-color: #ef4444; background: #fef2f2; color: #7f1d1d; }
+li .who { display: block; font-size: 10px; font-weight: 600; opacity: 0.7; }
+
+/* The link that sends the open tab to the highlighted text. */
+li .goto { display: inline-block; margin-top: 4px; color: #2563eb; font-size: 11px; cursor: pointer; }
+li .goto:hover { text-decoration: underline; }
+
 .badge { display: inline-block; margin-top: 4px; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 999px; background: #eef; color: #334; }
 .badge.new { background: #f3f4f6; color: #374151; }
 .badge.queued { background: #fef3c7; color: #78350f; }
@@ -23,7 +46,8 @@ li .author { display: block; margin-top: 2px; }
 .badge.changed { background: #dcfce7; color: #14532d; }
 .badge.answered { background: #dbeafe; color: #1e3a8a; }
 .badge.failed { background: #fee2e2; color: #7f1d1d; }
-li .response { margin-top: 4px; padding: 4px 6px; background: #fff; border: 1px solid #e5e5e5; border-radius: 4px; white-space: pre-wrap; }
+/* The batch a comment went into, which opens the list of batches. */
+.badge.batch-tag { margin-left: 4px; background: #e5e7eb; color: #374151; cursor: pointer; }
 
 /* The bar that sends a batch, and the tick box on each comment that can go in one. */
 .batch { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; padding: 6px 8px; background: #f3f4f6; border-radius: 6px; }
@@ -32,3 +56,24 @@ li .response { margin-top: 4px; padding: 4px 6px; background: #fff; border: 1px 
 .batch .primary:disabled { border-color: #cbd5e1; background: #e2e8f0; color: #94a3b8; cursor: default; }
 .queued { margin-bottom: 8px; padding: 4px 8px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; font-size: 11px; }
 li input.pick { float: left; margin: 2px 6px 0 0; }
+
+/* Deleting the comments Claude has finished with, which asks before it does. */
+.done-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; padding: 6px 8px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 11px; }
+.done-bar.confirm { background: #fef2f2; border-color: #fecaca; }
+.done-bar .done-count { flex: 1; color: #444; }
+.done-bar button { border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; padding: 3px 8px; font: inherit; font-size: 11px; }
+.done-bar .danger { border-color: #b91c1c; background: #b91c1c; color: #fff; }
+
+/* One batch of work: its number, where it stands, and what Claude said it did. */
+.batch-row { border-left-color: #cbd5e1; }
+.batch-row.working { border-left-color: #7c3aed; }
+.batch-row.done { border-left-color: #22c55e; }
+.batch-row.failed { border-left-color: #b91c1c; }
+.batch-head { display: flex; gap: 6px; align-items: baseline; }
+.batch-head strong { flex: 1; }
+.batch-row .badge { margin-top: 0; }
+.badge.b-waiting { background: #fef3c7; color: #78350f; }
+.badge.b-working { background: #ede9fe; color: #4c1d95; }
+.badge.b-done { background: #dcfce7; color: #14532d; }
+.badge.b-failed { background: #fee2e2; color: #7f1d1d; }
+.batch-row .pages { display: block; margin-top: 4px; white-space: pre-line; color: #888; }

@@ -1,4 +1,4 @@
-import { highlights, pageKey, remove, save, user, visible } from '@/lib/store';
+import { focused, highlights, pageKey, remove, save, user, visible } from '@/lib/store';
 import { COLORS, QUEUEABLE, shownStatus, statusLabel, validPage, type Highlight } from '@/lib/types';
 
 // The parts of a docs page that can be highlighted: the page title, which the
@@ -38,10 +38,15 @@ export default defineContentScript({
           await draw();
         } while (again);
         running = null;
+        await goToFocused();
       })());
     };
     render();
     highlights.watch(render);
+    // The popup writes down which highlight the reader asked to be taken to, and
+    // then sends this tab to the page. Scrolling to it can only happen here,
+    // because only this script knows where the text ended up on the page.
+    focused.watch(() => goToFocused());
     ctx.addEventListener(window, 'wxt:locationchange', () => setTimeout(render, 500));
 
     // Selecting text shows a small bar of colours.
@@ -107,12 +112,21 @@ export default defineContentScript({
       const note = Object.assign(document.createElement('textarea'), {
         value: h.note,
         placeholder: 'Add a comment…',
+        className: 'dh-note',
       });
       // Where the comment stands, under it, and what Claude said once it has
       // been through a batch.
       const status = shownStatus(h);
       const answer = status
-        ? [div(`dh-status dh-${status}`, [text(statusLabel(h))]), ...(h.claudeResponse ? [div('dh-response', [text(h.claudeResponse)])] : [])]
+        ? [
+            div('dh-row', [
+              div(`dh-status dh-${status}`, [text(statusLabel(h))]),
+              ...(h.batch ? [div('dh-status dh-batch', [text(`Batch ${h.batch}`)])] : []),
+            ]),
+            ...(h.claudeResponse
+              ? [div(`dh-response${status === 'failed' ? ' dh-bad' : ''}`, [text(h.claudeResponse)])]
+              : []),
+          ]
         : [];
       pop.replaceChildren(
         note,
@@ -133,6 +147,22 @@ export default defineContentScript({
     }
   },
 });
+
+// Scrolls to the highlight the reader picked in the extension, and flashes it so
+// that they can see which of the marks on the page it was. The request is
+// cleared as soon as it is acted on, and one older than a minute is ignored: it
+// was left behind by a page that never finished loading, and scrolling the
+// reader somewhere else long afterwards would be worse than doing nothing.
+async function goToFocused() {
+  const want = await focused.getValue();
+  if (!want || Date.now() - want.at > 60_000) return;
+  const mark = document.querySelector<HTMLElement>(`mark[data-hl="${want.id}"]`);
+  if (!mark) return;
+  await focused.setValue(null);
+  mark.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  mark.classList.add('dh-flash');
+  setTimeout(() => mark.classList.remove('dh-flash'), 2000);
+}
 
 const regions = () => [...document.querySelectorAll<HTMLElement>(REGIONS)];
 
@@ -240,11 +270,17 @@ function place(el: HTMLElement, rect: DOMRect) {
 
 const CSS = `
 mark[data-hl] { color: #111; cursor: pointer; border-radius: 2px; } /* the colours are pale, so the text is dark even on a dark page */
+/* The mark the reader came to from the extension, so they can see which it is. */
+mark[data-hl].dh-flash { outline: 3px solid #2563eb; outline-offset: 2px; animation: dh-pulse 0.6s ease-in-out 3; }
+@keyframes dh-pulse { 0%, 100% { outline-color: transparent; } 50% { outline-color: #2563eb; } }
 .dh-bar, .dh-pop { position: absolute; z-index: 2147483647; display: none; gap: 6px; padding: 6px;
   background: #fff; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 16px #0002;
   font: 13px system-ui, sans-serif; color: #111; }
 .dh-pop { flex-direction: column; width: 260px; }
-.dh-pop textarea { height: 70px; resize: vertical; font: inherit; padding: 4px; }
+/* The reader's own comment and Claude's reply, each in its own colour, the same
+   two colours the extension's list uses. */
+.dh-pop textarea.dh-note { height: 70px; resize: vertical; font: inherit; padding: 4px;
+  border: 1px solid #fcd34d; border-left: 3px solid #f59e0b; border-radius: 0 4px 4px 0; background: #fffbeb; color: #78350f; }
 .dh-row { display: flex; gap: 6px; align-items: center; }
 .dh-bar button, .dh-pop button { border: 1px solid #ccc; border-radius: 6px; background: #f6f6f6; cursor: pointer; font: inherit; }
 .dh-status { font-size: 11px; font-weight: 600; align-self: flex-start; padding: 1px 6px; border-radius: 999px; background: #eef; color: #334; }
@@ -255,6 +291,9 @@ mark[data-hl] { color: #111; cursor: pointer; border-radius: 2px; } /* the colou
 .dh-answered { background: #dbeafe; color: #1e3a8a; }
 .dh-failed { background: #fee2e2; color: #7f1d1d; }
 .dh-hint { font-size: 11px; color: #555; }
-.dh-response { white-space: pre-wrap; max-height: 180px; overflow-y: auto; padding: 6px; background: #f6f6f6; border-radius: 6px; }
+.dh-response { white-space: pre-wrap; max-height: 180px; overflow-y: auto; padding: 6px;
+  border-left: 3px solid #22c55e; border-radius: 0 4px 4px 0; background: #f0fdf4; color: #14532d; }
+.dh-response.dh-bad { border-left-color: #ef4444; background: #fef2f2; color: #7f1d1d; }
+.dh-batch { background: #e5e7eb; color: #374151; }
 .dh-dot { width: 20px; height: 20px; border-radius: 50% !important; padding: 0; }
 `;

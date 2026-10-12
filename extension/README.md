@@ -50,9 +50,20 @@ Deleting a highlight in the browser marks it deleted and hides it. The next sync
 deletes it on the API, and then rule 3 removes the marked copy. When two edits to
 one highlight meet, the later one wins.
 
-The popup opens from the toolbar icon. It shows who is signed in, whether the last
-sync worked, and the highlights. The two lists at the top choose a book and a
+The popup opens from the toolbar icon. It shows who is signed in and whether the
+last sync worked, and it has two lists under two tabs: **Comments**, which is the
+highlights themselves, and **Batches**, which is the work that has been asked for.
+In the comments tab, the two drop-down lists at the top choose a book and a
 chapter.
+
+Each comment shows three kinds of words, and each kind has its own colour so that
+they are never confused with one another. The text taken from the page is grey,
+the reader's own comment is amber, and Claude's reply is green. A reply that
+reports a failure is red instead, because it is not an answer. Under the grey text
+there is a **Go to this text** link. It sends the tab that is already open to that
+page, rather than opening a new one, and the extension then scrolls to the
+highlighted text and flashes it, so a comment written weeks ago is found without
+reading the page.
 
 The popup is also where feedback is asked for. A comment does nothing on its own:
 it sits in the browser and on the server until somebody chooses it. Every comment
@@ -65,6 +76,14 @@ A comment that has been edited and not yet synced has no tick box either: the
 server queues a comment by its id, so it has to hold the comment's new text
 before the comment can be asked for. The next sync, which happens by itself,
 gives it the tick box back.
+
+Comments pile up once Claude has answered them, and a reply that has been read is
+of no further use. So a second bar counts the comments Claude has finished with
+and offers **Delete done**. It works on what the filters are showing, which is why
+the count changes with them, and the comment and its reply go together, so it asks
+once before it deletes anything. Pressing it a second time does the deleting, and
+**Keep them** calls it off. A comment that failed is not counted as done, because
+it has not been answered and can be asked for again.
 
 ## Signing in with an API key
 
@@ -204,11 +223,11 @@ is written only by the worker.
 One press of **Address feedback** is one batch, and a batch is the unit of work
 from then on: it is numbered, the worker takes it whole, Claude sees all of it in
 one turn, and it succeeds or fails together. The number is what a reader follows,
-and the extension shows it beside each comment.
+and the popup writes it beside each comment and on the **Batches** tab.
 
 The worker does one batch at a time, and takes the oldest one it has not finished
 with. So a batch asked for while another is being worked on waits its turn rather
-than joining it, and the record says which batch it is waiting for.
+than joining it, and the tab says what it is waiting for: "Waiting for batch 7".
 This is what the queue is for. Two batches at once would have Claude changing the
 same pages in two conversations, and the second run would push on top of work the
 first had not finished.
@@ -225,9 +244,9 @@ a whole. It is part of the reply the schema asks for, so Claude writes it in the
 same turn as the per-comment replies, and the worker stores it on the record when
 the batch finishes. It is there so that the list of batches can be read weeks
 later without opening every comment. A batch that failed carries the reason there
-instead.
+instead, and the tab shows it in red rather than green.
 
-A batch is in one of four states:
+A batch is in one of four states, and the tab shows which:
 
 - `waiting`: asked for and not started, either because the worker has not looked
   yet or because an older batch is still going.
@@ -633,15 +652,16 @@ flush its cache, and nothing else.
   watches.
 - `ui/entrypoints/content.ts` draws the highlights on the page and shows the colour
   bar and the comment box.
-- `ui/entrypoints/background.ts` runs the sync.
+- `ui/entrypoints/background.ts` runs the sync, and reads the batch records after
+  it.
 - `ui/entrypoints/popup/` is the popup, including the form for the server URL and
   the API key.
 - `ui/lib/store.ts` reads and writes the browser copy, and holds the server URL and
   the API key.
 - `ui/lib/auth.ts` checks the server URL and the key with the API, and signs out.
-- `ui/lib/queue.ts` asks the API to queue a batch of comments.
-- `ui/lib/types.ts` holds how each status reads to the reader, and the rule for
-  which comments can be ticked.
+- `ui/lib/queue.ts` asks the API to make a batch out of a selection of comments.
+- `ui/lib/types.ts` holds how each status and each batch state reads to the
+  reader, and the rule for which comments can be ticked.
 - `api/` is the API, as a package of its own, and the folder its deploy watches.
 - `api/types.ts` is what the API stores, which the extension imports too: the
   comment, the batch, and the statuses of both.

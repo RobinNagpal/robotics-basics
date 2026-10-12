@@ -20,8 +20,10 @@ is small: one call into the borrowed library, and the handful of lines that
 decide what to keep out of the answer. Those lines are the whole of what this
 project wrote.
 
-The call and the handling of its answer are in
-[`03-yolo-zero-shot/yolo_zero_shot.py`](../../../code/src/08_seeing-the-glasses/03-yolo-zero-shot/yolo_zero_shot.py).
+The code lives in the `robot-arm-projects` repository, in the folder
+`v5-pick-glasses/02-segment-glasses/03-yolo-zero-shot/`. The call and the
+handling of its answer are in
+[`03-yolo-zero-shot/yolo_zero_shot.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/03-yolo-zero-shot/yolo_zero_shot.py).
 The library is Ultralytics: `YOLO` is the model, `attempt_download_asset` is
 what fetches the weights, and `model.predict` is the one line where the borrowed
 model does its work.
@@ -35,12 +37,35 @@ carry those numbers.
    the model on it, and bring the answer back into ordinary memory.
 3. Read what the model reported, which is its own name for each outline and how
    sure it was, then keep the outlines named a drinking vessel that also clear
-   the hand-set bar, surest first.
-4. Fill each keeper into a mask, and drop a mask that covers mostly the same
-   pixels as a better-scoring one.
+   the hand-set bar of 0.25, surest first.
+4. Fill each kept outline into a mask, and drop a mask that covers mostly the
+   same pixels as a better-scoring one.
 
+One function runs those steps in order. It is `Finder.find`, and the examiner
+calls it once for every picture it hands this solution. It calls `look`, which
+does steps 1 and 2, and passes the answer to `masks_from`, which does steps 3
+and 4. Then it hands each mask to the examiner's shared arithmetic, which turns
+the mask into a place on the table. Only its most important lines are shown
+here.
+
+```python
+class Finder:
+    def find(self, picture, kind: str) -> tuple[list[Found], list[str]]:
+        # Steps 1 and 2 in look, then steps 3 and 4 in masks_from.
+        masks = masks_from(look(picture), picture.depth.shape)
+        if not masks:
+            return [], ["the model named nothing in this picture a drinking vessel"]
+        ...
+        for mask in masks:
+            # The examiner's arithmetic, not this solution's, turns a mask into a place.
+            one = masks_to_glasses.one_glass(picture, mask)
+            ...
+        return found, doubts
+```
+
+The two functions it calls are below, with the function that loads the model.
 The file writes the filtering above the call that produces its input, so the
-numbers below do not read top to bottom.
+step numbers below do not read top to bottom.
 
 ```python
 # Step 1: load the borrowed model once and keep it -- every later picture reuses it for free.
@@ -84,7 +109,7 @@ def look(picture) -> object:
 ```
 
 The list of names step 3 tests against is in
-[`03-yolo-zero-shot/drinking_vessels.py`](../../../code/src/08_seeing-the-glasses/03-yolo-zero-shot/drinking_vessels.py),
+[`03-yolo-zero-shot/drinking_vessels.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/03-yolo-zero-shot/drinking_vessels.py),
 and it is worth showing rather than describing, because the solution's one
 promise is that nothing in it was tuned to this cell and that promise covers
 this list. Every name in it is one of the borrowed model's own categories, read
@@ -119,7 +144,7 @@ are everything this solution chose, and none of it came from this cell's data.
 ## 2. The code that measured the failure
 
 One more file is worth reading, because the result turns on it.
-[`what_it_named.py`](../../../code/src/08_seeing-the-glasses/03-yolo-zero-shot/what_it_named.py)
+[`what_it_named.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/03-yolo-zero-shot/what_it_named.py)
 runs the model over held-out arrangements and prints every name it offered, with
 the filter removed. A scorecard says only that glasses were missed. This says
 which names the model reached for instead, which is the difference between

@@ -23,6 +23,17 @@ are its structure, so moving a doc moves it on the site too;
 `website/lib/books.config.ts` only holds display text such as book titles, and the
 list of parts.
 
+## The By Example projects live in another repository
+
+The code behind the By Example books, `seeing-the-glasses` and
+`pushing-the-glasses-apart`, was written in the `robot-arm-projects` repository.
+It is cloned on this machine at `~/projects/robot-arm-projects`, and the glasses
+work is in `v5-pick-glasses/` there. When a By Example page needs its code checked
+or quoted, read it from that clone. When a page links to a file of that code, link
+to the file on GitHub, under
+`https://github.com/RobinNagpal/robot-arm-projects/blob/main/`, and check that
+the link resolves.
+
 ## IMPORTANT: naming inside `docs/`
 
 **Every document and every folder inside `docs/` must start with a two-digit number

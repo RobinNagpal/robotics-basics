@@ -1,11 +1,11 @@
 import { Cron } from 'croner';
-import type { Highlight } from '../api/types';
+import type { Batch, Highlight } from '../api/types';
 import { runTurn } from './claude';
 import { config } from './config';
-import { byPage, claim, giveBack, queuedFeedback, record } from './feedback';
+import { batchFeedback, byPage, claim, finishBatch, giveBack, nextBatch, record, startBatch } from './feedback';
 import { ensureClone, pullLatest, pushBatch, status } from './git';
 import { acquire } from './lock';
-import { batchPrompt, repairPrompt, RESULT_SCHEMA, type Reply } from './prompt';
+import { batchPrompt, repairPrompt, RESULT_SCHEMA, type Reply, type Result } from './prompt';
 import { loadSession, saveSession, type State } from './session';
 
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
@@ -14,12 +14,20 @@ const firstLine = (e: unknown) => {
   return String(err.stderr || err.message || e).trim().split('\n')[0];
 };
 
-// One run: take every comment a reader has queued, and address the whole lot as
-// one batch. Nothing is addressed unless somebody asked for it in the extension,
-// so a run with an empty queue costs nothing.
+// One run: take the oldest batch a reader has asked for and address all of it.
+// A run works on one batch only, so a batch asked for while another is being
+// worked on waits its turn and is taken by a later run. Nothing is addressed
+// unless somebody asked for it in the extension, so a run with no batch waiting
+// costs nothing.
 async function cycle() {
-  const queued = await queuedFeedback();
-  if (!queued.length) return log('nothing queued');
+  const batch = await nextBatch();
+  if (!batch) return log('nothing queued');
+
+  // Which comments the batch holds is read before anything is marked, because a
+  // batch whose comments have all been edited or deleted has no work left in it
+  // and has to be closed rather than left in the way of the batches behind it.
+  const queued = await batchFeedback(batch);
+  if (!queued.length) return closeEmpty(batch);
 
   const session = loadSession();
   // Compacting replaces the conversation so far with a summary of it. The
@@ -29,20 +37,33 @@ async function cycle() {
     log(r.isError ? `compact failed: ${r.text}` : 'session compacted');
   }
 
-  // A clone that cannot be brought up to date leaves the batch queued, and the
-  // next run tries again.
-  if (!(await latest(session))) return log('skipped: the clone could not pull main');
+  // A clone that cannot be brought up to date leaves the batch waiting, and the
+  // next run tries again. This happens before the batch is marked, so a pull
+  // that fails does not spend one of the batch's tries.
+  if (!(await latest(session))) return log(`skipped batch ${batch.number}: the clone could not pull main`);
 
   // Marking the batch 'working' is the last thing before Claude is invoked, so
-  // anyone watching the extension sees the batch change from queued to working
-  // at the moment the work starts. A comment edited in that moment drops out of
-  // the batch and keeps the status it had.
-  const batch = await claim(queued);
-  if (!batch.length) return log('nothing left to do: every queued comment changed while the run started');
-  const pages = [...byPage(batch).values()];
-  log(`addressing ${batch.length} comment(s) on ${pages.length} page(s) as one batch`);
+  // anyone watching the extension sees it change from waiting to working at the
+  // moment the work starts. A comment edited in that moment drops out of the
+  // batch and keeps the status it had.
+  const attempts = await startBatch(batch);
+  const comments = await claim(queued);
+  if (!comments.length) return closeEmpty(batch);
+  const pages = [...byPage(comments).values()];
+  log(`batch ${batch.number}, try ${attempts}: addressing ${comments.length} comment(s) on ${pages.length} page(s)`);
 
-  await addressBatch(session, batch, pages);
+  await addressBatch(session, batch, attempts, comments, pages);
+}
+
+// A batch with nothing left in it is finished rather than left waiting, because
+// the worker takes the oldest unfinished batch and would otherwise read this one
+// again on every run and never reach the batches behind it.
+async function closeEmpty(batch: Batch) {
+  await finishBatch(batch, 'done', [
+    'Nothing was left to address in this batch.',
+    'Every comment in it was rewritten or deleted before the work started.',
+  ]);
+  log(`batch ${batch.number} had nothing left in it, so it is closed`);
 }
 
 // Every turn goes to the one session, and the first turn creates it.
@@ -75,27 +96,42 @@ async function latest(session: State) {
 // comment marked 'changed' is one whose change is already on main. Nothing is
 // pushed until Claude has replied in the shape the worker asked for, so a turn
 // that ends any other way leaves its commits in the clone for the next run.
-async function addressBatch(session: State, batch: Highlight[], pages: Highlight[][]) {
+async function addressBatch(
+  session: State,
+  batch: Batch,
+  attempts: number,
+  comments: Highlight[],
+  pages: Highlight[][],
+) {
   const what = pages.length === 1 ? `${pages[0][0].book}/${pages[0][0].chapter}/${pages[0][0].page}` : `${pages.length} pages`;
 
-  let replies: Reply[];
+  let result: Result;
   try {
-    const r = await turn(session, batchPrompt(pages), RESULT_SCHEMA);
-    const out = r.structured as { replies: Reply[] } | undefined;
+    const r = await turn(session, batchPrompt(pages, batch.number), RESULT_SCHEMA);
+    const out = r.structured as Result | undefined;
     if (r.isError || !out) throw new Error(r.text || 'Claude gave no structured result');
-    replies = out.replies;
-    log(`Claude finished the batch, $${r.costUsd?.toFixed(2) ?? '?'}`);
+    result = out;
+    log(`Claude finished batch ${batch.number}, $${r.costUsd?.toFixed(2) ?? '?'}`);
   } catch (e) {
     // The batch is not thrown away. Everything in it goes back in the queue, so
     // the next run takes it again, and anything Claude did commit in the clone
-    // is pushed by that run. Only a comment that has used up its tries is
-    // marked failed here.
-    log(`the batch failed: ${firstLine(e)}`);
-    const back = await giveBack(batch, `The run failed: ${firstLine(e)}`).catch((e2) => {
+    // is pushed by that run. Only a batch that has used up its tries is marked
+    // failed here.
+    const reason = `The run failed: ${firstLine(e)}`;
+    log(`batch ${batch.number} failed: ${firstLine(e)}`);
+    const back = await giveBack(comments, reason, attempts).catch((e2) => {
       log('could not give the batch back, so it stays in progress for the next run', e2);
       return null;
     });
-    if (back) log(`${back.retrying.length} comment(s) queued again for the next run, ${back.givenUp.length} given up on`);
+    if (!back) return;
+    log(`${back.retrying.length} comment(s) queued again for the next run, ${back.givenUp.length} given up on`);
+    if (back.retrying.length) {
+      await finishBatch(batch, 'waiting', [reason, 'The next run takes this batch again.']);
+    } else if (back.givenUp.length) {
+      await finishBatch(batch, 'failed', [reason, `It was tried ${attempts} times, so the worker gave up on it.`]);
+    } else {
+      await closeEmpty(batch);
+    }
     return;
   }
 
@@ -107,11 +143,13 @@ async function addressBatch(session: State, batch: Highlight[], pages: Highlight
     commit = pushBatch(what);
     log(commit ? `pushed ${commit}` : 'nothing to push');
   } catch (e) {
-    return log(`push failed, the batch stays in progress: ${firstLine(e)}`);
+    const reason = `The work was done, but pushing it to GitHub failed: ${firstLine(e)}`;
+    log(`push failed, batch ${batch.number} stays in progress: ${firstLine(e)}`);
+    return finishBatch(batch, 'working', [reason, 'The next run pushes it and finishes the batch.']);
   }
 
-  for (const h of batch) {
-    const reply = replies.find((x) => x.id === h.id);
+  for (const h of comments) {
+    const reply = result.replies.find((x) => x.id === h.id);
     let state: Reply['status'] | 'failed' = reply?.status ?? 'failed';
     let response = reply?.response.join('\n') ?? 'Claude gave no reply to this comment.';
     if (state === 'changed' && !commit) {
@@ -123,6 +161,10 @@ async function addressBatch(session: State, batch: Highlight[], pages: Highlight
     const written = await record(h, state, response);
     log(`${h.id}: ${state}${written ? '' : ' (not written: the comment changed meanwhile)'}`);
   }
+
+  // The batch is finished last, so the extension shows it as done only once
+  // every comment in it carries its reply.
+  await finishBatch(batch, 'done', result.summary);
 }
 
 // A run that is due while another is still using the session waits for it, for

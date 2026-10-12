@@ -1,15 +1,17 @@
 import { Hono } from 'hono';
 import {
   isFeedback,
+  pagePath,
   QUEUE_TO,
   QUEUEABLE,
   statusOf,
   validPage,
+  type Batch,
   type Highlight,
   type HighlightRef,
 } from './types';
 import { nameForKey } from './keys';
-import { pageKeyOf, readAll, updatePage } from './store';
+import { pageKeyOf, readAll, readBatches, updateBatches, updatePage } from './store';
 
 export const app = new Hono<{ Variables: { name: string } }>();
 
@@ -43,14 +45,17 @@ app.post('/sync', async (c) => {
         const byId = new Map(items.filter((h) => !change.deletes.has(h.id)).map((h) => [h.id, h]));
         for (const h of change.upserts) {
           const old = byId.get(h.id);
-          // The status and Claude's response belong to the server, so whatever
-          // the browser sends for them is replaced. A new comment waits until
-          // somebody queues it.
-          if (!old) byId.set(h.id, { ...h, status: 'new', attempts: 0, claudeResponse: '', respondedAt: undefined });
+          // The status, Claude's response and the batch belong to the server, so
+          // whatever the browser sends for them is replaced. A new comment waits
+          // until somebody queues it.
+          if (!old) byId.set(h.id, { ...h, status: 'new', batch: undefined, claudeResponse: '', respondedAt: undefined });
           else if (old.updatedAt < h.updatedAt) {
-            // A changed comment is new feedback, so it has to be queued again.
+            // A changed comment is new feedback, so it has to be queued again,
+            // and it leaves the batch that addressed the words it used to say.
             const reopened =
-              h.note !== old.note ? { status: 'new' as const, attempts: 0, claudeResponse: '', respondedAt: undefined } : {};
+              h.note !== old.note
+                ? { status: 'new' as const, batch: undefined, claudeResponse: '', respondedAt: undefined }
+                : {};
             byId.set(h.id, { ...old, color: h.color, note: h.note, updatedAt: h.updatedAt, ...reopened });
           }
         }
@@ -61,14 +66,44 @@ app.post('/sync', async (c) => {
   return c.json(await readAll());
 });
 
+// Every batch of work that has been asked for, newest first. The extension shows
+// this as its own list, so a reader can see what is waiting, what Claude is on
+// now, and what each finished batch did.
+app.get('/batches', async (c) => c.json((await readBatches()).reverse()));
+
 // Asks for a batch of comments to be addressed. This is the one status change
-// the extension makes: it moves a comment to 'queued', and the feedback worker
-// takes every queued comment on its next run. Only a comment that is waiting or
-// has failed can be queued; anything else is left alone and counted as skipped,
-// so pressing the button twice queues nothing the second time.
+// the extension makes: it makes a batch, moves each comment to 'queued' and
+// writes the batch's number on it. The worker takes one batch at a time, oldest
+// first, so a batch asked for now waits for the batch before it to finish. Only
+// a comment that is waiting or has failed can be queued; anything else is left
+// alone and counted as skipped, so pressing the button twice queues nothing the
+// second time.
 app.post('/queue', async (c) => {
   const { refs = [] } = await c.req.json<{ refs: HighlightRef[] }>();
   if (!refs.every(validPage)) return c.json({ error: 'Bad book, chapter or page' }, 400);
+  if (!refs.length) return c.json({ batch: null, queued: 0, skipped: 0 });
+
+  // The record is written before any comment is stamped with its number, so a
+  // comment can never end up queued into a batch that does not exist. The size
+  // and the pages are what was asked for, and they are corrected below once the
+  // comments say how much of it could be queued.
+  const asked: Omit<Batch, 'number'> = {
+    status: 'waiting',
+    size: refs.length,
+    pages: [...new Set(refs.map(pagePath))].sort(),
+    askedBy: c.get('name'),
+    createdAt: Date.now(),
+    attempts: 0,
+    summary: [],
+  };
+  // The number is one more than the highest ever given out, and it is worked out
+  // inside the change so that a second request writing at the same moment makes
+  // the write fail and the number be worked out again on the new list.
+  let number = 0;
+  await updateBatches((items) => {
+    number = Math.max(0, ...items.map((b) => b.number)) + 1;
+    return [...items, { ...asked, number }];
+  });
 
   // Grouped by page, so each page file is read and written once.
   const wantedByPage = new Map<string, Set<string>>();
@@ -77,21 +112,40 @@ app.post('/queue', async (c) => {
     wantedByPage.set(key, (wantedByPage.get(key) ?? new Set()).add(r.id));
   }
 
-  let queued = 0;
-  await Promise.all(
+  const written = await Promise.all(
     [...wantedByPage].map(([key, wanted]) =>
       updatePage(key, (items) =>
         items.map((h) => {
           // A highlight with no comment asks nothing, so it cannot be queued.
           if (!wanted.has(h.id) || !QUEUEABLE.includes(statusOf(h)) || !isFeedback(h)) return h;
-          queued++;
-          // Asking is a fresh start, so a comment that failed before gets its
-          // full count of tries back and loses the message from the run that
-          // failed. The reader then sees it waiting rather than failed.
-          return { ...h, status: QUEUE_TO, attempts: 0, claudeResponse: '', respondedAt: undefined };
+          // Asking is a fresh start, so a comment that failed before loses the
+          // message from the run that failed. The reader then sees it waiting
+          // rather than failed.
+          return { ...h, status: QUEUE_TO, batch: number, claudeResponse: '', respondedAt: undefined };
         }),
       ),
     ),
   );
-  return c.json({ queued, skipped: refs.length - queued });
+  // Which comments went in is read back from the pages as they were written,
+  // not counted while writing them. The number is new, so a comment carrying it
+  // is one this request queued and nothing else.
+  const queued = written.flat().filter((h) => h.batch === number);
+
+  // Now the record can say how large the batch really is. A press that queued
+  // nothing leaves no batch at all, so the list is not filled with empty ones.
+  await updateBatches((items) =>
+    queued.length
+      ? items.map((b) =>
+          b.number === number
+            ? { ...b, size: queued.length, pages: [...new Set(queued.map(pagePath))].sort() }
+            : b,
+        )
+      : items.filter((b) => b.number !== number),
+  );
+
+  return c.json({
+    batch: queued.length ? number : null,
+    queued: queued.length,
+    skipped: refs.length - queued.length,
+  });
 });

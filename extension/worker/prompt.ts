@@ -1,15 +1,25 @@
 import type { Highlight } from '../api/types';
 
-// What Claude must send back after a batch: a reply for each comment, by its ID.
-// The schema is checked by Claude Code, so the worker always gets a status it
-// knows and a response of a fixed length. The lines are a list rather than one
-// string so that the length is a rule the reply cannot break. Claude may use up
-// to 7 lines, because the worker adds one more naming the pushed commit.
+// What Claude must send back after a batch: two lines about the batch as a whole,
+// and a reply for each comment, by its ID. The schema is checked by Claude Code,
+// so the worker always gets a status it knows and a response of a fixed length.
+// The lines are a list rather than one string so that the length is a rule the
+// reply cannot break. Claude may use up to 7 lines in a reply, because the worker
+// adds one more naming the pushed commit.
 export const MIN_LINES = 3;
 export const MAX_LINES = 7;
+// The summary is what the extension shows beside the batch in its list of
+// batches, where there is room for about two short sentences.
+export const SUMMARY_LINES = 2;
 export const RESULT_SCHEMA = {
   type: 'object',
   properties: {
+    summary: {
+      type: 'array',
+      items: { type: 'string', minLength: 1, maxLength: 160 },
+      minItems: 1,
+      maxItems: SUMMARY_LINES,
+    },
     replies: {
       type: 'array',
       items: {
@@ -29,7 +39,7 @@ export const RESULT_SCHEMA = {
       },
     },
   },
-  required: ['replies'],
+  required: ['summary', 'replies'],
   additionalProperties: false,
 } as const;
 
@@ -37,6 +47,11 @@ export interface Reply {
   id: string;
   status: 'changed' | 'answered';
   response: string[];
+}
+
+export interface Result {
+  summary: string[];
+  replies: Reply[];
 }
 
 function comment(h: Highlight, i: number) {
@@ -65,10 +80,10 @@ ${comments.map(comment).join('\n\n')}`;
 // the extension and asked for. The comments are grouped by the page they are on,
 // so Claude can finish one page before moving to the next, and every page in the
 // batch is changed in the one turn.
-export function batchPrompt(pages: Highlight[][]) {
+export function batchPrompt(pages: Highlight[][], batchNumber: number) {
   const comments = pages.flat();
   const many = pages.length > 1;
-  return `Readers left feedback on the docs site, docs.dodao.io, with the highlighter extension, and selected ${comments.length} comment${comments.length === 1 ? '' : 's'} on ${pages.length} page${many ? 's' : ''} to be addressed together. Address all of it in this one turn.
+  return `Readers left feedback on the docs site, docs.dodao.io, with the highlighter extension, and selected ${comments.length} comment${comments.length === 1 ? '' : 's'} on ${pages.length} page${many ? 's' : ''} to be addressed together. This is batch ${batchNumber}. Address all of it in this one turn.
 
 ${pages.map(page).join('\n\n')}
 
@@ -86,7 +101,9 @@ Do all of this work yourself in this one turn, and do not start subagents for it
 
 Then reply with one entry for every comment above, using its id:
 - status: "changed" if you changed the docs for that comment, or "answered" if you did not.
-- response: ${MIN_LINES} to ${MAX_LINES} lines written for the reader who left that comment, each line one short sentence. If you changed the docs, say what you changed and why. If you did not, give your answer. Do not give a commit hash; the program adds it. Keep to what the reader needs, and leave out the steps you took.`;
+- response: ${MIN_LINES} to ${MAX_LINES} lines written for the reader who left that comment, each line one short sentence. If you changed the docs, say what you changed and why. If you did not, give your answer. Do not give a commit hash; the program adds it. Keep to what the reader needs, and leave out the steps you took.
+
+Also reply with a summary of the batch: one or two short sentences saying what this batch did as a whole. The extension shows it beside batch ${batchNumber} in its list of batches, so write it for somebody looking back at the list weeks later. Name the pages or the subject rather than the number of comments, which the list already shows.`;
 }
 
 // Asked when git cannot bring the clone up to the latest main.

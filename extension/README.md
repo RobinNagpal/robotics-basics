@@ -118,6 +118,14 @@ Each docs page that has comments has one JSON file, at
 comments in the order they were made. A file disappears when its last comment is
 deleted, so the files that exist are exactly the pages with feedback on them.
 
+One more file, `batches.json`, holds the record of every batch of work that has
+been asked for. It sits outside the `feedback/` prefix, so reading every page file
+never reads it by accident. It is one file rather than one per batch because its
+whole point is the order of the batches: the next number to give out and the
+oldest batch still to be done are both answered by reading one end of one list.
+The list keeps the hundred most recent records, and never drops a batch the worker
+has not finished with, however old it is.
+
 Two people can sync changes to the same page at the same moment. Each one reads the
 page file, changes it and writes it back. If both wrote without checking, the
 second write would erase the first one's change. So the API writes a page file only
@@ -125,6 +133,13 @@ if it is unchanged since it was read. S3 checks this with the file's version tag
 and refuses the write when the file has changed. The API then reads the file again
 and repeats the change on the new copy. This is the same idea as a compare-and-swap
 loop in concurrent programming.
+
+That retry is why nothing counts while it changes a file. The function that makes
+the change runs again on each retry, so a count kept outside it would count the
+same comment twice. Every caller reads its answer from the file as it was written
+instead, which the store returns. This is how the API knows which comments went
+into a batch, and how the worker knows which comments it took and which it gave
+back.
 
 The bucket keeps every earlier version of every file. So a wrong edit or a deleted
 comment can be brought back from the version history.
@@ -143,16 +158,17 @@ of six values, and a comment moves through them in order:
 
 - `new`: the comment has been made and nothing has been asked of it. This is where
   every comment starts, and where an edited comment goes back to.
-- `queued`: somebody ticked it in the popup and pressed **Address feedback**. It is
-  waiting for the worker's next run.
-- `working`: the worker has taken it into a batch and is about to invoke Claude
+- `queued`: somebody ticked it in the popup and pressed **Address feedback**,
+  which put it in a batch. It waits there until the worker reaches that batch.
+- `working`: the worker has taken the batch it is in and is about to invoke Claude
   Code. A comment in this state is being worked on right now.
 - `changed`: Claude changed the docs to answer it.
 - `answered`: Claude replied without changing the docs, for a question or for a
   comment it decided the docs already meet.
 - `failed`: the run went wrong three times, and the response says how. A comment
-  only reaches this state after the worker has given up retrying it, and a reader
-  can tick it and send it again, which starts it over with a full set of tries.
+  only reaches this state after the worker has given up on the batch it was in,
+  and a reader can tick it and send it again, which makes a new batch with a full
+  set of tries.
 
 The three statuses in the middle of that list are what make the work happen in
 batches rather than continuously. Before them, a reader can leave twenty comments
@@ -171,28 +187,75 @@ edited goes back to `new` with its response cleared, because the edited comment 
 new feedback and has to be asked for again.
 
 There is one status change the extension does make, and it has an endpoint of its
-own rather than riding on a sync. `POST /queue` takes a list of comment ids and
-moves each one to `queued`. Only a comment that is `new`, or one the worker gave
-up on and marked `failed`, may be moved, and asking for a failed comment again
-clears the message from the run that failed and gives it its tries back. The
-endpoint refuses to move anything else, so the extension cannot pull a comment
-out of a running batch or write an outcome. A comment the request cannot move,
-because somebody else queued it or it has already been answered, is counted as
-skipped and left as it is. So pressing the button twice queues nothing the second
-time. Everything from `working` onwards is written only by the worker.
+own rather than riding on a sync. `POST /queue` takes a list of comment ids, makes
+a batch out of them, and moves each one to `queued` with that batch's number
+written on it. Only a comment that is `new`, or one the worker gave up on and
+marked `failed`, may be moved, and asking for a failed comment again clears the
+message from the run that failed and gives it its tries back. The endpoint refuses
+to move anything else, so the extension cannot pull a comment out of a running
+batch or write an outcome. A comment the request cannot move, because somebody
+else queued it or it has already been answered, is counted as skipped and left as
+it is. So pressing the button twice queues nothing the second time, and a request
+that could queue nothing at all makes no batch. Everything from `working` onwards
+is written only by the worker.
+
+### Batches of work
+
+One press of **Address feedback** is one batch, and a batch is the unit of work
+from then on: it is numbered, the worker takes it whole, Claude sees all of it in
+one turn, and it succeeds or fails together. The number is what a reader follows,
+and the extension shows it beside each comment.
+
+The worker does one batch at a time, and takes the oldest one it has not finished
+with. So a batch asked for while another is being worked on waits its turn rather
+than joining it, and the record says which batch it is waiting for.
+This is what the queue is for. Two batches at once would have Claude changing the
+same pages in two conversations, and the second run would push on top of work the
+first had not finished.
+
+Which comments are in a batch is not written in the batch's record. Each comment
+carries its batch number instead, and that is the one source of truth, so a record
+that says the wrong size can never send the worker to the wrong comments. The
+record holds what a reader wants to see: the number, where the batch stands, how
+many comments and pages it covers, who asked for it, when it was asked for and
+when it ended, how many tries it has had, and the summary.
+
+The summary is one or two short sentences from Claude saying what the batch did as
+a whole. It is part of the reply the schema asks for, so Claude writes it in the
+same turn as the per-comment replies, and the worker stores it on the record when
+the batch finishes. It is there so that the list of batches can be read weeks
+later without opening every comment. A batch that failed carries the reason there
+instead.
+
+A batch is in one of four states:
+
+- `waiting`: asked for and not started, either because the worker has not looked
+  yet or because an older batch is still going.
+- `working`: the worker has taken it and Claude is on it now.
+- `done`: the run finished and every comment in it has a reply.
+- `failed`: the run went wrong three times and the worker gave up on it.
+
+A batch whose comments were all rewritten or deleted before the work started has
+nothing left in it. That batch is marked `done` with a line saying so, rather than
+left waiting, because the worker always takes the oldest unfinished batch and
+would otherwise read that one on every run and never reach the batches behind it.
 
 ### What the worker does
 
 The worker is a long-running TypeScript program in `worker/`. On a schedule it
-looks for a queued batch and addresses the whole batch in one go. The schedule is
-how often it looks, not how often it works: a run with an empty queue reads the
+looks for a batch to do and addresses the whole batch in one go. The schedule is
+how often it looks, not how often it works: a run with no batch waiting reads the
 bucket, finds nothing and stops, which costs one listing and no model call. A run
 has these steps:
 
-1. It reads every comment from the bucket and keeps the ones that have some text
-   and are `queued`. It keeps the ones marked `working` as well, because only one
-   run uses the session at a time, so a comment still `working` when a run starts
-   was left there by a run that died before it could record an outcome.
+1. It reads the batch records and takes the oldest batch that is `waiting` or
+   `working`, then reads the comments that carry that batch's number. A batch
+   still marked `working` when a run starts is taken again rather than skipped,
+   because only one run uses the session at a time, so that batch was left there
+   by a run that died before it could record an outcome. The comments it keeps
+   are the ones that have some text and are `queued` or `working`, for the same
+   reason. A run works on one batch and no more, which is what makes the batch
+   behind it wait.
 2. It compacts the Claude Code session. Compacting replaces the conversation so far
    with a summary of it, so the session keeps what it learned about the docs
    without growing every run.
@@ -201,15 +264,16 @@ has these steps:
    edits, a rebase that stopped part-way or a conflict, the worker gives Claude
    git's error and asks it to put the clone into a state where the pull works,
    keeping real work. Then it pulls again. If that still fails, the batch stays
-   queued for the next run.
-4. It marks every comment in the batch `working`, and counts one try against
-   each of them. This is the last thing that happens before Claude Code is
-   invoked, so anybody watching the popup sees the batch change from queued to
+   waiting for the next run. This happens before anything is marked, so a pull
+   that fails does not spend one of the batch's tries.
+4. It marks the batch and every comment in it `working`, and counts one try
+   against the batch. This is the last thing that happens before Claude Code is
+   invoked, so anybody watching the popup sees the batch change from waiting to
    working at the moment the work starts. A comment that was edited or deleted in
    the moment between being read and being marked drops out of the batch and
    keeps the status it had, so Claude is never shown stale text. The try is
    counted here, as the work starts, rather than when the run ends, because a run
-   that is killed never reaches its end; otherwise a comment that somehow stops
+   that is killed never reaches its end; otherwise a batch that somehow stops
    every run would be taken for ever.
 5. It gives Claude the whole batch in one turn, with the comments grouped by the
    page they are on. Claude finds each source file, decides what each comment
@@ -221,13 +285,17 @@ has these steps:
    in the clone. The next run's pull puts them on top of `main`, or asks Claude
    to, and Claude then finds its work already done and replies.
 7. Only then does it record a reply for each comment. Claude replies in a fixed
-   shape, which Claude Code checks against a schema: one entry for each comment's
-   ID, with a status and a response of 3 to 7 short lines. For a comment that
-   changed the docs, the worker adds one more line naming the pushed commit,
-   which Claude cannot know, because the rebase gives the commit a new hash. So
-   every response is 3 to 8 lines, and a comment marked `changed` is one whose
-   change is already on `main`. A comment Claude gave no reply to, or says it
-   changed when nothing was committed, is marked `failed`.
+   shape, which Claude Code checks against a schema: a summary of the batch in one
+   or two lines, and one entry for each comment's ID, with a status and a response
+   of 3 to 7 short lines. For a comment that changed the docs, the worker adds one
+   more line naming the pushed commit, which Claude cannot know, because the
+   rebase gives the commit a new hash. So every response is 3 to 8 lines, and a
+   comment marked `changed` is one whose change is already on `main`. A comment
+   Claude gave no reply to, or says it changed when nothing was committed, is
+   marked `failed`.
+8. Last of all it marks the batch `done` and stores Claude's summary on it. The
+   batch is finished after the comments and not before, so a batch the tab shows
+   as done is one where every comment in it already carries its reply.
 
 #### When a run fails
 
@@ -235,9 +303,9 @@ A run can fail before it reads Claude's reply. Claude Code may be stopped by the
 timeout, or it may end its turn with an explanation instead of the reply the
 schema asks for, which is what happens if it hands the work to subagents and then
 waits on them. In that case the worker does not throw the batch away. It puts
-every comment in the batch back to `queued`, so the next run takes the same batch
-again. The reader sees the comments go back to waiting, and nothing has to be
-ticked again.
+every comment in the batch back to `queued` and the batch itself back to
+`waiting`, so the next run takes the same batch again. The reader sees it go back
+to waiting, with the reason on the batch, and nothing has to be ticked again.
 
 A retry also rescues the work itself. The push happens only after the reply has
 been read, so a turn that ends the wrong way leaves Claude's commits in the clone
@@ -245,12 +313,15 @@ with nothing pushed. The next run pulls, rebases those commits onto `main`, asks
 Claude again, and pushes them when it succeeds. Claude finds most of the work
 already done in its own clone, so the retry is usually quick.
 
-Retrying cannot go on for ever, because a comment that stops every run would hold
-up every batch queued behind it. So each comment has a budget of three tries
-(`MAX_ATTEMPTS` in `api/types.ts`), counted at step 4. When the last one is spent,
-the comment is marked `failed` with the reason and the number of tries, and the
-worker leaves it alone. From there it is the reader's decision: ticking it in the
-popup and pressing the button again gives it a fresh three.
+Retrying cannot go on for ever, because a batch that stops every run would hold up
+every batch queued behind it. So each batch has a budget of three tries
+(`MAX_ATTEMPTS` in `api/types.ts`), counted at step 4. The budget belongs to the
+batch rather than to each comment because the batch is what is retried: the whole
+of it goes back in the queue and the whole of it is taken again. When the last try
+is spent, every comment in the batch is marked `failed` with the reason and the
+number of tries, the batch is marked `failed` too, and the worker moves on to the
+batch behind it. From there it is the reader's decision: ticking those comments in
+the popup and pressing the button again makes a new batch with a fresh three.
 
 One rule holds through all of this, as it does everywhere else in the worker. A
 comment is only written while it still says what the run read and is still
@@ -264,8 +335,10 @@ lot together. The cost of that is the turn's length. A batch that takes longer
 than `TIMEOUT_MINUTES` is stopped, and then the whole batch is retried, where
 page-at-a-time work would have kept the pages that had already finished. A batch
 too large to finish inside the limit is therefore retried until its tries run out
-and then fails as a whole. So the size of a batch is a judgement the reader makes
-when ticking the boxes, and a very large selection is better sent as two.
+and then fails as a whole, which costs about three hours before anybody is told.
+So the size of a batch is a judgement the reader makes when ticking the boxes, and
+a very large selection is better sent as two batches, which the worker will do one
+after the other anyway.
 
 Only one run uses the session at a time. A run holds a lock file while it works,
 in `worker/.state/run.lock`, whether the schedule started it or `npm run once` did.
@@ -286,7 +359,9 @@ batch.
 The worker writes an outcome only if the comment is still there, still `working`,
 and still says what Claude was shown. A comment edited while Claude worked on it
 is left as the edit made it, which is `new`, so the reader can read the new text
-and ask for it again.
+and ask for it again. If every comment in a batch was edited that way, the batch
+has nothing left in it and is marked `done` saying so, which keeps it out of the
+way of the batches behind it.
 
 Claude works in a clone of the repository that exists only for the worker, so it
 never edits files that a person is editing. The clone is made once, the first time
@@ -297,30 +372,41 @@ and why the comments are only ever written by someone holding an API key.
 ### The test
 
 The statuses above are the part of the worker worth testing, because what can go
-wrong in them is a rule about which comment may change state, and a broken rule
-is quiet: a comment is worked on twice, or an answer lands on words the comment
-no longer says, and nothing reports an error. So `worker/feedback.test.ts` runs
-those functions against a store held in memory, of the same shape as the S3 one.
-That is the only reason `queuedFeedback`, `claim`, `giveBack`, `record` and
-`byPage` take a store as a last parameter: the real store is the default, so the
-worker calls them without mentioning it, and the test hands in its own.
+wrong in them is a rule about which comment or which batch may change state, and a
+broken rule is quiet: a comment is worked on twice, two batches run at once, or an
+answer lands on words the comment no longer says, and nothing reports an error. So
+`worker/feedback.test.ts` runs those functions against a store held in memory, of
+the same shape as the S3 one. That is the only reason `nextBatch`, `batchFeedback`,
+`startBatch`, `finishBatch`, `claim`, `giveBack`, `record` and `byPage` take a
+store as a last parameter: the real store is the default, so the worker calls them
+without mentioning it, and the test hands in its own.
 
 ```bash
 cd worker
 npm test     # node's own test runner, through tsx; no test framework to install
 ```
 
-The seven tests are the seven rules: a run takes the comments that were asked for
-and the ones a dead run left behind, oldest first; a comment stored before
-queueing existed reads as `new`; claiming marks exactly the batch and groups it by
-page file; a comment whose text changed between being read and being claimed drops
-out, whether it went back to `new` or was asked for again; an outcome is written
-once and only while the comment is still being worked on; and an outcome is
-refused for a comment edited while Claude worked.
+The fifteen tests are the fifteen rules. On the batches: a run takes the oldest
+batch and the one asked for after it waits; a batch left `working` by a run that
+died is taken again before a newer one; starting a batch marks it working and
+counts one try; a batch that failed goes back in the queue and the next run takes
+the same one; a batch is given up on once its tries are spent, and the batch
+behind it then goes ahead; a batch keeps the first outcome and summary written for
+it; and an empty batch can be closed so that it stops holding up the queue. On the
+comments: a run takes the comments of its own batch and nothing else; a comment
+stored before queueing existed reads as `new`; claiming marks exactly the batch
+and groups it by page file; a comment whose text changed between being read and
+being claimed drops out, whether it went back to `new` or was asked for again; an
+outcome is written once and only while the comment is still being worked on; an
+outcome is refused for a comment edited while Claude worked; and a comment edited
+while a failed run was going is not put back in the queue.
 
 Each test was checked by breaking the rule it covers and seeing it fail, which is
-the only way to know a test of a guard is doing anything. Six rules were broken
-one at a time and every one was caught.
+the only way to know a test of a guard is doing anything. Seven of the batch rules
+were broken one at a time, by taking the newest batch instead of the oldest, by
+ignoring a batch left `working`, by ignoring the batch number on a comment, by not
+counting a try, by retrying for ever, by overwriting a finished batch, and by
+ignoring an edit made during a failed run. Every one of them was caught.
 
 ### Why these tools
 
@@ -557,11 +643,12 @@ flush its cache, and nothing else.
 - `ui/lib/types.ts` holds how each status reads to the reader, and the rule for
   which comments can be ticked.
 - `api/` is the API, as a package of its own, and the folder its deploy watches.
-- `api/types.ts` is what the API stores, which the extension imports too.
-- `api/app.ts` is the API: the key check, `GET /me`, `POST /sync` and
-  `POST /queue`.
+- `api/types.ts` is what the API stores, which the extension imports too: the
+  comment, the batch, and the statuses of both.
+- `api/app.ts` is the API: the key check, `GET /me`, `POST /sync`, `GET /batches`
+  and `POST /queue`.
 - `api/keys.ts` reads the keys from Parameter Store.
-- `api/store.ts` reads and writes the page files in S3.
+- `api/store.ts` reads and writes the page files and the batch records in S3.
 - `api/lambda.ts` and `api/local.ts` run the API on Lambda and on your own
   machine.
 - `ui/install-page/index.html` is the install page, before its values are filled in.
@@ -570,9 +657,9 @@ flush its cache, and nothing else.
 - `worker/claude.ts` runs one turn of the Claude Code session.
 - `worker/prompt.ts` is what Claude is told about a batch of comments, and the
   shape of its replies.
-- `worker/feedback.ts` reads the queued comments, marks a batch `working`, gives a
-  failed batch back to the queue, and
-  records each outcome.
+- `worker/feedback.ts` finds the oldest batch still to do, reads its comments,
+  marks the batch and its comments `working`, gives a failed batch back to the
+  queue, records each outcome, and writes where the batch ended up.
 - `worker/feedback.test.ts` tests those status changes against a store held in
   memory.
 - `worker/git.ts` pulls the latest `main` into the clone before a batch and

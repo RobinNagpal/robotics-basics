@@ -73,7 +73,7 @@ is to do nothing.
 **Having room is the gripper's test, measured to the neighbour's edge.** A
 glass has room when no other glass's edge lies within 70 mm of its middle.
 [The gap that
-matters](01_what-is-asked-for.md#5-the-gap-that-matters-is-not-the-gap-between-the-glasses)
+matters](01_what-is-asked-for.md#6-the-gap-that-matters-is-not-the-gap-between-the-glasses)
 explains the number and why the test is not symmetric.
 
 **The tables are numbered, and the numbers are split.** Each table is drawn
@@ -194,6 +194,21 @@ what a push does, and a method whose glasses scatter is succeeding by looking
 again rather than by predicting, which is a real strategy but a different
 one.
 
+**The scorecard also keeps one row for each table.** Everything above is a
+total over the whole run, and a total answers how a solution did without saying
+anything about how it did on any one table. Those are different questions: a
+run that finishes 31 tables out of 50 does not say which of the 50 is the one
+worth looking at. So beside each run's scorecard the examiner writes a second
+file holding one row per table, which records that table's outcome, how many
+glasses were racked, how many were knocked over, how many pushes were spent and
+how far the glasses travelled in total. The rows exist so that a table can be
+chosen because it stands for the run rather than because it flatters the
+solution, and that is how the film on each solution's own page was picked. They
+also show something a reader might not guess: the typical table is a different
+kind of table for each solution, because the three geometry solutions usually
+finish one, the imitation policy usually leaves one unfinished, and the
+fine-tuned policy usually ends one in a state the cell should never reach.
+
 ## 6. Two things this scorecard needs that the camera work's did not
 
 The examiner for [telling the glasses
@@ -215,6 +230,14 @@ is uncertain. So each trained solution has to be trained with several seeds and
 evaluated over several runs, and the scorecard has to carry the **spread** and
 not only the middle. A result quoted without a spread is not a result. A method
 that wins by less than its own spread has not been shown to win.
+
+Drawing the action rather than computing it has one more consequence, and it is
+easy to be caught by. For such a solution **one table on its own is not the
+same table as that table reached in a run**, because every draw the policy made
+on the earlier tables has already moved its stream of random numbers along. So
+reproducing what a row says about the fourth table of a run means running the
+first three tables as well, and a solution filmed table by table will not
+always do what the scorecard says it did.
 
 **Running cost differs by orders of magnitude, so it belongs on the
 scorecard.** The six are not equally expensive to run for a single push, and

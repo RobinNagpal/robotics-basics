@@ -40,8 +40,9 @@
 ## Contents
 
 1. [Introduction](#1-introduction)
-2. [The problem this solves](#2-the-problem-this-solves)
-3. [The main idea](#3-the-main-idea)
+2. [A film of one table](#2-a-film-of-one-table)
+3. [The problem this solves](#3-the-problem-this-solves)
+4. [The main idea](#4-the-main-idea)
 
 ## 1. Introduction
 
@@ -103,7 +104,34 @@ solution happens to do well.
 
 ![Everything that could cause an unrecoverable failure is settled before the model is consulted, the model can never add a candidate or bring back one the geometry rejected, and deleting the model leaves a working system behind.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-flow-where-the-model-sits.png)
 
-## 2. The problem this solves
+## 2. A film of one table
+
+The introduction described how this method generates candidate pushes and lets a
+fitted model choose between them, and the film here shows it doing that on one
+table in the simulator, played at three times real speed.
+
+[Geometry generates and a model ranks, on one table, 33 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/02-geometry-ranked.mp4 "video")
+
+The outcome is the same as the printed rule's on this table: seven pushes, all
+five glasses racked, nothing knocked over. What differs is not the outcome but
+the distance. The glasses are moved 288 mm in total here against the fixed
+nudge's 145 mm on the same table, so the ranker is choosing longer pushes to
+reach the same place. One table proves nothing on its own, but it is a fair
+picture of the pair over all fifty, where this solution finishes two tables
+fewer than the rule it was meant to improve.
+
+Every one of the six solutions is filmed on this same table, number 10003 of
+the fifty the examiner holds back, so the six films can be watched against each
+other. The table was chosen because it stands for the whole run rather than
+because it flatters anybody, which is what [one row per
+table](../01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) in the
+scorecard is for, and all six films are collected in [the six solutions side by
+side](../10_the-results.md).
+
+The film shows the method at work, and the next section says which problem
+generating candidates and ranking them is meant to solve.
+
+## 3. The problem this solves
 
 [Pushing the glasses apart](../01_the-problem/01_what-is-asked-for.md) hands
 the arm a table with four to six glasses on it, some standing too close
@@ -136,7 +164,7 @@ them, and a ranking over an empty set is still empty. So whatever this solution
 is worth, it is worth nothing at all against the largest single failure in that
 record.
 
-## 3. The main idea
+## 4. The main idea
 
 The idea is one sentence long: ask the geometry for **every** safe push rather
 than for the best one, and let a fitted model put the survivors in order.

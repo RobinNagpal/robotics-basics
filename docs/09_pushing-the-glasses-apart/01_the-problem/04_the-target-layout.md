@@ -95,7 +95,7 @@ than a narrow one does. A layout that only checked the distance between two
 middles would call this pair fine, and the narrow glass would still be
 ungrippable. So the layout checks every glass against the edge of every
 neighbour. [The gap that
-matters](01_what-is-asked-for.md#5-the-gap-that-matters-is-not-the-gap-between-the-glasses)
+matters](01_what-is-asked-for.md#6-the-gap-that-matters-is-not-the-gap-between-the-glasses)
 explains where the room comes from.
 
 ### Every glass stands inside the glass zone

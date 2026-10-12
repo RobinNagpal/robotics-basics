@@ -47,8 +47,9 @@
 ## Contents
 
 1. [Introduction](#1-introduction)
-2. [The problem this solves](#2-the-problem-this-solves)
-3. [The main idea](#3-the-main-idea)
+2. [A film of one table](#2-a-film-of-one-table)
+3. [The problem this solves](#3-the-problem-this-solves)
+4. [The main idea](#4-the-main-idea)
 
 ## 1. Introduction
 
@@ -88,7 +89,34 @@ solution adds learned evidence to is stated there.
 
 ![Five networks fitted on the same data from different random starts agree where the training data covered that kind of push and diverge where it did not, which is a measure of ignorance that costs almost nothing — and where the data was thin in a way none of them noticed, all five agree and are wrong together.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-flow-the-five-copies.png)
 
-## 2. The problem this solves
+## 2. A film of one table
+
+The introduction described a method that learns how the table changes and then
+searches for a push with that model, and the film here shows it on one table in
+the simulator, played at three times real speed.
+
+[A learned world model planning on one table, 19 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4 "video")
+
+All five glasses are racked and nothing is knocked over, and it takes **two
+pushes**. The fixed nudge needs seven on this same table and moves the glasses
+145 mm to this solution's 70 mm, so the film is this method's economy in one
+table. The economy is the direct result of what it learned. Because it can
+predict where a glass will stop, it can pick a push that finishes the job
+instead of nudging and looking again, and two well-chosen pushes replace seven
+blind ones.
+
+Every one of the six solutions is filmed on this same table, number 10003 of
+the fifty the examiner holds back, so the six films can be watched against each
+other. The table was chosen because it stands for the whole run rather than
+because it flatters anybody, which is what [one row per
+table](../01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) in the
+scorecard is for, and all six films are collected in [the six solutions side by
+side](../10_the-results.md).
+
+Two pushes is what the film has to show, and the next section says which
+problem learning a model of the table is meant to solve.
+
+## 3. The problem this solves
 
 [The problem](../01_the-problem/01_what-is-asked-for.md) has already been
 stated in full, and this section narrows it to the single difficulty this
@@ -131,7 +159,7 @@ arrangement**, not the crowded pair. That is a question about tables rather
 than about pushes, and only a method that can say what a table will look like
 afterwards can ask it.
 
-## 3. The main idea
+## 4. The main idea
 
 The main idea is a separation, and the whole of this solution follows from it.
 

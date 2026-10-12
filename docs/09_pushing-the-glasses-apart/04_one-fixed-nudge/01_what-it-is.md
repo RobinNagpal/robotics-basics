@@ -41,8 +41,9 @@
 ## Contents
 
 1. [Introduction](#1-introduction)
-2. [The problem this solves](#2-the-problem-this-solves)
-3. [The main idea](#3-the-main-idea)
+2. [A film of one table](#2-a-film-of-one-table)
+3. [The problem this solves](#3-the-problem-this-solves)
+4. [The main idea](#4-the-main-idea)
 
 ## 1. Introduction
 
@@ -105,7 +106,34 @@ at the table again.
 
 ![The same job done without any prediction: measure the shortfall, push straight away from the crowding neighbour by a fixed fraction of it, look at the table again, and repeat until the glass is no longer short of room.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-flow-repeat-not-predict.png)
 
-## 2. The problem this solves
+## 2. A film of one table
+
+The introduction described this method in words, and the film here shows the
+same method working. It is one table cleared in the simulator, played at three
+times real speed.
+
+[One fixed nudge clears one table, 30 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/01-one-fixed-nudge.mp4 "video")
+
+The table holds five glasses, which is the average of the fifty. The arm pushes
+seven times, every one of the five glasses ends up clear and carried to the
+rack, and nothing is knocked over, which is this solution's commonest outcome.
+The thing to watch for is how often the same glass is pushed twice. The method
+never predicts where a glass will stop, so it moves one a fixed fraction of the
+room it is short of and then looks at the table again, and the repetition in the
+film is that habit made visible.
+
+Every one of the six solutions is filmed on this same table, number 10003 of
+the fifty the examiner holds back, so the six films can be watched against each
+other. The table was chosen because it stands for the whole run rather than
+because it flatters anybody, which is what [one row per
+table](../01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) in the
+scorecard is for, and all six films are collected in [the six solutions side by
+side](../10_the-results.md).
+
+So the film shows what the method does. The next section says what problem a
+method this plain is there to solve, and why the book needs it.
+
+## 3. The problem this solves
 
 [Pushing the glasses apart](../01_the-problem/01_what-is-asked-for.md) begins
 where [telling them apart in a
@@ -134,7 +162,7 @@ measuring. This solution takes the second branch, and it takes it as far as it
 can be taken: it predicts nothing, assumes nothing about friction, and keeps
 only the one claim about a push that does not need friction to be true.
 
-## 3. The main idea
+## 4. The main idea
 
 That one claim is the whole method, so it is worth stating before the
 arithmetic. **Pushing a glass away from a neighbour increases the distance

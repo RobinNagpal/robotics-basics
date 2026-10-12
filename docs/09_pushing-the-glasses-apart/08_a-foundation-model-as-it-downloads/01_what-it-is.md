@@ -33,8 +33,9 @@
 ## Contents
 
 1. [Introduction](#1-introduction)
-2. [The problem this solves](#2-the-problem-this-solves)
-3. [The main idea](#3-the-main-idea)
+2. [A film of one table](#2-a-film-of-one-table)
+3. [The problem this solves](#3-the-problem-this-solves)
+4. [The main idea](#4-the-main-idea)
 
 ## 1. Introduction
 
@@ -78,7 +79,33 @@ poor result here is still the most useful thing in this book.
 
 ![The view from the top, one instruction in plain English and the arm's joint readings go into the downloaded model, which returns a run of actions that are read as waypoints and carried out, with no training step, no data collection and no fitted parameter anywhere in the chain.](../../images/pushing-the-glasses-apart/a-foundation-model-as-it-downloads/smolvla-flow-what-it-does.png)
 
-## 2. The problem this solves
+## 2. A film of one table
+
+The introduction described what it means to run a large borrowed model here with
+no fitting of any kind, and the film here shows that model on one table in the
+simulator, played at three times real speed.
+
+[A large borrowed model used exactly as it downloads, on one table, 32 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/05-smolvla-as-it-downloads.mp4 "video")
+
+The run spends all sixteen of the table's pushes and **moves the glasses no
+measurable distance at all**. One of the five is racked, and only because it
+already had room before anything was pushed; the other four are refused. In the
+film the jaw sweeps across the table again and again at a height that never
+reaches a glass, which is the plainest possible picture of a model whose idea of
+where the work happens comes from somebody else's robot.
+
+Every one of the six solutions is filmed on this same table, number 10003 of
+the fifty the examiner holds back, so the six films can be watched against each
+other. The table was chosen because it stands for the whole run rather than
+because it flatters anybody, which is what [one row per
+table](../01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) in the
+scorecard is for, and all six films are collected in [the six solutions side by
+side](../10_the-results.md).
+
+The film shows a capable model acting in the wrong place, and the next section
+says which problem using one unchanged is meant to answer.
+
+## 3. The problem this solves
 
 [The problem](../01_the-problem/01_what-is-asked-for.md) asks for a jaw trajectory, and then another, until
 every glass on the table has about 70 mm of clear room in every direction and
@@ -101,7 +128,7 @@ for tables in general and asks whether the general thing is good enough for the
 particular one. That is a real question with a real answer, and the answer is
 worth knowing before anybody spends a week recording demonstrations.
 
-## 3. The main idea
+## 4. The main idea
 
 The idea is three steps, and there is nothing else in it.
 

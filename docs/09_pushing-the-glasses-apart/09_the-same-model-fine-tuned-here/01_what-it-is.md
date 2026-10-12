@@ -43,8 +43,9 @@
 ## Contents
 
 1. [Introduction](#1-introduction)
-2. [The problem this solves](#2-the-problem-this-solves)
-3. [The main idea](#3-the-main-idea)
+2. [A film of one table](#2-a-film-of-one-table)
+3. [The problem this solves](#3-the-problem-this-solves)
+4. [The main idea](#4-the-main-idea)
 
 ## 1. Introduction
 
@@ -120,7 +121,44 @@ untouched.
 
 ![The borrowed weights stay as they are and a correction of about four million numbers is learned beside them, so only the correction carries gradients and the training fits on a laptop, and afterwards the correction folds into the weights so running it costs what running the original cost.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/smolvla-finetuned-flow-the-correction.png)
 
-## 2. The problem this solves
+## 2. A film of one table
+
+The introduction described what was done to the borrowed model's numbers and why,
+and the film here shows the corrected model on one table in the simulator,
+played at three times real speed.
+
+[The same borrowed model after fine-tuning here, on one table, 10 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/06-smolvla-fine-tuned.mp4 "video")
+
+This run ends **wrong**, which is the worst of the three outcomes and this
+solution's commonest. In eight pushes one glass is racked, two are refused, and
+one is left lying on its side. The film shows both halves of what fine-tuning
+bought. The jaw now comes down to about the height a push has to happen at,
+which the downloaded model never did, and it comes down **onto** the glasses
+rather than beside them. Competence enough to reach the glasses and not enough
+to miss them is worse here than not reaching them at all, because a glass on its
+side is the one failure this cell cannot undo.
+
+This film is also where a warning in [the
+examiner](../01_the-problem/03_the-examiner.md#6-two-things-this-scorecard-needs-that-the-camera-works-did-not)
+was learned. Filmed on its own, this table toppled two glasses rather than one,
+and re-running it changed nothing, because the policy is settled for a given
+table. The policy draws its actions, so the three tables before this one had
+already moved its random numbers along, and the film had to be made by running
+those three first before it matched the row the scorecard holds.
+
+Every one of the six solutions is filmed on this same table, number 10003 of
+the fifty the examiner holds back, so the six films can be watched against each
+other. The table was chosen because it stands for the whole run rather than
+because it flatters anybody, which is what [one row per
+table](../01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) in the
+scorecard is for, and all six films are collected in [the six solutions side by
+side](../10_the-results.md).
+
+The film shows what fine-tuning bought and what it did not, and the next
+section says which problem continuing a borrowed model's training is meant to
+solve.
+
+## 3. The problem this solves
 
 This book asks for a jaw trajectory, and then another, until every glass has
 about 70 mm of clear room around it or the glasses that are left have been
@@ -152,7 +190,7 @@ underneath both, it has never seen the consequence of a push on this table.
 Continuing its training on pushes made here is the standard repair for all
 three at once.
 
-## 3. The main idea
+## 4. The main idea
 
 The idea is one sentence long: keep the borrowed numbers, and learn a small
 correction to them from pushes made on the examiner's tables.

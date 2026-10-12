@@ -22,17 +22,44 @@ what counts as done, as correct but incomplete, and as wrong.
 ## Contents
 
 1. [Introduction](#1-introduction)
-2. [Why dragging and not lifting](#2-why-dragging-and-not-lifting)
-3. [What is on the table](#3-what-is-on-the-table)
-4. [What goes in and what comes out](#4-what-goes-in-and-what-comes-out)
-5. [The gap that matters is not the gap between the glasses](#5-the-gap-that-matters-is-not-the-gap-between-the-glasses)
-6. [How low the push has to be, and why it is a property of the glass](#6-how-low-the-push-has-to-be-and-why-it-is-a-property-of-the-glass)
-7. [What else makes this hard](#7-what-else-makes-this-hard)
-8. [What is deliberately not in this problem](#8-what-is-deliberately-not-in-this-problem)
-9. [What "done" means](#9-what-done-means)
-10. [Where to go next](#10-where-to-go-next)
+2. [A film of the job](#2-a-film-of-the-job)
+3. [Why dragging and not lifting](#3-why-dragging-and-not-lifting)
+4. [What is on the table](#4-what-is-on-the-table)
+5. [What goes in and what comes out](#5-what-goes-in-and-what-comes-out)
+6. [The gap that matters is not the gap between the glasses](#6-the-gap-that-matters-is-not-the-gap-between-the-glasses)
+7. [How low the push has to be, and why it is a property of the glass](#7-how-low-the-push-has-to-be-and-why-it-is-a-property-of-the-glass)
+8. [What else makes this hard](#8-what-else-makes-this-hard)
+9. [What is deliberately not in this problem](#9-what-is-deliberately-not-in-this-problem)
+10. [What "done" means](#10-what-done-means)
+11. [Where to go next](#11-where-to-go-next)
 
-## 2. Why dragging and not lifting
+## 2. A film of the job
+
+The sections below describe the job in words and in numbers, and a sight of it
+first makes those words easier to follow. So the film here shows one of the six
+solutions in this book clearing one crowded table in the simulator, played at
+three times real speed.
+
+[The job done once: the plainest of the six solutions clears one table, 30 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/01-one-fixed-nudge.mp4 "video")
+
+Three things in the film are worth watching for, because the rest of this
+document is about them. First, every glass is **dragged across the table and
+never lifted**, which is the restriction the next section explains. Second, the
+arm **pushes, looks again and pushes again** rather than working out the whole
+job in advance, because a push does not land where it was aimed. Third, a glass
+is carried away only once it has room around it, and the table counts as
+finished only when every glass has been taken, which is what [this page means
+by done](#10-what-done-means) further down.
+
+The film is of the first and plainest of the six answers, one fixed nudge, and
+every one of the six is filmed on this same table so that the six can be
+watched against each other. [The six solutions side by
+side](../10_the-results.md) collects all six films in one place.
+
+So the arm drags rather than lifts, and the next section says why lifting is
+not available to it at all.
+
+## 3. Why dragging and not lifting
 
 Because lifting is the thing that is not available yet, and the reason is
 circular:
@@ -51,14 +78,14 @@ its weight, or where its stem is. All it needs is where the glass stands and
 how wide its base is, and both of those are already in [what the camera work
 hands over](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#4-what-must-come-out).
 
-## 3. What is on the table
+## 4. What is on the table
 
 The same glasses as [the camera work
 had](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#2-what-is-on-the-table)
 — four to six, one known kind, upright and opaque — except that some of them are
 close together. Close enough that the numbers in the next section bite.
 
-## 4. What goes in and what comes out
+## 5. What goes in and what comes out
 
 The table above is what an answer works on, and this section says in brief what
 an answer is handed and what it hands back. [What goes in and what comes
@@ -85,7 +112,7 @@ examiner](03_the-examiner.md) hands exactly this to every one of them.
 What goes in includes each glass's width, and the next section explains why the
 gap that decides gripping is not the plain gap between two glasses.
 
-## 5. The gap that matters is not the gap between the glasses
+## 6. The gap that matters is not the gap between the glasses
 
 ![The open jaw needs about 70 mm from a glass's middle outwards before it fits round it, so the gap that decides whether a glass can be gripped is the one between a middle and a neighbour's edge rather than the one between two glasses.](../../images/pushing-the-glasses-apart/what-is-asked-for/the-room-a-gripper-needs.png)
 
@@ -117,7 +144,7 @@ belongs to [looking again at what was
 hidden](../../08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md),
 and moving a glass changes it too.
 
-## 6. How low the push has to be, and why it is a property of the glass
+## 7. How low the push has to be, and why it is a property of the glass
 
 ![A push above a certain height on the glass tips it instead of sliding it, and how low that height is follows from the width of the foot the glass stands on and from a friction nothing in the cell can measure.](../../images/pushing-the-glasses-apart/what-is-asked-for/push-low-or-it-topples.png)
 
@@ -165,7 +192,7 @@ limit that is only as good as a guessed number. That is an argument for always
 pushing as low as the gripper can reach, and for watching what actually happens
 rather than trusting the prediction.
 
-## 7. What else makes this hard
+## 8. What else makes this hard
 
 **Where to push it *to*.** The destination has to be clear of every other
 glass, clear of the rack, inside the arm's reach, and inside the part of the
@@ -188,7 +215,7 @@ arrangement, not just the crowded pair.
 a glass with no idea how heavy it is. Too fast is a knock, and a knock on a
 tall glass is the thing this problem exists to avoid.
 
-## 8. What is deliberately not in this problem
+## 9. What is deliberately not in this problem
 
 **Lifting anything.** No grasp, no weighing, no rack.
 
@@ -199,7 +226,7 @@ tall glass is the thing this problem exists to avoid.
 **Tidying.** The glasses do not have to end up anywhere in particular. They have
 to end up far enough apart.
 
-## 9. What "done" means
+## 10. What "done" means
 
 A run is **done** when every glass on the table has at least 70 mm of clear
 room around it, at least one usable viewpoint for a side-on photograph, and
@@ -219,7 +246,7 @@ Scored against the simulator's record, the numbers worth watching are: how many
 glasses ended up grippable, how many pushes it took, how far each glass ended
 up from where the push aimed it, and how many were refused.
 
-## 10. Where to go next
+## 11. Where to go next
 
 Four documents describe what every answer shares, and they are worth reading
 before any of the six.

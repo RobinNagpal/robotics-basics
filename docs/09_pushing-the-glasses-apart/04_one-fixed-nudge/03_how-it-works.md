@@ -251,7 +251,7 @@ real code is involved and it would be easy to over-claim.
 
 **A design, not code:**
 
-- the four decisions of [the main idea](01_what-it-is.md#3-the-main-idea). The planner that
+- the four decisions of [the main idea](01_what-it-is.md#4-the-main-idea). The planner that
   exists chooses its heading and its distance by searching many headings and
   every distance up to a limit, and keeping the shortest push that frees a
   glass — or, when no push on the table frees one, the push that most cuts the

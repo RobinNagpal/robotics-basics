@@ -129,7 +129,7 @@ Read together, the two blocks show the whole bargain of this solution in a
 dozen lines: where the arithmetic can answer, it answers, and where it cannot —
 because the friction is missing from it — the method spends one short push to
 find out instead of guessing. Note which fixed nudge this is. The proportional
-nudge of [the main idea](01_what-it-is.md#3-the-main-idea) has no constant in the repository,
+nudge of [the main idea](01_what-it-is.md#4-the-main-idea) has no constant in the repository,
 while `PROBE` does, so the fixed length above is the one this code really
 commits to.
 

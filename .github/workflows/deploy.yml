@@ -74,12 +74,17 @@ jobs:
       # Everything else, and this pass deletes. Pages keep their URLs when
       # their content changes, so they must always be revalidated; the edge
       # holds them, and the deploy's invalidation is what releases them.
+      #
+      # The recordings under audio/ and the films under videos/ are uploaded
+      # separately and are not part of the build, so a pass that deletes what
+      # the build does not contain has to be told to leave them alone.
       - name: Upload the pages and delete what has gone
         run: |
           aws s3 sync website/out/ "s3://${{ vars.S3_BUCKET }}/" \
             --no-progress --delete \
             --exclude '_next/static/*' \
             --exclude 'audio/*' \
+            --exclude 'videos/*' \
             --cache-control 'public, max-age=0, must-revalidate'
 
       # One path, not one per URL. CloudFront counts /* as a single path

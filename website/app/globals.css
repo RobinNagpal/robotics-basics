@@ -2043,6 +2043,18 @@ html[data-audio-following] .read-dial {
   border-radius: 4px;
 }
 
+/* A film of the cell, played from the bucket rather than built into the site.
+   It is sized by its own shape rather than forced to 16 by 9, because these are
+   recorded from a simulator window that is not that shape. */
+.prose figure.doc-film video {
+  display: block;
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  border-radius: 4px;
+  background: #000;
+}
+
 .prose figure.doc-figure figcaption {
   font-size: 13.5px;
   line-height: 1.5;

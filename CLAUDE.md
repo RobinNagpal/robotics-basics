@@ -367,6 +367,47 @@ When explaining a tool or a framework, answer four questions: what it is, what i
 does for you, **why this one rather than the obvious alternative**, and what it
 costs you. Naming the rejected alternative is the part that carries the value.
 
+## Films: videos that a page plays
+
+A page may show a short film of the cell at work, and films are handled the way
+recordings are rather than the way images are. An image lives in `docs/` and is
+published by the build. A film does not, because a film is megabytes and the
+repository would grow by one every time a run is recorded again.
+
+A film is made in the project that holds the code, which for the By Example
+books is `robot-arm-projects`, and it stays committed there. That clone is the
+one source of it. From there it is uploaded to the bucket the site is served
+from, under `videos/`, beside the recordings under `audio/`:
+
+```bash
+aws s3 sync ~/projects/robot-arm-projects/v5-pick-glasses/videos/03-push-glasses-apart/ \
+  s3://robotics-basics-web-729763663166/videos/pushing-the-glasses-apart/ \
+  --exclude '*' --include '*.mp4' \
+  --content-type video/mp4 --cache-control 'public, max-age=31536000, immutable'
+```
+
+The folder under `videos/` is the book's address with its reading-order number
+stripped, which is the same rule the recordings follow. The deploy workflow
+excludes `videos/*` from the sync that deletes, so shipping the site never
+removes a film, and a film replaced in place needs the edge cache flushed for
+that path because it is stored with a year of cache life.
+
+A document links to a film by its **full address**, with the link's title set to
+`video`:
+
+```markdown
+[What the film shows, 30 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/01-one-fixed-nudge.mp4 "video")
+```
+
+A paragraph holding only such a link becomes a player with the link as its
+caption, and the title is what asks for that. The address is written in full
+rather than relative so that the same line is still a working link when the
+Markdown is read on GitHub, where there is no player at all. Only `.mp4` and
+`.webm` are turned into players; a link to anything else stays a link.
+
+Say in the caption how long the film runs and whether it has sound, because a
+reader deciding whether to press play has no other way to know.
+
 ## Other standing rules
 
 - Use the full form of an abbreviation the first time it appears.

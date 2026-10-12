@@ -50,6 +50,23 @@ function youtubeEmbed(href: string): string | null {
   return `https://www.youtube-nocookie.com/embed/${id}` + (start > 0 ? `?start=${start}` : '');
 }
 
+/**
+ * The address of a film a doc asks to be played in the page, or null if the
+ * link is not one.
+ *
+ * A film is too large to commit, so it is uploaded to the same bucket the site
+ * is served from, under `/videos/`, exactly as a recording is. The doc links to
+ * it by its full address, which means the link still works when the Markdown is
+ * read on GitHub, where no player is built. Only the two formats every browser
+ * can play are accepted, so a link to something else stays a plain link rather
+ * than becoming a player that shows nothing.
+ */
+function filmSrc(href: string): string | null {
+  const path = href.split(/[?#]/)[0];
+  if (!/\.(mp4|webm)$/i.test(path)) return null;
+  return href;
+}
+
 function isExternal(href: string): boolean {
   return /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('//');
 }
@@ -58,8 +75,8 @@ function isExternal(href: string): boolean {
  * Adapts the rendered doc to the site without touching its words:
  * rewrites links between docs to site URLs, points images at the docs folder,
  * lifts the H1 into the page header, collects the table of contents, wraps
- * tables and lone images so they lay out well, and embeds the YouTube videos a
- * doc asks for.
+ * tables and lone images so they lay out well, and turns the films and the
+ * YouTube videos a doc asks for into players.
  */
 function rehypeDocs(opts: { rel: string; urlByRel: Map<string, string>; toc: TocItem[] }) {
   const dir = posix.dirname(opts.rel);
@@ -100,12 +117,34 @@ function rehypeDocs(opts: { rel: string; urlByRel: Map<string, string>; toc: Toc
       }
 
       // A paragraph holding only an image becomes a figure with its alt text as caption.
+      // A paragraph holding only a link to a film titled "video", written
+      // [Title](https://docs.dodao.io/videos/....mp4 "video"), becomes a player
+      // with the link as its caption, so the film can be watched in the page and
+      // still be a plain link on GitHub.
       // A paragraph holding only a YouTube link titled "embed", written
       // [Title](https://www.youtube.com/watch?v=... "embed"), becomes the video
       // itself with the link as its caption. On GitHub it stays a plain link.
       if (tag === 'p') {
         const meaningful = node.children.filter((c) => !(c.type === 'text' && !c.value.trim()));
         const img = meaningful.length === 1 ? meaningful[0] : undefined;
+        if (img && img.type === 'element' && img.tagName === 'a' && img.properties?.title === 'video') {
+          const src = filmSrc(String(img.properties.href ?? ''));
+          if (src) {
+            delete img.properties.title;
+            node.tagName = 'figure';
+            node.properties = { className: ['doc-figure', 'doc-film'] };
+            node.children = [
+              {
+                type: 'element',
+                tagName: 'video',
+                properties: { src, controls: true, preload: 'metadata', playsInline: true },
+                children: [],
+              },
+              { type: 'element', tagName: 'figcaption', properties: {}, children: [img] },
+            ];
+          }
+          return;
+        }
         if (img && img.type === 'element' && img.tagName === 'a' && img.properties?.title === 'embed') {
           const href = String(img.properties.href ?? '');
           const src = youtubeEmbed(href);

@@ -73,7 +73,9 @@ than readings.
 
 **What the jaw felt on the last push.** The jaw comes down behind a glass,
 feels forward until it touches, pushes, and backs off, and it reports what it
-felt on the way. That force reading matters more than it looks, and [the number
+felt on the way. The reading comes from the force sensor at the arm's wrist,
+and [how the jaw's force is measured](#how-the-jaws-force-is-measured) below
+describes it. That force reading matters more than it looks, and [the number
 nobody has](03_pushing-without-toppling.md#4-the-number-nobody-has) says why.
 
 **Nothing else.** In particular, no answer may read the simulator's record of
@@ -84,6 +86,75 @@ This matters more here than in the simpler jobs this cell was built for,
 because six quite different methods are compared on this question, and a
 comparison only means something when the question was identical. The [test
 examiner](../02_the-examiner.md) hands exactly this to every one of them.
+
+### How the jaw's force is measured
+
+Of the three inputs, the force reading is the one that comes from touch rather
+than from the camera, so it is worth saying which sensor makes it and how.
+
+**The sensor is a six-axis force-torque sensor between the arm and the
+gripper.** The arm ends in a flat plate called the flange, and the gripper is
+not bolted straight to it. A force sensor sits between the two, so the gripper
+hangs from the arm only through that sensor. Anything that pushes on the jaw
+therefore pushes, through the gripper's body, on the sensor. "Six-axis" means it
+reports six numbers: the force along each of three directions, and the twist
+about each of them. The cell declares this sensor in
+[`arm/gripper.urdf.xacro`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/src/work_cell/work_cell/arm/gripper.urdf.xacro),
+under the name `wrist_force`. In the Gazebo cell it reports 100 times a second,
+in the gripper's own directions. The camera cannot measure a force at all, and
+the cell's two other sensors, the contact sensors in the pads, are read only as
+whether a pad is touching something.
+
+**A real sensor of this kind measures how much a piece of metal bends.** Inside
+it is a stiff metal part that bends by a tiny amount under load, too little to
+see. Strain gauges are glued to that part. A strain gauge is a thin wire pattern
+whose electrical resistance changes as it is stretched, so the bending becomes a
+change in voltage. A calibration made by the maker turns the voltages from all
+the gauges into the three forces and three twists. Because the sensor is in
+effect a very stiff spring, it reads every load below it, including the
+gripper's own weight. That weight is measured once with nothing touching and
+then subtracted, so that what is left is the force from contact.
+[Force and torque at the
+wrist](../../03_frameworks/02_gripping/02_grippers-and-hardware.md#81-force-and-torque-at-the-wrist)
+gives the published figures of one such sensor.
+
+**In the examiner, the force is added up from the physics.** The pushing is
+tested in MuJoCo rather than Gazebo, for reasons [the
+examiner](../02_the-examiner.md) gives, and MuJoCo has no sensor model to read.
+So at every step of the physics, which is every 2 milliseconds, the examiner
+in
+[`bench.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/bench/bench.py)
+finds every contact that involves the jaw, adds up the force of each one, and
+reports the size of the total in newtons. That is what the wrist sensor would
+read once the gripper's weight had been subtracted. It has no noise and no
+drift, which a real sensor has.
+
+**The push uses that number at three moments.** While the jaw comes down at
+200 mm per second, any force above 0.1 newton means it has landed on something,
+and it goes back up. While it feels forward at 10 mm per second, the first force
+above 0.1 newton is the touch, and the push starts from there. The threshold is
+that low because the lightest glass starts to slide under about a quarter of a
+newton, and a higher threshold would push it along without noticing it. While it
+pushes at 20 mm per second, a force above 20 newtons means something is wedged,
+and the push stops. Throughout, the largest force seen is kept, and that is the
+peak force the push reports.
+
+**The distances in the report come from the jaw's position, not from the
+sensor.** The sensor only says *when* the force crossed a threshold. Where the
+jaw was at that moment comes from where the arm had put it, which on the real arm
+is read from the joint encoders, the sensors that measure each joint's angle.
+[Measuring by
+touch](../../02_perception/02_object-perception/02_sensors.md#2-measuring-by-touch)
+explains that division of work.
+
+One caution applies to the real cell. The 0.1 newton touch threshold is about
+the noise level of a typical wrist sensor, whose maker recommends ten times that
+for detecting contact. So on real hardware the feel forward would need a higher
+threshold or a slower approach, and the examiner's clean reading is one of the
+ways it is easier than the world.
+
+So a solution is handed positions and widths, a picture, and these force and
+distance readings, and the next section says what it has to hand back.
 
 ## 5. What must come out
 

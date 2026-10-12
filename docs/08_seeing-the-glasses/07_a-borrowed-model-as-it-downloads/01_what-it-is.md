@@ -6,10 +6,13 @@
 > **What it does** — it shows the model a survey picture from the top, takes the
 > list of objects the model reports, and keeps the outlines whose name is a
 > drinking vessel. The names are then thrown away.
-> **What is fitted here** — nothing. The one number this solution adds is a bar
-> on the model's own confidence, set by hand at 0.25 and checked by eye against
-> the training half of the arrangements. Solution 4 carries the same bar at the
-> same value, so the pair is unaffected by it.
+> **What is fitted here** — nothing. The model gives every outline a confidence
+> score between 0 and 1, and this solution throws away any outline that scores
+> below 0.25. So an outline counts as a glass only when its name is a drinking
+> vessel **and** its score is at least 0.25. The 0.25 was chosen by hand, not
+> fitted, and [the main idea](#2-the-main-idea) says where it is used.
+> Solution 4 uses the same 0.25, so the comparison between the two is unaffected
+> by it.
 > **What it costs** — no labels, no training run, no weights file to keep in step
 > with the cell, and no graphics card of its own. The whole cost is the licence,
 > which [what it needs](05_what-it-needs.md) sets out.
@@ -74,6 +77,25 @@ many thousands of times.
 **Second, keep the outlines whose name is a drinking vessel**, and drop
 everything else the model named. This step is where the solution fails, and
 [how it works](03_how-it-works.md) is where the measurement of that failure sits.
+
+The same step applies the bar on confidence. Each outline comes with a score
+between 0 and 1 that says how sure the model is about it. An outline is kept
+only when two things are both true: its name is on the list of drinking vessels,
+and its score is 0.25 or more. An outline named "cup" with a score of 0.6 is
+kept. An outline named "cup" with a score of 0.1 is dropped, and so is an outline
+named "frisbee" with any score.
+
+The bar is used twice in the code, which [the code](02_the-code.md) shows. The
+model is told the bar when it runs, so it does not spend time building outlines
+below it. The filter then checks the bar again, so the decision belongs to this
+solution and can be tested.
+
+The value 0.25 was not fitted. It is the value Ultralytics itself uses by
+default, and it was checked by eye on the training half of the arrangements to
+make sure it was not obviously wrong. The score is only useful for its order
+here: the model learned its scores on photographs, so on these pictures a score
+of 0.6 does not mean the outline is right 60 times in 100. The bar is therefore a
+setting chosen by hand, and nobody should read it as a probability.
 
 **Third, hand the kept outlines to the shared arithmetic.** Turning a set of
 pixels into a place on the table and a width is a job [the

@@ -49,9 +49,12 @@ model is put to work on a particular job. Nothing here is unusual, and that is
 deliberate: this is the standard move, written out in full so that what it buys
 could be measured rather than assumed.
 
-**This solution is built and it has been marked.** What it scored is recorded
-beside the code, in
-[`04-yolo-fine-tuned/README.md`](../../../code/src/08_seeing-the-glasses/04-yolo-fine-tuned/README.md)
+**This solution is built and it has been marked.** Its code is in the
+`robot-arm-projects` repository, in the folder
+[`v5-pick-glasses/02-segment-glasses/04-yolo-fine-tuned/`](https://github.com/RobinNagpal/robot-arm-projects/tree/main/v5-pick-glasses/02-segment-glasses/04-yolo-fine-tuned).
+Every link to a code file in this chapter opens that file on GitHub in a new tab.
+What the solution scored is recorded beside the code, in
+[`04-yolo-fine-tuned/README.md`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/04-yolo-fine-tuned/README.md)
 and in that folder's per-block `results` files. It reports 99.4 glasses per 100
 on the layouts the cell's own rule spaces and 72.0 per 100 when they are crowded
 closer than that rule allows, against 6.4 and 2.1 for the same model untrained.

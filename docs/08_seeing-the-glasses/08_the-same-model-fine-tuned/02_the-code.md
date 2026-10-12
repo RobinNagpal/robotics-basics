@@ -19,18 +19,19 @@ One thing separates this solution from [solution
 training. So the piece worth reading first is the fitting step.
 
 The fitting step is in
-[`04-yolo-fine-tuned/yolo_fine_tuned.py`](../../../code/src/08_seeing-the-glasses/04-yolo-fine-tuned/yolo_fine_tuned.py),
+[`04-yolo-fine-tuned/yolo_fine_tuned.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/04-yolo-fine-tuned/yolo_fine_tuned.py),
 and it runs in three steps.
 
 1. Take the scenes it was handed, hold every fourth one back so the training run
    has pictures to check its own progress on, and write both parts out as a
    directory of pictures and label files, which is the only shape Ultralytics
-   reads a training set from.
+   reads a training set from. The writing is done by
+   [`dataset.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/04-yolo-fine-tuned/dataset.py).
 2. Pick up the downloaded weights, the same file solution 3 runs untouched, and
    continue that model's training on these pictures. The continuing is a single
    line, because the borrowed library owns the training loop.
 3. Copy the best weights the run produced into a file of this project's own,
-   which is what `run.py` loads afterwards.
+   which is what [`run.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/04-yolo-fine-tuned/run.py) loads afterwards.
 
 ```python
 def fit(examples: Iterable[data.Example], *, amodal: bool, save: Path, epochs: int = EPOCHS) -> Mapping:
@@ -75,7 +76,8 @@ the fitting happens once and these run on every picture afterwards.
 4. Look up the narrowest and the widest footprint a glass of the known kind
    could have, then walk the model's candidates surest first, turning each
    candidate's mask into a place on the table and a width by arithmetic every
-   solution in the chapter shares.
+   solution in the chapter shares, in
+   [`bench/masks_to_glasses.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/bench/masks_to_glasses.py).
 5. Keep a candidate whose width suits the kind, and keep one whose mask the
    frame cut short whatever its width. Every candidate left is reported as a
    doubt, as is one with too few depth readings to place at all, and what

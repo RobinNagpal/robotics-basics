@@ -125,9 +125,9 @@ untouched.
 
 The introduction described what was done to the borrowed model's numbers and why,
 and the film here shows the corrected model on one table in the simulator,
-played at three times real speed.
+played at one and a half times real speed.
 
-[The same borrowed model after fine-tuning here, on one table, 7 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/06-smolvla-fine-tuned.mp4 "video")
+[The same borrowed model after fine-tuning here, on one table, 11 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/06-smolvla-fine-tuned.mp4 "video")
 
 The table holds six glasses where the average is five, and five of those six
 have no room at the start, which is the usual state of these tables.
@@ -153,6 +153,12 @@ examiner](../01_the-problem/03_the-examiner.md#6-two-things-this-scorecard-needs
 explains why: a table filmed on its own is not the same table reached part-way
 through a run, because the tables before it have already moved the policy's
 random numbers along.
+
+Two details are the same in all six films: the hand never opens while it is
+pushing, and the pick-up at the end of a take is drawn rather than simulated.
+[The film of the
+job](../01_the-problem/01_what-is-asked-for.md#2-a-film-of-the-job) explains
+both of them, and it is worth reading once before watching any of the six.
 
 Every one of the six solutions is filmed on this same table, number 10025 of
 the fifty the examiner holds back, so the six films can be watched against each

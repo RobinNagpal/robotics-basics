@@ -58,23 +58,39 @@ JAW_FRICTION = 0.6
 # It is a real Robotiq 2F-85, and its shape is taken from the description
 # Robotiq publish rather than drawn here: arm/robotiq_2f85.py turns their link
 # offsets and collision meshes into the stack of boxes below, so this bench and
-# the cell the rest of the project describes are pushing with the same hand.
+# the cell in src/ are pushing with the same hand.
 #
 # The shape is worth knowing before reading anything this bench measures,
-# because it is not the blade a reader would picture. The two fingertips meet in
-# the middle and make a stub 27 mm across and 57 mm long. Behind them the
-# fingers stand 139 mm tall, and they start only 35 mm back from the tip.
-# Behind those again is the body, and behind that the force sensor and the
-# wrist.
+# because it is not the blade a reader would picture. The two fingertips meet
+# in the middle and make a stub 63 mm across and 57 mm long. Behind them the
+# fingers flare out to 139 mm — more than twice as wide — and they start only
+# 35 mm back from the tip. Behind those again is the 85 by 75 mm body, and
+# behind that the force sensor.
 #
 # **The hand is held rolled a quarter turn, and that is the one decision this
-# bench makes about it rather than reads off the datasheet.** Held the way the
-# cell grips, with the fingers side by side, the hand is 139 mm across, and the
-# glasses on these tables stand 150 mm apart centre to centre at the closest,
-# so a hand that wide has almost nowhere to go. Rolled a quarter turn the two
-# fingers stack one above the other, the hand is 27 mm across, and the task
-# becomes possible again. Rolling costs height, which is the trade, and it is
-# why PUSH_HEIGHT below is no longer the lowest the gripper can reach.
+# bench makes about it rather than reads off the datasheet.** It matters enough
+# to explain, because it is the difference between this problem working and not
+# working.
+#
+# Held the way the cell grips — fingers side by side, so the opening direction
+# is horizontal — the hand is 139 mm across. The glasses on these tables stand
+# 150 mm apart centre to centre at the closest, so a hand that wide has almost
+# nowhere to go: measured over the held-out tables it made **three pushes in
+# forty-nine tables** and left 201 of 245 glasses standing with "nowhere clear
+# to push it to". That is not a bench with a bug in it; it is what a real
+# Robotiq 2F-85 does to this task, and the thin blade this problem used to
+# assume had been hiding it.
+#
+# Rolled a quarter turn, the two fingers stack one above the other and the hand
+# is **27 mm across** — narrower than the blade it replaces. The task becomes
+# possible again. docs/03-push-glasses-apart/the-bench.md carries the
+# measurement both ways round, because the comparison is the most useful thing
+# the real gripper turned up.
+#
+# Rolling costs height, which is the trade and the reason PUSH_HEIGHT below is
+# no longer the lowest the gripper can reach. Turned on its side the hand
+# reaches 69 mm below its own middle, so it cannot ride at 50 mm without the
+# fingers striking the table.
 def _rolled(part: dict) -> dict:
     """One part of the hand, turned a quarter turn about the push direction.
 
@@ -112,8 +128,8 @@ TOOL_LENGTH = max(part["back"] + part["depth"] for part in JAW_PARTS) + WRIST_LE
 #
 # It is a list rather than a single width because the hand is not one shape.
 # Rolled, it stays 27 mm wide for the first 73 mm and then widens to the 75 mm
-# body and the 89 mm sensor behind it, and a solution that used one figure for all of it would be either
-# needlessly cautious or quietly dangerous.
+# body and the 89 mm force sensor behind it, and a solution that used one figure
+# for all of it would be either needlessly cautious or quietly dangerous.
 JAW_SEGMENTS = tuple(
     (part["back"], part["back"] + part["depth"], part["across"] / 2.0)
     for part in JAW_PARTS
@@ -133,7 +149,13 @@ JAW_HALF_HEIGHT = max(part["tall"] for part in JAW_PARTS) / 2.0
 # its fingers striking the table, with five millimetres to spare and rounded up
 # to the nearest five. Lower would be better — a push low on a glass is less
 # likely to tip it — so this is the geometry's answer and not a choice.
+#
+# It is deliberately *not* chosen by trying several heights and keeping the one
+# that scored best. The fifty tables here are the held-out set, and tuning a
+# number against them would make every result that follows a measurement of
+# that tuning. See TEST_SEEDS.
 PUSH_HEIGHT = math.ceil((JAW_HALF_HEIGHT + 0.005) * 200.0) / 200.0
+
 # The top edge of the jaw. A glass that is wider higher up meets the jaw here
 # first, so this, not PUSH_HEIGHT, is how high it is pushed.
 JAW_TOP = PUSH_HEIGHT + FINGER_HEIGHT / 2
@@ -178,11 +200,21 @@ TOP_VIEW_HEIGHT = 0.75
 # How many pixels that view is, (rows, columns). Square, because the frame is.
 TOP_VIEW_SIZE = (384, 384)
 
-# Clear room the open hand needs from a glass's middle to anything else, from
-# problem.md. It is not half the opening, which is the easy mistake: it is how
-# far the widest part of the open hand reaches from its own middle, and on a
-# 2F-85 the fingers stand further out than the pads do. A neighbour is in the
-# way when its edge is inside this.
+# Clear room the open hand needs from a glass's middle to anything else. A
+# neighbour is in the way when its edge is inside this.
+#
+# It is how far the open hand reaches either side of its own middle, worked out
+# from the real gripper rather than written down. Note that it is set by the
+# *fingers* and not by the pads: open, the 2F-85's fingers stand 76 mm out
+# while the pads are only 42 mm out, so the widest part of the hand is not the
+# part that touches the glass. Reading it off the opening instead, which is
+# what this project did before it had a real gripper, understates the hand by
+# 34 mm and declares room where the fingers would go through a neighbour.
+#
+# Nothing is added for luck. This is the hand's own size, and the margin for
+# the error in *measuring* a gap belongs with the solution that measures it —
+# TAKE_MARGIN, which each solution sets for itself. Folding a margin in here
+# would have every solution carrying it twice.
 GRIP_ROOM = robotiq_2f85.OPEN_HALF_WIDTH
 
 # Half the straight-down view's frame, measured on the table top. It has to
@@ -310,29 +342,12 @@ def slices(outline: Outline) -> list[tuple[float, float, float]]:
     return cut
 
 
-def _glass_xml(index: int, glass: SpawnedGlass) -> str:
-    mass, centre, across, spin = glass.mass_properties
-    x, y, _ = glass.position
-    geoms = "".join(
-        f'<geom type="cylinder" size="{r:.5f} {(top - bottom) / 2:.5f}" pos="0 0 {(top + bottom) / 2:.5f}" '
-        f'friction="{GLASS_ON_GLASS} 0.005 0.0001" rgba="0.6 0.8 0.9 1"/>'
-        for bottom, top, r in slices(glass.outline)
-    )
-    return (
-        f'<body name="glass_{index}" pos="{x:.5f} {y:.5f} {TABLE_TOP_Z}"><freejoint/>'
-        f'<inertial pos="0 0 {centre:.5f}" mass="{mass:.5f}" '
-        f'diaginertia="{across:.3e} {across:.3e} {spin:.3e}"/>'
-        f"{geoms}</body>"
-    )
-
-
 def _jaw_xml(surface: str) -> str:
     """The shut hand as MuJoCo boxes, tip at the origin, pushing along +x.
 
-    One box per stretch, laid out backwards from the fingertips, because the
+    One box per part, laid out backwards from the fingertips, because the
     fingertips are what reaches a glass first and everything else is measured
-    from them. The last box is the force sensor and the wrist behind the
-    gripper.
+    from them. The last box is the sensor and wrist behind the gripper.
     """
     boxes = []
     for part in JAW_PARTS + [
@@ -353,9 +368,88 @@ def _jaw_xml(surface: str) -> str:
     return "\n      ".join(boxes)
 
 
-def _world(glasses: list[SpawnedGlass]) -> str:
+# The drawn hand's own axes, before it is turned into the world: x runs forward
+# along the approach with the fingertips at zero, y is the direction the fingers
+# open, and z is the thickness of a finger. The hand is described once in these
+# axes and then turned, which is what lets the same description be shown rolled
+# on its side for a push and upright for a pick.
+DRAWN_PIECES = {
+    "fingertips": "0.80 0.82 0.85 1",
+    "fingers": "0.80 0.82 0.85 1",
+    "body": "0.62 0.64 0.68 1",
+    "pads": "0.20 0.20 0.22 1",
+}
+# How the hand is turned for a push: a quarter turn about the approach, which
+# stands the opening direction on its end so the two fingers stack one above the
+# other. This is the roll the whole of this problem is built on.
+ROLLED = f"{math.cos(math.pi / 4):.8f} {math.sin(math.pi / 4):.8f} 0 0"
+
+
+def _drawn_hand_xml() -> str:
+    """The hand as it really is, for the film to look at. It touches nothing.
+
+    Every box here has ``contype`` and ``conaffinity`` of zero, so the simulator
+    never collides it with anything, and it hangs off the jaw's mocap body,
+    which has no dynamics of its own. So these boxes can be drawn, moved and
+    hidden without changing a single result. That is the whole point of them:
+    the film can show the fingers opening around a glass even though the bench
+    itself only ever pushes with them shut.
+
+    They are the pieces ``robotiq_2f85.parts()`` lists rather than the boxes
+    above, so the gap between the two fingers is left open instead of being
+    filled in. ``film.py`` moves them by name.
+    """
+    boxes = []
+    for piece in robotiq_2f85.parts() + robotiq_2f85.pads() + [
+        {
+            "name": "wrist",
+            "side": 0,
+            "back": max(p["back"] + p["depth"] for p in robotiq_2f85.parts()),
+            "depth": WRIST_LENGTH,
+            "span": WRIST_ACROSS,
+            "tall": WRIST_ACROSS,
+            "offset": 0.0,
+        }
+    ]:
+        side = "left" if piece["side"] > 0 else "right" if piece["side"] < 0 else "middle"
+        name = f"drawn_{piece['name']}_{side}"
+        forward = -(piece["back"] + piece["depth"] / 2.0)
+        # Rolled, the opening direction points up, so a piece's offset from the
+        # middle of the hand becomes a height rather than a sideways step.
+        boxes.append(
+            f'<geom name="{name}" type="box" contype="0" conaffinity="0" '
+            f'size="{piece["depth"] / 2:.5f} {piece["span"] / 2:.5f} {piece["tall"] / 2:.5f}" '
+            f'pos="{forward:.5f} 0 {piece["offset"]:.5f}" quat="{ROLLED}" '
+            f'rgba="{DRAWN_PIECES.get(piece["name"], "0.42 0.43 0.46 1")}"/>'
+        )
+    return "\n      ".join(boxes)
+
+
+def _glass_xml(index: int, glass: SpawnedGlass) -> str:
+    mass, centre, across, spin = glass.mass_properties
+    x, y, _ = glass.position
+    geoms = "".join(
+        f'<geom type="cylinder" size="{r:.5f} {(top - bottom) / 2:.5f}" pos="0 0 {(top + bottom) / 2:.5f}" '
+        f'friction="{GLASS_ON_GLASS} 0.005 0.0001" rgba="0.6 0.8 0.9 1"/>'
+        for bottom, top, r in slices(glass.outline)
+    )
+    return (
+        f'<body name="glass_{index}" pos="{x:.5f} {y:.5f} {TABLE_TOP_Z}"><freejoint/>'
+        f'<inertial pos="0 0 {centre:.5f}" mass="{mass:.5f}" '
+        f'diaginertia="{across:.3e} {across:.3e} {spin:.3e}"/>'
+        f"{geoms}</body>"
+    )
+
+
+def _world(glasses: list[SpawnedGlass], draw_hand: bool = False) -> str:
     half_x, half_y = TABLE_SIZE[0] / 2, TABLE_SIZE[1] / 2
-    jaw = f'friction="{JAW_FRICTION} 0.005 0.0001" priority="2" rgba="0.6 0.6 0.62 1"'
+    # Drawn, the colliding boxes go nearly see-through and the real pieces are
+    # drawn inside them, so a viewer sees both the hand and the larger shape the
+    # simulator actually collides. Scored, they are plain solid grey and the
+    # drawn pieces are not there at all.
+    skin = "0.6 0.6 0.62 0.16" if draw_hand else "0.6 0.6 0.62 1"
+    jaw = f'friction="{JAW_FRICTION} 0.005 0.0001" priority="2" rgba="{skin}"'
+    hand = "\n      " + _drawn_hand_xml() if draw_hand else ""
     zone_x, zone_y = (GLASS_ZONE[0] + GLASS_ZONE[1]) / 2, (GLASS_ZONE[2] + GLASS_ZONE[3]) / 2
     # The camera top_view.py renders from. Its axes are the table's own: the
     # picture's right is +x and the picture's up is +y. It is a camera and not
@@ -372,10 +466,23 @@ def _world(glasses: list[SpawnedGlass]) -> str:
           friction="{TABLE_FRICTION} 0.005 0.0001" priority="1" rgba="0.75 0.6 0.45 1"/>
     {"".join(_glass_xml(i, g) for i, g in enumerate(glasses))}
     <body name="jaw" mocap="true" pos="0 0.5 1.3">
-      {_jaw_xml(jaw)}
+      {_jaw_xml(jaw)}{hand}
     </body>
   </worldbody>
 </mujoco>"""
+
+
+def drawing_world(glasses: list[SpawnedGlass]) -> str:
+    """The same world with the real hand drawn in it, for film.py and nothing else.
+
+    It is a second world rather than a setting on the scored one on purpose.
+    Three of the six solutions read an overhead picture of the table and decide
+    from it, so anything added to the world they are scored in could change
+    what they do. Keeping the drawn hand in a world of its own means the scored
+    world is the same object whether a table is filmed or not, and the film can
+    be made as clear as it likes.
+    """
+    return _world(glasses, draw_hand=True)
 
 
 @dataclass(frozen=True)

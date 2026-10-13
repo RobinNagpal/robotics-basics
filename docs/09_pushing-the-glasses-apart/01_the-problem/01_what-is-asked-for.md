@@ -38,9 +38,9 @@ what counts as done, as correct but incomplete, and as wrong.
 The sections below describe the job in words and in numbers, and a sight of it
 first makes those words easier to follow. So the film here shows one of the six
 solutions in this book clearing one crowded table in the simulator, played at
-three times real speed.
+one and a half times real speed.
 
-[The job done once: a learned world model clears one table, 25 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4 "video")
+[The job done once: a learned world model clears one table, 42 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4 "video")
 
 Three things in the film are worth watching for, because the rest of this
 document is about them. First, every glass is **dragged across the table and
@@ -50,6 +50,32 @@ job in advance, because a push does not land where it was aimed. Third, a glass
 is carried away only once it has room around it, and the table counts as
 finished only when every glass has been taken, which is what [this page means
 by done](#10-what-done-means) further down.
+
+Two things in the film are not what a first viewing suggests, and both of them
+are about the hand. The first is that **the hand never opens while it is
+pushing.** The gripper is held shut for the whole of this problem and the closed
+hand is used as the pusher, so nothing is gripped and nothing is lifted during a
+push. The second is that **the pick-up at the end of a take is drawn rather than
+simulated.** The examiner takes a glass away by moving it off the table in one
+instant, so instead of showing a glass disappear the film draws what a real
+pick-up would be: the wrist turns the hand upright, the fingers open to the
+width the glass was measured to be, the hand comes down around the glass, the
+fingers close, and the glass is carried off. A line on the screen says so while
+it happens, because the drawing is not evidence that this cell can lift a glass.
+It cannot yet, which is [why the arm drags instead of
+lifting](#3-why-dragging-and-not-lifting) in the first place.
+
+The hand is also drawn twice over, and both drawings are worth looking at. The
+solid pieces are the hand's real mouldings, which are two fingertips, two
+fingers behind them and the gripper's body behind those. Around those pieces,
+as a faint shell, is the larger shape the simulator actually collides with.
+That shell fills in the 82 mm gap between the two fingers, because a glass
+standing in that gap would be swept along by the hand just the same, so the
+shell is the shape every solution has to plan its pushes around even though no
+metal is there. That same shape is measured in [how low the push has to
+be](#7-how-low-the-push-has-to-be-and-why-it-is-a-property-of-the-glass) below,
+where its width and its height turn out to decide whether a glass can be pushed
+at all.
 
 One thing about the choice of film is worth saying straight away, because it is
 also the book's main finding. Every one of the six solutions is filmed on this
@@ -214,6 +240,15 @@ so it cannot ride lower than 75 mm without its fingers striking the table, and
 its leading stretch is 63 mm tall, so the top edge stands 32 mm above the
 middle. Both of those raise `h`, and `h` is the quantity this rule is most
 sensitive to.
+
+Turning the hand has a second cost as well, and [the film of the
+job](#2-a-film-of-the-job) is where it can be seen. A glass can only be gripped
+with one finger on each side of it, so the fingers have to open sideways, which
+they cannot do while the hand is lying on its side. The hand therefore has to be
+turned back upright before it can take anything at all. Pushing and gripping are
+two different poses of the same hand, and the wrist has to travel between them
+once for every glass that is taken, which is why the drawn pick-up at the end of
+each film begins by turning the wrist.
 
 Three things follow, and they are the shape of the problem:
 

@@ -108,9 +108,9 @@ solution happens to do well.
 
 The introduction described how this method generates candidate pushes and lets a
 fitted model choose between them, and the film here shows it doing that on one
-table in the simulator, played at three times real speed.
+table in the simulator, played at one and a half times real speed.
 
-[Geometry generates and a model ranks, on one table, 8 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/02-geometry-ranked.mp4 "video")
+[Geometry generates and a model ranks, on one table, 13 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/02-geometry-ranked.mp4 "video")
 
 The table holds six glasses where the average is five, and five of those six
 have no room at the start, which is the usual state of these tables.
@@ -126,6 +126,12 @@ comparison running through this document. Ranking candidates can only help when
 there is more than one candidate worth having. On a table where the hand's own
 width and height rule out almost every push, the ranker and the printed rule
 are choosing from the same very short list, so they choose the same thing.
+
+Two details are the same in all six films: the hand never opens while it is
+pushing, and the pick-up at the end of a take is drawn rather than simulated.
+[The film of the
+job](../01_the-problem/01_what-is-asked-for.md#2-a-film-of-the-job) explains
+both of them, and it is worth reading once before watching any of the six.
 
 Every one of the six solutions is filmed on this same table, number 10025 of
 the fifty the examiner holds back, so the six films can be watched against each

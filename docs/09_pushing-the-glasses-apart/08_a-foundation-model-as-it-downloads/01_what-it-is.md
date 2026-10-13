@@ -83,9 +83,9 @@ poor result here is still the most useful thing in this book.
 
 The introduction described what it means to run a large borrowed model here with
 no fitting of any kind, and the film here shows that model on one table in the
-simulator, played at three times real speed.
+simulator, played at one and a half times real speed.
 
-[A large borrowed model used exactly as it downloads, on one table, 38 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/05-smolvla-as-it-downloads.mp4 "video")
+[A large borrowed model used exactly as it downloads, on one table, 74 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/05-smolvla-as-it-downloads.mp4 "video")
 
 The table holds six glasses where the average is five, and five of those six
 have no room at the start, which is the usual state of these tables.
@@ -102,6 +102,12 @@ This solution draws its answer rather than computing it, so the film is one
 draw rather than an average. The scored runs on this table racked one glass
 each and spent thirteen pushes on average, against the film's sixteen, so the
 film is a slightly busier draw than the middle one.
+
+Two details are the same in all six films: the hand never opens while it is
+pushing, and the pick-up at the end of a take is drawn rather than simulated.
+[The film of the
+job](../01_the-problem/01_what-is-asked-for.md#2-a-film-of-the-job) explains
+both of them, and it is worth reading once before watching any of the six.
 
 Every one of the six solutions is filmed on this same table, number 10025 of
 the fifty the examiner holds back, so the six films can be watched against each

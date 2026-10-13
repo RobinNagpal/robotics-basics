@@ -93,9 +93,9 @@ solution adds learned evidence to is stated there.
 
 The introduction described a method that learns how the table changes and then
 searches for a push with that model, and the film here shows it on one table in
-the simulator, played at three times real speed.
+the simulator, played at one and a half times real speed.
 
-[A learned world model planning on one table, 25 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4 "video")
+[A learned world model planning on one table, 42 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4 "video")
 
 The table holds six glasses where the average is five, and five of those six
 have no room at the start, which is the usual state of these tables.
@@ -110,6 +110,12 @@ and looking again.
 It is worth knowing while watching that the same planner topples a glass on
 nineteen of the fifty tables. This film shows what it does when its guesses
 about toppling are right, and the scorecard shows how often they are not.
+
+Two details are the same in all six films: the hand never opens while it is
+pushing, and the pick-up at the end of a take is drawn rather than simulated.
+[The film of the
+job](../01_the-problem/01_what-is-asked-for.md#2-a-film-of-the-job) explains
+both of them, and it is worth reading once before watching any of the six.
 
 Every one of the six solutions is filmed on this same table, number 10025 of
 the fifty the examiner holds back, so the six films can be watched against each

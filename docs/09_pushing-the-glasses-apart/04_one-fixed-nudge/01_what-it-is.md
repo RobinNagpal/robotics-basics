@@ -109,10 +109,10 @@ at the table again.
 ## 2. A film of one table
 
 The introduction described this method in words, and the film here shows the
-same method working. It is one table in the simulator, played at three times
-real speed.
+same method working. It is one table in the simulator, played at one and a half
+times real speed.
 
-[One fixed nudge on one table, 8 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/01-one-fixed-nudge.mp4 "video")
+[One fixed nudge on one table, 13 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/01-one-fixed-nudge.mp4 "video")
 
 The table holds six glasses where the average is five, and five of those six
 have no room at the start, which is the usual state of these tables.
@@ -130,6 +130,12 @@ where a glass will stop, so it is built to push a little and look again, but
 here it hardly gets the chance: the hand is too wide to stand beside most of
 these glasses and too high to shove them without tipping them, so the loop runs
 out of legal pushes long before it runs out of budget.
+
+Two details are the same in all six films: the hand never opens while it is
+pushing, and the pick-up at the end of a take is drawn rather than simulated.
+[The film of the
+job](../01_the-problem/01_what-is-asked-for.md#2-a-film-of-the-job) explains
+both of them, and it is worth reading once before watching any of the six.
 
 Every one of the six solutions is filmed on this same table, number 10025 of
 the fifty the examiner holds back, so the six films can be watched against each

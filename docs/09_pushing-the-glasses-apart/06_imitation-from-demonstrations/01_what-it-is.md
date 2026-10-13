@@ -94,9 +94,9 @@ rest of the chapter unpacks.
 
 The introduction described a policy that was fitted by copying somebody else's
 pushes, and the film here shows what that policy actually does on one table in
-the simulator, played at three times real speed.
+the simulator, played at one and a half times real speed.
 
-[A policy copied from demonstrations, on one table, 13 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/03-imitation-from-demonstrations.mp4 "video")
+[A policy copied from demonstrations, on one table, 22 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/03-imitation-from-demonstrations.mp4 "video")
 
 The table holds six glasses where the average is five, and five of those six
 have no room at the start, which is the usual state of these tables.
@@ -112,6 +112,12 @@ This solution draws its answer rather than computing it, and three seeds of it
 were fitted, so the film is one draw from one seed rather than an average. It
 is seed 0. On this table the three seeds racked 1, 1 and 3 glasses in 14, 14
 and 11 pushes, so the film shows the commoner of the two behaviours.
+
+Two details are the same in all six films: the hand never opens while it is
+pushing, and the pick-up at the end of a take is drawn rather than simulated.
+[The film of the
+job](../01_the-problem/01_what-is-asked-for.md#2-a-film-of-the-job) explains
+both of them, and it is worth reading once before watching any of the six.
 
 Every one of the six solutions is filmed on this same table, number 10025 of
 the fifty the examiner holds back, so the six films can be watched against each

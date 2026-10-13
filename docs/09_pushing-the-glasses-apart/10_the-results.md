@@ -91,7 +91,15 @@ The scorecard above is fifty tables added up, and a sum hides what a run
 actually looks like. So each of the six was also filmed clearing one single
 table, and the same table for all six, which makes the films comparable in the
 same way the numbers above are comparable. Each film is recorded from the
-simulator, runs at three times real speed and has no sound.
+simulator, runs at one and a half times real speed and has no sound.
+
+Two details are the same in all six, and both are easy to misread. The hand
+never opens while it is pushing, because this problem holds the gripper shut and
+shoves the glasses with the whole closed hand. The pick-up at the end of a take
+is drawn rather than simulated, because the examiner takes a glass away by
+moving it off the table in one instant. [The film of the
+job](01_the-problem/01_what-is-asked-for.md#2-a-film-of-the-job) explains both,
+and says what the faint shell drawn around the hand is.
 
 The table filmed is number 10025 of the fifty, and it was chosen to be
 **typical rather than flattering**. The rule for choosing it was written down
@@ -110,12 +118,12 @@ scorecard above but counting one table instead of fifty.
 
 | | film | outcome | racked | toppled | pushes |
 |---|---|---|---|---|---|
-| 1 one fixed nudge | [8 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/01-one-fixed-nudge.mp4) | incomplete | 1 of 6 | **0** | **2** |
-| 2 geometry ranked | [8 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/02-geometry-ranked.mp4) | incomplete | 1 of 6 | **0** | **2** |
-| 3 imitation, ACT | [13 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/03-imitation-from-demonstrations.mp4) | incomplete | 1 of 6 | **0** | 14 |
-| 4 a world model | [25 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4) | done | **6 of 6** | **0** | 3 |
-| 5 SmolVLA as it downloads | [38 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/05-smolvla-as-it-downloads.mp4) | incomplete | 1 of 6 | **0** | 16 |
-| 6 SmolVLA fine-tuned | [7 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/06-smolvla-fine-tuned.mp4) | wrong | 1 of 6 | 1 | 4 |
+| 1 one fixed nudge | [13 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/01-one-fixed-nudge.mp4) | incomplete | 1 of 6 | **0** | **2** |
+| 2 geometry ranked | [13 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/02-geometry-ranked.mp4) | incomplete | 1 of 6 | **0** | **2** |
+| 3 imitation, ACT | [22 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/03-imitation-from-demonstrations.mp4) | incomplete | 1 of 6 | **0** | 14 |
+| 4 a world model | [42 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4) | done | **6 of 6** | **0** | 3 |
+| 5 SmolVLA as it downloads | [74 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/05-smolvla-as-it-downloads.mp4) | incomplete | 1 of 6 | **0** | 16 |
+| 6 SmolVLA fine-tuned | [11 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/06-smolvla-fine-tuned.mp4) | wrong | 1 of 6 | 1 | 4 |
 
 Each film also sits at the top of its own solution's first page, where what
 happens in it is described push by push. Taken together the six rows are this

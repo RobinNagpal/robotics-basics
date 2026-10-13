@@ -376,21 +376,61 @@ repository would grow by one every time a run is recorded again.
 
 A film is made in the project that holds the code, which for the By Example
 books is `robot-arm-projects`, and it stays committed there. That clone is the
-one source of it. From there it is uploaded to the bucket the site is served
-from, under `videos/`, beside the recordings under `audio/`:
+one source of it.
+
+### Convert it before uploading it, or it will not play
+
+**A film must be H.264 before it goes to the bucket.** This is the one rule here
+that is easy to miss, because a file that does not play still ends with `.mp4`,
+still reports itself as a video, and still plays perfectly in QuickTime or VLC
+on the machine that made it. The name `.mp4` says how the file is packaged and
+not how the pictures inside it are coded, and the two are different questions.
+A recorder left to its own defaults often writes **MPEG-4 Part 2**, an older
+coding that every desktop media player reads and **no browser will play**. The
+browser then shows a player that spins and never starts, with no error a reader
+can act on.
+
+So convert every film once, and check what came out rather than trusting the
+command:
 
 ```bash
-aws s3 sync ~/projects/robot-arm-projects/v5-pick-glasses/videos/03-push-glasses-apart/ \
+ffmpeg -i in.mp4 -c:v libx264 -profile:v high -pix_fmt yuv420p \
+  -crf 20 -preset slow -movflags +faststart -an out.mp4
+
+# must print h264; mpeg4 means the browser will refuse it
+ffprobe -v error -select_streams v:0 -show_entries stream=codec_name \
+  -of csv=p=0 out.mp4
+```
+
+Three parts of that line matter. `libx264` is the coding every browser plays.
+`-movflags +faststart` moves the file's index to the front, so the film starts
+as soon as the first bytes arrive instead of after the whole file has
+downloaded. `-an` drops the sound track, which these films do not have anyway.
+Converting also makes the file several times smaller than the recorder's own
+output, which is worth having for a file served over a network.
+
+Then upload the converted films to the bucket the site is served from, under
+`videos/`, beside the recordings under `audio/`:
+
+```bash
+aws s3 sync <folder of converted films>/ \
   s3://robotics-basics-web-729763663166/videos/pushing-the-glasses-apart/ \
   --exclude '*' --include '*.mp4' \
-  --content-type video/mp4 --cache-control 'public, max-age=31536000, immutable'
+  --content-type video/mp4 --cache-control 'public, max-age=31536000'
 ```
 
 The folder under `videos/` is the book's address with its reading-order number
 stripped, which is the same rule the recordings follow. The deploy workflow
 excludes `videos/*` from the sync that deletes, so shipping the site never
-removes a film, and a film replaced in place needs the edge cache flushed for
-that path because it is stored with a year of cache life.
+removes a film.
+
+A film is stored with a year of cache life but **without** `immutable`, which
+the recordings do use. The difference is deliberate. `immutable` promises that
+what is at an address will never change, and a film replaced in place breaks
+that promise: a browser that has already fetched one keeps serving it from its
+own cache even when the reader presses reload. Without the word, a reload
+revalidates and picks the new film up. Replacing a film still means flushing
+the edge cache for `/videos/*`, because the edge holds it for the year as well.
 
 A document links to a film by its **full address**, with the link's title set to
 `video`:

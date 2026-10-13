@@ -116,10 +116,10 @@ It has a price that is easy to miss. The examiner consumes waypoints a fixed
 period apart, 50 milliseconds, so **how far apart the waypoints are is how fast
 the jaw is being asked to travel**. Fixing the frame therefore fixes the speed
 as well as the reach, and the two cannot be chosen separately. Measured, the
-model's waypoints come back 14.3 mm apart, which asks for more than the arm's
+model's waypoints come back 14.6 mm apart, which asks for more than the arm's
 own top speed and fourteen times the speed the examiner's push macro moves at.
 
-![At the examiner's fixed waypoint period of 50 milliseconds, the spacing of the waypoints is the speed: 1 mm apart is the push macro's speed, 10 mm apart is the fastest the arm moves, and the model's own answers come back 14.3 mm apart.](../../images/pushing-the-glasses-apart/a-foundation-model-as-it-downloads/smolvla-the-spacing-is-the-speed.png)
+![At the examiner's fixed waypoint period of 50 milliseconds, the spacing of the waypoints is the speed: 1 mm apart is the push macro's speed, 10 mm apart is the fastest the arm moves, and the model's own answers come back 14.6 mm apart.](../../images/pushing-the-glasses-apart/a-foundation-model-as-it-downloads/smolvla-the-spacing-is-the-speed.png)
 
 Nothing in this solution clips that to something gentler, because a gentler
 limit would be a number chosen to make this solution look better and this

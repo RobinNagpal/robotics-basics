@@ -318,7 +318,7 @@ large as well as high.
 
 Of the 80 pushes in that run that did touch something, 69 jammed. That is the
 other half of the measurement and it has the same cause: the waypoints come
-back 14.3 mm apart, and the examiner consumes one every 50 milliseconds, so
+back 14.6 mm apart, and the examiner consumes one every 50 milliseconds, so
 they ask for the jaw to travel at more than the arm's own top speed and
 fourteen times the speed the push macro uses. A jaw arriving at a glass that
 fast wedges against it rather than sliding it along, and that is where the

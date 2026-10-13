@@ -139,10 +139,10 @@ room and still cannot be picked up properly.
 
 ### The glasses move as little as possible
 
-![A crowded pair of glasses at the start, then the same pair parted by moving each glass 16 mm, then the same pair parted by moving one glass 150 mm: both endings give each glass its room.](../../images/pushing-the-glasses-apart/the-target-layout/layout-least-movement.png)
+![A crowded pair of glasses at the start, then the same pair parted by moving each glass 19 mm, then the same pair parted by moving one glass 150 mm: both endings give each glass its room.](../../images/pushing-the-glasses-apart/the-target-layout/layout-least-movement.png)
 
 The middle row of the picture is a crowded pair: two narrow glasses with only
-5 mm of daylight between them. The top row parts them by moving each one 16 mm.
+5 mm of daylight between them. The top row parts them by moving each one 19 mm.
 The bottom row parts them by pushing one glass 150 mm to open table. Both
 endings satisfy the three conditions above.
 

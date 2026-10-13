@@ -145,7 +145,7 @@ not the same quantity: a push that spreads a little room over three glasses
 scores higher by the first and lower by the second than one that finishes a
 single glass outright.
 
-![One table, two legal pushes on it, and the two numbers each push earns: the push that frees two glasses gains 30 mm of room over the table, and the push that frees none gains 60 mm.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-the-label-is-not-the-score.png)
+![One table, two legal pushes on it, and the two numbers each push earns: the push that frees two glasses gains 42 mm of room over the table, and the push that frees none gains 60 mm.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-the-label-is-not-the-score.png)
 
 Both figures in that picture are arithmetic over the examiner's own room test
 and the planner's own shortfall, and the script that drew it prints them. The

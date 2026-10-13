@@ -118,7 +118,7 @@ has the full numbers with every column.
 | **5. [A foundation model as it downloads](06_a-foundation-model-as-it-downloads.md)** | 1 (0–1) | 48 (46–51) | 12 (10–14) | Its 48 racked glasses are exactly the 48 that already had room, so its pushes achieve nothing at all. The trajectories it returns hold the jaw about 200 mm above the table. It is not choosing badly among pushes; it is mostly not arriving at the table. That is the domain gap arriving exactly as predicted. |
 | **6. [The same model, fine-tuned here](07_the-same-model-fine-tuned-here.md)** | 1 (0–2) | 56 (50–65) | 40 (33–44) | The training brought the jaw down to the table without teaching it where to put the jaw down. About two of its pushes in three are blocked coming down, and the glasses that go over are what that costs. |
 
-![Glasses racked against glasses toppled, one point for each of the six, with the three geometry-driven solutions together in the bottom right corner and the three that produce the push themselves far away from it.](../../images/pushing-the-glasses-apart/how-the-six-compare/six-racked-against-toppled.png)
+![Glasses racked against glasses toppled, one point for each of the six: solutions 1 and 2 share a single point in the bottom right because they reach the same glasses, the world model sits far to the right and well above them, and the three that produce the push themselves are poorer on both axes at once.](../../images/pushing-the-glasses-apart/how-the-six-compare/six-racked-against-toppled.png)
 
 Three results in that table are worth more than the others.
 

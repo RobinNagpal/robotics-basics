@@ -73,7 +73,7 @@ CHUNK = 50                                   # the actions in one answer
 
 # 05-smolvla-as-it-downloads/asking.json, over all three evaluation runs.
 ASKED = 1855                                 # "asked"
-STEP_MM = 14.3                               # "step_mm_median"
+STEP_MM = 14.6                               # "step_mm_median"
 LOWEST_MM = 209.1                            # "lowest_mm_median"
 
 # 05-smolvla-as-it-downloads/results.json, "each"[2]: the run whose push count
@@ -137,7 +137,7 @@ def _check() -> None:
     assert PUSH_STEP_MM == 1.0, PUSH_STEP_MM
     assert TOP_STEP_MM == 10.0, TOP_STEP_MM
     assert STEP_MM > TOP_STEP_MM, (STEP_MM, TOP_STEP_MM)
-    assert round(STEP_MM / PUSH_STEP_MM, 1) == 14.3
+    assert round(STEP_MM / PUSH_STEP_MM, 1) == 14.6
     print(
         f"  the frame is {2 * HALF_FRAME_MM:.0f} mm across, centred on {VIEW_CENTRE_MM};\n"
         f"  the jaw parks at {PARK_MM} and clips to {tuple(round(v, 1) for v in CLIPPED_MM)};\n"

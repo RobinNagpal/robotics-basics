@@ -76,7 +76,7 @@ and the measured shape of those answers is the result of this solution. The
 median answer's lowest point is 217 mm above the table. Five of this table's
 six glasses are shorter than that, so the jaw passes over them without touching
 anything. The same answer travels 868 mm across the table, which is further
-than the picture's frame is wide, in waypoints 14.3 mm apart — more than the
+than the picture's frame is wide, in waypoints 14.6 mm apart — more than the
 arm's own top speed, and fourteen times the speed a push macro moves at.
 
 So what the examiner records is a push that happened and touched nothing. That

@@ -360,4 +360,4 @@ said yes on the strength of a number nobody had.
 - [The six solutions](../03_the-six-solutions/01_how-the-six-compare.md) — what each one puts between the
   measurements and the pushes.
 
-← [The target layout — where the glasses should end up](04_the-target-layout.md) · [The six solutions — same table, six ways to push](../03_the-six-solutions/01_how-the-six-compare.md) →
+← [The target layout — where the glasses should end up](04_the-target-layout.md) · [Questions and answers — the exact sizes of a look, a push and a run](06_questions-and-answers.md) →

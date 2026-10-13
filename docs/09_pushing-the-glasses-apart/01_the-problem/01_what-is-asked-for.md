@@ -331,7 +331,7 @@ up from where the push aimed it, and how many were refused.
 
 ## 11. Where to go next
 
-Four documents describe what every answer shares, and they are worth reading
+Five documents describe what every answer shares, and they are worth reading
 before any of the six.
 
 - [What goes in and what comes out](02_what-goes-in-and-what-comes-out.md) —
@@ -344,6 +344,9 @@ before any of the six.
 - [Pushing without toppling](05_pushing-without-toppling.md) — the height limit
   that decides whether a glass slides or tips, and the loop of plan, feel and
   look again.
+- [Questions and answers](06_questions-and-answers.md) — the exact shape of a
+  look and of a push, how many of each a solution may spend, and how many times
+  the whole set is run.
 
 Then the six answers themselves:
 

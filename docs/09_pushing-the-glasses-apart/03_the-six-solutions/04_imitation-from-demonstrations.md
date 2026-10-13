@@ -124,32 +124,32 @@ waypoints became the labels, and the file is quietly out of date.
 
 ## 4. What it scored
 
-All six solutions are given the same 50 tables holding 251 glasses, of which 193
+All six solutions are given the same 50 tables holding 251 glasses, of which 203
 have no room at the start. The teacher's row is shown beside this one, because
 student against teacher is what this pairing is for. This solution is run
 several times and the figure shown is the middle one.
 
 | | tables done | tables wrong | glasses racked | toppled | pushes |
 |---|---|---|---|---|---|
-| this solution (ACT) | 3 | 1 | 68 | 1 | 643 |
-| its teacher, the ranked geometry | 31 | 0 | 185 | 0 | 229 |
+| this solution (ACT) | 2 | 11 | 63 | 12 | 438 |
+| its teacher, the ranked geometry | 14 | 1 | 107 | 1 | 182 |
 
-**The student fell far short of its teacher**, finishing 3 tables against 31 and
-spending nearly three times the pushes to do it. It also toppled a glass, which
-the geometry never does.
+**The student fell far short of its teacher**, finishing 2 tables against 14 and
+spending nearly two and a half times the pushes to do it. It also toppled 12
+glasses where the geometry topples one.
 
 The reason was measured rather than guessed, and it is specific. The policy
 places the start of a push roughly right — within a centimetre or two of where
-the teacher put the fingertips — and gets the heading about thirty degrees out.
+the teacher put the fingertips — and gets the heading 22 to 27 degrees out.
 The jaw then meets a neighbour on the way down instead of reaching the glass it
 was aiming at, and the push is reported blocked with nothing moved.
 
-![The teacher's heading and a heading thirty degrees off it, with the jaw's own 270 mm body drawn on both: the teacher's clears the neighbour and the policy's comes down on it.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-a-heading-thirty-degrees-out.png)
+![The teacher's heading and a heading twenty-five degrees off it, with the jaw's own 266 mm of tool drawn on both: the teacher's clears the neighbour and the policy's comes down on it.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-what-the-heading-error-does.png)
 
-Thirty degrees sounds survivable and is not, because what has to be clear of a
+Twenty-five degrees sounds survivable and is not, because what has to be clear of a
 neighbour is not the short path the glass travels but the whole jaw standing
 behind it. A neighbour close enough to crowd a glass is close enough to leave
-only a narrow window of legal headings, and a thirty-degree error is wider than
+only a narrow window of legal headings, and an error of that size is wider than
 the window.
 
 The error is the averaging rather than a shortage of examples. Fitting the

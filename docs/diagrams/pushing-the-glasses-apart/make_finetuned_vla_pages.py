@@ -70,12 +70,12 @@ from matplotlib.patches import Circle, Rectangle
 
 # bench/bench.py
 WAYPOINT_MS = 50.0        # WAYPOINT_PERIOD = 0.05 s
-PUSH_HEIGHT_MM = 50.0     # PUSH_HEIGHT = LOWEST_GRIP = 0.050
+PUSH_HEIGHT_MM = 75.0     # bench/bench.py PUSH_HEIGHT: as low as the rolled hand goes
 TRAVEL_HEIGHT_MM = 300.0  # TRAVEL_HEIGHT = 0.30
 FEEL_SPEED_MM_S = 10.0    # FEEL_SPEED = 0.01 m/s
 PUSH_SPEED_MM_S = 20.0    # PUSH_SPEED = 0.02 m/s
-FINGER_LENGTH_MM = 120.0  # FINGER_LENGTH = 0.12
-FINGER_HEIGHT_MM = 30.0   # FINGER_HEIGHT = 0.03
+FINGER_LENGTH_MM = 57.0   # bench/bench.py FINGER_LENGTH: the fingertip pad
+FINGER_HEIGHT_MM = 63.4   # bench/bench.py FINGER_HEIGHT, the leading stretch on its side
 APPROACH_GAP_MM = 10.0    # 01-one-fixed-nudge/plan.py APPROACH_GAP = 0.010
 
 # 06-smolvla-fine-tuned/chunks.py CHUNK, which is SmolVLA's own chunk_size.
@@ -83,31 +83,31 @@ CHUNK = 50
 
 # 06-smolvla-fine-tuned/demonstrations-check/collected.json: the teacher's own
 # pushes, cut and resampled, over the 50 tuning tables.
-TEACHER_ACROSS_MM = 89.1
-TEACHER_STEP_MM = 1.8
+TEACHER_ACROSS_MM = 74.9
+TEACHER_STEP_MM = 1.5
 
 # 06-smolvla-fine-tuned/asking.json, over the 3 evaluation runs of the
 # held-out tables.
-FITTED_ACROSS_MM = 315.2
-FITTED_STEP_MM = 4.5
-FITTED_LOWEST_MM = 50.0
+FITTED_ACROSS_MM = 320.4
+FITTED_STEP_MM = 4.6
+FITTED_LOWEST_MM = 75.0
 
 # 05-smolvla-as-it-downloads/asking.json, the same three figures untrained.
-BORROWED_ACROSS_MM = 844.2
-BORROWED_STEP_MM = 14.3
-BORROWED_LOWEST_MM = 209.1
+BORROWED_ACROSS_MM = 868.2
+BORROWED_STEP_MM = 14.6
+BORROWED_LOWEST_MM = 217.4
 
 # 06-smolvla-fine-tuned/correction/training.json "history": how far the model's
 # waypoints land from the teacher's on tuning tables nothing was fitted on.
 # Step 0 is the correction at zero, which is solution 5 exactly.
-UNTRAINED_MM = 320.7
-UNTRAINED_WORST_MM = 658.4
-HALF_TRAINED_MM = 84.3
-TRAINED_MM = 90.0
+UNTRAINED_MM = 331.2
+UNTRAINED_WORST_MM = 574.2
+HALF_TRAINED_MM = 106.7
+TRAINED_MM = 84.8
 
 # 06-smolvla-fine-tuned/results.json "each": pushes that were stopped by a
 # glass while the jaw was still coming down, against every push that run made.
-BLOCKED_PER_RUN = ((247, 400), (259, 386), (275, 461))
+BLOCKED_PER_RUN = ((223, 369), (227, 351), (240, 374))
 
 # The glass zone, from rack/layout.py by way of diagram_style.
 ZONE_WIDE_MM = GLASS_ZONE[1] - GLASS_ZONE[0]
@@ -132,8 +132,8 @@ CHUNK_SECONDS = (CHUNK - 1) * PERIOD_S
 # The resampling is the only thing that changes the speed, so the spacing a
 # demonstration ends up with has to be the one the collected set reports.
 assert round(DEMO_STEP_MM, 1) == TEACHER_STEP_MM, (DEMO_STEP_MM, TEACHER_STEP_MM)
-assert round(DEMO_SPEED_MM_S) == 36, DEMO_SPEED_MM_S
-assert round(FITTED_SPEED_MM_S) == 90, FITTED_SPEED_MM_S
+assert round(DEMO_SPEED_MM_S) == 31, DEMO_SPEED_MM_S
+assert round(FITTED_SPEED_MM_S) == 92, FITTED_SPEED_MM_S
 assert DEMO_STEP_MM > TEACHER_PUSH_STEP_MM > TEACHER_FEEL_STEP_MM
 
 # The examiner holds a commanded path to the jaw's top speed. That cap never
@@ -143,9 +143,11 @@ TOP_SPEED_MM_S = 200.0                                # bench/bench.py TOP_SPEED
 assert DEMO_SPEED_MM_S < FITTED_SPEED_MM_S < TOP_SPEED_MM_S
 assert BORROWED_STEP_MM / PERIOD_S > TOP_SPEED_MM_S, BORROWED_STEP_MM
 
-# "still three times too far"
+# "still several times too far". The caption prints the ratio rather than a
+# word for it, so the band here only has to catch a figure that has stopped
+# meaning "much longer than the teacher's".
 TOO_LONG_BY = FITTED_ACROSS_MM / TEACHER_ACROSS_MM
-assert 3.0 <= TOO_LONG_BY <= 4.0, TOO_LONG_BY
+assert 3.0 <= TOO_LONG_BY <= 6.0, TOO_LONG_BY
 
 # "the borrowed model is clear of every glass but the tallest"
 assert MIDDLING[0] < BORROWED_LOWEST_MM < KIND_TALLEST, BORROWED_LOWEST_MM
@@ -156,14 +158,16 @@ assert FITTED_LOWEST_MM == PUSH_HEIGHT_MM
 assert UNTRAINED_MM > ZONE_WIDE_MM, (UNTRAINED_MM, ZONE_WIDE_MM)
 assert HALF_TRAINED_MM < UNTRAINED_MM / 3.0
 
-# "about three of its pushes in five are blocked on the way down" — the share
+# "about two of its pushes in three are blocked on the way down" — the share
 # is taken per run and the middle one reported, because a median blocked count
 # over one set of runs and a median total over another do not divide.
 BLOCKED_SHARES = sorted(blocked / total for blocked, total in BLOCKED_PER_RUN)
 BLOCKED_SHARE = BLOCKED_SHARES[1]
 assert 0.55 <= BLOCKED_SHARE <= 0.68, BLOCKED_SHARES
-# Which is why the picture says three in five and not two thirds.
-assert abs(BLOCKED_SHARE - 0.6) < abs(BLOCKED_SHARE - 2 / 3), BLOCKED_SHARE
+# Which is why the picture says two thirds and not three in five. The guard is
+# here so that the words in the prose cannot drift away from the measurement:
+# whichever of the two the documents say has to be the nearer one.
+assert abs(BLOCKED_SHARE - 2 / 3) < abs(BLOCKED_SHARE - 0.6), BLOCKED_SHARE
 
 
 # --------------------------------------------------------------------------- #
@@ -305,7 +309,10 @@ def the_same_push_in_fewer_waypoints() -> None:
     fixed period apart, that is the speed. The two rows are the same distance
     long on purpose: only the dots differ.
     """
-    figure, axis = new(11.8, 3.3)
+    # Wider than the picture needs for its drawing, because the two row titles
+    # are sentences and the push they describe is only a few centimetres of
+    # table. The paper has to fit the words, not the millimetres.
+    figure, axis = new(13.6, 3.3)
     bare(axis)
 
     teacher = np.arange(0.0, TEACHER_ACROSS_MM + 1e-9, TEACHER_PUSH_STEP_MM)
@@ -401,7 +408,12 @@ def where_the_jaw_comes_down() -> None:
 
     # Over the glass: the block meets the rim on the way down and stops there.
     bad_tip = half_rim
-    assert bad_tip - FINGER_LENGTH_MM < -half_rim, bad_tip
+    # The fingertips have to be over the glass for the descent to be stopped by
+    # it, which means the stretch they occupy overlaps the rim. It does not
+    # have to reach right across the glass: the real hand's fingertips are
+    # shorter than the blade this picture once drew, and touching the rim
+    # anywhere is enough to stop the hand coming down.
+    assert bad_tip - FINGER_LENGTH_MM < half_rim and bad_tip > -half_rim, bad_tip
     blocked_z = height + FINGER_HEIGHT_MM / 2.0
     jaw(bad_tip, blocked_z, WARN)
     axis.annotate("", xy=(bad_tip - FINGER_LENGTH_MM / 2.0, blocked_z + 26),

@@ -82,13 +82,14 @@ PUSH_TYPICAL = 11.8
 PUSH_LONGEST = 31.8
 CROWDED_OF = (210, 300, 60)
 
-# The jaw, as code/src/09_pushing-the-glasses-apart/bench/bench.py builds it. Its fingers are 30 mm tall and
-# ride with their middle at LOWEST_GRIP, so the face that meets the glass runs
-# from 35 to 65 mm. A tapered glass is wider higher up, so it touches the top
-# edge of that face first, and examiner's JAW_TOP says so in as many words: this,
-# not PUSH_HEIGHT, is how high the glass is really pushed.
-JAW_TOP = 65.0
-JAW_WIDTH = 28.0
+# The hand, as code/src/09_pushing-the-glasses-apart/bench/bench.py builds it.
+# It is a real Robotiq 2F-85 turned on its side, whose leading stretch is 63 mm
+# tall and rides with its middle at 75 mm, so the face that meets the glass runs
+# from 43 to 107 mm. A tapered glass is wider higher up, so it touches the top
+# edge of that face first, and the examiner's JAW_TOP says so in as many words:
+# this, not PUSH_HEIGHT, is how high the glass is really pushed.
+JAW_TOP = 106.7
+JAW_WIDTH = 27.0
 
 # What problem 2 hands over, as bench.py models it: one standard deviation of
 # 0.5 mm on a glass's position and 2.5 mm on a width. The position figure is

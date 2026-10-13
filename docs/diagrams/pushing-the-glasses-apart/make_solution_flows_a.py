@@ -62,8 +62,8 @@ from matplotlib.transforms import Bbox
 # All of these are read out of code/src/, and the constant that holds each one
 # is named so that a reader can check it in one step.
 
-GRIP_ROOM_MM = 70          # bench/bench.py GRIP_ROOM = 0.070
-JAW_TOP_MM = 65            # bench/bench.py JAW_TOP = PUSH_HEIGHT + FINGER_HEIGHT / 2
+GRIP_ROOM_MM = 76.2       # bench/bench.py GRIP_ROOM = 0.07621, the open hand's own reach
+JAW_TOP_MM = 106.7        # bench/bench.py JAW_TOP = PUSH_HEIGHT + FINGER_HEIGHT / 2
 MU_LOWEST = 0.2            # 01-one-fixed-nudge/plan.py MU_LOWEST
 MU_HIGHEST = 0.5           # 01-one-fixed-nudge/plan.py MU_HIGHEST
 PROBE_MM = 5               # 01-one-fixed-nudge/plan.py PROBE = 0.005

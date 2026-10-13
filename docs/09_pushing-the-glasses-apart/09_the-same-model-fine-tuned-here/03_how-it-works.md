@@ -245,7 +245,7 @@ waypoints a fixed period apart, so a chunk is two and a half seconds of motion
 whatever it contains. The teacher's push, once the examiner has sampled it, is
 a hundred waypoints or more, because the teacher feels forward at 10 mm/s and
 pushes at 20. Fitting that push into a chunk means resampling it, and that
-makes the student's jaw travel about 36 mm/s where its teacher travelled at 10
+makes the student's jaw travel about 31 mm/s where its teacher travelled at 10
 and 20. So **the student does not merely imitate its teacher's pushes; it makes
 them faster**, and the glasses are pushed by a jaw with more momentum behind
 it. It is not free to go as fast as it likes — the examiner holds a commanded
@@ -282,12 +282,18 @@ formed and aimed at nothing in particular is exactly that kind of failure.
 That gap has now been measured, and it is wider than the prose suggested.
 Before the training has taken a single step the correction is still zero, so
 the model is exactly solution 5, and asking it for a chunk on tuning tables
-puts its waypoints a median of **320 mm** from the teacher's, and 658 mm away
+puts its waypoints a median of **331 mm** from the teacher's, and 574 mm away
 at worst. The glass zone is 320 mm by 360 mm. So the borrowed model's answer is
 not a push aimed at the wrong glass; it is a smooth motion somewhere else on
-the table entirely. Five hundred steps of training cut that to 84 mm.
+the table entirely. Five hundred steps of training cut that to 107 mm.
 
-![The glass zone drawn to scale with a teacher's push on it, and two rings round that push: one of 320 mm, the median distance from the teacher's waypoints to the untrained model's, which is as wide as the zone itself, and one of 84 mm, the same measurement after five hundred steps of training.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/finetuned-how-far-the-answer-was.png)
+![The glass zone drawn to scale with a teacher's push on it, and two rings round that push: one of 331 mm, the median distance from the teacher's waypoints to the untrained model's, which is wider than the zone itself, and one of 107 mm, the same measurement after five hundred steps of training.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/finetuned-how-far-the-answer-was.png)
+
+The next five hundred steps cut it again, to 85 mm, and that second figure is
+worth more than the first. **The error was still falling when the training
+budget ran out**, so a thousand steps is where this run stopped rather than
+where the method stops improving. Every number this solution reports should be
+read as what a thousand steps buys, not as what fine-tuning can do.
 
 Fine-tuning removes the gap by construction, because the inputs the model is
 fitted on are the inputs it will be asked about. The pale blue of a glass
@@ -299,21 +305,21 @@ simply what a table looks like, as far as the fine-tuned model is concerned.
 be two claims, of which only one held.
 
 The *height* was learned, convincingly. Solution 5 measures its own chunks and
-reports that they come no lower than 209 mm above the table, so the borrowed
+reports that they come no lower than 217 mm above the table, so the borrowed
 model essentially never brings the jaw down to the glasses at all. The
-fine-tuned model's chunks come down to 50 mm, which is the height the gripper
+fine-tuned model's chunks come down to 75 mm, which is the height the gripper
 pushes at. That is the model having learned from this examiner's own pushes
 that a push happens on the table rather than above it, and it is the clearest
 single sign in these measurements that the domain gap closed.
 
-The *length* was not. The fine-tuned chunks still cover about 315 mm of table
-where the teacher's covered 89, and the jaw moves through them at a median of
-about 90 mm/s where the demonstrations run at 36. That is better than solution
-5's 844 mm, and still three times too far. So the model learned where a push
-happens long before it learned how far one goes, and a push three times too
-long on a crowded table is a push into a neighbour.
+The *length* was not. The fine-tuned chunks still cover about 320 mm of table
+where the teacher's covered 75, and the jaw moves through them at a median of
+about 92 mm/s where the demonstrations run at 31. That is better than solution
+5's 868 mm, and still more than four times too far. So the model learned where
+a push happens long before it learned how far one goes, and a push several
+times too long on a crowded table is a push into a neighbour.
 
-![The same table seen from the side with three chunks drawn on it: the borrowed model's, which stays 209 mm up and runs 844 mm across, the fine-tuned model's, which comes down to the 50 mm the jaw pushes at but still runs 315 mm across, and the teacher's, which is at the same height and 89 mm long.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/finetuned-the-height-not-the-length.png)
+![The same table seen from the side with three chunks drawn on it: the borrowed model's, which stays 217 mm up and runs 868 mm across, the fine-tuned model's, which comes down to the 75 mm the jaw pushes at but still runs 320 mm across, and the teacher's, which is at the same height and 75 mm long.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/finetuned-the-height-not-the-length.png)
 
 **Something like friction is absorbed, and this needs care rather than
 celebration.** Nothing in the cell measures friction and the examiner never

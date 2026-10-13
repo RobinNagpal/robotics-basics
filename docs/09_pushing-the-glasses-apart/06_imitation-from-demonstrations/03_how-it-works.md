@@ -295,7 +295,7 @@ the two glasses, touches neither, and spends a push for nothing.
 
 ![Two mirror-image demonstrations, each of which frees a crowded pair, and the chunk halfway between the two, which comes down the gap between the glasses and touches neither of them.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-the-average-of-two-good-pushes.png)
 
-ACT's measured failure has that shape: a heading about thirty degrees away from
+ACT's measured failure has that shape: a heading 22 to 27 degrees away from
 the teacher's, which is close to what averaging the teacher's alternatives
 would give.
 

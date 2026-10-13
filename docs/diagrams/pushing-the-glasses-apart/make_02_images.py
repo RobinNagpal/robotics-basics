@@ -50,7 +50,7 @@ from diagram_style import (
     INK,
     JAW_TOP,
     LABEL_SIZE,
-    LOWEST_GRIP,
+    PUSH_HEIGHT,
     MU_HIGH,
     MU_LOW,
     MUTED,
@@ -415,11 +415,11 @@ def picture_the_friction_ceiling(jobs) -> None:
                               (MU_HIGH, WARN, "-")):
         line.plot(width, (width / 2.0) / mu, color=colour, lw=2.0, ls=style,
                   label=f"mu {mu}" + (", the simulator's own" if mu == TABLE_FRICTION else ""))
-    line.axhline(LOWEST_GRIP, color=INK, lw=1.0, ls=(0, (2, 2)))
+    line.axhline(PUSH_HEIGHT, color=INK, lw=1.0, ls=(0, (2, 2)))
     line.axhline(JAW_TOP, color=INK, lw=1.8)
     line.text(max(drawn) + 1, JAW_TOP + 3.0, f"the jaw's top edge, {JAW_TOP:.0f} mm",
               fontsize=NOTE_SIZE, color=INK, ha="right", va="bottom")
-    line.text(max(drawn) + 1, LOWEST_GRIP - 3.0, f"the jaw's middle, {LOWEST_GRIP:.0f} mm",
+    line.text(max(drawn) + 1, PUSH_HEIGHT - 3.0, f"the jaw's middle, {PUSH_HEIGHT:.0f} mm",
               fontsize=NOTE_SIZE, color=INK, ha="right", va="top")
     # Where each friction's line crosses the push height is the narrowest foot
     # that still slides. Marked at the crossing rather than labelled off to one
@@ -461,7 +461,7 @@ def picture_the_friction_ceiling(jobs) -> None:
     shares = {}
     for label, feet in (("400 glasses drawn from the kind", drawn),
                         (f"the {len(chosen)} the nudge picks", chosen)):
-        for height in (LOWEST_GRIP, JAW_TOP):
+        for height in (PUSH_HEIGHT, JAW_TOP):
             for mu in (MU_LOW, TABLE_FRICTION, MU_HIGH):
                 shares[(label, height, mu)] = (
                     100.0 * sum(topple_height(f, mu) > height for f in feet) / len(feet))
@@ -469,8 +469,8 @@ def picture_the_friction_ceiling(jobs) -> None:
     mus = (MU_LOW, TABLE_FRICTION, MU_HIGH)
     spots = np.arange(len(mus), dtype=float)
     label = "400 glasses drawn from the kind"
-    for offset, height, colour, tag in ((-0.18, LOWEST_GRIP, MUTED,
-                                         f"if the push were at {LOWEST_GRIP:.0f} mm"),
+    for offset, height, colour, tag in ((-0.18, PUSH_HEIGHT, MUTED,
+                                         f"if the push were at {PUSH_HEIGHT:.0f} mm"),
                                         (0.18, JAW_TOP, WARN,
                                          f"at the real {JAW_TOP:.0f} mm")):
         heights = [shares[(label, height, mu)] for mu in mus]
@@ -482,19 +482,19 @@ def picture_the_friction_ceiling(jobs) -> None:
     bars.set_xticklabels([f"mu {mu}" for mu in mus], fontsize=LABEL_SIZE, color=INK)
     bars.set_yticks([0, 20, 40, 60, 80, 100])
     bars.set_ylabel("share that can be pushed at all, per cent", fontsize=LABEL_SIZE, color=INK)
-    bars.set_title("The 400 drawn glasses, and 15 mm of jaw",
+    bars.set_title("The 400 drawn glasses, and the height of the jaw",
                    fontsize=TITLE_SIZE, color=INK, pad=8)
     bars.set_ylim(0, 118)
     bars.legend(fontsize=NOTE_SIZE, loc="upper right", frameon=False)
     plain(bars)
 
     footer(figure, (
-        f"The jaw's middle rides at {LOWEST_GRIP:.0f} mm, but a tapered glass is wider higher up and "
+        f"The jaw's middle rides at {PUSH_HEIGHT:.0f} mm, but a tapered glass is wider higher up and "
         f"meets the jaw's top edge first, so the push lands at {JAW_TOP:.0f} mm."
         f"\nAt mu {MU_HIGH} the rule asks for a wider foot than this kind ever draws, so not one of "
         "the 400 may be pushed at all."))
     figure.subplots_adjust(bottom=0.24, top=0.90)
-    save(figure, "02-what-15-mm-of-jaw-costs.png")
+    save(figure, "02-what-the-jaws-height-costs.png")
     for (label, height, mu), share in shares.items():
         print(f"  {label}, mu {mu}, pushed at {height:.0f} mm: {share:.1f}% can be pushed at all")
     print(f"  the foot a glass needs at {JAW_TOP:.0f} mm: "

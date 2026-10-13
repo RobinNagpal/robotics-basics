@@ -14,7 +14,7 @@ recorded.
 
 A glass slides while the jaw touches it below half its foot width divided by
 the friction, and tips above that. The height that counts is the jaw's **top
-edge** at 65 mm, not the 50 mm its middle rides at, and for a glass whose foot
+edge** at 107 mm, not the 75 mm its middle rides at, and for a glass whose foot
 is narrow enough there is no contact height the arm can offer below the limit.
 The only correct answer for such a glass is to refuse, with the reason
 recorded, which marks the run *correct but incomplete* rather than wrong.
@@ -68,7 +68,7 @@ gave back, and the fourteen that really happened. Four tables are worth tracing,
 and the three described here are among them.
 
 Table 10004 is the ordinary case. The first look reports six readings of one
-kind of glass. Several pairs are closer than the 70 mm of clear room the gripper
+kind of glass. Several pairs are closer than the 76 mm of clear room the gripper
 needs, so nothing can be taken yet, and the planner goes to work on every
 crowded glass in turn.
 
@@ -120,7 +120,7 @@ aiming by arithmetic, manages 1.0 mm and 3.9 mm. **So this solution wins while
 being the less accurate of the two**, and it wins because accuracy is not what
 the task pays for: the geometry knows exactly where a glass will go and not
 whether that makes room, so it pushes, looks and often pushes again. Ninety of
-its 213 pushes are repeats of a push that fell short, against 14 of this
+its 182 pushes are repeats of a push that fell short, against 102 of this
 solution's 114.
 
 The line it loses on is the one that cannot be taken back. **One glass went

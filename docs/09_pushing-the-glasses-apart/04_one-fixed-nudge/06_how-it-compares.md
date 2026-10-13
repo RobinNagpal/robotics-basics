@@ -50,7 +50,7 @@ matter in their own right.
 
 **It has nowhere to stand.** The approach runs along the same line as the
 push, so pushing a glass straight away from its neighbour asks the arm to put
-270 mm of tool where the neighbour is. The honest reading is that **the
+266 mm of tool where the neighbour is. The honest reading is that **the
 approach is a harder constraint than the departure**, and this solution is the
 one that cannot choose its approach at all.
 

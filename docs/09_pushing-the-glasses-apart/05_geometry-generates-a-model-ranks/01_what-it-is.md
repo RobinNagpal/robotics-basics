@@ -67,8 +67,8 @@ in `src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`. The trees
 described below are in `src/09_pushing-the-glasses-apart/02-geometry-ranked`,
 fitted, and run over the same fifty held-out tables as the rule, so that both
 sides see exactly the same candidates and the only difference between the two
-runs is who picks. **The ranker loses that comparison.** It racked 185 of the
-251 glasses in 229 pushes where the printed rule racked 195 in 213, finishing
+runs is who picks. **The ranker does not win that comparison.** It racked 107 of
+the 251 glasses in 182 pushes where the printed rule racked the same 107 in 173, finishing
 two fewer tables and toppling nothing either way; `results.json` is the ranker's
 run and `rule.json` is the rule's. Why it loses is explained in [where it is
 strong and where it breaks](06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks),
@@ -110,22 +110,32 @@ The introduction described how this method generates candidate pushes and lets a
 fitted model choose between them, and the film here shows it doing that on one
 table in the simulator, played at three times real speed.
 
-[Geometry generates and a model ranks, on one table, 33 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/02-geometry-ranked.mp4 "video")
+[Geometry generates and a model ranks, on one table, 8 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/02-geometry-ranked.mp4 "video")
 
-The outcome is the same as the printed rule's on this table: seven pushes, all
-five glasses racked, nothing knocked over. What differs is not the outcome but
-the distance. The glasses are moved 288 mm in total here against the fixed
-nudge's 145 mm on the same table, so the ranker is choosing longer pushes to
-reach the same place. One table proves nothing on its own, but it is a fair
-picture of the pair over all fifty, where this solution finishes two tables
-fewer than the rule it was meant to improve.
+The table holds six glasses where the average is five, and five of those six
+have no room at the start, which is the usual state of these tables.
 
-Every one of the six solutions is filmed on this same table, number 10003 of
+In the film this solution makes the same two pushes the printed rule makes,
+racks the same one glass and refuses the same five. It describes the refusals
+slightly differently — two tip before they slide, two tipped when tried, and
+one is still without room after being pushed — but the table ends in the same
+place.
+
+That is the result rather than a coincidence, and it is the point of the
+comparison running through this document. Ranking candidates can only help when
+there is more than one candidate worth having. On a table where the hand's own
+width and height rule out almost every push, the ranker and the printed rule
+are choosing from the same very short list, so they choose the same thing.
+
+Every one of the six solutions is filmed on this same table, number 10025 of
 the fifty the examiner holds back, so the six films can be watched against each
-other. The table was chosen because it stands for the whole run rather than
-because it flatters anybody, which is what [one row per
+other. The table was chosen to be **typical rather than flattering**, by a rule
+written down before it was applied: every one of the six had to reach its own
+commonest outcome there and rack at least one glass, and exactly one table of
+the fifty does both. Choosing that way needed [one row per
 table](../01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) in the
-scorecard is for, and all six films are collected in [the six solutions side by
+scorecard, because a total over fifty tables cannot say which single table
+stands for the rest. All six films are collected in [the six solutions side by
 side](../10_the-results.md).
 
 The film shows the method at work, and the next section says which problem

@@ -106,17 +106,27 @@ The arm does not get to choose `h` freely either, and the value to put in the
 rule is not the obvious one.
 
 The jaw is a solid object with a height of its own. Its middle rides as low as
-the gripper can go, which is 50 mm above the table, and the fingers are 30 mm
-tall, so the jaw's top edge stands at 65 mm. Those are the gripper's own
-numbers and they do not change between glasses. What changes is which part of
+the hand can go, which is 75 mm above the table, and its leading stretch is
+63 mm tall, so the jaw's top edge stands at 107 mm. Those are the gripper's own
+numbers and they do not change between glasses. Both of them are larger than
+they would be for a thin blade, and the reason is worth carrying through this
+page: the hand is a real Robotiq 2F-85, it is 139 mm across its fingers when
+held the way the cell grips, and the glasses on these tables stand 150 mm apart
+at the closest. So it has to be turned a quarter turn onto its side to fit
+between them at all, and on its side it is 27 mm across but reaches 69 mm below
+its own middle. **Turning it buys the room to get in and costs the height**,
+and the height is what this section is about. What changes is which part of
 the jaw the glass meets, and **a glass that is wider higher up meets the top
 edge before any other part of the jaw touches it**. The tapered kind is wider
 higher up by definition, so for those glasses the contact is at the top edge.
 
-So `h` is 65 mm for a glass of that shape, not the 50 mm the arm aims at. The
-difference is 15 mm on a limit that is itself often only a few tens of
+So `h` is 107 mm for a glass of that shape, not the 75 mm the arm aims at. The
+difference is 32 mm on a limit that is itself often only a few tens of
 millimetres, so it is not a rounding question: checking the rule at the middle
-of the jaw declares far more glasses safe than really are. And the mistakes all
+of the jaw declares far more glasses safe than really are. Measured across 400
+drawn tapered glasses at the friction the simulator uses, checking at the
+middle calls about one in eleven safe to push and checking at the top edge
+calls none of them safe. And the mistakes all
 point the same way.
 Every glass that the lenient check wrongly admits is a glass that will be
 touched above its limit and will go over, while the stricter check's mistakes
@@ -131,7 +141,7 @@ Put the two previous sections together and a third consequence follows that is
 easy to miss, because it looks like a gap rather than an answer.
 
 The limit `a / μ` is small when the foot is narrow or the friction is high. It
-can be smaller than 65 mm, and it can even be smaller than the 50 mm the jaw
+can be smaller than 107 mm, and it can even be smaller than the 75 mm the jaw
 rides at, which is already the lowest the gripper reaches without fouling the
 table. For such a glass there is no contact height the arm can offer that is
 below the limit. The glass tips before it slides, whatever the arm does.

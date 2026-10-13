@@ -52,7 +52,7 @@ it downloads the weights and makes the pushes on the same 50 held-out tables as
 the other five, and
 [its README](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/README.md)
 carries the numbers. It did badly, which was expected, and it did badly in a
-way nobody here expected: of the 754 pushes it made in a run, about nine in ten
+way nobody here expected: of the 620 pushes it made in a run, about eight in ten
 never touched a glass at all, because the trajectories it returns stay roughly
 200 mm above the table. The pages that follow report that rather than the
 failure the design argued for.
@@ -85,21 +85,33 @@ The introduction described what it means to run a large borrowed model here with
 no fitting of any kind, and the film here shows that model on one table in the
 simulator, played at three times real speed.
 
-[A large borrowed model used exactly as it downloads, on one table, 32 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/05-smolvla-as-it-downloads.mp4 "video")
+[A large borrowed model used exactly as it downloads, on one table, 38 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/05-smolvla-as-it-downloads.mp4 "video")
 
-The run spends all sixteen of the table's pushes and **moves the glasses no
-measurable distance at all**. One of the five is racked, and only because it
-already had room before anything was pushed; the other four are refused. In the
-film the jaw sweeps across the table again and again at a height that never
-reaches a glass, which is the plainest possible picture of a model whose idea of
-where the work happens comes from somebody else's robot.
+The table holds six glasses where the average is five, and five of those six
+have no room at the start, which is the usual state of these tables.
 
-Every one of the six solutions is filmed on this same table, number 10003 of
+In the film the jaw sweeps across the table sixteen times without ever reaching
+a glass, because the borrowed model's chunks come back about 200 mm above the
+table. One of the six glasses is racked, and only because it already had room
+before anything was pushed. This is the longest of the six films and the
+emptiest, and that is the result rather than a fault in the recording: it is
+the plainest possible picture of a model whose idea of where the work happens
+comes from somebody else's robot.
+
+This solution draws its answer rather than computing it, so the film is one
+draw rather than an average. The scored runs on this table racked one glass
+each and spent thirteen pushes on average, against the film's sixteen, so the
+film is a slightly busier draw than the middle one.
+
+Every one of the six solutions is filmed on this same table, number 10025 of
 the fifty the examiner holds back, so the six films can be watched against each
-other. The table was chosen because it stands for the whole run rather than
-because it flatters anybody, which is what [one row per
+other. The table was chosen to be **typical rather than flattering**, by a rule
+written down before it was applied: every one of the six had to reach its own
+commonest outcome there and rack at least one glass, and exactly one table of
+the fifty does both. Choosing that way needed [one row per
 table](../01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) in the
-scorecard is for, and all six films are collected in [the six solutions side by
+scorecard, because a total over fifty tables cannot say which single table
+stands for the rest. All six films are collected in [the six solutions side by
 side](../10_the-results.md).
 
 The film shows a capable model acting in the wrong place, and the next section
@@ -108,7 +120,7 @@ says which problem using one unchanged is meant to answer.
 ## 3. The problem this solves
 
 [The problem](../01_the-problem/01_what-is-asked-for.md) asks for a jaw trajectory, and then another, until
-every glass on the table has about 70 mm of clear room in every direction and
+every glass on the table has about 76 mm of clear room in every direction and
 nothing has been knocked over. Choosing those trajectories is hard because a
 push does not go where it was aimed, for the reasons [pushing without
 toppling](../01_the-problem/05_pushing-without-toppling.md) sets out in full.

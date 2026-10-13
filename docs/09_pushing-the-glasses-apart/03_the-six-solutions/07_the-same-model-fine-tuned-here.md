@@ -109,35 +109,35 @@ reports carries that caveat**.
 
 ## 4. What it scored
 
-All six solutions are given the same 50 tables holding 251 glasses, of which 193
+All six solutions are given the same 50 tables holding 251 glasses, of which 203
 have no room at the start. Its partner's row is shown beside it, because the
 pair is the point. Both are run several times and the figure shown is the middle
 one.
 
 | | tables done | tables wrong | glasses racked | toppled | pushes |
 |---|---|---|---|---|---|
-| this solution, fine-tuned | 4 | 38 | 77 | 46 | 400 |
-| the same model, as it downloads | 0 | 5 | 56 | 6 | 754 |
+| this solution, fine-tuned | 1 | 36 | 56 | 40 | 369 |
+| the same model, as it downloads | 1 | 9 | 48 | 12 | 620 |
 
 **The training worked and the score got worse.** Both halves of that sentence
 are true, and reading only one of them misreads the pair.
 
 The training worked in the sense that matters, and the measurement is exact.
-The borrowed model's chunks stop a median of 209 mm above the table; the
-fine-tuned model's come down to a median of 50 mm, which is precisely the
-height the jaw has to ride at to move anything. It finishes four tables where
-its partner finishes none, and it racks 77 glasses against 56 in a little over
-half the pushes.
+The borrowed model's chunks stop a median of 217 mm above the table; the
+fine-tuned model's come down to a median of 75 mm, which is precisely the
+height the jaw has to ride at to move anything. It racks 56 glasses against 48
+in a little over half the pushes, and both finish about one table in fifty.
 
 The score got worse because it learned the height a push happens at without
 learning where to put the jaw down.
 
 ![The same pushes sorted into the ones that never touched anything, the ones blocked coming down and the ones that reached a glass, for the borrowed model and for the fine-tuned one.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/smolvla-finetuned-where-the-pushes-went.png)
 
-In the middle run, 247 of its 400 pushes are blocked on the way down, where its
-partner has none blocked at all, and it topples 46 glasses where the geometry
-topples none. Its partner stays out of the "wrong" column by never reaching a
-glass: it hovers, achieves little, and is marked correct but incomplete.
+In the middle run, 223 of its 369 pushes are blocked on the way down, where its
+partner has none blocked at all, and it topples 40 glasses where the geometry
+topples one. Its partner stays out of the "wrong" column largely by never
+reaching a glass: it hovers, achieves little, and is usually marked correct but
+incomplete.
 
 So the gap between the two is not a measurement of training buying nothing. It
 is a measurement of **training buying enough competence to act and not enough to
@@ -208,9 +208,13 @@ the states the student actually visits, not to collect more of the same
 demonstrations.
 
 If you read this page for one reason, read it for the pair with its partner.
-Same library, same model, same weights, same examiner, same input, same output,
-same marking, same cost per push, and the only difference is the training. And
-read the result carefully, because the obvious reading of it is wrong.
+Same library, same model, same weights, same examiner, same input, same output
+and the same marking, and the only difference is the training. One forward pass
+costs the same for both, 285 ms against 292, but this solution needs about 1.4
+passes a push where its partner needs 1.0, because 421 of its 1,515 answers aim
+at a glass the loop has already refused and are thrown away. **Fine-tuning
+changed what the model answers, not what it costs to ask.** And read the result
+carefully, because the obvious reading of it is wrong.
 
 The code is in
 [`src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/`](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned)

@@ -290,7 +290,7 @@ convenience but the deciding property.
 The score itself is deliberately plain arithmetic over the predicted table, and
 it is short enough to state in full. Add up, over every glass, how much clear
 room is still missing at the end — how far each neighbour's edge reaches inside
-the 70 mm that glass needs. Charge a tenth of a millimetre of that missing room
+the 76 mm that glass needs. Charge a tenth of a millimetre of that missing room
 for every millimetre the jaw travels, so that the shortest push which does the
 job wins. One more term keeps the arithmetic honest: the model also returns how
 likely the jaw is to be blocked on the way down, and a push that is blocked

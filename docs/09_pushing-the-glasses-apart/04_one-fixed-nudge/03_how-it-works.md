@@ -64,16 +64,18 @@ The loop needs an error, so the error has to be defined before anything else,
 and the definition contains the one trap in this problem that catches almost
 everybody.
 
-To close on a glass the open jaw has to get round it: a finger and a pad on
-each side, with the jaw opened wider than the glass before it closes. Added up
-from the glass's middle outwards, that comes to about **70 mm of clear room in
-every direction**. Those are the gripper's own numbers, so the project is
-allowed to write them down, and the examiner holds the 70 mm as a constant and
+To close on a glass the open hand has to get round it: a finger on each side,
+with the hand opened wider than the glass before it closes. The room that needs
+is not half the opening, which is the easy mistake. It is how far the widest
+part of the open hand reaches from its own middle, and on this cell's gripper
+the fingers stand further out than the pads that do the gripping. Measured that
+way it comes to **76 mm of clear room in every direction**. Those are the gripper's own numbers, so the project is
+allowed to write them down, and the examiner holds the 76 mm as a constant and
 applies the test like this: **a glass has room when every other glass's edge is
-at least 70 mm from its middle.**
+at least 76 mm from its middle.**
 
 Read that sentence twice, because the word *edge* is what makes the test
-asymmetric. The 70 mm is measured from one glass's middle out to another
+asymmetric. The 76 mm is measured from one glass's middle out to another
 glass's **edge**, and a glass's edge is half its own widest width out from its
 own middle. So what a glass needs from a neighbour depends on **how wide the
 neighbour is, not on how wide it is itself**. A narrow glass standing beside a
@@ -81,12 +83,12 @@ wide one can be badly short of room while the wide one, at the very same
 distance, has room to spare, because the wide one's rim reaches much further
 into the gap than the narrow one's does.
 
-![The same pair of glasses from the top at four separations, showing that the wide one comes free before the narrow one does: each glass carries the 70 mm ring the open jaw needs, and a glass is blocked while its neighbour's edge is inside that ring, so the narrow glass, whose neighbour's edge reaches further in, is still blocked at a distance where the wide one already has its room.](../../images/pushing-the-glasses-apart/one-fixed-nudge/01-four-distances-one-pair.png)
+![The same pair of glasses from the top at four separations, showing that the wide one comes free before the narrow one does: each glass carries the 76 mm ring the open jaw needs, and a glass is blocked while its neighbour's edge is inside that ring, so the narrow glass, whose neighbour's edge reaches further in, is still blocked at a distance where the wide one already has its room.](../../images/pushing-the-glasses-apart/one-fixed-nudge/01-four-distances-one-pair.png)
 
 From that, the error falls out. The shortfall of one glass against one
 neighbour is
 
-    70 mm  +  half the neighbour's widest width  −  the distance between
+    76 mm  +  half the neighbour's widest width  −  the distance between
     their middles
 
 and it is zero or less when that neighbour is not in the way. The glass's own
@@ -99,7 +101,7 @@ it.
 Written as a subtraction the shortfall is three numbers. Drawn on the table it
 is one length, and it is the length the whole method is built around.
 
-![The crowded glass with the 70 mm ring the open jaw needs round it, the neighbour's rim reaching inside that ring, and the overlap marked: the shortfall is how far the neighbour's edge comes inside the ring, which is the same thing as 70 mm plus half the neighbour's width minus the distance between the two middles.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-pages-the-error.png)
+![The crowded glass with the 76 mm ring the open jaw needs round it, the neighbour's rim reaching inside that ring, and the overlap marked: the shortfall is how far the neighbour's edge comes inside the ring, which is the same thing as 76 mm plus half the neighbour's width minus the distance between the two middles.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-pages-the-error.png)
 
 Two consequences matter, and both are easy to miss.
 
@@ -235,7 +237,7 @@ real code is involved and it would be easy to over-claim.
   scorecard;
 - the room test, as `has_room()` in
   [`src/09_pushing-the-glasses-apart/bench/bench.py`](../../../code/src/09_pushing-the-glasses-apart/bench/bench.py), which holds the
-  70 mm as the gripper's constant and applies it to the neighbour's edge;
+  76 mm as the gripper's constant and applies it to the neighbour's edge;
 - the shortfall, as `shortfall()` in
   [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py);
 - the tipping rule, as `slides()` in the same file, evaluated at the top edge

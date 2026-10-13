@@ -73,19 +73,33 @@ STEP = 2.0                 # 01-one-fixed-nudge/plan.py STEP = 0.002
 # GRIP_ROOM (70 mm) and GLASS_ZONE come from diagram_style, which copies them
 # from bench/bench.py and rack/layout.py.
 
-# The ablation, from the two files the runs wrote. Both ran the same loop over
-# the same held-out tables with the same candidate set.
-GLASSES = 251              # 02-geometry-ranked/results.json and rule.json, "glasses"
-HELD_OUT = 50              # both files, "scenes"
-RANKER_RACKED = 185        # results.json glasses_end.racked
-RANKER_PUSHES = 229        # results.json pushes.total
-RULE_RACKED = 195          # rule.json glasses_end.racked
-RULE_PUSHES = 213          # rule.json pushes.total
-# Three more rankers, each fitted on a bootstrap resample of the same rows and
-# run over the same tables. 02-geometry-ranked/README.md records the three
-# counts; the fit itself is deterministic, so resampling the rows is the only
-# variation this method has.
-RESAMPLED_RACKED = (180, 181, 184)
+# The ablation, read from the two files the runs wrote rather than copied out,
+# so that re-running either one cannot leave this picture behind. Both ran the
+# same loop over the same held-out tables with the same candidate set, and the
+# only difference is who picks.
+_RANKED = Path(__file__).resolve().parents[3] / "code" / "src" / "09_pushing-the-glasses-apart" / "02-geometry-ranked"
+
+
+def _run(name: str) -> dict:
+    """One of the two scorecards: results.json is the ranker, rule.json the rule."""
+    found = _RANKED / name
+    if not found.exists():
+        raise SystemExit(f"{found} is missing: run that solution first")
+    return json.loads(found.read_text())
+
+
+_RANKER, _RULE = _run("results.json"), _run("rule.json")
+
+GLASSES = _RANKER["glasses"]
+HELD_OUT = _RANKER["scenes"]
+RANKER_RACKED = _RANKER["glasses_end"]["racked"]
+RANKER_PUSHES = _RANKER["pushes"]["total"]
+RANKER_TRAVEL = _RANKER["travel_mm"]
+RANKER_DONE = _RANKER["outcome"]["done"]
+RULE_RACKED = _RULE["glasses_end"]["racked"]
+RULE_PUSHES = _RULE["pushes"]["total"]
+RULE_TRAVEL = _RULE["travel_mm"]
+RULE_DONE = _RULE["outcome"]["done"]
 
 _TRAINING = (
     Path(__file__).resolve().parents[3]
@@ -342,55 +356,63 @@ def what_the_fit_leaned_on() -> None:
 
 
 def the_ablation() -> None:
-    """Glasses racked by the rule and by the ranker, against the spread of the fit.
+    """What the ranker changed and what it did not, column by column.
 
-    A reader's first answer to "the ranker racked ten fewer" is that the fit
-    was unlucky. Putting the three resampled fits on the same line answers that
-    without a sentence: the gap is wider than anything the fitting moves.
+    A reader's first question about a fitted ranker is whether it was worth
+    fitting. The answer here is unusual and is easier to see than to say: on
+    the two columns the run is marked on, the ranker and the printed rule are
+    the same number, and on the two columns that measure what the arm spent,
+    the ranker is dearer. So the picture puts the four columns side by side
+    rather than drawing a gap that does not exist.
     """
-    figure, axis = new(9.0, 2.7)
-    for side in ("top", "right", "left"):
+    figure, axis = new(9.4, 3.9)
+    for side in ("top", "right", "left", "bottom"):
         axis.spines[side].set_visible(False)
     axis.set_yticks([])
 
-    fits = sorted((RANKER_RACKED, *RESAMPLED_RACKED))
-    axis.add_patch(Rectangle((fits[0] - 0.4, -0.42), fits[-1] - fits[0] + 0.8, 0.84,
-                             facecolor=_tint(WARN, 0.84), edgecolor="none", zorder=1))
-    for racked in RESAMPLED_RACKED:
-        axis.plot([racked], [0], marker="o", markersize=8, markerfacecolor="white",
-                  markeredgecolor=WARN, markeredgewidth=1.6, zorder=4)
-    axis.plot([RANKER_RACKED], [0], marker="o", markersize=11, color=WARN, zorder=5)
-    axis.plot([RULE_RACKED], [0], marker="o", markersize=11, color=GOOD, zorder=5)
+    # Each column is drawn as a share of the larger of the two bars, because
+    # pushes and millimetres cannot share one scale with a count of glasses.
+    columns = (
+        (f"tables finished\nof {HELD_OUT}", RULE_DONE, RANKER_DONE, "{:.0f}", True),
+        (f"glasses racked\nof {GLASSES}", RULE_RACKED, RANKER_RACKED, "{:.0f}", True),
+        ("pushes spent", RULE_PUSHES, RANKER_PUSHES, "{:.0f}", False),
+        ("glasses moved, mm", RULE_TRAVEL, RANKER_TRAVEL, "{:.0f}", False),
+    )
+    width, gap = 0.34, 1.0
+    for index, (label, rule_value, ranker_value, form, same_is_good) in enumerate(columns):
+        top = max(rule_value, ranker_value)
+        spot = index * gap
+        for offset, value, colour in ((-width / 2, rule_value, GOOD),
+                                      (width / 2, ranker_value, WARN)):
+            axis.bar(spot + offset, value / top, width=width, color=colour, alpha=0.8, zorder=3)
+            axis.text(spot + offset, value / top + 0.035, form.format(value), ha="center",
+                      va="bottom", fontsize=10, color=colour, weight="bold")
+        tied = rule_value == ranker_value
+        axis.text(spot, -0.09, label, ha="center", va="top", fontsize=9.5, color=INK)
+        axis.text(spot, -0.30, "the same" if tied else "dearer", ha="center", va="top",
+                  fontsize=9, color=GOOD if same_is_good and tied else MUTED,
+                  style="italic")
 
-    axis.text(RANKER_RACKED, 0.30, "the ranker", fontsize=10.5, color=WARN,
-              ha="center", va="bottom", weight="bold")
-    axis.text(RULE_RACKED, 0.30, "the printed rule", fontsize=10.5, color=GOOD,
-              ha="center", va="bottom", weight="bold")
-    axis.text((fits[0] + fits[-1]) / 2.0, -0.52,
-              f"four fits of the same model:\n{fits[0]} to {fits[-1]}",
-              fontsize=9, color=WARN, ha="center", va="top")
+    axis.plot([], [], color=GOOD, lw=6, label="the printed rule picking")
+    axis.plot([], [], color=WARN, lw=6, label="the fitted ranker picking")
+    axis.legend(fontsize=9.5, loc="upper center", bbox_to_anchor=(0.5, 1.13),
+                ncol=2, frameon=False)
 
-    axis.annotate("", xy=(RULE_RACKED, 0.78), xytext=(RANKER_RACKED, 0.78), zorder=6,
-                  arrowprops=dict(arrowstyle="<|-|>", color=INK, lw=1.2, shrinkA=0, shrinkB=0))
-    axis.text((RANKER_RACKED + RULE_RACKED) / 2.0, 0.84,
-              f"{RULE_RACKED - RANKER_RACKED} glasses", fontsize=10, color=INK,
-              ha="center", va="bottom", weight="bold")
-
-    axis.set_xlim(177.5, 198.5)
-    axis.set_ylim(-1.15, 1.3)
-    # Whole glasses: a tick reading 182.5 would be a count of nothing.
-    axis.set_xticks([180, 185, 190, 195])
-    axis.set_xlabel(f"glasses racked, of {GLASSES}, over the same {HELD_OUT} held-out tables",
-                    fontsize=9, color=MUTED)
-    axis.tick_params(axis="x", colors=MUTED, labelsize=8.5)
-    axis.set_title("The ranker loses by more than the fitting varies",
-                   fontsize=12.5, color=INK, pad=12)
-    axis.text(0.5, -0.40,
-              f"Same candidates, same budget; only the choosing differs. "
-              f"The rule spent {RULE_PUSHES} pushes and the ranker {RANKER_PUSHES}.",
+    axis.set_xlim(-0.72, (len(columns) - 1) * gap + 0.72)
+    axis.set_ylim(-0.46, 1.16)
+    axis.set_xticks([])
+    axis.set_title("Fitting the ranker changed what the arm spent, not what it achieved",
+                   fontsize=12.5, color=INK, pad=34)
+    axis.text(0.5, -0.12,
+              "Same candidates, same tables, same budget; only the choosing differs. "
+              "Each pair is drawn against its own larger bar, because a count of "
+              "glasses and a distance cannot share one scale.",
               transform=axis.transAxes, ha="center", va="top", fontsize=8.6, color=MUTED)
 
-    print(f"  rule {RULE_RACKED}, ranker {RANKER_RACKED}, resampled fits {RESAMPLED_RACKED}")
+    print(f"  rule: {RULE_DONE} tables, {RULE_RACKED} glasses, {RULE_PUSHES} pushes, "
+          f"{RULE_TRAVEL:.0f} mm")
+    print(f"  ranker: {RANKER_DONE} tables, {RANKER_RACKED} glasses, {RANKER_PUSHES} pushes, "
+          f"{RANKER_TRAVEL:.0f} mm")
     save(figure, "ranked-pages-the-ablation.png")
 
 

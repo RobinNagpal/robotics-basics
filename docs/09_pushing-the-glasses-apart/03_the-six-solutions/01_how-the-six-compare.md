@@ -93,7 +93,7 @@ model that *decides*, and the cost of a wrong answer grows as you go down it.
 
 ## 5. What each one scored
 
-Every solution is given the same **50 tables holding 251 glasses, 193 of which
+Every solution is given the same **50 tables holding 251 glasses, 203 of which
 have no room at the start**, spends the same budget of 4 pushes per glass and
 16 per table, and is judged by the same scorecard. A table is **done** when
 every glass on it could be picked up. A glass is **racked** when it was picked
@@ -111,24 +111,27 @@ has the full numbers with every column.
 
 | Solution | Tables done, of 50 | Glasses racked, of 251 | Glasses toppled | Why those results |
 |---|---|---|---|---|
-| **1. [One fixed nudge](02_one-fixed-nudge.md)** | **33** | 195 | **0** | The geometry refuses rather than guesses whenever the arithmetic is unsure, so it never breaks anything, and it finishes the most tables of the six. What it gives up is the 56 glasses it refused rather than racked. |
-| **2. [Geometry generates, a model ranks](03_geometry-generates-a-model-ranks.md)** | 31 | 185 | **0** | Same candidates, same refusals, same safety — and the fitted ranker loses to the printed rule it was meant to improve, on both columns, using more pushes to do it. The ordering could not help, because within one glass's job-finishing candidates the room gained is tied at the median, so there is nothing there for an ordering to tell apart. |
-| **3. [Imitation from demonstrations](04_imitation-from-demonstrations.md)** | 3 (3–6) | 68 (67–82) | 1 (0–5) | It places the start of a push roughly right and gets the heading about thirty degrees out, and the jaw's own body then meets a neighbour on the way down. That is the policy averaging over teacher pushes that disagree, not a shortage of examples: four times the data removed the memorising and left the error. |
-| **4. [A world model, then plan with it](05_a-world-model-then-plan-with-it.md)** | 31 | **202** | 1 | It racked more glasses than anything else in the book, in 114 pushes against the geometry's 229, because a push aimed with a model of where the glass will stop rarely has to be tried again. It also toppled a glass, and the model had rated that push safe. |
-| **5. [A foundation model as it downloads](06_a-foundation-model-as-it-downloads.md)** | 0 (0–0) | 56 (52–57) | 6 (5–8) | About nine of its pushes in ten touch nothing at all, because the trajectories it returns hold the jaw well above the glasses. It is not choosing badly among pushes; it is mostly not arriving at the table. That is the domain gap arriving exactly as predicted. |
-| **6. [The same model, fine-tuned here](07_the-same-model-fine-tuned-here.md)** | 4 (3–4) | 77 (74–85) | 46 (38–49) | The training brought the jaw down to the table without teaching it where to put the jaw down. In the middle run, 247 of its 400 pushes are blocked coming down, and the glasses that go over are what that costs. |
+| **1. [One fixed nudge](02_one-fixed-nudge.md)** | 14 | 107 | **1** | The geometry refuses rather than guesses whenever the arithmetic is unsure, so it almost never breaks anything. What it gives up is the 143 glasses it refused rather than racked, and with this gripper most of those refusals are the cell's doing rather than the method's: there is nowhere to stand the hand, or no height at which the glass would slide. |
+| **2. [Geometry generates, a model ranks](03_geometry-generates-a-model-ranks.md)** | 14 | 107 | **1** | It reaches *exactly* the same tables and the same glasses as the printed rule it was meant to improve, for nine more pushes and half again the travel. The ordering could not help, because when a table bottoms out on the hand's own width and height there is only a very short list of legal pushes to order. |
+| **3. [Imitation from demonstrations](04_imitation-from-demonstrations.md)** | 2 (1–3) | 63 (51–64) | 12 (7–13) | It places the start of a push roughly right and gets the heading 22 to 27 degrees out, and the hand's own 266 mm of body then meets a neighbour on the way down. That is the policy averaging over teacher pushes that disagree, not a shortage of examples: four times the data removed the memorising and took about a fifth off the error. |
+| **4. [A world model, then plan with it](05_a-world-model-then-plan-with-it.md)** | **20** | **146** | 20 | It racks more glasses than anything else in the book and finishes the most tables, because a push aimed with a model of where the glass will stop rarely has to be tried again. It also topples 20 glasses, and the model had rated every one of those pushes safe. |
+| **5. [A foundation model as it downloads](06_a-foundation-model-as-it-downloads.md)** | 1 (0–1) | 48 (46–51) | 12 (10–14) | Its 48 racked glasses are exactly the 48 that already had room, so its pushes achieve nothing at all. The trajectories it returns hold the jaw about 200 mm above the table. It is not choosing badly among pushes; it is mostly not arriving at the table. That is the domain gap arriving exactly as predicted. |
+| **6. [The same model, fine-tuned here](07_the-same-model-fine-tuned-here.md)** | 1 (0–2) | 56 (50–65) | 40 (33–44) | The training brought the jaw down to the table without teaching it where to put the jaw down. About two of its pushes in three are blocked coming down, and the glasses that go over are what that costs. |
 
 ![Glasses racked against glasses toppled, one point for each of the six, with the three geometry-driven solutions together in the bottom right corner and the three that produce the push themselves far away from it.](../../images/pushing-the-glasses-apart/how-the-six-compare/six-racked-against-toppled.png)
 
 Three results in that table are worth more than the others.
 
-**The first is that nothing learned beats the written geometry here.** The
-fixed nudge finishes the most tables and breaks nothing, and the only solution
-that racks more glasses is the world model. Everything built on a borrowed
-model finishes almost nothing. That is the result, not a disappointment: the
-control was built first precisely so that the five expensive answers would have
-something honest to be measured against, and only one of them got anywhere near
-it.
+**The first is that one learned solution clears many more glasses and breaks
+far more.** The world model racks 146 against the written geometry's 107, which
+is more than a third again, and it topples 20 against 1. So the honest summary
+is not that learning won or lost. The same mechanism — predicting an outcome
+instead of refusing whenever the arithmetic is unsure — is what buys the extra
+glasses and what breaks the extra ones, and the two cannot be separated by
+tuning a threshold. Everything built on a borrowed model, meanwhile, finishes
+almost nothing. That is the result, not a disappointment: the control was built
+first precisely so that the five expensive answers would have something honest
+to be measured against.
 
 **The second is solution 2 against solution 4, and it is the most useful
 comparison in the book.** Both fit a model, both keep the written geometry
@@ -136,24 +139,24 @@ around it, and they fit models of different quantities. Solution 2 fits a model
 of *how much a push would help*, which the geometry already computes exactly
 from the destination. Solution 4 fits a model of *what a push will actually
 do*, which is the quantity the geometry gets wrong, because predicting where a
-pushed glass stops needs the friction nobody here has measured. The first lost
-to a printed rule; the second racked more glasses than anything else in the
-book. **The learning that paid attacked the quantity the geometry gets wrong,
+pushed glass stops needs the friction nobody here has measured. The first reached exactly the same tables and the same
+glasses as the printed rule it was meant to beat; the second racked more
+glasses than anything else in the book. **The learning that paid attacked the quantity the geometry gets wrong,
 not the quantity it gets right.** So the useful question is not whether to
 learn, but which quantity is worth learning.
 
 **The third is solution 5 against solution 6, and it is the cleanest pair.**
 Same library, same model, same downloaded weights, same examiner, same input,
-same output, same marking and the same cost per push. The only difference is
-that one of them has had its training continued on this cell's own pushes. The
-fine-tuned half finishes four tables where the borrowed half finishes none, and
-it topples 46 glasses a run where its partner topples 6, which puts 38 of its
-50 tables in the "wrong" column against its partner's 5. **Fine-tuning bought
-enough competence to act and not enough to act safely**, and on a scorecard
-where a toppled glass cannot be undone that is worse than inaction. The
-fine-tuned model is also the one with the heaviest caveat on its row: it
-received about one part in three hundred of the training its own library's
-recipe asks for.
+same output and the same marking. The only difference is that one of them has
+had its training continued on this cell's own pushes. Both finish about one
+table in fifty, but the fine-tuned half topples 40 glasses a run where its
+partner topples 12, which puts 36 of its 50 tables in the "wrong" column
+against its partner's 9. **Fine-tuning bought enough competence to act and not
+enough to act safely**, and on a scorecard where a toppled glass cannot be
+undone that is worse than inaction. The fine-tuned model is also the one with
+the heaviest caveat on its row: it received about one part in three hundred of
+the training its own library's recipe asks for, and its correction was still
+improving when that budget ran out.
 
 One cost does not appear in any of the three tables. Solutions 5 and 6 carry
 whatever terms the SmolVLA weights carry, and a file produced by continuing

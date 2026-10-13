@@ -65,20 +65,24 @@ COUNTS = (4, 5, 6)
 # The four kinds, in the order code/src/09_pushing-the-glasses-apart/bench/bench.py cycles them.
 KINDS = ("straight_glass", "tapered_glass", "stemmed_glass", "short_stemmed_glass")
 
-# The top edge of the closed jaw, 65 mm above the table: bench.py builds it from
-# the gripper's own declared finger height, and a glass that flares out above
-# the fingertips meets the jaw here rather than at LOWEST_GRIP. A gripper
-# dimension, not a glass one.
-JAW_TOP = 65.0
+# The top edge of the closed jaw, 107 mm above the table: bench.py builds it
+# from the real Robotiq 2F-85's own finger height with the hand turned on its
+# side, and a glass that flares out above the fingertips meets the jaw here
+# rather than at the height the jaw's middle rides. A gripper dimension, not a
+# glass one.
+JAW_TOP = 106.7
 
 # The two guesses this problem brackets with, and the value the simulator
 # actually gives the table. Nothing tells the arm which it is.
 BENCH_FRICTION = 0.35
 FRICTIONS = (MU_LOW, BENCH_FRICTION, MU_HIGH)
 
-# The level view, from the cell's own description: 380 mm back from the glass,
-# and nine places on the circle round it, 40 degrees apart.
-STANDOFF = 380.0
+# The level view, from the cell's own description: 300 mm back from the glass,
+# and nine places on the circle round it, 40 degrees apart. The RealSense D405
+# that now does the measuring has a wide enough lens to fit the tallest glass
+# in from closer than the arm is willing to stand, so the standoff is the floor
+# the cell sets rather than the sum the lens asks for.
+STANDOFF = 300.0
 DIRECTIONS = tuple(40.0 * step for step in range(9))
 
 # The floor this document lowers the spawner to when it needs a crowded table.
@@ -98,24 +102,24 @@ BENCH = {
     "seeds": (10_000, 10_999),
     "scenes": 1000,
     "glasses": 5000,
-    "without_room": 3731,              # glasses with no room at the start
-    "closest": (54.2, 86.7, 121.1),    # closest pair per scene: min, median, max, mm
-    "emptied": 36,                     # scenes the peel cleared on its own
-    "residue": 712,                    # scenes where it racked some and left the rest
-    "nothing_free": 252,               # scenes where nothing qualified at all
-    "rounds": {0: 252, 1: 634, 2: 111, 3: 3},
-    "residues": {0: 36, 1: 0, 2: 186, 3: 218, 4: 299, 5: 189, 6: 72},
-    "pairs_before": 4.05,              # pairs inside GRIPPABLE_APART, per scene
-    "pairs_after": 3.21,
-    "racked": 1401,                    # glasses racked with no push aimed at them
-    "left": 3599,
-    "picks": 1.40,                     # free picks per scene
+    "without_room": 3896,              # glasses with no room at the start
+    "closest": (54.4, 87.9, 126.8),    # closest pair per scene: min, median, max, mm
+    "emptied": 19,                     # scenes the peel cleared on its own
+    "residue": 676,                    # scenes where it racked some and left the rest
+    "nothing_free": 305,               # scenes where nothing qualified at all
+    "rounds": {0: 305, 1: 619, 2: 73, 3: 3},
+    "residues": {0: 19, 1: 0, 2: 157, 3: 201, 4: 318, 5: 210, 6: 95},
+    "pairs_before": 4.54,              # pairs inside GRIPPABLE_APART, per scene
+    "pairs_after": 3.70,
+    "racked": 1191,                    # glasses racked with no push aimed at them
+    "left": 3809,
+    "picks": 1.19,                     # free picks per scene
     "disagreed": 0,                    # scenes where a random pick order changed the residue
-    "unpushable": {0.3: 48, 0.35: 185, 0.5: 1311},   # of the 3599 left
+    "unpushable": {0.3: 758, 0.35: 1712, 0.5: 3510},   # of the 3809 left
     # The same sweep with the 5 mm take margin code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py
     # applies, which is three standard deviations of the measurement error in
     # the gap between two glasses.
-    "margin": {"racked": 1073, "emptied": 8, "nothing_free": 338, "cascades": 36},
+    "margin": {"racked": 950, "emptied": 6, "nothing_free": 376, "cascades": 23},
 }
 
 # The two tables walked through in the document, as (count, seed).

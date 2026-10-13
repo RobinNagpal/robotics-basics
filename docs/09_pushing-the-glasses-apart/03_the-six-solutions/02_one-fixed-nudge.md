@@ -2,8 +2,7 @@
 
 This page describes the first of the six solutions in about eight minutes of
 reading. It is the one solution that holds no fitted numbers at all, and it is
-also, on this book's scorecard, the one that finished the most tables and broke
-nothing. By the end of this page you will know the one idea it rests on, the
+also, on this book's scorecard, the one that broke the least. By the end of this page you will know the one idea it rests on, the
 loop it runs, what it costs, what it scored on the shared examiner, which part
 of it was run and which part is a design, and the three things it cannot do
 that the other five were built to try. The full method is in [the chapter on
@@ -151,7 +150,7 @@ is what bounds them.
 
 ## 4. What it scored
 
-Every solution is given the same 50 tables holding 251 glasses, of which 193
+Every solution is given the same 50 tables holding 251 glasses, of which 203
 have no room at the start, spends the same push budget, and is judged by the
 same scorecard, which [the examiner](../01_the-problem/03_the-examiner.md) describes. A table
 is **finished** when every glass on it could be picked up, and **wrong** when
@@ -163,17 +162,22 @@ because the two share everything except the one step.
 
 | tables finished | tables wrong | glasses racked | toppled | pushes |
 |---|---|---|---|---|
-| **33** | **0** | 195 | **0** | 213 |
+| 14 | **1** | 107 | **1** | **173** |
 
-**It finished more tables than any of the other five, and it broke nothing.**
-Those are the two columns that matter most, and this solution holds the best
-figure in both. The only solution that racked more glasses is [a world model,
-then plan with it](05_a-world-model-then-plan-with-it.md), which did it in half
-the pushes and toppled one glass doing so.
+**It breaks almost nothing, and that is the column it wins.** One glass over
+fifty tables, and one table left in a state the cell should never reach. No
+other solution comes close on either, and [a world model, then plan with
+it](05_a-world-model-then-plan-with-it.md) racks 146 glasses to this one's 107
+by toppling twenty.
 
-It left 17 tables unfinished and refused 56 glasses, which is where its score
-goes. A refusal is an acceptable answer on this scorecard, so none of those 56
-cost it a wrong table.
+It left 35 tables unfinished and refused 143 of the 251 glasses, which is where
+its score goes. A refusal is an acceptable answer on this scorecard, so none of
+those 143 cost it a wrong table. It is worth knowing what those refusals mostly
+are, because they are not failures of the method. 53 of them are *nowhere clear
+to push it to*, which is the hand being too wide to stand beside the glass, and
+87 are the glass tipping rather than sliding, which is the hand being unable to
+come lower than 75 mm. Both are the cell telling the method that this part of
+the job cannot be done as the cell is built.
 
 One more property of this row is worth knowing. Nothing in this method was
 fitted and nothing in it is drawn at random, so it behaves the same way on the
@@ -210,11 +214,12 @@ fixed fraction rule in particular, and the third belongs to both versions.
 **The rule has one heading to offer, and sometimes there is nowhere to stand.**
 The approach runs along the same line as the push, so pushing a glass straight
 away from its neighbour asks the arm to put a long tool where the neighbour is.
-The jaw is 270 mm long behind its fingertips and 90 mm across, so in a tight
-group that is impossible. The searching planner can look for another heading
-and the rule cannot, which is the clearest difference between them — and the
-56 refusals in the run show the constraint biting even with all 72 headings
-available.
+The hand is 266 mm long behind its fingertips: narrow for the first 73 mm of
+that, then 75 mm across its body and 89 mm across the force sensor behind it.
+In a tight group that is impossible. The searching planner can look for another
+heading and the rule cannot, which is the clearest difference between them —
+and the 53 glasses the run refuses for having *nowhere clear to push to* show
+the constraint biting even with all 72 headings available.
 
 **The rule cannot help a glass crowded from two sides**, because a push away
 from one neighbour is a push towards the other. No value of the fraction fixes

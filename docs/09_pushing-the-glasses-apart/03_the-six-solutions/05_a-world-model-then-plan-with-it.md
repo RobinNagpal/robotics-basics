@@ -126,20 +126,21 @@ model, so there is no model licence to meet in either way.
 
 ## 4. What it scored
 
-All six solutions are given the same 50 tables holding 251 glasses, of which 193
+All six solutions are given the same 50 tables holding 251 glasses, of which 203
 have no room at the start. The geometry's row is shown beside this one, because
 the pair is what this solution exists to settle.
 
 | | tables done | tables wrong | glasses racked | toppled | pushes |
 |---|---|---|---|---|---|
-| this solution (the first way) | 31 | 1 | **202** | 1 | **114** |
-| the ranked geometry | 31 | 0 | 185 | 0 | 229 |
+| this solution (the first way) | **20** | 19 | **146** | 20 | 221 |
+| the ranked geometry | 14 | **1** | 107 | **1** | 182 |
 
-**It racked more glasses than any other solution in the book, in half the
-pushes of the geometry it was measured against.** The ranked geometry had to
-repeat 109 of its 229 pushes; this solution repeated 14 of its 114. That is what
-a usable prediction buys: a push aimed with a model of where the glass will stop
-does not need to be tried again.
+**It racked more glasses than any other solution in the book, and it broke more
+than any other except the fine-tuned model.** Those two facts are one fact. The
+geometry refuses a glass whenever its arithmetic cannot show the push is safe;
+this solution predicts the outcome instead and acts on the prediction, so it
+attempts the pushes the geometry turns down. 39 more glasses reach the rack that
+way, and 19 more end up on their side.
 
 It also finished the same number of tables, not more, and it cost something the
 geometry never costs. **It toppled one glass and lost one table to a state the

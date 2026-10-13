@@ -95,25 +95,34 @@ The introduction described a method that learns how the table changes and then
 searches for a push with that model, and the film here shows it on one table in
 the simulator, played at three times real speed.
 
-[A learned world model planning on one table, 19 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4 "video")
+[A learned world model planning on one table, 25 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4 "video")
 
-All five glasses are racked and nothing is knocked over, and it takes **two
-pushes**. The fixed nudge needs seven on this same table and moves the glasses
-145 mm to this solution's 70 mm, so the film is this method's economy in one
-table. The economy is the direct result of what it learned. Because it can
-predict where a glass will stop, it can pick a push that finishes the job
-instead of nudging and looking again, and two well-chosen pushes replace seven
-blind ones.
+The table holds six glasses where the average is five, and five of those six
+have no room at the start, which is the usual state of these tables.
 
-Every one of the six solutions is filmed on this same table, number 10003 of
+In the film all six glasses are racked in **three pushes**, and nothing is
+toppled. The other five solutions leave this table unfinished or wrong, so this
+is the one film of the six in which the job is actually done. The economy is
+the direct result of what the method learned: because it can predict where a
+glass will stop, it can choose a push that finishes the job instead of nudging
+and looking again.
+
+It is worth knowing while watching that the same planner topples a glass on
+nineteen of the fifty tables. This film shows what it does when its guesses
+about toppling are right, and the scorecard shows how often they are not.
+
+Every one of the six solutions is filmed on this same table, number 10025 of
 the fifty the examiner holds back, so the six films can be watched against each
-other. The table was chosen because it stands for the whole run rather than
-because it flatters anybody, which is what [one row per
+other. The table was chosen to be **typical rather than flattering**, by a rule
+written down before it was applied: every one of the six had to reach its own
+commonest outcome there and rack at least one glass, and exactly one table of
+the fifty does both. Choosing that way needed [one row per
 table](../01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) in the
-scorecard is for, and all six films are collected in [the six solutions side by
+scorecard, because a total over fifty tables cannot say which single table
+stands for the rest. All six films are collected in [the six solutions side by
 side](../10_the-results.md).
 
-Two pushes is what the film has to show, and the next section says which
+Three pushes is what the film has to show, and the next section says which
 problem learning a model of the table is meant to solve.
 
 ## 3. The problem this solves
@@ -167,7 +176,7 @@ The main idea is a separation, and the whole of this solution follows from it.
 function that answers *given this table and this push, what is the table
 afterwards*. Keep it completely free of any opinion about what a good push is.
 Then write the opinion separately, as plain arithmetic over tables: a table
-where every glass has its 70 mm of clear room is good, a table where something
+where every glass has its 76 mm of clear room is good, a table where something
 has fallen over is unacceptable, and a shorter push is better than a longer
 one. Finally, put a search between the two: propose pushes, ask the model what
 each one leads to, score the answers with the arithmetic, and make the best
@@ -178,7 +187,7 @@ completely different sources of truth. What will happen is a fact about the
 world, and it can only be learned from the world — which here means pushing
 glasses in the simulator and recording the result. What counts as good is a
 fact about the task, and it is already written down in [the
-problem](../01_the-problem/01_what-is-asked-for.md): 70 mm of clear room, nothing knocked over, as few
+problem](../01_the-problem/01_what-is-asked-for.md): 76 mm of clear room, nothing knocked over, as few
 pushes as possible. Mixing them produces a thing that has to be retrained when
 the task changes. Keeping them apart means **the same model serves a different
 goal by changing only the arithmetic**. If the task later became spreading the

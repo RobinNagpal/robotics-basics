@@ -98,7 +98,8 @@ robots.
 So the model has never seen this cell. It has never seen these glasses — not
 the straight glass, not the tapered glass, not the stemmed glass and not the
 short stemmed glass. It has never seen this jaw, which is two fingers and two
-pads held closed and level, 30 mm tall, riding as low as the gripper reaches.
+fingers held closed and turned on their side, 63 mm tall, riding as low as the
+hand reaches.
 And it has never seen a table rendered the way this examiner renders one.
 
 What **is** borrowed is everything else: the architecture, the weights, the
@@ -171,7 +172,7 @@ of this model, in this problem, does no work.
 **The pose is the one that was not foreseen, and the reason is the cell rather
 than the model.** The reading that turns z-scores into millimetres gives the
 model one box it can describe: the frame of the straight-down picture, 717 mm
-across the table, and heights from 50 mm, where the jaw must ride to move
+across the table, and heights from 75 mm, where the jaw must ride to move
 anything, up to the 300 mm it travels at. Between actions the examiner parks
 the jaw out of the way, at 500 mm along the table from the picture's frame and
 550 mm up. That spot is outside the box on all three axes, so all three clip to
@@ -188,7 +189,7 @@ makes it answer high. The folder measures how much: asked the same picture six
 times with the parked pose, the lowest point of a run of waypoints has a median
 of 182 mm, and asked with an all-zero pose instead, 122 mm. So the pinned pose
 raises the answers by about 60 mm. It is not the whole story, because 122 mm is
-still far above the 50 mm the jaw has to be at and above most of a glass, but
+still far above the 75 mm the jaw has to be at and above most of a glass, but
 it is a real part of it.
 
 Two things follow from both inputs being constant, and the second is the
@@ -306,12 +307,12 @@ needs the picture to be read accurately and the picture is the part that does
 not match.
 
 **The measured failure is blunter than that, and easier to see.** Over three
-runs of the 50 held-out tables, the model was asked 2,260 times. The median run
-made 754 pushes and **674 of them never touched anything at all.** The reason
-is height. The median run of waypoints has its lowest point 209 mm above the
-table, while the jaw has to be at 50 mm to move a glass and the glasses on
+runs of the 50 held-out tables, the model was asked 1,855 times. The median run
+made 620 pushes and **506 of them never touched anything at all.** The reason
+is height. The median run of waypoints has its lowest point 217 mm above the
+table, while the jaw has to be at 75 mm to move a glass and the glasses on
 these tables stand 90 to 230 mm tall, so the jaw sweeps through the air above
-them. The same run of waypoints travels 844 mm across the table in its 50
+them. The same run of waypoints travels 868 mm across the table in its 50
 steps, which is more than the width of the picture's frame, so the movement is
 large as well as high.
 

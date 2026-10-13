@@ -14,7 +14,7 @@ teaches the wrong lesson.
 
 A glass slides while the jaw touches it below half its foot width divided by
 the friction, and tips above that. The height that counts is the jaw's **top
-edge** at 65 mm, not the 50 mm its middle rides at, and for a glass whose foot
+edge** at 107 mm, not the 75 mm its middle rides at, and for a glass whose foot
 is narrow enough there is no contact height the arm can offer below the limit.
 The only correct answer for such a glass is to refuse, with the reason
 recorded, which marks the run *correct but incomplete* rather than wrong.
@@ -44,7 +44,7 @@ in `clear.py` and `joining.py`, and they sit in this solution's own folder
 rather than in the examiner.
 
 How much that first check was needed is worth reporting, because the answer is
-not at all. Over the three runs the model was asked 2,260 times, and **not one
+not at all. Over the three runs the model was asked 1,855 times, and **not one
 of its trajectories was thrown away for reaching a refused glass**. Section 2
 explains why: the trajectories do not come down far enough to reach any glass,
 refused or not.
@@ -59,7 +59,7 @@ a time.
 draws from seed 10001. It holds six tapered glasses between 109 and 211 mm
 tall, from 75 to 104 mm across at their widest, standing on feet between 35 and
 45 mm across. Three of the six are crowded at the start: a neighbour's rim
-reaches inside the 70 mm of clear room the open jaw needs round them.
+reaches inside the 76 mm of clear room the open jaw needs round them.
 
 **The shared machinery runs first**, and on this table it changes nothing. It
 asks `slides()` about every glass from its measured foot, and no glass fails.
@@ -73,9 +73,9 @@ explained by it.
 **Then the model is asked.** It receives the rendered view from the top, the
 unvarying sentence, and the jaw's parked pose. What comes back is 50 waypoints,
 and the measured shape of those answers is the result of this solution. The
-median answer's lowest point is 209 mm above the table. Five of this table's
+median answer's lowest point is 217 mm above the table. Five of this table's
 six glasses are shorter than that, so the jaw passes over them without touching
-anything. The same answer travels 844 mm across the table, which is further
+anything. The same answer travels 868 mm across the table, which is further
 than the picture's frame is wide, in waypoints 14.3 mm apart — more than the
 arm's own top speed, and fourteen times the speed a push macro moves at.
 
@@ -83,8 +83,8 @@ So what the examiner records is a push that happened and touched nothing. That
 costs one entry against the budget of 16 pushes per table. **Then the arm looks
 again**, the arrangement is unchanged because nothing moved, the model is asked
 once more, and the same thing happens. Across a run of 50 tables this solution
-spends 754 pushes, which is a little over 15 per table against a budget of 16,
-so almost every table runs to the end of its budget. 674 of those 754 pushes
+spends 620 pushes, which is a little over 12 per table against a budget of 16,
+so most tables run to the end of their budget. 506 of those 620 pushes
 never touched anything.
 
 The 80 that did touch something are the other half of the story. 69 of them

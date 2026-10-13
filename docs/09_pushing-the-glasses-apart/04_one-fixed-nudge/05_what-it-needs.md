@@ -18,9 +18,10 @@ tipping rule and its test push need. It does not use the rendered view from the
 top, it does not use the force report beyond whether the jaw touched anything,
 and it never reads the simulator's record.
 
-**The gripper's own numbers.** The 70 mm of clear room, the 50 mm the jaw's
-middle rides at, the 30 mm height of the jaw that puts its top edge at 65 mm,
-the 270 mm of tool behind the fingertips and the 90 mm width of its body. All of
+**The gripper's own numbers.** The 76 mm of clear room, the 75 mm the jaw's
+middle rides at, the 63 mm height of the jaw that puts its top edge at 107 mm,
+the 266 mm of tool behind the fingertips and the three widths that tool has
+along its length. All of
 these belong to the hardware rather than to any glass, so the project allows
 them to be written down, and none of them is tuned.
 

@@ -109,9 +109,10 @@ foot `2a` across, on a table it rubs against with friction `μ`, slides while
 
 and tips over above that. The height that counts is the **top edge of the
 jaw**, not its middle, because a glass that is wider higher up meets the top
-edge first. The middle of the jaw rides at 50 mm, which is as low as the
-gripper reaches without fouling the table, and the fingers are 30 mm tall, so
-the top edge stands at 65 mm. Those are the gripper's own numbers and they do
+edge first. The middle of the jaw rides at 75 mm, which is as low as the
+hand reaches without its fingers striking the table, and its leading stretch is
+63 mm tall, so
+the top edge stands at 107 mm. Those are the gripper's own numbers and they do
 not change from one glass to the next. What changes is `a`, because every glass
 has its own foot, so **the limit is computed for each glass from its measured
 foot width** rather than agreed once for the whole kind.

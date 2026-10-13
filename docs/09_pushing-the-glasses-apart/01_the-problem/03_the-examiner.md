@@ -71,7 +71,7 @@ one glass on it has no room, so there is never a table where the right answer
 is to do nothing.
 
 **Having room is the gripper's test, measured to the neighbour's edge.** A
-glass has room when no other glass's edge lies within 70 mm of its middle.
+glass has room when no other glass's edge lies within 76 mm of its middle.
 [The gap that
 matters](01_what-is-asked-for.md#6-the-gap-that-matters-is-not-the-gap-between-the-glasses)
 explains the number and why the test is not symmetric.
@@ -197,7 +197,7 @@ one.
 **The scorecard also keeps one row for each table.** Everything above is a
 total over the whole run, and a total answers how a solution did without saying
 anything about how it did on any one table. Those are different questions: a
-run that finishes 31 tables out of 50 does not say which of the 50 is the one
+run that finishes 14 tables out of 50 does not say which of the 50 is the one
 worth looking at. So beside each run's scorecard the examiner writes a second
 file holding one row per table, which records that table's outcome, how many
 glasses were racked, how many were knocked over, how many pushes were spent and
@@ -205,9 +205,12 @@ how far the glasses travelled in total. The rows exist so that a table can be
 chosen because it stands for the run rather than because it flatters the
 solution, and that is how the film on each solution's own page was picked. They
 also show something a reader might not guess: the typical table is a different
-kind of table for each solution, because the three geometry solutions usually
-finish one, the imitation policy usually leaves one unfinished, and the
-fine-tuned policy usually ends one in a state the cell should never reach.
+kind of table for each solution. The world model usually finishes one, the two
+written-geometry solutions and the two borrowed models usually leave one
+unfinished, and the fine-tuned policy usually ends one in a state the cell
+should never reach. That is why the one table all six are filmed on had to be
+chosen by a rule covering all six at once, rather than by picking whichever
+table looked representative.
 
 ## 6. Two things this scorecard needs that the camera work's did not
 

@@ -30,8 +30,8 @@ What the borrowing costs is accuracy and every lever for improving it. The
 domain gap is large: the model learned from real cameras and cluttered rooms,
 and it is shown flat pale blue shapes on an empty rectangle. What it returns
 across that gap is not movement aimed at the wrong glass but movement that
-never reaches the table — a median lowest point 209 mm up, where the jaw has to
-be at 50 mm to move anything, and 674 pushes in 754 touching nothing. The force
+never reaches the table — a median lowest point 217 mm up, where the jaw has to
+be at 75 mm to move anything, and 506 pushes in 620 touching nothing. The force
 reading cannot reach it, so the only channel that observes friction is closed.
 The actions arrive with no units in them, so a reading stands between the model
 and the jaw and a poor one would be blamed on the model. And both the
@@ -158,7 +158,7 @@ Read in that order, [the six
 solutions](../03_the-six-solutions/01_how-the-six-compare.md) measure what each
 kind of fitting buys, and this one is the borrowed extreme they are read
 against. It is also, by a wide margin, the worst of the six: 56 of 251 glasses
-racked and no table finished, against 195 and 33 tables for the arithmetic of
+racked and one table finished, against 107 and 14 tables for the arithmetic of
 solution 1.
 
 One of those comparisons is sharper than the rest, and it is the reason this

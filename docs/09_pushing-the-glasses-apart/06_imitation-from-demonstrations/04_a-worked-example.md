@@ -14,7 +14,7 @@ lesson.
 
 A glass slides while the jaw touches it below half its foot width divided by
 the friction, and tips above that. The height that counts is the jaw's **top
-edge** at 65 mm, not the 50 mm its middle rides at, and for a glass whose foot
+edge** at 107 mm, not the 75 mm its middle rides at, and for a glass whose foot
 is narrow enough there is no contact height the arm can offer below the limit.
 The only correct answer for such a glass is to refuse, with the reason
 recorded, which marks the run *correct but incomplete* rather than wrong.
@@ -128,14 +128,14 @@ the policy might have produced was allowed to make it worse.
 behaves exactly as described. The first push does not. What the fitted policy
 actually returns on a table it has not seen is a chunk that starts in roughly
 the right neighbourhood — within a centimetre or two of where the teacher put
-the fingertips — but points about thirty degrees away from where the teacher
-pointed. That matters more than it sounds, because the jaw is 270 mm of finger,
-body and wrist behind its fingertips, and turning it thirty degrees about the
+the fingertips — but points about twenty-five degrees away from where the teacher
+pointed. That matters more than it sounds, because the jaw is 266 mm of finger,
+body and wrist behind its fingertips, and turning it twenty-five degrees about the
 fingertips swings the far end of the wrist 135 mm sideways. On a crowded table
 that puts the 90 mm body over a glass the teacher's own heading cleared
 comfortably.
 
-![The same fingertip at the teacher's heading and at thirty degrees off it, with a third glass twenty millimetres clear of the jaw's body in the first and underneath it in the second.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-thirty-degrees-of-heading.png)
+![The same fingertip at the teacher's heading and at twenty-five degrees off it, with a third glass twenty millimetres clear of the jaw's body in the first and underneath it in the second.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-the-heading-error.png)
 
 The examiner brings the jaw down to the chunk's first waypoint and stops if it
 touches anything on the way, so almost every push ends there, before any glass

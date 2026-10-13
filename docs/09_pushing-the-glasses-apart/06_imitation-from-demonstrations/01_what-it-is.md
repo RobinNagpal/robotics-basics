@@ -96,23 +96,32 @@ The introduction described a policy that was fitted by copying somebody else's
 pushes, and the film here shows what that policy actually does on one table in
 the simulator, played at three times real speed.
 
-[A policy copied from demonstrations, on one table, 16 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/03-imitation-from-demonstrations.mp4 "video")
+[A policy copied from demonstrations, on one table, 13 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/03-imitation-from-demonstrations.mp4 "video")
 
-The table is not finished. One of the five glasses is racked, the other four are
-refused, and the run spends sixteen pushes, which is the whole budget a table is
-allowed. Almost nothing moves: the glasses travel 9 mm in total, against the
-145 mm its own teacher needs on this table. The reason is visible in the film,
-because most of those pushes are stopped while the jaw is still coming down,
-meeting a neighbour on the way. The policy has learned roughly where a push
-starts and has the heading wrong, and a heading that is wrong by a little is
-enough to put the jaw into the glass beside the one it meant to move.
+The table holds six glasses where the average is five, and five of those six
+have no room at the start, which is the usual state of these tables.
 
-Every one of the six solutions is filmed on this same table, number 10003 of
+In the film the policy spends fourteen pushes and racks one glass, and the
+glass it racks is the one that already had room. Most of those pushes end while
+the jaw is still coming down, because the chunk puts the jaw over a neighbour
+rather than behind the target. The arm touches something, goes back up, and
+asks for another chunk from the same unchanged picture, which is why the film
+is a loop of near-identical attempts.
+
+This solution draws its answer rather than computing it, and three seeds of it
+were fitted, so the film is one draw from one seed rather than an average. It
+is seed 0. On this table the three seeds racked 1, 1 and 3 glasses in 14, 14
+and 11 pushes, so the film shows the commoner of the two behaviours.
+
+Every one of the six solutions is filmed on this same table, number 10025 of
 the fifty the examiner holds back, so the six films can be watched against each
-other. The table was chosen because it stands for the whole run rather than
-because it flatters anybody, which is what [one row per
+other. The table was chosen to be **typical rather than flattering**, by a rule
+written down before it was applied: every one of the six had to reach its own
+commonest outcome there and rack at least one glass, and exactly one table of
+the fifty does both. Choosing that way needed [one row per
 table](../01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) in the
-scorecard is for, and all six films are collected in [the six solutions side by
+scorecard, because a total over fifty tables cannot say which single table
+stands for the rest. All six films are collected in [the six solutions side by
 side](../10_the-results.md).
 
 The film shows a policy that learned nearly the right thing, and the next
@@ -122,7 +131,7 @@ first place.
 ## 3. The problem this solves
 
 [The problem](../01_the-problem/01_what-is-asked-for.md) asks for a jaw trajectory, and then another, until
-every glass has about 70 mm of clear room in every direction or the glasses
+every glass has about 76 mm of clear room in every direction or the glasses
 that are left have been refused with a reason. So the thing to be produced is a
 function: from the arrangement of a crowded table, to a motion of the jaw.
 

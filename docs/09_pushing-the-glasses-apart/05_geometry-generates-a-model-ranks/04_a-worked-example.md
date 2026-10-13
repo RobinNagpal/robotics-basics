@@ -14,7 +14,7 @@ lesson.
 
 A glass slides while the jaw touches it below half its foot width divided by
 the friction, and tips above that. The height that counts is the jaw's **top
-edge** at 65 mm, not the 50 mm its middle rides at, and for a glass whose foot
+edge** at 107 mm, not the 75 mm its middle rides at, and for a glass whose foot
 is narrow enough there is no contact height the arm can offer below the limit.
 The only correct answer for such a glass is to refuse, with the reason
 recorded, which marks the run *correct but incomplete* rather than wrong.

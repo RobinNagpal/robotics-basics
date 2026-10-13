@@ -43,17 +43,18 @@ is an exact tie, while the pushes that only ease the crowding range 11.9 mm. For
 one glass the printed rule already matches the best candidate in **159 of 206
 groups**, and the best possible choice beats it by 0.0 mm at the median.
 
-**So the ranker was fitted, and it lost to the rule it was meant to improve.**
-Both ran the same loop over the same fifty held-out tables with the same budget
-and the same candidate set, the only difference being who picks: the ranker
-racked **185 of 251 glasses in 229 pushes** and finished 31 tables, where the
-printed rule racked **195 in 213 pushes** and finished 33. Neither toppled
-anything.
+**So the ranker was fitted, and it did not improve on the rule it was meant to
+improve.** Both ran the same loop over the same fifty held-out tables with the
+same budget and the same candidate set, the only difference being who picks:
+the ranker racked **107 of 251 glasses in 182 pushes** and finished 14 tables,
+where the printed rule racked **the same 107 in 173 pushes** and finished the
+same 14. Each toppled one glass. The two agree on every column the run is
+marked on, and differ only in what the arm spent getting there.
 
-![The ranker racked 185 glasses and the printed rule 195, on the same fifty tables; three more rankers fitted on resamples of the same rows racked 180, 181 and 184, so the whole spread of the fitting is narrower than the gap to the rule.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-pages-the-ablation.png)
+![Four pairs of bars for the printed rule and the fitted ranker on the same fifty tables: the tables finished and the glasses racked are identical at 14 and 107, while the ranker spends 182 pushes against 173 and moves the glasses 4,325 mm against 2,844.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-pages-the-ablation.png)
 
-The gap is not an unlucky fit, and the reason is the label rather than the
-trees. The model is fitted on **room gained** and the run is marked on **glasses
+That the two agree exactly is not a coincidence, and the reason is the label
+rather than the trees. The model is fitted on **room gained** and the run is marked on **glasses
 that end up grippable**, and a push that spreads room over three glasses scores
 higher than one that finishes a glass outright. On the validation tables in
 `training.json` the ranker's top pick takes a job-finishing push in **47 of the
@@ -251,8 +252,8 @@ already computes exactly from the destination. Solution 4 fits a model of **what
 a push will actually do**, which is the quantity the geometry gets wrong, because
 predicting where a pushed glass ends up needs the friction and the weight
 distribution that nobody here has. Both have now been run on the same tables.
-Solution 4 racked 202 of the 251 glasses in 114 pushes, repeating only 14 of
-them, where the geometry racked 195 in 213 pushes and had to repeat 90. **The
+Solution 4 racked 146 of the 251 glasses in 221 pushes, repeating 102 of
+them, where the geometry racked 107 in 182 pushes and had to repeat 71. **The
 learning that paid in this cell attacked the quantity the geometry gets wrong,
 not the quantity it gets right.** That is the single most useful thing to take
 from placing these two side by side.

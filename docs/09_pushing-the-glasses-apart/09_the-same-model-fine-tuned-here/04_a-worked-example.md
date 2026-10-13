@@ -14,7 +14,7 @@ teaches the wrong lesson.
 
 A glass slides while the jaw touches it below half its foot width divided by
 the friction, and tips above that. The height that counts is the jaw's **top
-edge** at 65 mm, not the 50 mm its middle rides at, and for a glass whose foot
+edge** at 107 mm, not the 75 mm its middle rides at, and for a glass whose foot
 is narrow enough there is no contact height the arm can offer below the limit.
 The only correct answer for such a glass is to refuse, with the reason
 recorded, which marks the run *correct but incomplete* rather than wrong.
@@ -54,7 +54,7 @@ recognise once both have been run over the same one.
 **The table.** Five tapered glasses stand in the glass zone, drawn at
 proportions from across the kind's range, so they are not all the same height.
 Two of them stand as close together as the examiner allows, so neither has its
-70 mm of clear room measured to the other's edge, and because the test is to
+76 mm of clear room measured to the other's edge, and because the test is to
 the edge rather than to the middle, the narrower of the two is crowded while
 the wider one may not be. A third glass, standing alone, is drawn with a foot
 narrow enough that its limit falls below the jaw's top edge. The examiner
@@ -67,14 +67,14 @@ table — together with an instruction, and it returns a chunk of waypoints on
 the scale of robots that are not this one, read through the convention the pair
 agreed in advance. What comes out is a smooth, well-formed jaw motion whose
 relationship to these five glasses is genuinely in doubt. Measured over the
-held-out tables, that motion stays a median of 209 mm above the table and runs
-844 mm across it, which is clear of every glass but the tallest, so nearly nine
+held-out tables, that motion stays a median of 217 mm above the table and runs
+868 mm across it, which is clear of every glass but the tallest, so nearly nine
 pushes in ten touch nothing at all. Nothing in the output looks wrong, which is
 the characteristic failure of a model used across a domain gap.
 
 **What this solution does.** The corrected model is shown a view of a kind
 every example in its training set looked like, and returns a chunk in this
-cell's own units. It brings the jaw down to 50 mm, the height the gripper
+cell's own units. It brings the jaw down to 75 mm, the height the gripper
 pushes at, which is what its teacher's pushes did and what solution 5 never
 does. Then the chunk's first waypoint decides everything, and this is where the
 measurement is harsher than the expectation.
@@ -88,7 +88,7 @@ the chunk **blocked on the way down**, and the jaw goes straight back up
 without pushing anything — or the glass goes over. The model learned the height
 and did not learn the place: about three of its pushes in five end that way.
 
-![One glass seen from the side with the jaw coming down to its first waypoint from two places: behind the glass, where the jaw reaches 50 mm in open table and the rest of the chunk pushes, and over the glass, where the jaw meets the rim on the way down and the chunk is abandoned without a push.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/finetuned-where-the-jaw-comes-down.png)
+![One glass seen from the side with the jaw coming down to its first waypoint from two places: behind the glass, where the jaw reaches 75 mm in open table and the rest of the chunk pushes, and over the glass, where the jaw meets the rim on the way down and the chunk is abandoned without a push.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/finetuned-where-the-jaw-comes-down.png)
 
 **Where this solution is only as good as its teacher.** Which of the crowded
 pair to move is a choice solution 2's ranker makes, and on a pair like this one
@@ -109,7 +109,7 @@ differs is whether the model had ever seen this situation at all.
 
 **And the case neither can answer.** The third glass, with the narrow foot,
 cannot be pushed safely. The shared check computes the limit from the glass's
-measured foot width and the jaw's top edge, finds it below 65 mm, and refuses
+measured foot width and the jaw's top edge, finds it below 107 mm, and refuses
 that glass with that reason before either model is asked anything. The glass is
 left standing and the table is marked *correct but incomplete*. The refusal, its
 reason and its correctness belong entirely to the shared geometry.
@@ -126,7 +126,7 @@ model that keeps aiming at a glass it may not touch is a separate cap on
 answers per table, set at three times the push budget, which is slack rather
 than a limit. In practice none of this bound: the counts in each folder's
 `asking.json` say it fired once in this solution's 1,248 answers and not at all
-in solution 5's 2,260.
+in solution 5's 1,855.
 
 The honest summary of the example is that fine-tuning changes the first half of
 it and not the second. The chunk becomes a motion at the height a push happens

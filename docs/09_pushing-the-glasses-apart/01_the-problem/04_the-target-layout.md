@@ -39,7 +39,7 @@ out](02_what-goes-in-and-what-comes-out.md), which explains the measurements
 
 ## 2. The question, written out
 
-The pushing task is finished when every glass has about 70 mm of clear room in
+The pushing task is finished when every glass has about 76 mm of clear room in
 every direction, at least one usable viewpoint for a side-on photograph, and
 nothing has been knocked over. That is a statement about **where the glasses
 are**, so before anything can be pushed, somebody has to decide where each glass
@@ -124,7 +124,7 @@ and the layout needs only the one test.
 ![One glass with nine camera places round it on a circle, two neighbours nearby, and the line from each camera place to the glass drawn green when no other glass shares the picture and red when one stands in front of it, beside it or behind it.](../../images/pushing-the-glasses-apart/the-target-layout/layout-a-line-of-sight.png)
 
 Measuring a glass means photographing it from the side. The arm is offered
-nine places for the camera, spread evenly on a circle 380 mm out from the
+nine places for the camera, spread evenly on a circle 300 mm out from the
 glass, 40° apart. The picture shows those nine places round one glass, with two
 neighbours nearby. A place is green when the glass would be alone in its
 picture. It is red when another glass would appear in the same picture, in
@@ -404,7 +404,7 @@ remove returns by the side door. So the layout is computed once per
 arrangement, stored with it, and reused by every solution tried on it.
 
 **Success stays defined on the clearance, not on the layout.** A solution that
-gives every glass its 70 mm of clear room has done what the problem asked, even
+gives every glass its 76 mm of clear room has done what the problem asked, even
 if the arrangement it reached is nothing like the computed one. There is more
 than one way to uncrowd a table, and the alternatives are not wrong. So the
 check that decides whether a run is done has to be the clearance condition

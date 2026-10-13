@@ -37,12 +37,12 @@ from diagram_style import (
     INK,
     JAW_TOP,
     LABEL_SIZE,
-    LOWEST_GRIP,
     MU_HIGH,
     MU_LOW,
     MUTED,
     NOTE_SIZE,
     PAD_HEIGHT,
+    PUSH_HEIGHT as JAW_MIDDLE_HEIGHT,
     STURDY,
     TABLE_FRICTION,
     TIPPY,
@@ -67,13 +67,14 @@ from work_cell.glasses.spawn import SpawnedGlass  # noqa: E402
 KIND = "tapered_glass"
 GRAVITY = 9.81
 
-# Where the push actually lands. The middle of the jaw rides at LOWEST_GRIP,
-# but the jaw is FINGER_HEIGHT tall and a tapered glass is wider higher up, so
-# the glass meets the jaw's TOP edge first. That is JAW_TOP, and it is 15 mm
-# higher than the number it is easy to reach for. Every figure in this script
-# is computed at JAW_TOP and says so in its caption.
+# Where the push actually lands. The middle of the hand rides at the height
+# diagram_style calls PUSH_HEIGHT, but its leading stretch is FINGER_HEIGHT
+# tall and a tapered glass is wider higher up, so the glass meets the hand's
+# TOP edge first. That is JAW_TOP, and it is 32 mm higher than the number it is
+# easy to reach for. Every figure in this script is computed at JAW_TOP and
+# says so in its caption.
 PUSH_HEIGHT = JAW_TOP              # mm; code/src/09_pushing-the-glasses-apart/bench/bench.py JAW_TOP
-JAW_MIDDLE = LOWEST_GRIP           # mm; what a careless tipping check would use
+JAW_MIDDLE = JAW_MIDDLE_HEIGHT     # mm; what a careless tipping check would use
 
 PUSH_SPEED = 20.0                  # mm/s; code/src/09_pushing-the-glasses-apart/bench/bench.py PUSH_SPEED
 SLOW_PUSH = 10.0                   # mm/s; half speed, for the comparison

@@ -22,8 +22,8 @@ twice over because the page makes two separate points about the same geometry.
                                         taken out of play is taken out in front of
                                         the policy, because a chunk of waypoints
                                         has no channel for a refusal.
-    imitation-thirty-degrees-of-heading.png           a worked example: the measured
-                                        failure. Same fingertip, thirty degrees of
+    imitation-the-heading-error.png           a worked example: the measured
+                                        failure. Same fingertip, the measured
                                         heading, and the jaw's own 270 mm tail is
                                         over a glass.
 
@@ -38,7 +38,7 @@ Every number drawn into these pictures is read out of ``code/src/`` and the
 constant it came from is named beside it below. Three of the pictures also
 check their own claim: the crowded pair is crowded by the bench's own
 ``has_room``, the averaged chunk really does stand still, and the jaw really
-does clear the third glass at the teacher's heading and not at thirty degrees
+does clear the third glass at the teacher's heading and not at the measured error
 off it. A picture that stopped being true would stop the run rather than be
 written.
 
@@ -88,21 +88,27 @@ FEEL_STEP_MM = FEEL_SPEED * WAYPOINT_MS / 1000.0          # 0.5 mm
 PUSH_STEP_MM = PUSH_SPEED * WAYPOINT_MS / 1000.0          # 1.0 mm
 CAP_MM = TOP_SPEED * WAYPOINT_MS / 1000.0                 # 10 mm, the furthest a leg may be
 
-PUSH_HEIGHT_MM = 50.0    # bench/bench.py PUSH_HEIGHT = LOWEST_GRIP = 0.050
+PUSH_HEIGHT_MM = 75.0     # bench/bench.py PUSH_HEIGHT: as low as the rolled hand goes
 TRAVEL_HEIGHT_MM = 300.0  # bench/bench.py TRAVEL_HEIGHT = 0.30
-JAW_TOP_MM = 65.0        # bench/bench.py JAW_TOP = PUSH_HEIGHT + FINGER_HEIGHT / 2
+JAW_TOP_MM = 106.7        # bench/bench.py JAW_TOP = PUSH_HEIGHT + FINGER_HEIGHT / 2
 RETREAT_MM = 20.0        # bench/bench.py RETREAT = 0.02
 
 # The closed jaw in plan, as bench.py declares its three boxes. Everything is
 # measured back from the fingertip, which is where the jaw's own frame sits.
-FINGER_LENGTH_MM = 120.0  # bench/bench.py FINGER_LENGTH = 0.12
-JAW_THICKNESS_MM = 28.0   # bench/bench.py JAW_THICKNESS = 2 * (0.010 + 0.004)
-BODY_SIZE_MM = 90.0      # bench/bench.py BODY_SIZE = 0.09
-BODY_LENGTH_MM = 50.0    # bench/bench.py BODY_LENGTH = 0.05
-WRIST_LENGTH_MM = 100.0  # bench/bench.py WRIST_LENGTH = 0.10
-TOOL_LENGTH_MM = FINGER_LENGTH_MM + BODY_LENGTH_MM + WRIST_LENGTH_MM   # 270 mm
+FINGER_LENGTH_MM = 57.0   # bench/bench.py FINGER_LENGTH: the fingertip pad
+JAW_THICKNESS_MM = 27.0   # bench/bench.py JAW_THICKNESS: the two fingertips, stacked
+BODY_SIZE_MM = 89.0       # bench/bench.py WRIST_ACROSS: the force sensor, the widest part
+# Where the hand widens, measured back from the fingertips. Rolled onto its
+# side it stays 27 mm across for the first 73 mm, then the gripper's body
+# takes it to 75 mm, and behind that the force sensor is wider again. The
+# three stretches are bench.py's own JAW_SEGMENTS, simplified to the three a
+# picture can show apart.
+NARROW_BACK_MM = 72.9     # bench/bench.py JAW_SEGMENTS: where the body starts
+BODY_BACK_MM = 166.2      # bench/bench.py JAW_SEGMENTS: where the sensor starts
+BODY_ACROSS_MM = 75.0     # bench/bench.py JAW_PARTS: the gripper's body
+TOOL_LENGTH_MM = 266.2   # bench/bench.py TOOL_LENGTH
 
-GRIP_ROOM_MM = 70.0      # bench/bench.py GRIP_ROOM = 0.070
+GRIP_ROOM_MM = 76.2       # bench/bench.py GRIP_ROOM = 0.07621, the open hand's own reach
 APPROACH_GAP_MM = 10.0   # 01-one-fixed-nudge/plan.py APPROACH_GAP = 0.010
 AIM_MARGIN_MM = 10.0     # 01-one-fixed-nudge/plan.py AIM_MARGIN = 0.010
 CLEARANCE_MM = 8.0       # 01-one-fixed-nudge/plan.py CLEARANCE = 0.008
@@ -123,7 +129,7 @@ NARROW_RIM_MM = 70.0
 # The heading error the fitted policy actually shows, from
 # 03-imitation-from-demonstrations/README.md: "its heading is around 30 degrees
 # out".
-HEADING_ERROR_DEG = 30.0
+HEADING_ERROR_DEG = 25.0
 
 # One chunk, split the way the teacher's own push splits it. The fingertip
 # starts APPROACH_GAP outside the glass's widest point and feels in, so the
@@ -165,9 +171,9 @@ def jaw_parts(fingertip, heading: float):
     fingertip = np.asarray(fingertip, dtype=float)
     out = []
     for near, far, half, label in (
-        (0.0, FINGER_LENGTH_MM, JAW_THICKNESS_MM / 2.0, "fingers"),
-        (FINGER_LENGTH_MM, FINGER_LENGTH_MM + BODY_LENGTH_MM, BODY_SIZE_MM / 2.0, "body"),
-        (FINGER_LENGTH_MM + BODY_LENGTH_MM, TOOL_LENGTH_MM, BODY_SIZE_MM / 2.0, "wrist"),
+        (0.0, NARROW_BACK_MM, JAW_THICKNESS_MM / 2.0, "fingers"),
+        (NARROW_BACK_MM, BODY_BACK_MM, BODY_ACROSS_MM / 2.0, "body"),
+        (BODY_BACK_MM, TOOL_LENGTH_MM, BODY_SIZE_MM / 2.0, "wrist"),
     ):
         a = fingertip - near * forward
         b = fingertip - far * forward
@@ -651,12 +657,12 @@ def where_a_refusal_comes_from() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# 6. a worked example: thirty degrees of heading
+# 6. a worked example: the measured heading error
 # --------------------------------------------------------------------------- #
 
 
-def thirty_degrees_of_heading() -> None:
-    """The measured failure, drawn: same fingertip, thirty degrees, body over a glass.
+def the_heading_error() -> None:
+    """The measured failure, drawn: same fingertip, the measured error, body over a glass.
 
     The jaw is 270 mm of arm behind a 120 mm finger, so a heading error does
     not move the fingertip much and moves the far end of the wrist a long way.
@@ -739,7 +745,7 @@ def thirty_degrees_of_heading() -> None:
 
     print(f"  body clearance from the third glass: {straight:.1f} mm at the teacher's heading, "
           f"{skewed:.1f} mm at {HEADING_ERROR_DEG:.0f} degrees off (veto at {CLEARANCE_MM:.0f} mm)")
-    save(figure, "imitation-thirty-degrees-of-heading.png")
+    save(figure, "imitation-the-heading-error.png")
 
 
 def main() -> None:
@@ -748,7 +754,7 @@ def main() -> None:
     what_a_demonstration_keeps()
     heading_as_cosine_and_sine()
     where_a_refusal_comes_from()
-    thirty_degrees_of_heading()
+    the_heading_error()
 
 
 if __name__ == "__main__":

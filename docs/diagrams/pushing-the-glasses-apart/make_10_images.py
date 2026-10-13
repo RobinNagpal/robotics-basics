@@ -527,22 +527,28 @@ def gap_line(axis, a: dict, b: dict, colour: str, above: float = 0.0) -> float:
 # --------------------------------------------------------------------------- #
 # The example table every picture but the last two is drawn on.
 # --------------------------------------------------------------------------- #
-def can_be_pushed(glass: dict, mu: float = TABLE_FRICTION) -> bool:
-    """Whether this glass has any height the jaw can reach and still slide it.
+def can_be_pushed(glass: dict) -> bool:
+    """Whether solution 1's own rule would let this glass be pushed at all.
 
-    The height that matters is the jaw's *top* edge, not the middle of it. A
-    tapered glass is wider higher up, so it meets the top edge of the 30 mm jaw
-    before it meets the middle, and that is where the push is applied.
+    The height that matters is the jaw's *top* edge, not the middle of it,
+    because a glass that is wider higher up meets the top edge first and that
+    is where the push is applied. With the real gripper that edge is 107 mm up,
+    and at the friction the simulator really uses almost no glass is *certain*
+    to slide from there. The planner therefore does not demand certainty: it
+    refuses only the glasses that tip even at the most favourable friction it
+    believes in, which is the lowest one, and settles the rest with a 5 mm test
+    push. This asks the same question, so the worked example below is a push
+    the arm would really try.
     """
-    return pushable(glass["foot"], mu, JAW_TOP)
+    return pushable(glass["foot"], MU_LOW, JAW_TOP)
 
 
 def example_table() -> tuple[int, list[dict], list[dict], tuple[int, int]]:
     """A five-glass layout crowded into exactly one pair, one of which can be pushed.
 
-    "Can be pushed" is asked at the simulator's own friction, which is the
-    honest test even though the arm does not know that number: a worked example
-    whose glass tips before it slides would be a worked example of a refusal.
+    "Can be pushed" is ``can_be_pushed`` above, which is the planner's own
+    question rather than a stricter one: a worked example of a glass the
+    planner would refuse outright would be a worked example of a refusal.
     """
     for seed in range(400):
         glasses = table(5, seed)
@@ -568,9 +574,13 @@ def picture_what_it_predicts(seed: int, crowded: list[dict], pair: tuple[int, in
     plan = search(crowded, index, rng)
     landing = predict(glass, plan["heading"], plan["travel"])
     after = moved(crowded, index, landing)
-    middle = ((crowded[pair[0]]["x"] + crowded[pair[1]]["x"]) / 2,
-              (crowded[pair[0]]["y"] + crowded[pair[1]]["y"]) / 2)
-    close = 110.0
+    # Centred on the three places that matter — the pair, and where the pushed
+    # glass lands — because the two close-up panels share one window and a
+    # glass that leaves it cannot be compared with where it started.
+    points = [(crowded[pair[0]]["x"], crowded[pair[0]]["y"]),
+              (crowded[pair[1]]["x"], crowded[pair[1]]["y"]), landing]
+    middle = (sum(p[0] for p in points) / len(points), sum(p[1] for p in points) / len(points))
+    close = 150.0
 
     figure, axes = new(13.4, 5.9, columns=3)
     state, action, result = axes

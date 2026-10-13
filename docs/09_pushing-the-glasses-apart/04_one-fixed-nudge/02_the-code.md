@@ -81,7 +81,7 @@ Step 1 is a question about the foot, and the picture below marks the two widths
 it compares against on one. Between those two widths the arithmetic has nothing
 left to say.
 
-![The foot a glass stands on, with the two widths the arithmetic compares against marked on it: below 26 mm a glass tips at every friction in the range and is refused, above 65 mm it slides at every friction and is pushed, and between the two the answer depends on a number nobody has. The ranges the four kinds of glass are drawn from show that neither the tapered kind nor the short stemmed one ever reaches the right-hand zone.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-pages-three-answers.png)
+![The foot a glass stands on, with the two widths the arithmetic compares against marked on it: below 43 mm a glass tips at every friction in the range and is refused, above 107 mm it slides at every friction and is pushed, and between the two the answer depends on a number nobody has. The ranges the four kinds of glass are drawn from show that neither the tapered kind nor the short stemmed one ever reaches the right-hand zone.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-pages-three-answers.png)
 
 Steps 2 and 3 are the one exception to that. A glass tall enough that even the
 short test push could lean it most of the way to falling is refused rather

@@ -14,7 +14,7 @@ the easy case teaches the wrong lesson.
 
 A glass slides while the jaw touches it below half its foot width divided by
 the friction, and tips above that. The height that counts is the jaw's **top
-edge** at 65 mm, not the 50 mm its middle rides at, and for a glass whose foot
+edge** at 107 mm, not the 75 mm its middle rides at, and for a glass whose foot
 is narrow enough there is no contact height the arm can offer below the limit.
 The only correct answer for such a glass is to refuse, with the reason
 recorded, which marks the run *correct but incomplete* rather than wrong.
@@ -31,17 +31,17 @@ across them. A glass can be pushed when its line passes above the height the
 jaw touches it at, and the dot on each line is the narrowest foot that still
 slides at that friction.
 
-![Three rising lines, one for each friction, against the foot the glass stands on, with the jaw's middle at 50 mm and its top edge at 65 mm ruled across them.](../../images/pushing-the-glasses-apart/one-fixed-nudge/02-the-friction-ceiling.png)
+![Three rising lines, one for each friction, against the foot the glass stands on, with the jaw's middle at 75 mm and its top edge at 107 mm ruled across them.](../../images/pushing-the-glasses-apart/one-fixed-nudge/02-the-friction-ceiling.png)
 
-Those 15 mm between the jaw's middle and its top edge cost far more than their
+Those 32 mm between the jaw's middle and its top edge cost far more than their
 size suggests, and the second picture is what they cost. It takes 400 glasses
 drawn from one kind and asks, at each of the three frictions, what share of them
 could be pushed at all. At the friction the simulator itself uses, the share
-falls from 77 in every 100 to 25. At the highest friction the rule asks for a
-wider foot than this kind of glass is ever drawn with, so not one of the 400 may
-be pushed.
+falls from 9 in every 100 to none at all. At the highest friction the rule asks
+for a wider foot than this kind of glass is ever drawn with, so not one of the
+400 may be pushed from either height.
 
-![Two bars at each of three frictions, one for a push at 50 mm and one for a push at the real 65 mm, showing what share of 400 drawn glasses could be pushed at all.](../../images/pushing-the-glasses-apart/one-fixed-nudge/02-what-15-mm-of-jaw-costs.png)
+![Two bars at each of three frictions, one for a push at 75 mm and one for a push at the real 107 mm, showing what share of 400 drawn glasses could be pushed at all.](../../images/pushing-the-glasses-apart/one-fixed-nudge/02-what-the-jaws-height-costs.png)
 
 The arm is never told which of the three frictions is the real one, and nothing
 in the cell measures it. So the three lines are three different answers about
@@ -51,9 +51,10 @@ answer is true.
 **This solution has a second reason to refuse, and it is the one that costs it
 most.** The jaw pushes along the direction it points, so the approach runs
 along the same line as the push, and pushing a glass straight away from its
-neighbour means coming in from the neighbour's side. The tool reaches 270 mm
-back from the fingertips, and the body behind the fingers is 90 mm across, all
-of it at the height of the push. So all of it has to miss everything on the
+neighbour means coming in from the neighbour's side. The tool reaches 266 mm
+back from the fingertips. It is narrow at the front, 27 mm across for the first
+73 mm, and then it widens: 75 mm across the gripper's body and 89 mm across the
+force sensor behind that, all of it at the height of the push. So all of it has to miss everything on the
 table, and in a tight group the blocking neighbour is standing exactly where
 the tool would have to be.
 
@@ -63,7 +64,7 @@ to push the glass from. **Every solution that searches over headings can ask
 for a different approach; this one cannot**, and that is the sharpest statement
 of what the simplicity costs.
 
-![The glass to be pushed, the neighbour it is being pushed away from, and the closed jaw drawn to scale on the line between them: the fingertips come down 10 mm outside the glass, and the 270 mm of tool behind them lies along the same line, straight through the place the neighbour is standing.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-pages-nowhere-to-stand.png)
+![The glass to be pushed, the neighbour it is being pushed away from, and the closed jaw drawn to scale on the line between them: the fingertips come down 10 mm outside the glass, and the 266 mm of tool behind them lies along the same line, straight through the place the neighbour is standing.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-pages-nowhere-to-stand.png)
 
 ## 2. A worked example
 
@@ -86,9 +87,9 @@ kind, which is all the method ever reads about a glass.
 | B | close beside A, further from the arm | the widest the kind allows, on a broad foot |
 | C | the far corner of the zone, clear of both | middling |
 
-**The room test.** A needs 70 mm plus half of B's widest width, and B is as
+**The room test.** A needs 76 mm plus half of B's widest width, and B is as
 wide as the kind allows, so B's rim reaches inside A's ring and A is short of
-room. Turn the test round and B needs 70 mm plus half of A's widest width, and
+room. Turn the test round and B needs 76 mm plus half of A's widest width, and
 A is narrow, so B has room to spare at the very same distance. C is clear of
 both. **So A alone is on the list**, which is the asymmetry doing its work:
 one gap, two different answers, and the glass with the problem is the narrow
@@ -159,7 +160,7 @@ which is precisely what this method gave up in exchange for being one
 multiplication.
 
 **The same table also shows the approach failure.** If B and C stand closer to
-A than the tool is long, then pushing A away from B asks the arm to put 270 mm
+A than the tool is long, then pushing A away from B asks the arm to put 266 mm
 of tool where B is standing, and pushing A away from C asks the same of C's
 place. The method has no third heading to offer, so it refuses A with the
 reason that there is nowhere clear to push it from. The refusal arrives before

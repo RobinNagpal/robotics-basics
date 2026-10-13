@@ -109,25 +109,37 @@ at the table again.
 ## 2. A film of one table
 
 The introduction described this method in words, and the film here shows the
-same method working. It is one table cleared in the simulator, played at three
-times real speed.
+same method working. It is one table in the simulator, played at three times
+real speed.
 
-[One fixed nudge clears one table, 30 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/01-one-fixed-nudge.mp4 "video")
+[One fixed nudge on one table, 8 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/01-one-fixed-nudge.mp4 "video")
 
-The table holds five glasses, which is the average of the fifty. The arm pushes
-seven times, every one of the five glasses ends up clear and carried to the
-rack, and nothing is knocked over, which is this solution's commonest outcome.
-The thing to watch for is how often the same glass is pushed twice. The method
-never predicts where a glass will stop, so it moves one a fixed fraction of the
-room it is short of and then looks at the table again, and the repetition in the
-film is that habit made visible.
+The table holds six glasses where the average is five, and five of those six
+have no room at the start, which is the usual state of these tables.
 
-Every one of the six solutions is filmed on this same table, number 10003 of
+In the film the arm racks the one glass that already had room, makes two
+pushes, and then refuses the other five, each for its own reason: two tip
+before they slide, two tipped when the push was tried, and one has nowhere
+clear to be pushed to. Nothing is knocked over, and the table is left
+unfinished, which is this solution's commonest outcome. That is the shape of
+nearly every table with this gripper — one or two glasses taken, the rest
+turned down, none broken.
+
+The thing to watch for is how short the film is. The method never predicts
+where a glass will stop, so it is built to push a little and look again, but
+here it hardly gets the chance: the hand is too wide to stand beside most of
+these glasses and too high to shove them without tipping them, so the loop runs
+out of legal pushes long before it runs out of budget.
+
+Every one of the six solutions is filmed on this same table, number 10025 of
 the fifty the examiner holds back, so the six films can be watched against each
-other. The table was chosen because it stands for the whole run rather than
-because it flatters anybody, which is what [one row per
+other. The table was chosen to be **typical rather than flattering**, by a rule
+written down before it was applied: every one of the six had to reach its own
+commonest outcome there and rack at least one glass, and exactly one table of
+the fifty does both. Choosing that way needed [one row per
 table](../01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) in the
-scorecard is for, and all six films are collected in [the six solutions side by
+scorecard, because a total over fifty tables cannot say which single table
+stands for the rest. All six films are collected in [the six solutions side by
 side](../10_the-results.md).
 
 So the film shows what the method does. The next section says what problem a

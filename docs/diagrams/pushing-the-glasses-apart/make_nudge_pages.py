@@ -70,20 +70,26 @@ from work_cell.glasses.shapes import family  # noqa: E402
 # All of these are read out of code/src/, and the constant that holds each one
 # is named so that a reader can check it in one step.
 
-GRIP_ROOM_MM = 70.0        # bench/bench.py GRIP_ROOM = 0.070
-JAW_TOP_MM = 65.0          # bench/bench.py JAW_TOP = PUSH_HEIGHT + FINGER_HEIGHT / 2
+GRIP_ROOM_MM = 76.2       # bench/bench.py GRIP_ROOM = 0.07621, the open hand's own reach
+JAW_TOP_MM = 106.7        # bench/bench.py JAW_TOP = PUSH_HEIGHT + FINGER_HEIGHT / 2
 MU_LOWEST = 0.2            # 01-one-fixed-nudge/plan.py MU_LOWEST
 MU_HIGHEST = 0.5           # 01-one-fixed-nudge/plan.py MU_HIGHEST
 PROBE_MM = 5.0             # 01-one-fixed-nudge/plan.py PROBE = 0.005
 APPROACH_GAP_MM = 10.0     # 01-one-fixed-nudge/plan.py APPROACH_GAP = 0.010
 FEEL_BEYOND_MM = 30.0      # 01-one-fixed-nudge/plan.py FEEL_BEYOND = 0.030
 
-FINGER_LENGTH_MM = 120.0   # bench/bench.py FINGER_LENGTH = 0.12
-BODY_LENGTH_MM = 50.0      # bench/bench.py BODY_LENGTH = 0.05
-WRIST_LENGTH_MM = 100.0    # bench/bench.py WRIST_LENGTH = 0.10
-TOOL_LENGTH_MM = FINGER_LENGTH_MM + BODY_LENGTH_MM + WRIST_LENGTH_MM   # bench.py TOOL_LENGTH, 270 mm
-BODY_SIZE_MM = 90.0        # bench/bench.py BODY_SIZE = 0.09
-JAW_THICKNESS_MM = 28.0    # bench/bench.py JAW_THICKNESS = 2 * (0.010 + 0.004)
+FINGER_LENGTH_MM = 57.0   # bench/bench.py FINGER_LENGTH: the fingertip pad
+# Where the hand widens, measured back from the fingertips. Rolled onto its
+# side it stays 27 mm across for the first 73 mm, then the gripper's body
+# takes it to 75 mm, and behind that the force sensor is wider again. The
+# three stretches are bench.py's own JAW_SEGMENTS, simplified to the three a
+# picture can show apart.
+NARROW_BACK_MM = 72.9     # bench/bench.py JAW_SEGMENTS: where the body starts
+BODY_BACK_MM = 166.2      # bench/bench.py JAW_SEGMENTS: where the sensor starts
+BODY_ACROSS_MM = 75.0     # bench/bench.py JAW_PARTS: the gripper's body
+TOOL_LENGTH_MM = 266.2     # bench/bench.py TOOL_LENGTH
+BODY_SIZE_MM = 89.0       # bench/bench.py WRIST_ACROSS: the force sensor, the widest part
+JAW_THICKNESS_MM = 27.0   # bench/bench.py JAW_THICKNESS: the two fingertips, stacked
 
 # The foot a glass has to stand on before the arithmetic can decide it on its
 # own. Both ends are the same rule, h < a / mu, read backwards at the height
@@ -188,19 +194,23 @@ def tick(axis, x: float, bottom: float, top: float, *, colour=MUTED, lw=0.9) -> 
 def the_error() -> None:
     """The error the loop corrects, drawn as a length on the table.
 
-    Algebraically the shortfall is 70 mm, plus half the neighbour's widest
-    width, minus the distance between the two middles. On the table it is one
+    Algebraically the shortfall is the clear room the open hand needs, plus
+    half the neighbour's widest width, minus the distance between the two
+    middles. On the table it is one
     thing: how far the neighbour's edge reaches inside the ring. The picture is
     here because the prose has to say it as a subtraction, and a reader cannot
     see a subtraction.
     """
-    width, height = 8.7, 5.8
+    width, height = 8.7, 6.0
     figure, axis = sheet(width, height)
     title(figure, axis, width, height - 0.12,
           "The shortfall: how far the neighbour's edge reaches inside the ring")
 
     scale = 0.0225                 # inches per millimetre
-    table = Table(axis, (2.20, 3.55), scale)
+    # Anchored higher than the picture's own middle, because the stack of
+    # measuring lines hangs below the ring and the ring is the open hand's own
+    # reach, which is wider than this picture used to assume.
+    table = Table(axis, (2.20, 3.85), scale)
 
     # The crowded glass is drawn at the narrow end of the tapered kind's
     # declared range and its neighbour at the wide end, because the room one
@@ -596,9 +606,9 @@ def nowhere_to_stand() -> None:
     # has to put them: behind the glass, on the neighbour's side.
     tip = -(crowded_rim / 2.0 + APPROACH_GAP_MM)
     pieces = (
-        (tip - FINGER_LENGTH_MM, FINGER_LENGTH_MM, JAW_THICKNESS_MM),
-        (tip - FINGER_LENGTH_MM - BODY_LENGTH_MM, BODY_LENGTH_MM, BODY_SIZE_MM),
-        (tip - FINGER_LENGTH_MM - BODY_LENGTH_MM - WRIST_LENGTH_MM, WRIST_LENGTH_MM, BODY_SIZE_MM),
+        (tip - NARROW_BACK_MM, NARROW_BACK_MM, JAW_THICKNESS_MM),
+        (tip - BODY_BACK_MM, BODY_BACK_MM - NARROW_BACK_MM, BODY_ACROSS_MM),
+        (tip - TOOL_LENGTH_MM, TOOL_LENGTH_MM - BODY_BACK_MM, BODY_SIZE_MM),
     )
     for start, along, across in pieces:
         axis.add_patch(

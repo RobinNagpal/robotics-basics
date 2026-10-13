@@ -19,7 +19,7 @@ about, and one measured result each for four of the six solutions.
     ranked-the-label-is-not-the-score.png the quantity solution 2's model is
                                           fitted on is not the quantity the
                                           run is marked on.
-    imitation-a-heading-thirty-degrees-out.png  why the measured heading error
+    imitation-what-the-heading-error-does.png  why the measured heading error
                                           lands the jaw's own body on a
                                           neighbour.
     smolvla-the-jaw-hovers.png            how far above the table the borrowed
@@ -44,7 +44,9 @@ Run from code/:
 
 from __future__ import annotations
 
+import json
 import math
+from pathlib import Path
 
 import numpy as np
 from diagram_style import (
@@ -76,21 +78,47 @@ from matplotlib.patches import Circle, Polygon, Rectangle
 # ------------------------------------------------------------------ the numbers
 #
 # Each solution's own results.json, under
-# code/src/09_pushing-the-glasses-apart/. For the three solutions the examiner
-# requires several runs of, the figure is the "spread" block's median.
+# code/src/09_pushing-the-glasses-apart/, read here rather than copied, so that
+# re-running a solution and re-drawing this picture cannot disagree. For the
+# three solutions the examiner requires several runs of, results.json reports a
+# "spread" block instead of plain totals and the figure taken is its median.
 
 HELD_OUT_TABLES = 50
 GLASSES = 251
 
-# name, glasses racked, glasses toppled
-RESULTS = [
-    ("1 one fixed nudge", 195, 0),
-    ("2 geometry ranked", 185, 0),
-    ("3 imitation, ACT", 68, 1),
-    ("4 a world model", 202, 1),
-    ("5 SmolVLA as it downloads", 56, 6),
-    ("6 SmolVLA fine-tuned", 77, 46),
+SOLUTIONS = [
+    ("1 one fixed nudge", "01-one-fixed-nudge"),
+    ("2 geometry ranked", "02-geometry-ranked"),
+    ("3 imitation, ACT", "03-imitation-from-demonstrations"),
+    ("4 a world model", "04-a-world-model"),
+    ("5 SmolVLA as it downloads", "05-smolvla-as-it-downloads"),
+    ("6 SmolVLA fine-tuned", "06-smolvla-fine-tuned"),
 ]
+CODE = Path(__file__).resolve().parents[3] / "code" / "src" / "09_pushing-the-glasses-apart"
+
+
+def _scored(folder: str) -> tuple[int, int]:
+    """How many glasses that solution racked and toppled, from its own scorecard.
+
+    A solution run once writes its totals directly, as ``glasses_end.racked``.
+    A solution the examiner runs several times writes a ``spread`` block
+    instead, whose keys are the same names flattened with a dot and whose
+    values are the least, the median and the most over those runs. The median
+    is the figure this picture draws, which is the same one the comparison
+    table quotes.
+    """
+    found = json.loads((CODE / folder / "results.json").read_text())
+
+    def figure(name: str) -> int:
+        if "spread" in found:
+            return int(found["spread"][f"glasses_end.{name}"]["median"])
+        return int(found["glasses_end"][name])
+
+    return figure("racked"), figure("toppled")
+
+
+# name, glasses racked, glasses toppled
+RESULTS = [(name, *_scored(folder)) for name, folder in SOLUTIONS]
 
 # 01-one-fixed-nudge/plan.py: the enumerator solutions 1 and 2 share.
 HEADINGS = 72              # HEADINGS
@@ -101,10 +129,10 @@ APPROACH_GAP_MM = 10       # APPROACH_GAP = 0.010
 CLEARANCE_MM = 8           # CLEARANCE = 0.008
 
 # bench/bench.py, the jaw as arm/gripper.urdf.xacro declares it.
-TOOL_LENGTH_MM = 270       # TOOL_LENGTH = FINGER_LENGTH + BODY_LENGTH + WRIST_LENGTH
-BODY_SIZE_MM = 90          # BODY_SIZE
-PUSH_HEIGHT_MM = 50        # PUSH_HEIGHT = LOWEST_GRIP
-JAW_TOP_MM = 65            # JAW_TOP = PUSH_HEIGHT + FINGER_HEIGHT / 2
+TOOL_LENGTH_MM = 266.2    # bench/bench.py TOOL_LENGTH
+BODY_SIZE_MM = 89.0       # bench/bench.py WRIST_ACROSS: the force sensor, the widest part
+PUSH_HEIGHT_MM = 75.0     # bench/bench.py PUSH_HEIGHT: as low as the rolled hand goes
+JAW_TOP_MM = 106.7        # bench/bench.py JAW_TOP = PUSH_HEIGHT + FINGER_HEIGHT / 2
 TRAVEL_HEIGHT_MM = 300     # TRAVEL_HEIGHT = 0.30
 
 # glasses/shapes.py KIND_RANGES, by way of diagram_style: the declared range of
@@ -131,7 +159,7 @@ FINETUNED_BLOCKED = 247
 FINETUNED_NEVER_TOUCHED = 39
 
 # 03-imitation-from-demonstrations/README.md, "Why it scores that way".
-HEADING_ERROR_DEG = 30
+HEADING_ERROR_DEG = 25
 
 
 # --------------------------------------------------------------------------- #
@@ -353,9 +381,9 @@ def racked_against_toppled() -> None:
 
     bottom = note(
         axis, 0.55, floor - 0.76,
-        "A toppled glass cannot be stood back up, so the two axes are not worth the same. The three solutions that let written\n"
-        "geometry choose the push sit together in the bottom right; the three that produce the push themselves come nowhere near\n"
-        "them. The only trade worth arguing about is between solutions 1 and 4: seven more glasses racked, for one glass broken.",
+        "A toppled glass cannot be stood back up, so the two axes are not worth the same. Solutions 1 and 2 are one dot, because\n"
+        "they reach the same glasses on the same tables. The trade worth arguing about is between that dot and solution 4, which\n"
+        "racks 39 more glasses for 19 more broken; everything that produces the push itself is poorer on both axes at once.",
         colour=INK, figure=figure,
     )
 
@@ -388,7 +416,7 @@ def the_rule_and_the_planner() -> None:
         "look(): the camera measures every glass — where it stands, how tall it is,\n"
         "how wide at its widest and how wide the foot it stands on is.",
         "Take every glass that already has clear room, and look again.",
-        f"Refuse every glass that tips before it slides. The jaw's top edge rides {JAW_TOP_MM} mm\n"
+        f"Refuse every glass that tips before it slides. The jaw's top edge rides {JAW_TOP_MM:.0f} mm\n"
         "above the table, and the friction is never measured.",
     ):
         y = box(figure, axis, chain_x, y, chain_w, text)
@@ -594,11 +622,11 @@ def the_label_is_not_the_score() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# 6. solution 3: what a heading thirty degrees out does
+# 6. solution 3: what the measured heading error does
 # --------------------------------------------------------------------------- #
 
 
-def a_heading_thirty_degrees_out() -> None:
+def what_the_heading_error_does() -> None:
     """The teacher's heading and the fitted policy's, with the jaw drawn on both.
 
     One idea: what has to be clear is not the line the glass travels along but
@@ -609,7 +637,7 @@ def a_heading_thirty_degrees_out() -> None:
     figure, axis = sheet(width, height)
 
     y = title(figure, axis, width, height - 0.12,
-              "Why a heading thirty degrees out is a push that never reaches the glass") - 0.34
+              f"Why a heading {HEADING_ERROR_DEG:.0f} degrees out is a push that never reaches the glass") - 0.34
 
     rim = 90.0
     panel_x, panel_w = 0.80, 7.2
@@ -630,7 +658,7 @@ def a_heading_thirty_degrees_out() -> None:
     least_deg = math.degrees(math.asin(min(1.0, clear_mm / apart_mm)))
     teacher_deg = 90.0 + least_deg + 6.0
     policy_deg = teacher_deg - HEADING_ERROR_DEG
-    print(f"  a-heading-thirty-degrees-out: a neighbour {apart_mm:.0f} mm away needs the jaw's "
+    print(f"  what-the-heading-error-does: a neighbour {apart_mm:.0f} mm away needs the jaw's "
           f"line {clear_mm:.0f} mm clear of it, so a heading has to be at least {least_deg:.0f} "
           f"degrees off the line towards it; the teacher's is {teacher_deg:.0f} degrees and the "
           f"policy's {policy_deg:.0f}")
@@ -684,8 +712,8 @@ def a_heading_thirty_degrees_out() -> None:
         edge=INK, face=PAPER,
     )
 
-    finish(figure, axis, "imitation-a-heading-thirty-degrees-out.png", bottom - 0.10)
-    save(figure, "imitation-a-heading-thirty-degrees-out.png")
+    finish(figure, axis, "imitation-what-the-heading-error-does.png", bottom - 0.10)
+    save(figure, "imitation-what-the-heading-error-does.png")
 
 
 # --------------------------------------------------------------------------- #
@@ -845,7 +873,7 @@ def main() -> None:
     racked_against_toppled()
     the_rule_and_the_planner()
     the_label_is_not_the_score()
-    a_heading_thirty_degrees_out()
+    what_the_heading_error_does()
     the_jaw_hovers()
     where_the_pushes_went()
 

@@ -114,7 +114,7 @@ path into the shorter one does not change where the jaw goes; it changes how
 fast it gets there, because the examiner consumes waypoints a fixed fifty
 milliseconds apart whatever the gaps between them stand for.
 
-![One recorded push of 89 mm drawn twice: as the teacher made it, where no waypoint is more than 1.0 mm from the last because the teacher never pushes faster than 20 mm/s, and as the fifty waypoints the model is trained to emit, 1.8 mm apart, which the examiner eats at the same rate and therefore carries out at 36 mm/s.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/finetuned-the-same-push-in-fewer-waypoints.png)
+![One recorded push of 75 mm drawn twice: as the teacher made it, where no waypoint is more than 1.0 mm from the last because the teacher never pushes faster than 20 mm/s, and as the fifty waypoints the model is trained to emit, 1.5 mm apart, which the examiner eats at the same rate and therefore carries out at 31 mm/s.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/finetuned-the-same-push-in-fewer-waypoints.png)
 
 The second block also borrows its arithmetic from its partner rather than
 repeating it. `as_action` and `drift` call `to_state` and `to_jaw`, which are

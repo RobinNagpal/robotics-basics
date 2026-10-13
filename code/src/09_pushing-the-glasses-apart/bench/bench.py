@@ -39,7 +39,7 @@ from dataclasses import dataclass
 
 import mujoco
 import numpy as np
-from work_cell.arm.dimensions import LOWEST_GRIP
+from work_cell.arm import robotiq_2f85
 from work_cell.glasses.shapes import Outline, draw
 from work_cell.glasses.spawn import SpawnedGlass
 from work_cell.rack.layout import GLASS_ZONE
@@ -53,20 +53,87 @@ GLASS_ON_GLASS = 0.4
 # Aluminium finger and silicone pad, on glass.
 JAW_FRICTION = 0.6
 
-# The closed jaw, as arm/gripper.urdf.xacro declares it, held level with the
-# fingers pointing the way it pushes. Two 10 mm fingers and two 4 mm pads side
-# by side, 120 mm long and 30 mm tall; the 90 mm body behind them; and the
-# wrist behind that, drawn as a box the size of the body.
-FINGER_LENGTH = 0.12
-FINGER_HEIGHT = 0.03
-JAW_THICKNESS = 2 * (0.010 + 0.004)
-BODY_SIZE = 0.09
-BODY_LENGTH = 0.05
-WRIST_LENGTH = 0.10
-TOOL_LENGTH = FINGER_LENGTH + BODY_LENGTH + WRIST_LENGTH
+# The closed hand, held level with the fingers pointing the way it pushes.
+#
+# It is a real Robotiq 2F-85, and its shape is taken from the description
+# Robotiq publish rather than drawn here: arm/robotiq_2f85.py turns their link
+# offsets and collision meshes into the stack of boxes below, so this bench and
+# the cell the rest of the project describes are pushing with the same hand.
+#
+# The shape is worth knowing before reading anything this bench measures,
+# because it is not the blade a reader would picture. The two fingertips meet in
+# the middle and make a stub 27 mm across and 57 mm long. Behind them the
+# fingers stand 139 mm tall, and they start only 35 mm back from the tip.
+# Behind those again is the body, and behind that the force sensor and the
+# wrist.
+#
+# **The hand is held rolled a quarter turn, and that is the one decision this
+# bench makes about it rather than reads off the datasheet.** Held the way the
+# cell grips, with the fingers side by side, the hand is 139 mm across, and the
+# glasses on these tables stand 150 mm apart centre to centre at the closest,
+# so a hand that wide has almost nowhere to go. Rolled a quarter turn the two
+# fingers stack one above the other, the hand is 27 mm across, and the task
+# becomes possible again. Rolling costs height, which is the trade, and it is
+# why PUSH_HEIGHT below is no longer the lowest the gripper can reach.
+def _rolled(part: dict) -> dict:
+    """One part of the hand, turned a quarter turn about the push direction.
 
-# The middle of the jaw rides this high: as low as the gripper goes.
-PUSH_HEIGHT = LOWEST_GRIP
+    Across and tall simply swap: what was the gap between the fingers becomes
+    the hand's height, and the width of a finger becomes how much room the
+    hand needs beside it.
+    """
+    return {**part, "across": part["tall"], "tall": part["across"]}
+
+
+JAW_PARTS = [_rolled(part) for part in robotiq_2f85.jaw()]
+
+# How wide the leading stub is, which is what first touches a glass.
+JAW_THICKNESS = JAW_PARTS[0]["across"]
+# How tall it is, which decides how high up a glass is shoved and therefore
+# whether the glass slides or tips.
+FINGER_HEIGHT = JAW_PARTS[0]["tall"]
+FINGER_LENGTH = JAW_PARTS[0]["depth"]
+
+# Behind the gripper sits the FT 300-S force sensor and Robotiq's coupling
+# plate, and behind those the arm's own wrist. They are drawn as one box
+# because nothing about them is meant to touch a glass; what they are for here
+# is being in the way, so only their outside matters. The sensor is the widest
+# of them at 89 mm.
+WRIST_ACROSS = 0.089
+WRIST_LENGTH = 0.10
+
+TOOL_LENGTH = max(part["back"] + part["depth"] for part in JAW_PARTS) + WRIST_LENGTH
+
+# The hand's silhouette, as a list of stretches measured back from the
+# fingertips: how far back the stretch starts, how far back it ends, and how
+# far it reaches either side of the push. A solution checks a push against
+# these to find out whether any part of the hand would be dragged through a
+# neighbouring glass.
+#
+# It is a list rather than a single width because the hand is not one shape.
+# Rolled, it stays 27 mm wide for the first 73 mm and then widens to the 75 mm
+# body and the 89 mm sensor behind it, and a solution that used one figure for all of it would be either
+# needlessly cautious or quietly dangerous.
+JAW_SEGMENTS = tuple(
+    (part["back"], part["back"] + part["depth"], part["across"] / 2.0)
+    for part in JAW_PARTS
+) + (
+    (
+        max(part["back"] + part["depth"] for part in JAW_PARTS),
+        TOOL_LENGTH,
+        WRIST_ACROSS / 2.0,
+    ),
+)
+
+# How far the hand reaches below its own middle, turned on its side. The
+# fingers set it, because they are the longest thing across the opening.
+JAW_HALF_HEIGHT = max(part["tall"] for part in JAW_PARTS) / 2.0
+
+# The middle of the jaw rides this high: as low as the rolled hand goes without
+# its fingers striking the table, with five millimetres to spare and rounded up
+# to the nearest five. Lower would be better — a push low on a glass is less
+# likely to tip it — so this is the geometry's answer and not a choice.
+PUSH_HEIGHT = math.ceil((JAW_HALF_HEIGHT + 0.005) * 200.0) / 200.0
 # The top edge of the jaw. A glass that is wider higher up meets the jaw here
 # first, so this, not PUSH_HEIGHT, is how high it is pushed.
 JAW_TOP = PUSH_HEIGHT + FINGER_HEIGHT / 2
@@ -111,10 +178,12 @@ TOP_VIEW_HEIGHT = 0.75
 # How many pixels that view is, (rows, columns). Square, because the frame is.
 TOP_VIEW_SIZE = (384, 384)
 
-# Clear room the open jaw needs from a glass's middle to anything else, from
-# problem.md: half the widest opening, a finger and a pad each side, and a
-# little to spare. A neighbour is in the way when its edge is inside this.
-GRIP_ROOM = 0.070
+# Clear room the open hand needs from a glass's middle to anything else, from
+# problem.md. It is not half the opening, which is the easy mistake: it is how
+# far the widest part of the open hand reaches from its own middle, and on a
+# 2F-85 the fingers stand further out than the pads do. A neighbour is in the
+# way when its edge is inside this.
+GRIP_ROOM = robotiq_2f85.OPEN_HALF_WIDTH
 
 # Half the straight-down view's frame, measured on the table top. It has to
 # hold the whole glass zone, and a little more: in a view from above a glass
@@ -257,6 +326,33 @@ def _glass_xml(index: int, glass: SpawnedGlass) -> str:
     )
 
 
+def _jaw_xml(surface: str) -> str:
+    """The shut hand as MuJoCo boxes, tip at the origin, pushing along +x.
+
+    One box per stretch, laid out backwards from the fingertips, because the
+    fingertips are what reaches a glass first and everything else is measured
+    from them. The last box is the force sensor and the wrist behind the
+    gripper.
+    """
+    boxes = []
+    for part in JAW_PARTS + [
+        {
+            "name": "wrist",
+            "back": max(p["back"] + p["depth"] for p in JAW_PARTS),
+            "depth": WRIST_LENGTH,
+            "across": WRIST_ACROSS,
+            "tall": WRIST_ACROSS,
+        }
+    ]:
+        middle = -(part["back"] + part["depth"] / 2.0)
+        boxes.append(
+            f'<geom name="{part["name"]}" type="box" '
+            f'size="{part["depth"] / 2:.5f} {part["across"] / 2:.5f} {part["tall"] / 2:.5f}" '
+            f'pos="{middle:.5f} 0 0" {surface}/>'
+        )
+    return "\n      ".join(boxes)
+
+
 def _world(glasses: list[SpawnedGlass]) -> str:
     half_x, half_y = TABLE_SIZE[0] / 2, TABLE_SIZE[1] / 2
     jaw = f'friction="{JAW_FRICTION} 0.005 0.0001" priority="2" rgba="0.6 0.6 0.62 1"'
@@ -276,12 +372,7 @@ def _world(glasses: list[SpawnedGlass]) -> str:
           friction="{TABLE_FRICTION} 0.005 0.0001" priority="1" rgba="0.75 0.6 0.45 1"/>
     {"".join(_glass_xml(i, g) for i, g in enumerate(glasses))}
     <body name="jaw" mocap="true" pos="0 0.5 1.3">
-      <geom name="fingers" type="box" size="{FINGER_LENGTH / 2} {JAW_THICKNESS / 2} {FINGER_HEIGHT / 2}"
-            pos="{-FINGER_LENGTH / 2} 0 0" {jaw}/>
-      <geom name="body" type="box" size="{BODY_LENGTH / 2} {BODY_SIZE / 2} {BODY_SIZE / 2}"
-            pos="{-FINGER_LENGTH - BODY_LENGTH / 2} 0 0" {jaw}/>
-      <geom name="wrist" type="box" size="{WRIST_LENGTH / 2} {BODY_SIZE / 2} {BODY_SIZE / 2}"
-            pos="{-FINGER_LENGTH - BODY_LENGTH - WRIST_LENGTH / 2} 0 0" {jaw}/>
+      {_jaw_xml(jaw)}
     </body>
   </worldbody>
 </mujoco>"""
@@ -405,7 +496,9 @@ class Bench:
         self.model = mujoco.MjModel.from_xml_string(_world(self.glasses))
         self.data = mujoco.MjData(self.model)
         self.bodies = [self.model.body(f"glass_{i}").id for i in range(len(self.glasses))]
-        self.jaw_geoms = {self.model.geom(n).id for n in ("fingers", "body", "wrist")}
+        self.jaw_geoms = {
+            self.model.geom(part["name"]).id for part in JAW_PARTS
+        } | {self.model.geom("wrist").id}
         self.taken: dict[int, bool] = {}
         self.records: list[Record] = []
         self.looks = 0

@@ -203,7 +203,7 @@ plainly made the score worse. About three of its pushes in five are blocked
 coming down, because it never learned where to put the jaw down, and 46 glasses
 a run go over.
 
-![Where the pushes went before and after the training: the borrowed model's pushes nearly all touch nothing, because its chunks stay 209 mm above the table, while the fine-tuned model's come down to the 50 mm the jaw pushes at and are then mostly stopped by a glass on the way down.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/smolvla-finetuned-where-the-pushes-went.png)
+![Where the pushes went before and after the training: the borrowed model's pushes nearly all touch nothing, because its chunks stay 217 mm above the table, while the fine-tuned model's come down to the 75 mm the jaw pushes at and are then mostly stopped by a glass on the way down.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/smolvla-finetuned-where-the-pushes-went.png)
 
 Solution 5 stays out of the *wrong* column by never reaching a glass at all: it
 hovers, refuses nearly everything, and is marked correct but incomplete. So the

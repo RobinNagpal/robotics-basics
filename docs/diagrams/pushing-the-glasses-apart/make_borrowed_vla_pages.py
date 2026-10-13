@@ -57,7 +57,7 @@ from matplotlib.patches import Circle, Rectangle
 GLASS_ZONE = (320.0, 640.0, -440.0, -80.0)   # rack/layout.py GLASS_ZONE, in mm
 TOP_VIEW_HEIGHT_MM = 750.0                   # TOP_VIEW_HEIGHT = 0.75
 TRAVEL_HEIGHT_MM = 300.0                     # TRAVEL_HEIGHT = 0.30
-PUSH_HEIGHT_MM = 50.0                        # PUSH_HEIGHT = LOWEST_GRIP
+PUSH_HEIGHT_MM = 75.0     # bench/bench.py PUSH_HEIGHT: as low as the rolled hand goes
 TABLE_TOP_MM = 750.0                         # table/layout.py TABLE_TOP_Z = 0.75
 WAYPOINT_PERIOD_S = 0.05                     # WAYPOINT_PERIOD
 TOP_SPEED_MMS = 200.0                        # TOP_SPEED = DESCEND_SPEED = 0.20
@@ -72,7 +72,7 @@ ACTION_SPAN = 2.0                            # ACTION_SPAN
 CHUNK = 50                                   # the actions in one answer
 
 # 05-smolvla-as-it-downloads/asking.json, over all three evaluation runs.
-ASKED = 2260                                 # "asked"
+ASKED = 1855                                 # "asked"
 STEP_MM = 14.3                               # "step_mm_median"
 LOWEST_MM = 209.1                            # "lowest_mm_median"
 
@@ -124,7 +124,7 @@ MODEL_SPEED_MMS = STEP_MM / WAYPOINT_PERIOD_S
 
 def _check() -> None:
     """Everything the two pictures claim, checked before either is drawn."""
-    assert round(HALF_FRAME_MM, 1) == 358.3, HALF_FRAME_MM
+    assert round(HALF_FRAME_MM, 1) == 363.5, HALF_FRAME_MM
     assert VIEW_CENTRE_MM == (480.0, -260.0), VIEW_CENTRE_MM
     # Picture 1's whole claim: the parked jaw is outside the box on all three
     # axes, so all three numbers the model is handed clip to an edge.

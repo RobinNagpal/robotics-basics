@@ -200,11 +200,11 @@ score.
 
 Against [one fixed nudge](../04_one-fixed-nudge/01_what-it-is.md), the comparison
 is whether any learning beats no learning, and the answer on the shared scorecard
-is split. This solution racks 202 glasses to the written geometry's 195, and does
-it in 114 pushes rather than 213. The written geometry finishes 33 tables to this
-solution's 31, and breaks nothing at all where this one breaks one glass. Seven
-more glasses racked for one glass toppled is the whole of the trade, and it is a
-trade rather than a win because a toppled glass cannot be stood back up. Against
+is split. This solution racks 146 glasses to the written geometry's 107, and
+finishes 20 tables to its 14. It breaks 20 glasses doing it, where the written
+geometry breaks one. **Thirty-nine more glasses racked for nineteen more
+toppled is the whole of the trade**, and it is a trade rather than a win
+because a toppled glass cannot be stood back up. Against
 all that, the fixed nudge needs no data, no training and no weights, and it
 explains every one of its own failures.
 

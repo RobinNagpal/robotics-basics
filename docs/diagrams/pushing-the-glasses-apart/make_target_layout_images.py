@@ -255,7 +255,12 @@ def least_movement() -> None:
     width = KIND_NARROWEST
     need = GRIP_ROOM + width / 2.0          # what each needs between middles
     a, b = (0.0, 0.0), (width + 5.0, 0.0)   # 5 mm of daylight: not touching
-    gap = need - (b[0] - a[0])              # how much further apart they must be
+    # How much further apart they must be, and a tenth of a millimetre over it.
+    # Parting them by exactly ``need`` leaves the pair sitting on the room test
+    # rather than inside it, so whether the picture's own check passes comes
+    # down to the last bit of the arithmetic. A real push would not stop on the
+    # line either, and the tenth is far below anything the picture shows.
+    gap = need - (b[0] - a[0]) + 0.1
     both = (a[0] - gap / 2, b[0] + gap / 2)
     one_far = b[0] + 150.0           # a long push to open table
     cost_both = 2 * (gap / 2) ** 2

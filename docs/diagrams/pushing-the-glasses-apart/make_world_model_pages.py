@@ -64,7 +64,7 @@ from matplotlib.patches import Circle, FancyArrowPatch, Polygon, Rectangle
 # constant that holds each one is named so that a reader can check it in one
 # step.
 
-GRIP_ROOM_MM = 70.0        # bench/bench.py GRIP_ROOM = 0.070
+GRIP_ROOM_MM = 76.2       # bench/bench.py GRIP_ROOM = 0.07621, the open hand's own reach
 
 STANDOFF_MM = 20.0         # 04-a-world-model/features.py STANDOFF = 0.02
 FEEL_PAST_MM = 10.0        # 04-a-world-model/features.py FEEL_PAST = 0.01

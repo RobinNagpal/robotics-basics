@@ -29,7 +29,10 @@ FIRST, LAST = bench.TEST_SEEDS, bench.TEST_SEEDS + 1000
 TAKE_MARGIN = 0.005
 
 MU_LOW, MU_HIGH = 0.3, 0.5
-GRIPPABLE_APART = 0.140
+# The symmetric worst case: two of the widest glasses of the kind, each needing
+# its own clear room. It follows the gripper, so it is worked out from
+# GRIP_ROOM rather than written down.
+GRIPPABLE_APART = 2.0 * GRIP_ROOM
 
 
 def table(seed: int) -> list[dict]:
@@ -149,7 +152,7 @@ def show(name: str, found: dict) -> None:
           f"= {100 * sum(v for k, v in found['rounds'].items() if k > 1) / scenes:.1f}%")
     print(f"    residue sizes: {dict(sorted(found['residues'].items()))}")
     print(f"    a random one-at-a-time order disagreed on {found['disagreed']} scenes")
-    print(f"    pairs inside 140 mm: {found['pairs_before']} before "
+    print(f"    pairs inside {1000 * GRIPPABLE_APART:.0f} mm: {found['pairs_before']} before "
           f"({found['pairs_before'] / scenes:.2f} a scene), {found['pairs_after']} after "
           f"({found['pairs_after'] / scenes:.2f} a scene)")
     print(f"    glasses racked with no push: {found['racked']}/{glasses} "

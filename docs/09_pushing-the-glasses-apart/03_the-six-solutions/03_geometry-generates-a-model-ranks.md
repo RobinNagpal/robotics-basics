@@ -113,28 +113,37 @@ exists, in a way no test of the code would notice.
 
 ## 4. What it scored
 
-All six solutions are given the same 50 tables holding 251 glasses, of which 193
+All six solutions are given the same 50 tables holding 251 glasses, of which 203
 have no room at the start. The second row below is this solution with its model
 deleted, so that the printed rule inside it picks instead, which is the
 comparison this solution exists to make.
 
 | | tables done | tables wrong | glasses racked | toppled | pushes |
 |---|---|---|---|---|---|
-| the fitted ranker | 31 | **0** | 185 | **0** | 229 |
-| the same loop, printed rule picking | 33 | **0** | 195 | **0** | 213 |
+| the fitted ranker | 14 | **1** | 107 | **1** | 182 |
+| the same loop, printed rule picking | 14 | **1** | 107 | **1** | 173 |
 
-**The ranker lost to the rule it was meant to improve**, on both tables finished
-and glasses racked, and using more pushes to do it. That is the finding of this
+**The ranker reached exactly the same place as the rule it was meant to
+improve**, on every column but one, and it spent nine more pushes and half
+again the travel getting there. That is the finding of this
 solution, and it was measured rather than guessed: both rows ran the same loop
 over the same held-out tables with the same budget and the same candidate set,
 and the only difference was who picks.
 
-It is not an unlucky fit, because three rankers fitted on resamples of the same
-rows racked 180, 181 and 184 glasses. The reason is the label. The model is
-fitted on *room gained over the table* and the run is marked on *glasses that
-end up grippable*, and those are not the same quantity: a push that spreads a
-little room over three glasses scores higher by the first and lower by the
-second than one that finishes a single glass outright.
+It is not an unlucky fit, and the reason the ordering cannot help was measured
+before the fitting rather than guessed afterwards. Within one glass's
+job-finishing candidates the room gained is an **exact tie** — 0.000 mm between
+the best and the worst, at the median over 161 such groups — because the
+enumerator stops each heading at the first travel that gives the glass room, so
+every candidate lands on the same contour. In precisely the part of the
+candidate set where the task is being finished there is nothing for an ordering
+to tell apart.
+
+The second reason is the label. The model is fitted on *room gained over the
+table* and the run is marked on *glasses that end up grippable*, and those are
+not the same quantity: a push that spreads a little room over three glasses
+scores higher by the first and lower by the second than one that finishes a
+single glass outright.
 
 ![One table, two legal pushes on it, and the two numbers each push earns: the push that frees two glasses gains 30 mm of room over the table, and the push that frees none gains 60 mm.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-the-label-is-not-the-score.png)
 
@@ -213,11 +222,11 @@ much a push would help**, which is a quantity the geometry already computes
 exactly. That solution fits a model of **what a push will actually do**, which
 is the quantity the geometry gets wrong, because predicting where a pushed glass
 stops needs the friction nobody here has measured. On the same tables it racked
-202 glasses in 114 pushes, against 185 in 229 for the fitted ranker and 195 in
-213 for the printed rule. **The learning that paid attacked the quantity the
-geometry gets wrong, not the quantity it gets right.** It cost one toppled
-glass to do it, which neither row above ever does, so the two approaches are not
-ordered on a single number.
+146 glasses in 221 pushes, against 107 in 182 for the fitted ranker and 107 in
+173 for the printed rule. **The learning that paid attacked the quantity the
+geometry gets wrong, not the quantity it gets right.** It cost 20 toppled
+glasses to do it, where either row above topples one, so the two approaches are
+not ordered on a single number.
 
 The code is in
 [`src/09_pushing-the-glasses-apart/02-geometry-ranked/`](../../../code/src/09_pushing-the-glasses-apart/02-geometry-ranked)

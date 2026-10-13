@@ -76,21 +76,25 @@ from work_cell.glasses.shapes import KIND_RANGES, draw  # noqa: E402
 from work_cell.rack.layout import GLASS_ZONE as ZONE_M  # noqa: E402
 
 # --------------------------------------------------------------------------- #
-# The jaw, from code/src/09_pushing-the-glasses-apart/bench/bench.py, in millimetres. These are the arm's own
-# numbers, taken from arm/gripper.urdf.xacro by the examiner.
+# The hand, from code/src/09_pushing-the-glasses-apart/bench/bench.py, in
+# millimetres. All of them are the Robotiq 2F-85's own sizes, rolled onto its
+# side so that it fits between glasses standing 150 mm apart. FINGER_LENGTH is
+# how far back from the fingertips one fingertip pad runs and JAW_THICKNESS is
+# how wide the pair of them is; TOOL_LENGTH is how far back the whole hand
+# reaches, including the force sensor and the wrist behind it, and BODY_SIZE is
+# how wide that sensor is, which is the widest thing on the tool.
 # --------------------------------------------------------------------------- #
 
-FINGER_LENGTH = 120.0                   # bench.FINGER_LENGTH
-JAW_THICKNESS = 2 * (10.0 + 4.0)        # bench.JAW_THICKNESS: two fingers and two pads
-BODY_SIZE = 90.0                        # bench.BODY_SIZE: the body behind the fingers
-BODY_LENGTH = 50.0                      # bench.BODY_LENGTH
+FINGER_LENGTH = 57.0                    # bench.FINGER_LENGTH
+JAW_THICKNESS = 27.0                    # bench.JAW_THICKNESS: the two fingertips, stacked
+BODY_SIZE = 89.0                        # bench.WRIST_ACROSS: the sensor behind the gripper
 WRIST_LENGTH = 100.0                    # bench.WRIST_LENGTH
-TOOL_LENGTH = FINGER_LENGTH + BODY_LENGTH + WRIST_LENGTH   # bench.TOOL_LENGTH
+TOOL_LENGTH = 266.2                     # bench.TOOL_LENGTH
 TIP_TO_FLANGE = FINGERTIP_OFFSET * 1000.0                  # arm/dimensions.py
 
-# JAW_TOP comes from diagram_style: the middle of the jaw rides at LOWEST_GRIP
-# and the jaw is FINGER_HEIGHT tall, so its top edge is 15 mm higher, and that
-# top edge is what a glass which flares outwards meets first.
+# JAW_TOP comes from diagram_style: the middle of the jaw rides at PUSH_HEIGHT
+# and its leading stretch is FINGER_HEIGHT tall, so its top edge is 32 mm
+# higher, and that top edge is what a glass which flares outwards meets first.
 
 # What the examiner measures and what it hides, from bench.py.
 POSITION_NOISE = 0.5                    # bench.POSITION_NOISE, one standard deviation
@@ -777,7 +781,7 @@ def study_the_ladder(count: int = 120) -> None:
     """What each freedom the planner has is worth, against a fixed nudge.
 
     Run twice: once with the arm treated as a point, which is how a push is
-    usually scored, and once with the arm's own 270 mm of tool in the test.
+    usually scored, and once with the arm's own 266 mm of tool in the test.
     """
     heading_line(f"7. The fixed nudge, and what each freedom is worth, over {count} tapered "
                  f"tables")

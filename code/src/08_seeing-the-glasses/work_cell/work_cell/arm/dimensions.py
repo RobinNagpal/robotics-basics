@@ -16,6 +16,8 @@ gripper.urdf.xacro, and the two have to move together.
 
 from __future__ import annotations
 
+from . import robotiq_2f85
+
 import math
 
 import numpy as np
@@ -46,13 +48,24 @@ CAMERA_OFFSET = np.array([0.085, 0.0, 0.015])
 # result and not a failure.
 LOWEST_GRIP = 0.050
 
+# The Robotiq FT 300-S force sensor on the flange, and Robotiq's own coupling
+# plate between it and the gripper. Both are makers' figures.
+FORCE_SENSOR_HEIGHT = 0.0375
+GRIPPER_ADAPTER_HEIGHT = 0.011
+
 # How far sideways the fingers may be shifted at the last moment, on the
 # strength of the close-up look down them. Half the gripper's opening: a glass
 # further off than that is not the one about to be closed on, and shifting
 # onto it would be aiming at the wrong thing rather than aiming better.
 GRASP_NUDGE_LIMIT = 0.045
 
-FINGERTIP_OFFSET = 0.170
+# How far the fingertips stand below the tool point. This is the real Robotiq
+# 2F-85's own reach, read from the description Robotiq publish, plus the force
+# sensor and the coupling plate the gripper is bolted to. It is about 30 mm
+# more than the invented tool this project used to assume, and that matters
+# wherever the arm has to reach past a glass: a longer tool has to be put
+# somewhere, and on a crowded table there is often nowhere to put it.
+FINGERTIP_OFFSET = FORCE_SENSOR_HEIGHT + GRIPPER_ADAPTER_HEIGHT + robotiq_2f85.FINGERTIP_REACH
 GRASP_OFFSET = 0.110
 
 # How far the pads run along each finger, back from the tip.

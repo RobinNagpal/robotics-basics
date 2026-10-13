@@ -113,26 +113,29 @@ rather than for this one.
 
 ## 4. What it scored
 
-All six solutions are given the same 50 tables holding 251 glasses, of which 193
+All six solutions are given the same 50 tables holding 251 glasses, of which 203
 have no room at the start. This solution is run several times and the figure
 shown is the middle one.
 
 | tables done | tables wrong | glasses racked | toppled | pushes | thinking per push |
 |---|---|---|---|---|---|
-| 0 | 5 | 56 | 6 | 754 | slow |
+| 1 | 9 | 48 | 12 | 620 | slow |
 
-**It finished no table at all**, racked about a fifth of the glasses, toppled
-six of them, and spent more pushes than any other solution in the book. It is
+**It finished one table in fifty**, racked about a fifth of the glasses,
+toppled twelve of them, and spent more pushes than any other solution in the
+book. The racked figure needs reading carefully: the 48 glasses it racked are
+exactly the 48 that already had room before anything was pushed, so the arm
+could have made no push at all and scored the same. It is
 also the slowest of the six per push, because every decision is a forward pass
 through a large network rather than arithmetic.
 
-The reason is specific and was measured rather than guessed. About nine of its
+The reason is specific and was measured rather than guessed. About eight of its
 pushes in ten touch nothing at all, because the trajectories it returns hold the
-jaw well above the glasses. Over the 2,260 chunks it was asked for across the
-three runs, the lowest point of a chunk is a median of 209 mm above the table,
-where a push happens at 50 mm.
+jaw well above the glasses. Over the 1,855 chunks it was asked for across the
+three runs, the lowest point of a chunk is a median of 217 mm above the table,
+where a push happens at 75 mm.
 
-![The heights at which the jaw can travel, where it has to ride to move a glass, how tall the glasses are, and the 209 mm the downloaded model's chunks stop at.](../../images/pushing-the-glasses-apart/a-foundation-model-as-it-downloads/smolvla-the-jaw-hovers.png)
+![The heights at which the jaw can travel, where it has to ride to move a glass, how tall the glasses are, and the 217 mm the downloaded model's chunks stop at.](../../images/pushing-the-glasses-apart/a-foundation-model-as-it-downloads/smolvla-the-jaw-hovers.png)
 
 So it is not failing to choose a good push; it is mostly not reaching the
 table. That is the domain gap arriving exactly as predicted: the model produces

@@ -39,6 +39,16 @@ leaves out matters as much as what it holds, and [what goes in and what comes
 out](02_what-goes-in-and-what-comes-out.md#3-what-look-hands-over)
 sets that out in full.
 
+A look at table 10025 begins like this, with one row for each of its six
+standing glasses and every length in metres:
+
+```json
+[
+  {"id": 0, "x": 0.4570, "y": -0.4170, "height": 0.1554, "widest": 0.0740, "foot": 0.0419, "standing": true},
+  {"id": 1, "x": 0.5489, "y": -0.2464, "height": 0.1360, "widest": 0.0871, "foot": 0.0462, "standing": true}
+]
+```
+
 ## 3. What does a push take, and what shape is it in?
 
 A push takes **one value with six fields**: which glass the push is meant to
@@ -59,6 +69,18 @@ That report is the only thing a solution ever learns about its own push, and
 [what goes in and what comes
 out](02_what-goes-in-and-what-comes-out.md#5-what-push-does-and-what-it-reports-back) explains
 how each field is produced.
+
+The push that solution reads from that look, and the reply the examiner gives
+back, are these two objects, with lengths in metres and the heading in radians:
+
+```json
+{"glass": 4, "start": [0.3726, -0.4500], "heading": 1.5708, "reach": 0.0881, "travel": 0.0660,
+ "aim": [0.3726, -0.3259]}
+```
+
+```json
+{"blocked": false, "touched": 0.0146, "jammed": false, "peak": 1.73, "pushed": 0.0660}
+```
 
 ## 4. How many looks and pushes is a solution allowed?
 

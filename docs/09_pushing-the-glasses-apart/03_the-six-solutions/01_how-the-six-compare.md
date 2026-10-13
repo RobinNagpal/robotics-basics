@@ -47,6 +47,39 @@ shared language for an action here — but the table is the same table either
 way. A solution may therefore choose any action space it likes, and the
 outcome is measured identically for all six.
 
+The shared contract is small enough to show whole. Every solution is handed a
+list like the first object below, one row per standing glass with the lengths
+in metres, and the three that read pictures are handed a 384 by 384 colour
+picture of the same table at the same moment instead. Every solution answers
+with one of the two forms underneath it: a push described by numbers, which the
+examiner expands into a path, or a short run of waypoints the jaw follows
+exactly as given.
+
+```json
+[{"id": 0, "x": 0.4570, "y": -0.4170, "height": 0.1554, "widest": 0.0740, "foot": 0.0419, "standing": true}]
+```
+
+```json
+{"glass": 4, "start": [0.3726, -0.4500], "heading": 1.5708, "reach": 0.0881, "travel": 0.0660,
+ "aim": [0.3726, -0.3259]}
+```
+
+```json
+{"glass": 4, "aim": [0.3726, -0.3259],
+ "waypoints": [{"x": 0.3726, "y": -0.4500, "z": 0.3000, "heading": 1.5708},
+               {"x": 0.3726, "y": -0.4500, "z": 0.2900, "heading": 1.5708}]}
+```
+
+Either way the reply is the same five fields, saying whether the jaw was
+blocked on the way down, how far it went before touching, whether it jammed,
+the largest force it felt and how far it really pushed. That is why the two
+action spaces can be compared at all: they differ in what is asked for and
+agree in what comes back.
+
+```json
+{"blocked": false, "touched": 0.0146, "jammed": false, "peak": 1.73, "pushed": 0.0660}
+```
+
 Two parts of the job belong to no solution and are described elsewhere: where
 the glasses should end up, in [the target
 layout](../01_the-problem/04_the-target-layout.md), and the limit that decides

@@ -48,9 +48,9 @@ where it stands, how tall it is, how wide it is at its widest, how wide it is
 at its foot, and whether it is still standing. It is the same list of facts the
 camera work for [telling the glasses
 apart](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md)
-produces, which is why this problem can begin where that one ended. Written
-out, a look at table 10025 starts like this, one row per standing glass and
-every length in metres:
+produces, which is why this problem can begin where that one ended. Written out,
+a look at table 10025 starts like this. There is one row per standing glass, and
+every length is in metres.
 
 ```json
 [
@@ -142,10 +142,10 @@ forward it travelled before touching or that it never touched, whether it
 jammed, the most force it felt at any moment, and how far it actually moved
 after touching.
 
-Both halves are small enough to show whole. The first object below is the push
-solution 1 asks for on table 10025, and the second is what the examiner hands
-back after carrying it out, with lengths in metres, the heading in radians and
-the force in newtons:
+Both halves are small enough to show in full. The first object below is the push
+solution 1 asks for on table 10025. The second is the reply the examiner gives
+after carrying it out. Lengths are in metres, the heading is in radians and the
+force is in newtons.
 
 ```json
 {"glass": 4, "start": [0.3726, -0.4500], "heading": 1.5708, "reach": 0.0881, "travel": 0.0660,
@@ -156,9 +156,9 @@ the force in newtons:
 {"blocked": false, "touched": 0.0146, "jammed": false, "peak": 1.73, "pushed": 0.0660}
 ```
 
-The `aim` is the one field the arm never uses. The examiner keeps it so that it
-can measure, once the glass has settled, how far it finished from where the
-solution expected it to stop.
+The `aim` is the one field the arm never uses. The examiner keeps it instead.
+Once the glass has settled, it measures how far the glass really stopped from
+where the solution expected it to stop.
 
 ### How the jaw's force is measured
 

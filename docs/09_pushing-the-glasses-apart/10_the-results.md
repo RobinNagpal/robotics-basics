@@ -147,6 +147,15 @@ row the scorecard holds for that table.
 explains why, and each solution's own page says how its film compares with its
 scored runs on the same table.
 
+A second warning applies to the racking at the end of every film. The examiner
+takes a glass away once it has room, without asking whether the gripper could
+have closed on it, and on this particular table three of the six glasses are
+wider at the height the hand must hold them than the gripper opens. The films
+say so on screen when it happens. No row in the table above changes because of
+it, since all six solutions are marked the same way, and [what the examiner
+measures](01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) says
+how many glasses of the 251 are in that position.
+
 The films show what each solution does. The next section explains the one
 column of the scorecard that is easy to read backwards.
 

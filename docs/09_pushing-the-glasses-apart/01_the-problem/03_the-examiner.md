@@ -157,6 +157,29 @@ glass is only counted as racked if it had genuine room at the moment it was
 taken, so a run that clears the table has demonstrated grippability rather than
 asserted it.
 
+**That measurement rests on an assumption, and drawing the pick-up for the
+films is what made the assumption visible.** When the examiner racks a glass it
+asks one question, which is whether the glass had room around it, and it never
+asks whether this gripper could have closed on it. Nothing forced that second
+question until the films had to draw a hand closing on a real glass, because a
+drawing has to put the pads somewhere. Two of the gripper's own measurements
+decide where. The first is that there are only 33 mm between the pads and the
+palm behind them, so a glass has to be held within 33 mm of its own rim or its
+rim would be inside the gripper's body. The second is that the pads open 85 mm.
+A tapered glass is widest at its rim, which is exactly the part of it the palm
+forces the hand to hold. Put the two together and **22 of the 251 held-out
+glasses are wider, at the only height the palm allows, than the gripper opens**,
+by between 0.7 and 8.6 mm. Eighteen of those 22 are tapered glasses. They could
+not be picked up at all, the examiner racks them anyway, and the films say so on
+screen when a glass being taken is one of them.
+
+This changes nothing in the comparison and it is worth knowing all the same. No
+score in this book depends on it, because every one of the six solutions is
+marked by the same examiner in the same way, so the 22 glasses help and hinder
+all of them equally. What it says is that **spreading the glasses apart is not
+the whole of the job**. This book's half of the work can succeed completely and
+leave a glass that the next half, closing the hand on it, still cannot take.
+
 **Pushes are counted against a budget.** The scorecard records how many pushes
 were spent in total, how many of them were repeat pushes on a glass already
 pushed, and how many went wrong in each of the ways a push can: blocked on the

@@ -65,6 +65,15 @@ it happens, because the drawing is not evidence that this cell can lift a glass.
 It cannot yet, which is [why the arm drags instead of
 lifting](#3-why-dragging-and-not-lifting) in the first place.
 
+One line that appears during those pick-ups says something the rest of this
+book does not. Three of the six glasses on this table are wider, at the height
+the hand is forced to hold them, than the gripper opens, so the film says on
+screen that the glass is wider than the gripper opens and leaves the fingers at
+their widest. The examiner takes the glass away regardless, because all it asks
+is whether the glass had room. [What the examiner
+measures](03_the-examiner.md#5-what-the-examiner-measures) explains how many
+glasses that is and why no score in this book turns on it.
+
 The hand is also drawn twice over, and both drawings are worth looking at. The
 solid pieces are the hand's real mouldings, which are two fingertips, two
 fingers behind them and the gripper's body behind those. Around those pieces,

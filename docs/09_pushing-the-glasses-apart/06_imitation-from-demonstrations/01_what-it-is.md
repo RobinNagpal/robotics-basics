@@ -96,7 +96,7 @@ The introduction described a policy that was fitted by copying somebody else's
 pushes, and the film here shows what that policy actually does on one table in
 the simulator, played at one and a half times real speed.
 
-[A policy copied from demonstrations, on one table, 22 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/03-imitation-from-demonstrations.mp4 "video")
+[A policy copied from demonstrations, on one table, 23 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/03-imitation-from-demonstrations.mp4 "video")
 
 The table holds six glasses where the average is five, and five of those six
 have no room at the start, which is the usual state of these tables.

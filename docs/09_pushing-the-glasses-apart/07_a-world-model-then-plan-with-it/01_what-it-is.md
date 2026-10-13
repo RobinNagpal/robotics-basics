@@ -95,7 +95,7 @@ The introduction described a method that learns how the table changes and then
 searches for a push with that model, and the film here shows it on one table in
 the simulator, played at one and a half times real speed.
 
-[A learned world model planning on one table, 42 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4 "video")
+[A learned world model planning on one table, 44 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4 "video")
 
 The table holds six glasses where the average is five, and five of those six
 have no room at the start, which is the usual state of these tables.

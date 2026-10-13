@@ -40,7 +40,7 @@ first makes those words easier to follow. So the film here shows one of the six
 solutions in this book clearing one crowded table in the simulator, played at
 one and a half times real speed.
 
-[The job done once: a learned world model clears one table, 42 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4 "video")
+[The job done once: a learned world model clears one table, 44 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4 "video")
 
 Three things in the film are worth watching for, because the rest of this
 document is about them. First, every glass is **dragged across the table and
@@ -57,22 +57,23 @@ pushing.** The gripper is held shut for the whole of this problem and the closed
 hand is used as the pusher, so nothing is gripped and nothing is lifted during a
 push. The second is that **the pick-up at the end of a take is drawn rather than
 simulated.** The examiner takes a glass away by moving it off the table in one
-instant, so instead of showing a glass disappear the film draws what a real
-pick-up would be: the wrist turns the hand upright, the fingers open to the
-width the glass was measured to be, the hand comes down around the glass, the
-fingers close, and the glass is carried off. A line on the screen says so while
-it happens, because the drawing is not evidence that this cell can lift a glass.
-It cannot yet, which is [why the arm drags instead of
+instant, so instead of showing a glass disappear the film draws a stand-in for a
+pick-up: the wrist rolls back level, the fingers open to the width the glass was
+measured to be, the hand reaches in so that the pads pass either side of the
+glass, the fingers close, and the glass is carried off. A line on the screen
+says so while it happens, in the words "problem 1 does the real pick". Problem 1
+is what the project that wrote this code calls the job of picking one glass up,
+which is a job this library has not yet made a book of, and its rule for where
+to hold a glass lives in the code the camera work shares. The drawing is not
+evidence that this cell can lift a glass, which is [why the arm drags instead of
 lifting](#3-why-dragging-and-not-lifting) in the first place.
 
-One line that appears during those pick-ups says something the rest of this
-book does not. Three of the six glasses on this table are wider, at the height
-the hand is forced to hold them, than the gripper opens, so the film says on
-screen that the glass is wider than the gripper opens and leaves the fingers at
-their widest. The examiner takes the glass away regardless, because all it asks
-is whether the glass had room. [What the examiner
-measures](03_the-examiner.md#5-what-the-examiner-measures) explains how many
-glasses that is and why no score in this book turns on it.
+That stand-in is worth one more sentence, because it stands in for something
+this cell often could not do. The examiner takes a glass away as soon as it has
+room, without asking whether the cell's grip rule could have found anywhere to
+hold it, and asked about all 251 glasses that rule finds a hold for only 97.
+[What the examiner measures](03_the-examiner.md#5-what-the-examiner-measures)
+gives the breakdown and says why no score in this book turns on it.
 
 The hand is also drawn twice over, and both drawings are worth looking at. The
 solid pieces are the hand's real mouldings, which are two fingertips, two
@@ -250,14 +251,14 @@ its leading stretch is 63 mm tall, so the top edge stands 32 mm above the
 middle. Both of those raise `h`, and `h` is the quantity this rule is most
 sensitive to.
 
-Turning the hand has a second cost as well, and [the film of the
+Rolling the hand has a second cost as well, and [the film of the
 job](#2-a-film-of-the-job) is where it can be seen. A glass can only be gripped
-with one finger on each side of it, so the fingers have to open sideways, which
-they cannot do while the hand is lying on its side. The hand therefore has to be
-turned back upright before it can take anything at all. Pushing and gripping are
-two different poses of the same hand, and the wrist has to travel between them
-once for every glass that is taken, which is why the drawn pick-up at the end of
-each film begins by turning the wrist.
+with one finger on each side of it, so the fingers have to open sideways across
+the glass, which they cannot do while the hand is lying on its side. The roll
+therefore has to be undone before the hand can take anything at all. Pushing and
+gripping are two different poses of the same hand, and the wrist has to travel
+between them once for every glass that is taken, which is why the drawn pick-up
+at the end of each film begins by rolling the wrist back level.
 
 Three things follow, and they are the shape of the problem:
 

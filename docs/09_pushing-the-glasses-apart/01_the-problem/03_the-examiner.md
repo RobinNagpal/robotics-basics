@@ -157,28 +157,43 @@ glass is only counted as racked if it had genuine room at the moment it was
 taken, so a run that clears the table has demonstrated grippability rather than
 asserted it.
 
-**That measurement rests on an assumption, and drawing the pick-up for the
-films is what made the assumption visible.** When the examiner racks a glass it
-asks one question, which is whether the glass had room around it, and it never
-asks whether this gripper could have closed on it. Nothing forced that second
-question until the films had to draw a hand closing on a real glass, because a
-drawing has to put the pads somewhere. Two of the gripper's own measurements
-decide where. The first is that there are only 33 mm between the pads and the
-palm behind them, so a glass has to be held within 33 mm of its own rim or its
-rim would be inside the gripper's body. The second is that the pads open 85 mm.
-A tapered glass is widest at its rim, which is exactly the part of it the palm
-forces the hand to hold. Put the two together and **22 of the 251 held-out
-glasses are wider, at the only height the palm allows, than the gripper opens**,
-by between 0.7 and 8.6 mm. Eighteen of those 22 are tapered glasses. They could
-not be picked up at all, the examiner racks them anyway, and the films say so on
-screen when a glass being taken is one of them.
+**That measurement rests on an assumption, and it is worth saying what the
+assumption hides.** When the examiner racks a glass it asks one question, which
+is whether the glass had room around it, and it never asks the other one, which
+is whether the cell could have picked that glass up at all. Those are not the
+same question, and the distance between them is larger than it sounds. The cell
+has a rule of its own for where to hold a glass, in
+[`glasses/rules.py`](../../../code/src/08_seeing-the-glasses/work_cell/work_cell/glasses/rules.py),
+and that rule can simply be asked. Given the real gripper's measurements and
+each held-out glass's own shape, **it finds somewhere to hold only 97 of the
+251**.
 
-This changes nothing in the comparison and it is worth knowing all the same. No
-score in this book depends on it, because every one of the six solutions is
-marked by the same examiner in the same way, so the 22 glasses help and hinder
-all of them equally. What it says is that **spreading the glasses apart is not
-the whole of the job**. This book's half of the work can succeed completely and
-leave a glass that the next half, closing the hand on it, still cannot take.
+Read the table below a row at a time: each row is one kind of glass, and the
+numbers are how many of that kind the rule can hold out of how many there are.
+
+| kind | a grip found |
+|---|---|
+| straight | 62 of 65 |
+| tapered | 18 of 66 |
+| stemmed | 17 of 60 |
+| short stemmed | **0 of 60** |
+
+**The commonest reason is reach rather than width.** The gripper comes in level
+from the side, so the whole tool lies across the height it holds at instead of
+sitting above it, and whatever hangs furthest below the tool's own axis decides
+how low it can go. That leaves a floor 50 mm above the table. A glass with
+nothing worth holding between that floor and its own halfway point is refused,
+and a short stemmed glass is all stem below the line, which is why not one of
+the 60 can be held.
+
+This is a limit of the picking step rather than of anything in this book, and
+no solution's score depends on it, because all six are marked by the same
+examiner in the same way. The films are honest about it too: the pick-up each
+one draws is a stand-in, and the line on screen says that the real pick belongs
+to the cell's own grip rule. What the finding adds is that **spreading the
+glasses apart is not the whole of the job**. This book's half of the work can
+succeed completely and still leave a glass that the next half, closing the hand
+on it, cannot take.
 
 **Pushes are counted against a budget.** The scorecard records how many pushes
 were spent in total, how many of them were repeat pushes on a glass already

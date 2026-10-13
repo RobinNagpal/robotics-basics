@@ -127,7 +127,7 @@ The introduction described what was done to the borrowed model's numbers and why
 and the film here shows the corrected model on one table in the simulator,
 played at one and a half times real speed.
 
-[The same borrowed model after fine-tuning here, on one table, 11 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/06-smolvla-fine-tuned.mp4 "video")
+[The same borrowed model after fine-tuning here, on one table, 12 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/06-smolvla-fine-tuned.mp4 "video")
 
 The table holds six glasses where the average is five, and five of those six
 have no room at the start, which is the usual state of these tables.

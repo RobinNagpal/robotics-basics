@@ -120,10 +120,10 @@ scorecard above but counting one table instead of fifty.
 |---|---|---|---|---|---|
 | 1 one fixed nudge | [13 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/01-one-fixed-nudge.mp4) | incomplete | 1 of 6 | **0** | **2** |
 | 2 geometry ranked | [13 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/02-geometry-ranked.mp4) | incomplete | 1 of 6 | **0** | **2** |
-| 3 imitation, ACT | [22 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/03-imitation-from-demonstrations.mp4) | incomplete | 1 of 6 | **0** | 14 |
-| 4 a world model | [42 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4) | done | **6 of 6** | **0** | 3 |
+| 3 imitation, ACT | [23 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/03-imitation-from-demonstrations.mp4) | incomplete | 1 of 6 | **0** | 14 |
+| 4 a world model | [44 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4) | done | **6 of 6** | **0** | 3 |
 | 5 SmolVLA as it downloads | [74 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/05-smolvla-as-it-downloads.mp4) | incomplete | 1 of 6 | **0** | 16 |
-| 6 SmolVLA fine-tuned | [11 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/06-smolvla-fine-tuned.mp4) | wrong | 1 of 6 | 1 | 4 |
+| 6 SmolVLA fine-tuned | [12 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/06-smolvla-fine-tuned.mp4) | wrong | 1 of 6 | 1 | 4 |
 
 Each film also sits at the top of its own solution's first page, where what
 happens in it is described push by push. Taken together the six rows are this
@@ -148,13 +148,13 @@ explains why, and each solution's own page says how its film compares with its
 scored runs on the same table.
 
 A second warning applies to the racking at the end of every film. The examiner
-takes a glass away once it has room, without asking whether the gripper could
-have closed on it, and on this particular table three of the six glasses are
-wider at the height the hand must hold them than the gripper opens. The films
-say so on screen when it happens. No row in the table above changes because of
+takes a glass away once it has room, without asking whether the cell could have
+picked it up, and the pick-up each film draws is a stand-in that says so on
+screen. Asked about all 251 held-out glasses, the cell's own grip rule finds
+somewhere to hold only 97 of them. No row in the table above changes because of
 it, since all six solutions are marked the same way, and [what the examiner
-measures](01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) says
-how many glasses of the 251 are in that position.
+measures](01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) gives
+the breakdown.
 
 The films show what each solution does. The next section explains the one
 column of the scorecard that is easy to read backwards.

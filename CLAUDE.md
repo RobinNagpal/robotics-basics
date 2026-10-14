@@ -422,7 +422,7 @@ Then upload the converted films to the bucket the site is served from, under
 aws s3 sync <folder of converted films>/ \
   s3://robotics-basics-web-729763663166/videos/pushing-the-glasses-apart/ \
   --exclude '*' --include '*.mp4' \
-  --content-type video/mp4 --cache-control 'public, max-age=31536000'
+  --content-type video/mp4 --cache-control 'public, max-age=0, s-maxage=31536000'
 ```
 
 The folder under `videos/` is the book's address with its reading-order number
@@ -430,13 +430,26 @@ stripped, which is the same rule the recordings follow. The deploy workflow
 excludes `videos/*` from the sync that deletes, so shipping the site never
 removes a film.
 
-A film is stored with a year of cache life but **without** `immutable`, which
-the recordings do use. The difference is deliberate. `immutable` promises that
-what is at an address will never change, and a film replaced in place breaks
-that promise: a browser that has already fetched one keeps serving it from its
-own cache even when the reader presses reload. Without the word, a reload
-revalidates and picks the new film up. Replacing a film still means flushing
-the edge cache for `/videos/*`, because the edge holds it for the year as well.
+A film is stored so that **the reader's own browser asks every time and the
+edge still keeps it for a year**, which is what `max-age=0, s-maxage=31536000`
+says. `max-age=0` is for the browser: it may keep the film, but it has to ask
+whether the copy is still current, and the answer is almost always a 304 of a
+few hundred bytes rather than the film again. `s-maxage` is for CloudFront,
+which holds the film for the year and answers those questions itself, so the
+bucket is not touched.
+
+This costs one tiny request per view and it buys the only thing that matters
+when a film is replaced: the new film reaches everybody. The obvious setting,
+a year of `max-age`, does not. A browser that has already fetched a film then
+keeps it for the year, and pressing reload does not help, because browsers
+revalidate the page but take a video from their own cache. That really happened
+here: six films were replaced four times in one day and a reader who had the
+page open kept seeing the first version. Never use `immutable` on a film for the
+same reason, although the recordings do use it, because they are never replaced
+in place.
+
+Replacing a film still means flushing the edge cache for `/videos/*`, because
+the edge is where the year of cache life now lives.
 
 A document links to a film by its **full address**, with the link's title set to
 `video`:

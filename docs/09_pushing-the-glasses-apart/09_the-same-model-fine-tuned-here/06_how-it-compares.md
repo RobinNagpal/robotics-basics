@@ -125,7 +125,7 @@ unavailable when they cannot, and then the harder members are needed: adapting
 with no labels, or varying the training data so widely that the new domain
 falls inside the range already covered. That second one, **domain
 randomisation**, is the usual answer when a policy trained in a simulator has
-to work on a real robot, and it is the thing that would have to be added before
+to work on a real robot. It is the thing that would have to be added before
 any of this reached a real table, since a policy that absorbed one examiner's
 friction has learned a number rather than a skill.
 

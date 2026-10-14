@@ -138,7 +138,7 @@ precisely the part of the candidate set where the task is being finished there i
 nothing for an ordering to tell apart.
 
 The second reason is the label. The model is fitted on *room gained over the
-table* and the run is marked on *glasses that end up grippable*, and those are
+table* and the run is marked on *glasses that end up grippable*. Those are
 not the same quantity: a push that spreads a little room over three glasses
 scores higher by the first and lower by the second than one that finishes a
 single glass outright.

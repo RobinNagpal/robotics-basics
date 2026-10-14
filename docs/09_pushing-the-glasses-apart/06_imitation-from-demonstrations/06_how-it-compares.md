@@ -205,9 +205,9 @@ Against [geometry generates, a model
 ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md), the comparison is student
 against teacher, and it is the most informative pairing this solution has.
 What the gap measures is not which method is better but whether the mapping
-from a picture to a good push is learnable: a student that nearly matches its
+from a picture to a good push is learnable. A student that nearly matches its
 teacher says the policy class is adequate and the remaining error belongs to
-the teacher's geometry, and a student that falls well short says the opposite.
+the teacher's geometry. A student that falls well short says the opposite.
 This student falls well short, and the code folder's `README.md` says by how
 much and reads the result.
 

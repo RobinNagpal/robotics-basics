@@ -144,8 +144,8 @@ There is a well developed theory of what happens when an object is pushed
 across a table. Mason's *Mechanics and Planning of Manipulator Pushing
 Operations* (IJRR 1986) established the result the field rests on, usually
 called the voting theorem: which way a pushed object rotates is decided by
-where the line of pushing passes relative to the object's centre of friction,
-and that can be worked out without knowing the pressure under the object in
+where the line of pushing passes relative to the object's centre of friction.
+That can be worked out without knowing the pressure under the object in
 detail. Lynch and Mason's *Stable Pushing: Mechanics, Controllability and
 Planning* (IJRR 1996) turned it into planned pushes that carry an object along
 a chosen path. **Where it is normally right:** when the friction and the way

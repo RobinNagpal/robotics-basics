@@ -126,9 +126,9 @@ nearly every table with this gripper — one or two glasses taken, the rest
 turned down, none broken.
 
 The thing to watch for is how short the film is. The method never predicts
-where a glass will stop, so it is built to push a little and look again, but
+where a glass will stop, so it is built to push a little and look again. But
 here it hardly gets the chance: the hand is too wide to stand beside most of
-these glasses and too high to shove them without tipping them, so the loop runs
+these glasses and too high to shove them without tipping them. So the loop runs
 out of legal pushes long before it runs out of budget.
 
 All six solutions are filmed on this same table, so the films can be watched

@@ -27,7 +27,7 @@ not there yet.
 What learning the physics adds is a **second** refusal, from the evidence rather
 than from the rule. The planner can turn a glass down in two different ways, and
 it records which. It can find that every one of the fifteen hundred candidate
-pushes was struck out by one of the three filters, in which case no push on that
+pushes was struck out by one of the three filters. In that case, no push on that
 glass got past five independently trained copies of the model asked on five
 readings of the table, and the reason it reports names whichever of the topple
 veto and the map struck out more of them. Or it can find that pushes survived

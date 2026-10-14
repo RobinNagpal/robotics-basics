@@ -94,7 +94,7 @@ def to_action(waypoints: tuple[Waypoint, ...]) -> np.ndarray:
 
 Five columns rather than four, and the extra one is worth a sentence. The first
 three are where the jaw is. The last two are its heading, carried as the
-heading's cosine and its sine rather than as the angle itself, because an angle
+heading's cosine and its sine rather than as the angle itself. An angle
 wraps: two pushes two degrees apart can have numbers at opposite ends of the
 range, and a model fitted on that number learns the wrap as a cliff that is not
 in the pushes. Two numbers that do not wrap cost one column and remove it.

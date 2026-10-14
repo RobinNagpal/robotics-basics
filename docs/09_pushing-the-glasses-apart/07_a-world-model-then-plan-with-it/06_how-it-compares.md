@@ -132,7 +132,7 @@ confidently about a situation none of them has seen, which is precisely the
 failure recorded above. For a method that does report when it has left the
 region it knows, Bauza and Rodriguez's [*A Probabilistic Data-Driven Model for
 Planar Pushing*](https://arxiv.org/abs/1704.03033) (2017) fits a Gaussian
-process to pushing data and returns a spread with every value; it is slower to
+process to pushing data and returns a spread with every value. It is slower to
 query and does not scale to tens of thousands of examples, which is the trade an
 ensemble takes the other side of.
 

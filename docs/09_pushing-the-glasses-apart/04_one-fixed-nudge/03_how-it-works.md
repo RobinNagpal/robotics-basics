@@ -126,7 +126,7 @@ rather than merely complicating it.
 
 Start by naming what nobody knows. Call the shortfall `s`, and call the fraction the
 method applies to it `k`, which is the gain. The jaw is therefore commanded to travel `k
-· s`. What the glass actually does is some other distance, because the jaw may slip
+· s`. What the glass actually does is some other distance. The jaw may slip
 against a curved wall, the glass turns as well as travels, the friction under its foot
 is not the same everywhere on that foot, and the glass may carry on a little after the
 jaw stops or stop a little before it. Write that unknown as a factor `g`, so the glass
@@ -307,7 +307,7 @@ supplied training data would be doing two jobs and the second job would make
 the first one suspect. But it does mean that if the ranked geometry did not
 exist, the demonstrations for solutions 3 and 6 would have to be bought
 somewhere else, either by a person teleoperating the arm or by writing a second
-method for the purpose, and both of those are real costs that the comparison
+method for the purpose. Both of those are real costs that the comparison
 would then have to carry.
 
 ← [The code](02_the-code.md) · [A worked example](04_a-worked-example.md) →

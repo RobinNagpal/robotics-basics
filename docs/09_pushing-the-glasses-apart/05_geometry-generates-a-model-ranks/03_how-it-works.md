@@ -20,12 +20,15 @@ exact shape decides what the model is later handed.
 
 For one crowded glass it sweeps **72 headings**, one every 5°, all the way
 round. Along each heading it steps the travel out in **2 mm steps to 150 mm**.
-At every step it asks four questions: does the moving glass's own path clear
-every other glass, does the swept path of the fingers clear them, does the
-swept path of the wrist and the gripper body clear them, and is the destination
-both inside the glass zone and inside the ring the arm reaches comfortably. The
-first step that fails ends that heading, because a clash found at one length is
-still there at any greater length along the same line.
+At every step it asks four questions.
+
+- Does the moving glass's own path clear every other glass?
+- Does the swept path of the fingers clear them?
+- Does the swept path of the wrist and the gripper body clear them?
+- Is the destination both inside the glass zone and inside the ring the arm reaches comfortably?
+
+The first step at which any of these fails ends that heading, because a clash
+found at one length is still there at any greater length along the same line.
 
 Two properties of that loop decide everything that follows, and both are
 structural rather than accidental.

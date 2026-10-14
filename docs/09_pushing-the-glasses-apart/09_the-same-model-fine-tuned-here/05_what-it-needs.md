@@ -21,8 +21,8 @@ the glass zone, looking straight down, returning a 384 by 384 picture that
 frames the whole zone. It is separate from the camera the films use, which
 looks steeply down from the arm's side. A path by which a chunk of waypoints is
 carried out as an action is the output this model produces, and `Bench.follow()`
-is that path: it takes the waypoints as they come, consumes them a fixed period
-apart, and reports the same record a parameterised push does, so the scorecard
+is that path. It takes the waypoints as they come, consumes them a fixed period
+apart, and reports the same record a parameterised push does. So the scorecard
 cannot tell which door an action came through. Neither was hard, and both were
 the real price of going off the shelf, because every LeRobot policy expects
 pictures and an action space at control rate.

@@ -172,8 +172,8 @@ The model here does not say what is on the table. It says how much a given actio
 help. That is **utility** or **value** estimation, and what makes it workable is that
 the answer is cheap to check: take the action in the simulator and see what happened.
 The move has a well known ancestor in grasping, where nobody could write down a rule
-saying whether a gripper pose would hold an object, so attempts were collected and a
-function was fitted from the pose to whether it worked — Pinto and Gupta's [*Supersizing
+saying whether a gripper pose would hold an object. So attempts were collected and a
+function was fitted from the pose to whether it worked. Pinto and Gupta's [*Supersizing
 Self-supervision*](https://arxiv.org/abs/1509.06825) (ICRA 2016) is the clearest
 example, with a robot making tens of thousands of attempts and labelling each by whether
 the object came up. Applied to pushing rather than grasping, the same move produced
@@ -204,7 +204,7 @@ measured width, is not that case.
 The mechanics underneath all of this is older and is not a rule of thumb. Matthew
 Mason's *Mechanics and Planning of Manipulator Pushing Operations* (International
 Journal of Robotics Research, 1986) is where planar pushing became a subject with
-results in it, including which way an object turns when it is pushed, and Kevin Lynch
+results in it, including which way an object turns when it is pushed. Kevin Lynch
 and Mason's *Stable Pushing: Mechanics, Controllability, and Planning* (same journal,
 1996) works out when a push keeps an object under control rather than letting it slip
 away. The lesson those papers carry into this document is the one the arrangement above

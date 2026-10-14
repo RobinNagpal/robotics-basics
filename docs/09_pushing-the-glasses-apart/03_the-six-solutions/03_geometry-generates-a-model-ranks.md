@@ -106,10 +106,11 @@ six hundred comparisons in all and no matrix multiplication anywhere. Even a
 candidate set in the thousands costs a small fraction of the seconds one arm
 movement takes.
 
-Once fitted it needs **a model file kept in step with the cell.** Change the
-heading sweep, the step length, the glass zone or the way the examiner draws its
-crowded tables, and the fitted model quietly describes a cell that no longer
-exists, in a way no test of the code would notice.
+Once fitted it needs **a model file kept in step with the cell**, because a
+change to the sweep, the step length or the zone leaves the model describing a
+cell that no longer exists, and no test of the code would notice. [What it
+needs](../05_geometry-generates-a-model-ranks/05_what-it-needs.md) says what
+each of those changes does.
 
 ## 4. What it scored
 
@@ -153,52 +154,33 @@ run shows the same thing. By its own label the ranker is the better chooser: it
 gives up 4.4 mm of room against the best available candidate, where the printed
 rule gives up 18.7 mm. It still clears fewer tables.
 
-There is a second reason the ordering could not help much, and it was also
-measured. Within one glass's job-finishing candidates the room gained ranges
-0.0 mm at the median over 161 groups, which is an exact tie, so in precisely the
-part of the candidate set where the task is being finished there is nothing for
-an ordering to tell apart. What the fit says mattered points the same way: the
-topple ratio and the foot width came first and the push distance last, so the
-model mostly learned which glass is risky to push rather than which push is
-good. The verdict is to keep the simpler one. The full table for all six
-solutions is in [the results](../10_the-results.md).
+What the fit says mattered points the same way as the tie above: the topple
+ratio and the foot width came first and the push distance last, so the model
+mostly learned which glass is risky to push rather than which push is good. The
+verdict is to keep the simpler one. The full table for all six solutions is in
+[the results](../10_the-results.md).
 
 ## 5. Where it is strong and where it breaks
 
-The learned part cannot cause the failure that cannot be undone. Toppling,
-leaving the glass zone, leaving the arm's reach and striking the rack are all
-settled before the model is consulted, and the zero in the toppled column is
-what that looks like when it holds.
+Three strengths come from where the model sits in the design, and [how it
+compares](../05_geometry-generates-a-model-ranks/06_how-it-compares.md) argues
+each of them. The learned part cannot cause the failure that cannot be undone,
+because toppling, leaving the zone, leaving the arm's reach and striking the
+rack are all settled before the model is asked anything. It degrades to
+something that works, since deleting the model leaves the printed rule running
+the table. And it is checkable, because every candidate prints with its score
+and every refusal prints with the geometry's own reason.
 
-It degrades to something that works. Delete the model and the printed rule runs
-the table, so there is no state in which this solution is broken rather than
-merely unimproved.
-
-It is checkable. Every candidate can be printed with its score, every refusal
-remains the geometry's and prints with a reason, and the model reports which of
-its inputs mattered. It is also cheap in every currency, and it is the teacher
-for two of the other five, which is the contribution that survives even though
-its own score is unremarkable.
-
-Against that, three kinds of weakness.
-
-The first is what the design cannot do. It cannot invent a candidate, so its
-quality is the enumerator's quality rather than the model's. It cannot express
-a push that is not a straight drag along one heading. And it says nothing at
-all about the commonest refusal in the record, which is a glass with nowhere
-clear to go.
-
-The second is what it cannot survive. A log collected while the model is
-driving holds outcomes only for the candidates the model already prefers, so
-retraining on it without occasionally taking the second-ranked candidate locks
-in an early mistake. And every label in the training set was decided by the
-examiner's private friction, which was never measured against anything real.
-
-The third is that it fails quietly. A badly fitted ranker orders the candidates
-roughly at random. Nothing errors, nothing topples, and the run simply spends
-more pushes and leaves more glasses behind than it needed to. That is exactly
-how it failed here, and the only reason it was caught is that somebody ran the
-test with the model deleted and everything else held the same.
+Three kinds of weakness stand against those. The design cannot invent a
+candidate, so its quality is the enumerator's rather than the model's, and it
+has nothing to say about the commonest refusal in the record, which is a glass
+with nowhere clear to go. It cannot survive being retrained on its own driving,
+because such a log holds outcomes only for the candidates the model already
+prefers. And it fails quietly: a badly fitted ranker orders the candidates
+roughly at random, nothing errors, nothing topples, and the run simply spends
+more pushes than it needed to. That is exactly how it failed here, and it was
+caught only because somebody ran the test with the model deleted and everything
+else held the same.
 
 ## 6. When to choose it
 

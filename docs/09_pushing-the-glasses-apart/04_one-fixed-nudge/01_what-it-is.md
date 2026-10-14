@@ -114,8 +114,8 @@ times real speed.
 
 [One fixed nudge on one table, 13 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/01-one-fixed-nudge.mp4 "video")
 
-The table holds six glasses where the average is five, and five of those six
-have no room at the start, which is the usual state of these tables.
+It holds six glasses where the average is five, and five of them have no room
+at the start.
 
 In the film the arm racks the one glass that already had room, makes two
 pushes, and then refuses the other five, each for its own reason: two tip
@@ -131,22 +131,10 @@ here it hardly gets the chance: the hand is too wide to stand beside most of
 these glasses and too high to shove them without tipping them, so the loop runs
 out of legal pushes long before it runs out of budget.
 
-Two details are the same in all six films: the hand never opens while it is
-pushing, and the pick-up at the end of a take is drawn rather than simulated.
-[The film of the
-job](../01_the-problem/01_what-is-asked-for.md#2-a-film-of-the-job) explains
-both of them, and it is worth reading once before watching any of the six.
-
-Every one of the six solutions is filmed on this same table, number 10025 of
-the fifty the examiner holds back, so the six films can be watched against each
-other. The table was chosen to be **typical rather than flattering**, by a rule
-written down before it was applied: every one of the six had to reach its own
-commonest outcome there and rack at least one glass, and exactly one table of
-the fifty does both. Choosing that way needed [one row per
-table](../01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) in the
-scorecard, because a total over fifty tables cannot say which single table
-stands for the rest. All six films are collected in [the six solutions side by
-side](../10_the-results.md).
+All six solutions are filmed on this same table, so the films can be watched
+against each other. [The six films](../10_the-results.md#3-the-six-films-all-of-the-same-table)
+collects them, says how that table was chosen, and explains the two things every
+one of the films has in common.
 
 So the film shows what the method does. The next section says what problem a
 method this plain is there to solve, and why the book needs it.

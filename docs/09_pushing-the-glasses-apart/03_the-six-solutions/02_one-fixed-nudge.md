@@ -45,17 +45,9 @@ nothing.
 
 ![The loop as one pass: measure the table, choose the glass to push and the neighbour to push it away from, check the tipping rule, push, and look again, with the three ways the loop can end.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-flow-what-it-does.png)
 
-The two pictures below say why the loop has that shape. The first is the method
-this one refuses: aiming the push at where the glass will stop. The second is
-what this solution does instead.
-
-![Aiming a push at where the glass will come to rest needs the friction with the table and how the weight sits on the foot; nobody in this cell has measured either, so the push lands short of the room needed or into the next glass.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-flow-why-prediction-fails.png)
-
-So this solution makes no prediction at all. It measures, pushes a little way in
-a direction that is right whatever the friction turns out to be, and then looks
-at the table again.
-
-![The same job done without any prediction: measure the shortfall, push straight away from the crowding neighbour by a fixed fraction of it, look at the table again, and repeat until the glass is no longer short of room.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-flow-repeat-not-predict.png)
+Two more pictures on [what it is](../04_one-fixed-nudge/01_what-it-is.md) draw
+the same loop against the method it refuses, which is aiming the push at where
+the glass will stop.
 
 ## 2. How it works
 
@@ -191,22 +183,14 @@ full table for all six is in [the results](../10_the-results.md).
 Its strengths follow from how little it claims, and so do its weaknesses, which
 is what makes it a clean control rather than merely a weak solution.
 
-It cannot be wrong about pushing, because it says nothing about pushing. Every
-other solution has a prediction somewhere that can be wrong. This one has a
-direction that is right for any friction and a distance that is deliberately
-too small.
-
-Its answer can be read. Every step is a number that can be printed, and every
-refusal has a reason that can be checked with a ruler.
-
-Short pushes are safe pushes. Every millimetre of travel is a millimetre in
-which something can be knocked, so a method whose instinct is to move a glass
-as little as possible has a good instinct, and the small fraction gives it that
-instinct for free.
-
-It exercises the whole contact sequence with no planning code in the way. When
-something falls over while this book's work is being built, this method tells
-you the fault was in the contact, because there was no plan to be wrong.
+Four strengths follow, and [how it
+compares](../04_one-fixed-nudge/06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks)
+makes the case for each. It cannot be wrong about pushing, because it says
+nothing about pushing. Its answer can be read, since every step is a number that
+can be printed and every refusal has a reason that can be checked with a ruler.
+Its pushes are short, and a short push is a safe push. And it exercises the
+whole contact sequence with no planning code in the way, so when something falls
+over the fault is in the contact and nowhere else.
 
 The weaknesses are real and they are structural. Two of them belong to the
 fixed fraction rule in particular, and the third belongs to both versions.

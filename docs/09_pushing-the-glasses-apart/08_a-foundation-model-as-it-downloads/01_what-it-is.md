@@ -87,8 +87,8 @@ simulator, played at one and a half times real speed.
 
 [A large borrowed model used exactly as it downloads, on one table, 74 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/05-smolvla-as-it-downloads.mp4 "video")
 
-The table holds six glasses where the average is five, and five of those six
-have no room at the start, which is the usual state of these tables.
+It holds six glasses where the average is five, and five of them have no room
+at the start.
 
 In the film the jaw sweeps across the table sixteen times without ever reaching
 a glass, because the borrowed model's chunks come back about 200 mm above the
@@ -103,22 +103,10 @@ draw rather than an average. The scored runs on this table racked one glass
 each and spent thirteen pushes on average, against the film's sixteen, so the
 film is a slightly busier draw than the middle one.
 
-Two details are the same in all six films: the hand never opens while it is
-pushing, and the pick-up at the end of a take is drawn rather than simulated.
-[The film of the
-job](../01_the-problem/01_what-is-asked-for.md#2-a-film-of-the-job) explains
-both of them, and it is worth reading once before watching any of the six.
-
-Every one of the six solutions is filmed on this same table, number 10025 of
-the fifty the examiner holds back, so the six films can be watched against each
-other. The table was chosen to be **typical rather than flattering**, by a rule
-written down before it was applied: every one of the six had to reach its own
-commonest outcome there and rack at least one glass, and exactly one table of
-the fifty does both. Choosing that way needed [one row per
-table](../01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) in the
-scorecard, because a total over fifty tables cannot say which single table
-stands for the rest. All six films are collected in [the six solutions side by
-side](../10_the-results.md).
+All six solutions are filmed on this same table, so the films can be watched
+against each other. [The six films](../10_the-results.md#3-the-six-films-all-of-the-same-table)
+collects them, says how that table was chosen, and explains the two things every
+one of the films has in common.
 
 The film shows a capable model acting in the wrong place, and the next section
 says which problem using one unchanged is meant to answer.

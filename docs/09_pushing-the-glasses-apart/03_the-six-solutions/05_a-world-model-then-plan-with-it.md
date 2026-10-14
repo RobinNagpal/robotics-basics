@@ -168,26 +168,15 @@ the arithmetic that scores a predicted table and the solution aims somewhere
 else, with no retraining at all, where a learned policy would have to be
 trained again.
 
-Against that, four weaknesses.
-
-It can be confidently wrong, and that is its worst failure. Where the training
-data is thin in a way the copies did not notice, all five agree and are wrong
-together. The topples recorded while it was being tuned were exactly this: the
-model had rated every one of them safe, and a stricter limit does not catch
-that.
-
-Its model is only as wide as its encoding, which is five neighbours, four
-measurements each, and no representation of the jaw's body. Anything those
-numbers cannot express cannot be learned however much data is collected, and
-most of the recorded failure causes are of that kind.
-
-It is slow at run time, because hundreds of model calls per push is the price
-of searching rather than answering, and it compounds error over depth, which
-caps how far a sequence could usefully be planned.
-
-And it cannot be inspected the way written geometry can. It is the most
-machinery of the six — a data collector, a trainer, an ensemble, a search and a
-loop — against a page of arithmetic.
+Against that, four weaknesses, which [how it
+compares](../07_a-world-model-then-plan-with-it/06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks)
+sets out with the evidence for each. It can be confidently wrong, which is its
+worst failure, because where the training data is thin all five copies agree and
+are wrong together. Its model is only as wide as its encoding, so anything those
+numbers cannot express cannot be learned however much data is collected. It is
+slow at run time, since hundreds of model calls per push is the price of
+searching rather than answering. And it cannot be inspected the way written
+geometry can, while being the most machinery of the six.
 
 ## 6. When to choose it
 

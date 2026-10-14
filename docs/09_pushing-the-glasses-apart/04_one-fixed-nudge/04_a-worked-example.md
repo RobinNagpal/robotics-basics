@@ -12,17 +12,12 @@ the easy case teaches the wrong lesson.
 
 ## 1. When a glass cannot be pushed safely
 
-A glass slides while the jaw touches it below half its foot width divided by
-the friction, and tips above that. The height that counts is the jaw's **top
-edge** at 107 mm, not the 75 mm its middle rides at, and for a glass whose foot
-is narrow enough there is no contact height the arm can offer below the limit.
-The only correct answer for such a glass is to refuse, with the reason
-recorded, which marks the run *correct but incomplete* rather than wrong.
-[Pushing without toppling](../01_the-problem/05_pushing-without-toppling.md)
-sets all of that out once, including what is done when the unknown friction
-leaves the limit undecided, and it is **arithmetic applied before any model is
-consulted** in five of the six solutions. What follows is only what is this
-solution's own.
+A glass slides while the jaw touches it below half its foot width divided by the
+friction, and tips above that. [Pushing without
+toppling](../01_the-problem/05_pushing-without-toppling.md) sets that rule out
+once, with the jaw's two heights, the glasses it refuses outright, and what is
+done when the unknown friction leaves the answer undecided. What follows here is
+only what is this solution's own.
 
 The first picture draws that rule. The height at which a push starts tipping a
 glass rises with the foot the glass stands on, and it falls as the friction

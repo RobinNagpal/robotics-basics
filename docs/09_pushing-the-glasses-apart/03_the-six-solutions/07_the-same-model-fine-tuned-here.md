@@ -81,31 +81,20 @@ cloning ever evaluates an outcome, so the teacher remains the ceiling.
 
 ## 3. What it needs
 
-It needs **LeRobot**, which is Apache-2.0, and the SmolVLA weights, which the
-library fetches by itself. **The terms on the weights are the thing to read
-rather than the terms on the library**, because a file produced by continuing
-their training inherits whatever they carried, and no amount of training here
-relicenses it.
+It needs **LeRobot** and the **SmolVLA weights**, and the terms to read are the
+ones on the weights rather than the ones on the library, because training a file
+further does not relicense what it carried. It needs **its teacher built**,
+because the teacher's pushes are the training set, and simulator time to record
+them.
 
-It needs **its teacher built**, because the teacher's pushes are the training
-set, and **simulator time** to record them over the training half of the tables.
-It needs the **held-out half** for checking that the policy learned pushing
-rather than the tables.
-
-**It does not need a rented accelerator, and this is the place the plan was
-wrong.** The training ran on this machine, an Apple Silicon Mac with no NVIDIA
-card, holding **1.02 GiB** while it ran, with the borrowed weights, the
-correction, the correction's gradients and the optimiser's running averages all
-in memory at once. Low-rank adaptation is exactly why. Memory was never close to
-being the obstacle.
-
-**What renting would buy here is time, not memory**, and that distinction
-matters because time is what this solution is short of. A training step on Metal
-takes a second or two where a dedicated card would take a fraction of one, and
-the library's own recipe for this model is twenty thousand steps at a batch of
-sixty-four. What ran here is a thousand steps at a batch of four, which is about
-one part in three hundred of that compute, and **every number this solution
-reports carries that caveat**.
+**It did not need a rented accelerator, and that is where the plan was wrong.**
+The training ran on this machine and held about a gigabyte, which low-rank
+adaptation is exactly why. What renting would have bought is time rather than
+memory, and time is what this solution is short of: it ran about one part in
+three hundred of the library's own recipe for this model, so **every number it
+reports carries that caveat**. [What it
+needs](../09_the-same-model-fine-tuned-here/05_what-it-needs.md) gives the
+licence terms, the memory figure and the arithmetic behind that fraction.
 
 ## 4. What it scored
 
@@ -139,18 +128,14 @@ topples one. Its partner stays out of the "wrong" column largely by never
 reaching a glass: it hovers, achieves little, and is usually marked correct but
 incomplete.
 
-So the gap between the two is not a measurement of training buying nothing. It
-is a measurement of **training buying enough competence to act and not enough to
-act safely**, on a scorecard where a toppled glass cannot be undone. **A policy
-that does nothing scores better than a policy that does the wrong thing**, and
-any reading of this pair that skips that sentence has misread it.
-
-The honest conclusion about the method is therefore still open, and two things
-would move it. More training, since the compute spent here is about one part in
-three hundred of what the recipe asks. And DAgger, a method in which the teacher
-is asked what it would have done in the states the student actually reaches —
-because "the jaw came down on a glass" is precisely a state the teacher never
-visits, and so precisely what these demonstrations cannot teach. The full table
+So the gap between the two does not measure training buying nothing. It measures
+**training buying enough competence to act and not enough to act safely**, on a
+scorecard where a toppled glass cannot be undone. **A policy that does nothing
+scores better than a policy that does the wrong thing**, and any reading of this
+pair that skips that sentence has misread it. The conclusion about the method is
+still open, and [how it
+compares](../09_the-same-model-fine-tuned-here/06_how-it-compares.md) shows
+where the pushes went in both runs and says what would move it. The full table
 for all six is in [the results](../10_the-results.md).
 
 ## 5. Where it is strong and where it breaks
@@ -166,27 +151,16 @@ into a price, and a price is a trade the policy may decide to make. Learning
 from examples of correct pushes leaves "never topple" as a constraint rather
 than a price.
 
-Against that, four kinds of weakness.
-
-The first is what it inherits from being a borrowed model. A large fraction of
-its parameters serve a language channel this task does not use. It commits to a
-chunk, so a surprise inside a push is carried out anyway. It cannot explain
-anything it did. And the correction is low-rank, so it adapts less deeply than
-a full fine-tune would, which means the gap it shows is a lower bound on what
-fine-tuning could buy.
-
-The second is what it inherits from its teacher. Its ceiling is the ranked
-geometry, because nothing ever showed it a better push. Its training set was
-filtered to successes, so it was fitted on the easy half of its teacher's
-experience. And it has seen no refusals at all, so it proposes pushes on
-glasses that must not be pushed.
-
-The third is what it owes to being trained on one examiner's tables. Part of
-what it gains over its partner is this examiner's own friction absorbed into
-its weights, which is a memorised constant rather than an ability, and would
-not survive a real table.
-
-The fourth is the list of things it does not do at all, in section 2.
+Against that, four kinds of weakness, each argued in [how it
+compares](../09_the-same-model-fine-tuned-here/06_how-it-compares.md). It
+inherits the borrowed model's faults: a language channel this task does not use,
+a chunk it commits to whatever happens inside it, and no account of why it did
+anything. It inherits its teacher's ceiling, because nothing ever showed it a
+better push than the ranked geometry, and it never saw a refusal, so it proposes
+pushes on glasses that must not be pushed. It owes part of its gain to this
+examiner's own friction, now sitting in its weights as a memorised constant that
+no real table would honour. And it does not do the things listed in section 2 at
+all.
 
 ## 6. When to choose it
 

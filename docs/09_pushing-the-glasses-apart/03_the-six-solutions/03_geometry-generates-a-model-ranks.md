@@ -33,11 +33,10 @@ model can never add a push to the list and never bring back one the geometry
 rejected.** So it decides the order of the attempts and nothing about whether an
 attempt is safe.
 
-That matters because of what this cell cannot undo. A toppled glass cannot be
-stood back up, and in a cell whose one unrecoverable failure is a toppled glass,
-keeping every safety decision in arithmetic that a person wrote is the property
-worth designing around. Here the worst a badly fitted model can do is waste a
-push.
+A toppled glass cannot be stood back up, so the worst a badly fitted model can
+do is waste a push. [The full chapter's
+introduction](../05_geometry-generates-a-model-ranks/01_what-it-is.md#1-introduction)
+explains why that arrangement is the safe one.
 
 The model itself is a set of **gradient-boosted regression trees**, of order two
 hundred trees, which is the standard tool for predicting a number from a short

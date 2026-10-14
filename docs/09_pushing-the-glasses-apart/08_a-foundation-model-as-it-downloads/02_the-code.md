@@ -13,13 +13,13 @@ part, what the code below is doing.
 
 ## 1. The code that does the work
 
-Nothing here is fitted, so the only code this project wrote is the join between
-what the borrowed model emits and what this cell's jaw is. [How it
-works](03_how-it-works.md#4-the-actions-arrive-with-no-units-in-them) explains
-why that join turned out to be the whole solution: the released checkpoint
-saves its normalisation statistics under keys the normaliser never looks up, so
-the actions arrive as z-scores with no units in them at all, and a scale had to
-be chosen rather than converted.
+Nothing here is fitted, so the only code this project wrote is the join between what the
+borrowed model emits and what this cell's jaw is. [How it
+works](03_how-it-works.md#4-the-actions-arrive-with-no-units-in-them) explains why that
+join turned out to be the whole solution: the released checkpoint saves its
+normalisation statistics under keys the normaliser never looks up. So the actions arrive
+as z-scores with no units in them at all, and a scale had to be chosen rather than
+converted.
 
 The borrowed library does its work in one call, in
 [`05-smolvla-as-it-downloads/policy.py`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/policy.py).
@@ -103,14 +103,13 @@ def to_jaw(action: np.ndarray, up: float = UP_HIGHER) -> np.ndarray:
     )
 ```
 
-The only object in this solution that has both a metric extent and is seen by
-the model is the frame of the straight-down picture, which is 717 mm across the
-table top. So `ACTION_SPAN = 2.0` is the decision that two standard deviations
-of the model's output span that frame, which makes one standard deviation 179
-mm across the table and 62 mm of height. That is the reading that lets the
-model put the jaw anywhere it can see and nowhere it cannot, and it is the one
-property a join has to have if the score is to be about the model rather than
-about the join.
+The only object in this solution that has both a metric extent and is seen by the model
+is the frame of the straight-down picture, which is 717 mm across the table top. So
+`ACTION_SPAN = 2.0` is the decision that two standard deviations of the model's output
+span that frame, which makes one standard deviation 179 mm across the table and 62 mm of
+height. That is the reading that lets the model put the jaw anywhere it can see and
+nowhere it cannot. And it is the one property a join has to have if the score is to be
+about the model rather than about the join.
 
 It has a price that is easy to miss. The examiner consumes waypoints a fixed
 period apart, 50 milliseconds, so **how far apart the waypoints are is how fast
@@ -121,12 +120,11 @@ own top speed and fourteen times the speed the examiner's push macro moves at.
 
 ![At the examiner's fixed waypoint period of 50 milliseconds, the spacing of the waypoints is the speed: 1 mm apart is the push macro's speed, 10 mm apart is the fastest the arm moves, and the model's own answers come back 14.6 mm apart.](../../images/pushing-the-glasses-apart/a-foundation-model-as-it-downloads/smolvla-the-spacing-is-the-speed.png)
 
-Nothing in this solution clips that to something gentler, because a gentler
-limit would be a number chosen to make this solution look better and this
-solution fits nothing. The examiner does hold a commanded path to the fastest
-speed the cell ever moves the jaw, which is a different thing: that limit
-belongs to the arm, it applies to all six solutions, and it never binds on a
-path the examiner itself produced.
+Nothing in this solution clips that to something gentler, because a gentler limit would
+be a number chosen to make this solution look better and this solution fits nothing. The
+examiner does hold a commanded path to the fastest speed the cell ever moves the jaw.
+This is a different thing: that limit belongs to the arm, it applies to all six
+solutions, and it never binds on a path the examiner itself produced.
 
 ## 2. The pushes are what this contributes
 
@@ -147,15 +145,14 @@ treats them alike, because **what is scored is the table afterwards rather than
 the push that changed it**. That is the only arrangement under which a push
 described by three numbers and a run of fifty waypoints can be compared at all.
 
-One consequence of that is worth naming, because it changes how one column of
-the scorecard should be read. The examiner records how far a pushed glass
-landed from where the solution aimed it. The other five solutions supply that
-aim as a prediction. This one cannot, because the model was never asked where
-it expected a glass to end up, so the aim is read back off the path afterwards
-as the point where the path ends. The 74 mm median this solution reports is
-therefore the distance from the end of a trajectory to the glass it happened to
-move, which is not the same quantity as solution 1's 1.0 mm. It is bookkeeping
-rather than a failed prediction.
+One consequence of that is worth naming, because it changes how one column of the
+scorecard should be read. The examiner records how far a pushed glass landed from where
+the solution aimed it. The other five solutions supply that aim as a prediction. This
+one cannot, because the model was never asked where it expected a glass to end up, so
+the aim is read back off the path afterwards as the point where the path ends. The 74 mm
+median this solution reports is therefore the distance from the end of a trajectory to
+the glass it happened to move. This is not the same quantity as solution 1's 1.0 mm. It
+is bookkeeping rather than a failed prediction.
 
 One thing about the repeats is specific to this solution. The examiner requires
 every trained solution to be trained with several seeds and evaluated over
@@ -180,14 +177,13 @@ for this jaw, because the numbers it emits carry no units of their own. The
 examiner carries those waypoints out, the table changes, fresh measurements are
 taken, and the model is asked again.
 
-What the model brings to that loop is a general sense of how manipulation goes,
-and nothing about this cell. What it is denied is the force reading, because
-its three inputs do not include one for force. And what stands between its
-general competence and this particular table is a large domain gap: it learned
-from real cameras, real light and cluttered rooms, and it is shown flat pale
-blue shapes on an empty rectangle. Across that gap it produces movement
-unrelated to this table — in the measured case, movement that stays about 200
-mm in the air and crosses most of a metre of table in one answer.
+What the model brings to that loop is a general sense of how manipulation goes, and
+nothing about this cell. What it is denied is the force reading, because its three
+inputs do not include one for force. And what stands between its general competence and
+this particular table is a large domain gap: it learned from real cameras, real light
+and cluttered rooms. And it is shown flat pale blue shapes on an empty rectangle. Across
+that gap it produces movement unrelated to this table. In the measured case, movement
+that stays about 200 mm in the air and crosses most of a metre of table in one answer.
 
 Every one of those is a consequence of one decision: **fit nothing here**. That
 decision is what makes the solution free to try, and it is also what removes

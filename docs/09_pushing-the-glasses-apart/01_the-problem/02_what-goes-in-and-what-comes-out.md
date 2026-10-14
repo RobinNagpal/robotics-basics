@@ -2,13 +2,12 @@
 
 ## 1. Introduction
 
-Every solution in this book is handed the same things and has to hand back the
-same kind of thing. This page says exactly what those are: what a solution may
-read, what it is never told, what a push does and reports, and what a solution
-returns. It follows [what is asked for](01_what-is-asked-for.md), which says why
-the arm drags the glasses rather than lifting them, and it comes before [the
-examiner](03_the-examiner.md), which draws the tables these calls are made on
-and marks the result.
+Every solution in this book is handed the same things and has to hand back the same kind
+of thing. This page says exactly what those are: what a solution may read, what it is
+never told, what a push does and reports, and what a solution returns. It follows [what
+is asked for](01_what-is-asked-for.md), which says why the arm drags the glasses rather
+than lifting them, and it comes before [the examiner](03_the-examiner.md). This draws
+the tables these calls are made on and marks the result.
 
 Everything here is carried out by the examiner's code, in
 `code/src/09_pushing-the-glasses-apart/bench/`, so it is the same for all six
@@ -81,16 +80,15 @@ that frames the whole zone. It is separate from the camera `film.py` uses,
 which looks steeply down from the arm's side and exists only for watching a run
 by eye.
 
-Keeping those two cameras apart matters more than it first appears, and the
-reason is in the sentence above: a solution that reads a picture decides from
-what is in that picture. So if filming a table added anything at all to the
-simulated world, a filmed table could become a different table from the one the
-same solution was scored on, and the comparison between the six would quietly
-stop being a comparison. The films avoid that by being drawn in a second world
-of their own, which is built beside the scored one and never simulated, so the
-scored world is the same whether a table is filmed or not. The bench proves it
-with a test that runs one table both ways and requires every glass to finish in
-the same place.
+Keeping those two cameras apart matters more than it first appears, and the reason is in
+the sentence above: a solution that reads a picture decides from what is in that
+picture. So if filming a table added anything at all to the simulated world, a filmed
+table could become a different table from the one the same solution was scored on. And
+the comparison between the six would quietly stop being a comparison. The films avoid
+that by being drawn in a second world of their own, which is built beside the scored one
+and never simulated. So the scored world is the same whether a table is filmed or not.
+The bench proves it with a test that runs one table both ways and requires every glass
+to finish in the same place.
 
 What a look leaves out matters as much as what it includes, and the next
 section lists it.
@@ -259,14 +257,13 @@ the same kind of thing.
 **The shared output is a jaw trajectory**: a path for the jaw to follow, and
 then another, until the table is done or the budget is spent.
 
-Some of the six do not think in trajectories at all. A geometric solution
-thinks in a **parameterised push**: a handful of numbers saying which glass to
-move, where to put the fingertips down, which way to point, how far to feel
-forward and how far to push. That is exactly what `push()` accepts, and
-`push()` itself is the machinery that turns those numbers into the descend,
-feel, push, back off and lift described above. So **the expansion from a push
-into a trajectory is a macro the examiner owns**, not something a solution
-writes. Every parameterised push is expanded the same way, by the same code, so
+Some of the six do not think in trajectories at all. A geometric solution thinks in a
+**parameterised push**: a handful of numbers saying which glass to move, where to put
+the fingertips down. This way to point, how far to feel forward and how far to push.
+That is exactly what `push()` accepts, and `push()` itself is the machinery that turns
+those numbers into the descend, feel, push, back off and lift described above. So **the
+expansion from a push into a trajectory is a macro the examiner owns**, not something a
+solution writes. Every parameterised push is expanded the same way, by the same code, so
 no solution gains or loses anything in that step.
 
 Other solutions think in trajectories natively. A modern imitation policy does

@@ -63,12 +63,11 @@ of what the simplicity costs.
 
 ## 2. A worked example
 
-The method is small enough that one example can show all of it, so this section
-follows two tables through the loop: one where the method is sufficient and
-one where it is not. Both are described in relations rather than in sizes, as
-the project's rule requires, and both hold glasses of the tapered kind,
-because that is the kind that stands on the narrowest foot for its width, so
-the tipping rule bites hardest on it.
+The method is small enough that one example can show all of it, so this section follows
+two tables through the loop: one where the method is sufficient and one where it is not.
+Both are described in relations rather than in sizes, as the project's rule requires.
+And both hold glasses of the tapered kind, because that is the kind that stands on the
+narrowest foot for its width, so the tipping rule bites hardest on it.
 
 ### A table where it works
 
@@ -146,13 +145,12 @@ reason, which scores the table as correct but incomplete rather than wrong.
 
 ![The same table on three passes of the loop, with A between B and C: on the first pass B reaches furthest into A's ring and A is pushed away from B, which carries it towards C; on the second pass C is the worse of the two and A is pushed back; on the third pass it is B again, and A ends no closer to having room than it began.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-pages-crowded-from-two-sides.png)
 
-That is the structural failure, and it is worth seeing why the next solution in
-the set does not share it. A push that moved A sideways, along a line that is
-away from neither B nor C but out of the gap between them, would free A in one
-go. Such a push exists on this table; the information needed to find it is
-already in the measurements; and finding it needs a search over directions,
-which is precisely what this method gave up in exchange for being one
-multiplication.
+That is the structural failure, and it is worth seeing why the next solution in the set
+does not share it. A push that moved A sideways, along a line that is away from neither
+B nor C but out of the gap between them, would free A in one go. Such a push exists on
+this table; the information needed to find it is already in the measurements; and
+finding it needs a search over directions. This is precisely what this method gave up in
+exchange for being one multiplication.
 
 **The same table also shows the approach failure.** If B and C stand closer to
 A than the tool is long, then pushing A away from B asks the arm to put 266 mm

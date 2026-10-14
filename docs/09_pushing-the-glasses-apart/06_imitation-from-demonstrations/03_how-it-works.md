@@ -18,13 +18,12 @@ Behaviour cloning is the whole of this solution, so it is worth setting out in
 plain words before anything is built on it.
 
 A **policy** is a function from what the arm can see to what the arm should do.
-**Behaviour cloning** is fitting that function from examples of somebody else
-doing the job. Each example is a pair: what was seen at some moment, and what
-the demonstrator did at that moment. The first half of the pair is the input,
-the second half is the label, and fitting proceeds exactly as it would for any
-other supervised problem — show an example, compare what the network produced
-against what the demonstrator did, and nudge every weight a little in the
-direction that would have closed the gap.
+**Behaviour cloning** is fitting that function from examples of somebody else doing the
+job. Each example is a pair: what was seen at some moment, and what the demonstrator did
+at that moment. The first half of the pair is the input, the second half is the label,
+and fitting proceeds exactly as it would for any other supervised problem. Show an
+example, compare what the network produced against what the demonstrator did, and nudge
+every weight a little in the direction that would have closed the gap.
 
 The programming comparison is a close one. Behaviour cloning is fitting a
 lookup table that was given to you, and then being asked to answer queries that
@@ -258,23 +257,23 @@ to emit coarser chunks would be slowed by it.
 
 ![One chunk drawn at the spacing its waypoints really have, dense while the jaw feels for the glass and twice as loose while it pushes, between the one look that produced it and the next look after it.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-the-waypoint-spacing-is-the-speed.png)
 
-What makes the trade bearable is set by `Bench.follow`, and it is less than the
-loop gives a parameterised push. Coming down to the chunk's first waypoint is
-the examiner's own move and it stops if the jaw touches anything on the way, so
-a chunk that starts over an obstacle comes back as blocked rather than being
-driven through. But **once the jaw is travelling across the table the examiner
-does not feel for the glass.** A chunk is carried out as it was given, which is
-the whole point of accepting one, and the only thing that stops it is the jam
-threshold. So the slow approach to contact is not the cell's behaviour here; it
-is part of the chunk, copied from the teacher's own feel. That is the one place
-where this solution leans on the demonstrations for safety rather than on the
-examiner.
+What makes the trade bearable is set by `Bench.follow`, and it is less than the loop
+gives a parameterised push. Coming down to the chunk's first waypoint is the examiner's
+own move and it stops if the jaw touches anything on the way. So a chunk that starts
+over an obstacle comes back as blocked rather than being driven through. But **once the
+jaw is travelling across the table the examiner does not feel for the glass.** A chunk
+is carried out as it was given. This is the whole point of accepting one, and the only
+thing that stops it is the jam threshold. So the slow approach to contact is not the
+cell's behaviour here; it is part of the chunk, copied from the teacher's own feel. That
+is the one place where this solution leans on the demonstrations for safety rather than
+on the examiner.
 
-Chunking is also the reason [the examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#6-what-must-come-out) accepts
-waypoints at all. Requiring every solution to emit the same three or four push
-parameters sounds like the fairest possible rule, and it would be the unfair
-one, because squeezing a chunking policy down to a handful of parameters
-removes the mechanism that makes it work.
+Chunking is also the reason [the
+examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#6-what-must-come-out)
+accepts waypoints at all. Requiring every solution to emit the same three or four push
+parameters sounds like the fairest possible rule. And it would be the unfair one,
+because squeezing a chunking policy down to a handful of parameters removes the
+mechanism that makes it work.
 
 ## 5. A second way — Diffusion Policy
 
@@ -313,15 +312,14 @@ Behaviour cloning has one characteristic failure, and it follows directly from
 the fragility named earlier: a cloned policy only knows situations the
 demonstrator visited.
 
-Here is the mechanism, in order. The policy acts slightly differently from the
-teacher — a little short, a little off the demonstrated heading, because no
-fitted function reproduces its labels exactly. That small difference puts the
-arm in a state the teacher would not have reached. In that state the policy is
-a little further outside the region its examples covered, so its next action is
-a little worse, which puts the arm in a state further out still. **The error is
-not added once; it is fed back into its own input.** This is **compounding
-error**, and it is why a policy that looks excellent on held-out single
-decisions can still fail over a whole run.
+Here is the mechanism, in order. The policy acts slightly differently from the teacher —
+a little short, a little off the demonstrated heading, because no fitted function
+reproduces its labels exactly. That small difference puts the arm in a state the teacher
+would not have reached. In that state the policy is a little further outside the region
+its examples covered, so its next action is a little worse, which puts the arm in a
+state further out still. **The error is not added once; it is fed back into its own
+input.** This is **compounding error**. And it is why a policy that looks excellent on
+held-out single decisions can still fail over a whole run.
 
 The comparison from programming is the difference between a rounding error in a
 calculation and a rounding error inside a loop that reads its own last result.
@@ -363,12 +361,11 @@ visits, ask the teacher what it would have done there, and add that answer to
 the training set as a label. Retrain, and repeat. The set then covers the
 policy's own drift, which is exactly the region plain cloning leaves empty.
 
-It is affordable here for the reason named two sections ago. The teacher is a
-program, so it can be asked about any state, at any time, for nothing, and a
-human demonstrator cannot answer "what would you have done on this table that
-my policy produced last Tuesday". So the one serious weakness of behaviour
-cloning has a cheap repair available in this particular arrangement, and that
-is a consequence of the teacher being code rather than a property of imitation
-learning in general.
+It is affordable here for the reason named two sections ago. The teacher is a program,
+so it can be asked about any state, at any time, for nothing. And a human demonstrator
+cannot answer "what would you have done on this table that my policy produced last
+Tuesday". So the one serious weakness of behaviour cloning has a cheap repair available
+in this particular arrangement. That is a consequence of the teacher being code rather
+than a property of imitation learning in general.
 
 ← [The code](02_the-code.md) · [A worked example](04_a-worked-example.md) →

@@ -6,13 +6,13 @@ the licence that comes with the weights.
 
 ## 1. What it needs
 
-It needs **LeRobot**, which is Apache-2.0, and the SmolVLA weights, which the
-library fetches by itself. That file is large, it comes from outside the
-project, and it is not something to commit beside the code. The terms on the
-weights are the thing to read rather than the terms on the library, because a
-file produced by continuing their training inherits whatever they carried, and
-no amount of training here relicenses it. It needs **PyTorch** underneath,
-which is what both the training and the forward pass run on.
+It needs **LeRobot**, which is Apache-2.0, and the SmolVLA weights, which the library
+fetches by itself. That file is large, it comes from outside the project, and it is not
+something to commit beside the code. The terms on the weights are the thing to read
+rather than the terms on the library, because a file produced by continuing their
+training inherits whatever they carried. And no amount of training here relicenses it.
+It needs **PyTorch** underneath, which is what both the training and the forward pass
+run on.
 
 It needs **the two parts of the examiner this solution waited on**, and both are
 there now. A rendered view looking straight down is the input this model takes,
@@ -65,9 +65,9 @@ way: π0, which belongs to the same family, holds about 3.3 billion parameters
 and its full fine-tune floor is above 70 GB, and there the question really is
 whether the training fits.
 
-And once trained, it needs **a correction kept in step with the cell**. Change
-the camera, the way the view from the top is rendered, the range of proportions
-a kind is drawn from, or the teacher, and the file is quietly out of date in a
-way no test of the code would notice.
+And once trained, it needs **a correction kept in step with the cell**. Change the
+camera, the way the view from the top is rendered, the range of proportions a kind is
+drawn from, or the teacher. And the file is quietly out of date in a way no test of the
+code would notice.
 
 ← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

@@ -14,15 +14,14 @@ which is why they are on one page.
 
 ## 1. The code at the heart of it
 
-Everything this solution adds to [solution
-1](../04_one-fixed-nudge/01_what-it-is.md) sits in two places, and they are small
-enough to read here. The first is the model itself: scikit-learn's boosted
-trees, fitted once and then asked for one number per candidate so that the
-candidates can be sorted. The second is the number those trees are asked to
-predict, which is measured by making the push on the examiner and reading the
-table afterwards. The candidates themselves are not this solution's own — they
-come from solution 1's enumerator unchanged — so the choosing is the only thing
-that differs, and the label is what the choosing is taught to want.
+Everything this solution adds to [solution 1](../04_one-fixed-nudge/01_what-it-is.md)
+sits in two places, and they are small enough to read here. The first is the model
+itself: scikit-learn's boosted trees, fitted once and then asked for one number per
+candidate so that the candidates can be sorted. The second is the number those trees are
+asked to predict, which is measured by making the push on the examiner and reading the
+table afterwards. The candidates themselves are not this solution's own — they come from
+solution 1's enumerator unchanged. So the choosing is the only thing that differs, and
+the label is what the choosing is taught to want.
 
 The borrowed library does its work in a constructor and one call to `fit`, and
 the sort that follows is the model's entire effect on the run. Both are in
@@ -120,36 +119,34 @@ def roll(table: Bench, before: Before, candidate: Candidate) -> Rolled:
     )
 ```
 
-Two things are visible in those blocks together. `survivors` is called before
-the model and `score` only reorders what it returns, which is the safety
-argument this whole document rests on. And the label is `gained`, metres of
-room the whole table gained, while the run is marked on how many glasses end up
-grippable — the mismatch that costs the ranker the comparison with the printed
-rule.
+Two things are visible in those blocks together. `survivors` is called before the model
+and `score` only reorders what it returns, which is the safety argument this whole
+document rests on. And the label is `gained`, metres of room the whole table gained,
+while the run is marked on how many glasses end up grippable. The mismatch that costs
+the ranker the comparison with the printed rule.
 
 ## 2. The pushes are what this contributes
 
 One point about the output has to be clear, because it decides what a
 comparison with the other five is a comparison of.
 
-This solution thinks in **parameterised pushes**: which glass to move, where to
-put the fingertips down, which way to point the jaw, how far to feel forward and
-how far to push once it has touched. That is exactly what the examiner's
-`push()` already accepts, and **the expansion of those numbers into a jaw
-trajectory is a macro the examiner owns.** The examiner brings the closed jaw
-down at the chosen start point, feels forward slowly until the force passes a
-small threshold, pushes the asked-for distance, backs off a couple of centimetres
-and lifts clear. Every parameterised push is expanded the same way by the same
-code, so this solution gains nothing and loses nothing in that step.
+This solution thinks in **parameterised pushes**: which glass to move, where to put the
+fingertips down. This way to point the jaw, how far to feel forward and how far to push
+once it has touched. That is exactly what the examiner's `push()` already accepts, and
+**the expansion of those numbers into a jaw trajectory is a macro the examiner owns.**
+The examiner brings the closed jaw down at the chosen start point, feels forward slowly
+until the force passes a small threshold, pushes the asked-for distance, backs off a
+couple of centimetres and lifts clear. Every parameterised push is expanded the same way
+by the same code, so this solution gains nothing and loses nothing in that step.
 
 ![One glass, with the five numbers of a parameterised push marked on it: where the fingertips come down, which way the jaw points, how far forward it feels, and how far the glass travels, all of them on the same straight line.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-pages-a-push-is-five-numbers.png)
 
-So **what this solution contributes is the choice of push and nothing else**.
-The trajectory is the examiner's, the physics is MuJoCo's, and the marking reads
-the table afterwards rather than the action, which is what lets a five-number
-push and a chunk of waypoints from a learned policy be compared at all. [The
-examiner](../01_the-problem/03_the-examiner.md#4-the-score-is-the-outcome-not-the-action) states that once so that no solution has to
-argue it again.
+So **what this solution contributes is the choice of push and nothing else**. The
+trajectory is the examiner's, the physics is MuJoCo's, and the marking reads the table
+afterwards rather than the action. This is what lets a five-number push and a chunk of
+waypoints from a learned policy be compared at all. [The
+examiner](../01_the-problem/03_the-examiner.md#4-the-score-is-the-outcome-not-the-action)
+states that once so that no solution has to argue it again.
 
 The limitation that follows is genuine rather than a formality. A parameterised
 push is a straight drag along one heading. A policy that emits waypoints
@@ -163,27 +160,25 @@ clearest example of what the enumeration costs.
 The pieces now join into one loop, and the loop is the one [pushing without
 toppling](../01_the-problem/05_pushing-without-toppling.md) describes: plan, feel, look again.
 
-Before any of it, and once, the model is fitted. Candidates are generated
-geometrically on the training tables, every one of them is executed on the
-examiner, each is labelled with the clear room the table gained and with whether
-the glass toppled, and a few hundred boosted regression trees are fitted to
-those labels on a table of a few thousand rows.
+Before any of it, and once, the model is fitted. Candidates are generated geometrically
+on the training tables, every one of them is executed on the examiner, each is labelled
+with the clear room the table gained and with whether the glass toppled. And a few
+hundred boosted regression trees are fitted to those labels on a table of a few thousand
+rows.
 
-At run time, one pass of the loop goes like this. `look()` hands over where each
-glass stands and how wide it is at its widest and at its foot, carrying the
-measurement error [the camera work
-reports](../../08_seeing-the-glasses/11_the-results.md). Any glass that already
-has room is racked and removed from the problem. For each glass that is still
-crowded, the topple limit is evaluated from its measured foot across the believed
-range of friction, and a glass that tips before it slides at every friction in
-that range is refused with the reason. For the glasses that remain, the
-enumerator sweeps the headings, steps the travel out, applies its four tests and
-keeps the survivors. Each survivor is turned into the short list of lengths,
-angles, counts and ratios described above, the model scores it, and the
-candidates are sorted. The highest-scoring push is handed to the examiner, which
-expands it into a trajectory, carries it out, and reports what the jaw felt. Then
-the arm looks again, and the loop repeats with the arrangement as it now is
-rather than as it was planned to be.
+At run time, one pass of the loop goes like this. `look()` hands over where each glass
+stands and how wide it is at its widest and at its foot, carrying the measurement error
+[the camera work reports](../../08_seeing-the-glasses/11_the-results.md). Any glass that
+already has room is racked and removed from the problem. For each glass that is still
+crowded, the topple limit is evaluated from its measured foot across the believed range
+of friction. And a glass that tips before it slides at every friction in that range is
+refused with the reason. For the glasses that remain, the enumerator sweeps the
+headings, steps the travel out, applies its four tests and keeps the survivors. Each
+survivor is turned into the short list of lengths, angles, counts and ratios described
+above, the model scores it, and the candidates are sorted. The highest-scoring push is
+handed to the examiner, which expands it into a trajectory, carries it out, and reports
+what the jaw felt. Then the arm looks again, and the loop repeats with the arrangement
+as it now is rather than as it was planned to be.
 
 Two things are worth holding on to from that.
 

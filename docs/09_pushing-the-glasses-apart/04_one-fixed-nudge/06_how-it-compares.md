@@ -97,22 +97,21 @@ is made of says where it should be expected to work and where it should not.
 
 ### Proportional control
 
-A correction that is the measured error multiplied by a fixed gain is a
-**proportional controller**, the simplest member of the family usually written
-as PID, which adds a term for the accumulated error and a term for its rate of
-change. **Where it is normally right:** when the error can be measured, when
-the correction is known to act in the right direction, and when the factor
-relating the correction to its effect is at least bounded, a small gain is
-stable with no model of the system whatever. That is a remarkably weak set of
-requirements, and it is the reason proportional control is everywhere. **Where
-it is not right:** a proportional controller is slow when an accurate model is
-available, because a model lets one step do what the controller does in
-several; and it leaves a steady error whenever the system has a constant offset
-pulling against it, which is the usual reason for adding the integral term.
-Here the second objection does not bite, because the measurement is of position
-and the correction moves position, so there is no offset to accumulate against.
-The first objection bites exactly, and the whole set of six exists to find out
-what an accurate model would be worth.
+A correction that is the measured error multiplied by a fixed gain is a **proportional
+controller**, the simplest member of the family usually written as PID. This adds a term
+for the accumulated error and a term for its rate of change. **Where it is normally
+right:** when the error can be measured, when the correction is known to act in the
+right direction, and when the factor relating the correction to its effect is at least
+bounded, a small gain is stable with no model of the system whatever. That is a
+remarkably weak set of requirements, and it is the reason proportional control is
+everywhere. **Where it is not right:** a proportional controller is slow when an
+accurate model is available, because a model lets one step do what the controller does
+in several. It leaves a steady error whenever the system has a constant offset pulling
+against it. This is the usual reason for adding the integral term. Here the second
+objection does not bite, because the measurement is of position and the correction moves
+position, so there is no offset to accumulate against. The first objection bites
+exactly, and the whole set of six exists to find out what an accurate model would be
+worth.
 
 ### Singulation
 
@@ -129,16 +128,15 @@ upright glasses, so the structure carries over and the safety does not.
 
 ### Fixed push policies
 
-Pushing a short fixed distance along a direction chosen by a simple rule is a
-real method rather than a straw man. Danielczuk and colleagues' *Linear Push
-Policies to Increase Grasp Access in Dense Clutter* (IEEE CASE 2018) is the
-clearest statement of it, and its finding is the one this solution relies on:
-such pushes are cheap and often sufficient to open enough space for a grasp.
-**Where it is normally right:** dense clutter inside a bin, where a push cannot
-do much harm. **Where it is not:** here, for the two reasons above and for a
-third that is specific to upright objects. A flat object in a bin can be pushed
-from a direction the gripper can easily occupy, while an upright glass must be
-pushed from the side, and the side is where the neighbour is.
+Pushing a short fixed distance along a direction chosen by a simple rule is a real
+method rather than a straw man. Danielczuk and colleagues' *Linear Push Policies to
+Increase Grasp Access in Dense Clutter* (IEEE CASE 2018) is the clearest statement of
+it, and its finding is the one this solution relies on: such pushes are cheap and often
+sufficient to open enough space for a grasp. **Where it is normally right:** dense
+clutter inside a bin, where a push cannot do much harm. **Where it is not:** here, for
+the two reasons above and for a third that is specific to upright objects. A flat object
+in a bin can be pushed from a direction the gripper can easily occupy, while an upright
+glass must be pushed from the side. And the side is where the neighbour is.
 
 ### Quasi-static planar pushing, which this solution deliberately does not use
 
@@ -164,16 +162,15 @@ solution takes no prediction at all. [Solution
 ### Guarded moves
 
 Ending a motion on a sensed condition rather than at a computed coordinate is a
-**guarded move**, and it is one of the oldest ideas in robot assembly.
-Lozano-Pérez, Mason and Taylor's *Automatic Synthesis of Fine-Motion Strategies
-for Robots* (IJRR 1984) is the reference statement of why: when the position of
-a thing is uncertain, a motion that stops on a sensor is reliable where a motion
-that stops at a coordinate is not. **Where it is normally right:** every
-contact made against an object whose position was measured from a distance,
-which is every contact in this project. **Where it is not a complete answer:** a
-guarded move tells the arm where the surface is and says nothing about what to
-do once it is found, so it removes a class of collisions and solves no part of
-the planning.
+**guarded move**, and it is one of the oldest ideas in robot assembly. Lozano-Pérez,
+Mason and Taylor's *Automatic Synthesis of Fine-Motion Strategies for Robots* (IJRR
+1984) is the reference statement of why: when the position of a thing is uncertain, a
+motion that stops on a sensor is reliable where a motion that stops at a coordinate is
+not. **Where it is normally right:** every contact made against an object whose position
+was measured from a distance, which is every contact in this project. **Where it is not
+a complete answer:** a guarded move tells the arm where the surface is and says nothing
+about what to do once it is found. So it removes a class of collisions and solves no
+part of the planning.
 
 ### Baselines, as a discipline
 
@@ -248,20 +245,18 @@ after it needs the same contact sequence and the same refusals. Do not ship it,
 because it has one heading to offer, it cannot help a glass crowded from two
 sides, and it never asks whether the place it is sending a glass is clear.
 
-And read it in both directions, as the book on telling the glasses apart reads
-[its own written
-rule](../../08_seeing-the-glasses/05_rules-on-the-table/01_what-it-is.md).
-The usual reading is about the other five: if a model cannot beat a
-fixed nudge, it has earned nothing, because it cost data, training time and
-hardware that this one did not, so matching it is not a result. The other
-reading is about the problem. This method works at all only because the glasses
-stand upright on a flat table, because the gripper's clear room is a known
-constant, because [the camera
-work](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md)
-reports a position and a width for every glass, and because a refusal is an
-acceptable answer. Each of the other five needs fewer of those promises than
-this one does. So a reader who finds a fixed nudge convincing should read that
-as a statement about how generous this book's promises are, and the value of
-the other five is what they do when the promises stop.
+And read it in both directions, as the book on telling the glasses apart reads [its own
+written rule](../../08_seeing-the-glasses/05_rules-on-the-table/01_what-it-is.md). The
+usual reading is about the other five: if a model cannot beat a fixed nudge, it has
+earned nothing, because it cost data, training time and hardware that this one did not.
+So matching it is not a result. The other reading is about the problem. This method
+works at all only because the glasses stand upright on a flat table, because the
+gripper's clear room is a known constant, because [the camera
+work](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md) reports a
+position and a width for every glass, and because a refusal is an acceptable answer.
+Each of the other five needs fewer of those promises than this one does. So a reader who
+finds a fixed nudge convincing should read that as a statement about how generous this
+book's promises are. And the value of the other five is what they do when the promises
+stop.
 
 ← [What it needs](05_what-it-needs.md) · [Geometry generates, a model ranks — what it is](../05_geometry-generates-a-model-ranks/01_what-it-is.md) →

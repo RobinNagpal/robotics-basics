@@ -60,20 +60,20 @@ prediction can do is waste one attempt**. In a cell where a toppled glass
 cannot be stood back up by anything in this project, that property is worth a
 great deal.
 
-All of this is built, and the result is worth stating before anything else,
-because it is the finding rather than a footnote. The candidate generation and
-the printed rule that takes the shortest push which finishes the job are both
-in `src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`. The trees
-described below are in `src/09_pushing-the-glasses-apart/02-geometry-ranked`,
-fitted, and run over the same fifty held-out tables as the rule, so that both
-sides see exactly the same candidates and the only difference between the two
-runs is who picks. **The ranker does not win that comparison.** It racked 107 of
-the 251 glasses in 182 pushes where the printed rule racked the same 107 in 173, finishing
-two fewer tables and toppling nothing either way; `results.json` is the ranker's
-run and `rule.json` is the rule's. Why it loses is explained in [where it is
-strong and where it breaks](06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks),
-and the short answer is that the model is fitted on room gained while the run is
-scored on glasses racked, and those are not the same quantity.
+All of this is built, and the result is worth stating before anything else, because it
+is the finding rather than a footnote. The candidate generation and the printed rule
+that takes the shortest push which finishes the job are both in
+`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`. The trees described below
+are in `src/09_pushing-the-glasses-apart/02-geometry-ranked`, fitted, and run over the
+same fifty held-out tables as the rule. So that both sides see exactly the same
+candidates and the only difference between the two runs is who picks. **The ranker does
+not win that comparison.** It racked 107 of the 251 glasses in 182 pushes where the
+printed rule racked the same 107 in 173, finishing two fewer tables and toppling nothing
+either way; `results.json` is the ranker's run and `rule.json` is the rule's. Why it
+loses is explained in [where it is strong and where it
+breaks](06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks). And the short
+answer is that the model is fitted on room gained while the run is scored on glasses
+racked, and those are not the same quantity.
 
 By the end of this document you will understand what a decision tree is and
 what boosting a set of them means, why a handful of geometric quantities suits
@@ -106,9 +106,9 @@ solution happens to do well.
 
 ## 2. A film of one table
 
-The introduction described how this method generates candidate pushes and lets a
-fitted model choose between them, and the film here shows it doing that on one
-table in the simulator, played at one and a half times real speed.
+The introduction described how this method generates candidate pushes and lets a fitted
+model choose between them. And the film here shows it doing that on one table in the
+simulator, played at one and a half times real speed.
 
 [Geometry generates and a model ranks, on one table, 13 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/02-geometry-ranked.mp4 "video")
 
@@ -121,11 +121,11 @@ slightly differently — two tip before they slide, two tipped when tried, and
 one is still without room after being pushed — but the table ends in the same
 place.
 
-That is the result rather than a coincidence, and it is the point of the
-comparison running through this document. Ranking candidates can only help when
-there is more than one candidate worth having. On a table where the hand's own
-width and height rule out almost every push, the ranker and the printed rule
-are choosing from the same very short list, so they choose the same thing.
+That is the result rather than a coincidence, and it is the point of the comparison
+running through this document. Ranking candidates can only help when there is more than
+one candidate worth having. On a table where the hand's own width and height rule out
+almost every push, the ranker and the printed rule are choosing from the same very short
+list. So they choose the same thing.
 
 All six solutions are filmed on this same table, so the films can be watched
 against each other. [The six films](../10_the-results.md#3-the-six-films-all-of-the-same-table)
@@ -144,13 +144,13 @@ arm has to drag them apart, because it may not lift them: lifting needs a
 measured profile, measuring needs a clear view from the side, and a clear view
 from the side is exactly what the crowding has taken away.
 
-A push therefore needs three things decided — which glass to move, in which
-direction, and how far — and the honest difficulty is that the first attempt
-at this produces far too many answers rather than too few. Sweep the headings
-round one crowded glass and step the travel out along each of them, and a large
-number of those pushes turn out to be perfectly legal. So the problem this
-solution addresses is not how to find a safe push. It is **how to choose among
-safe pushes**, which is a different question and a smaller one.
+A push therefore needs three things decided — which glass to move, in which direction,
+and how far. The honest difficulty is that the first attempt at this produces far too
+many answers rather than too few. Sweep the headings round one crowded glass and step
+the travel out along each of them, and a large number of those pushes turn out to be
+perfectly legal. So the problem this solution addresses is not how to find a safe push.
+It is **how to choose among safe pushes**, which is a different question and a smaller
+one.
 
 The complaint it is aimed at is therefore not safety. The geometry already in
 this repository toppled nothing at all over the examiner's fifty held-out
@@ -161,12 +161,11 @@ push that did not achieve what it was chosen for, so a method that chose better
 among the same candidates would spend fewer of them. That is the gap a ranker is
 pointed at.
 
-The other number in that same file is worth naming, because this solution does
-not touch it. **56 of the 251 glasses were refused for having nowhere clear to
-push them to.** That is a shortage of candidates rather than a bad ordering of
-them, and a ranking over an empty set is still empty. So whatever this solution
-is worth, it is worth nothing at all against the largest single failure in that
-record.
+The other number in that same file is worth naming, because this solution does not touch
+it. **56 of the 251 glasses were refused for having nowhere clear to push them to.**
+That is a shortage of candidates rather than a bad ordering of them. And a ranking over
+an empty set is still empty. So whatever this solution is worth, it is worth nothing at
+all against the largest single failure in that record.
 
 ## 4. The main idea
 

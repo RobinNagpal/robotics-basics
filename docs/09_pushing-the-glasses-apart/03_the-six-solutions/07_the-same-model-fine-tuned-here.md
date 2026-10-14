@@ -31,12 +31,12 @@ front of it. It is the standard repair for a domain gap, and the domain gap in
 this pair is severe: the borrowed model learned from real cameras in cluttered
 rooms, and it is shown flat shapes on an empty rectangle.
 
-This solution applies that repair using **low-rank adaptation**. Rather than
-moving all 450 million of the model's numbers, it learns a small correction —
-about four million numbers — and adds it to them. Only the correction carries
-gradients and optimiser state, so what has to be held in memory is the model
-plus a little, and afterwards the correction folds into the weights so that
-running the result costs exactly what running the original cost.
+This solution applies that repair using **low-rank adaptation**. Rather than moving all
+450 million of the model's numbers, it learns a small correction — about four million
+numbers — and adds it to them. Only the correction carries gradients and optimiser
+state. So what has to be held in memory is the model plus a little, and afterwards the
+correction folds into the weights so that running the result costs exactly what running
+the original cost.
 
 The demonstrations come from [geometry generates, a model
 ranks](03_geometry-generates-a-model-ranks.md), the same teacher [imitation from
@@ -74,18 +74,17 @@ to credit the model with them: it does not refuse, it does not choose
 destinations, it does not own the loop, and it does not stop a push that is
 going wrong. Each of those belongs to the shared machinery around it.
 
-What fine-tuning closes is the gap between the inputs. What it cannot touch is
-the shape of the model — a large fraction of those 450 million numbers serve a
-language channel this task does not use — or the fact that nothing in behaviour
-cloning ever evaluates an outcome, so the teacher remains the ceiling.
+What fine-tuning closes is the gap between the inputs. What it cannot touch is the shape
+of the model — a large fraction of those 450 million numbers serve a language channel
+this task does not use. Or the fact that nothing in behaviour cloning ever evaluates an
+outcome, so the teacher remains the ceiling.
 
 ## 3. What it needs
 
-It needs **LeRobot** and the **SmolVLA weights**, and the terms to read are the
-ones on the weights rather than the ones on the library, because training a file
-further does not relicense what it carried. It needs **its teacher built**,
-because the teacher's pushes are the training set, and simulator time to record
-them.
+It needs **LeRobot** and the **SmolVLA weights**. And the terms to read are the ones on
+the weights rather than the ones on the library, because training a file further does
+not relicense what it carried. It needs **its teacher built**, because the teacher's
+pushes are the training set, and simulator time to record them.
 
 **It did not need a rented accelerator, and that is where the plan was wrong.**
 The training ran on this machine and held about a gigabyte, which low-rank
@@ -111,11 +110,11 @@ one.
 **The training worked and the score got worse.** Both halves of that sentence
 are true, and reading only one of them misreads the pair.
 
-The training worked in the sense that matters, and the measurement is exact.
-The borrowed model's chunks stop a median of 217 mm above the table; the
-fine-tuned model's come down to a median of 75 mm, which is precisely the
-height the jaw has to ride at to move anything. It racks 56 glasses against 48
-in a little over half the pushes, and both finish about one table in fifty.
+The training worked in the sense that matters, and the measurement is exact. The
+borrowed model's chunks stop a median of 217 mm above the table; the fine-tuned model's
+come down to a median of 75 mm. This is precisely the height the jaw has to ride at to
+move anything. It racks 56 glasses against 48 in a little over half the pushes, and both
+finish about one table in fifty.
 
 The score got worse because it learned the height a push happens at without
 learning where to put the jaw down.
@@ -165,11 +164,11 @@ all.
 ## 6. When to choose it
 
 Choose fine-tuning a foundation policy when a borrowed model nearly works, the
-demonstrations are cheap, and **something outside the policy can stop it doing
-damage**. That last condition is the one this solution shows the cost of
-ignoring. The topple refusal in front of it checks whether a *glass* may be
-pushed; nothing checks whether the *chunk the model produced* is safe to carry
-out, and 46 toppled glasses a run is what that gap is worth.
+demonstrations are cheap, and **something outside the policy can stop it doing damage**.
+That last condition is the one this solution shows the cost of ignoring. The topple
+refusal in front of it checks whether a *glass* may be pushed. Nothing checks whether
+the *chunk the model produced* is safe to carry out, and 46 toppled glasses a run is
+what that gap is worth.
 
 Do not choose it on this much compute. One part in three hundred of the
 recommended training is not a fair test of the method, and the fair conclusion
@@ -192,10 +191,9 @@ carefully, because the obvious reading of it is wrong.
 
 The code is in
 [`src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/`](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned)
-and it writes its own `results.json` beside itself. The full treatment, with
-low-rank adaptation explained, where the demonstrations come from, the two ways
-training on one cell's pushes goes wrong, and a second way on a markedly larger
-model, starts at [what it
-is](../09_the-same-model-fine-tuned-here/01_what-it-is.md).
+and it writes its own `results.json` beside itself. The full treatment, with low-rank
+adaptation explained, where the demonstrations come from, the two ways training on one
+cell's pushes goes wrong. And a second way on a markedly larger model, starts at [what
+it is](../09_the-same-model-fine-tuned-here/01_what-it-is.md).
 
 ← [A foundation model as it downloads](06_a-foundation-model-as-it-downloads.md) · [One fixed nudge — what it is](../04_one-fixed-nudge/01_what-it-is.md) →

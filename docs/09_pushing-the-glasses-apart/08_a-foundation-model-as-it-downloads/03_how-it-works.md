@@ -22,12 +22,11 @@ The kind of model being borrowed needs explaining before anything else,
 because the rest of this document depends on what goes into it and what comes
 out.
 
-Three things go in together. The first is **what the camera sees**, as an
-ordinary picture. The second is **an instruction in ordinary words**, written
-the way a person would write it, such as "pick up the red block" or "push the
-glasses apart". The third is **the robot's own joint readings**, which say
-where each joint is at this moment, so the model knows the shape the arm is
-currently in and not only what is in front of it.
+Three things go in together. The first is **what the camera sees**, as an ordinary
+picture. The second is **an instruction in ordinary words**, written the way a person
+would write it, such as "pick up the red block" or "push the glasses apart". The third
+is **the robot's own joint readings**, which say where each joint is at this moment. So
+the model knows the shape the arm is currently in and not only what is in front of it.
 
 One thing comes out: **robot actions**. The model returns targets for the robot
 to move to, at the rate a controller consumes them, so a single answer is a
@@ -42,13 +41,12 @@ leaves the acting to something else, and it is not a controller that is handed
 a goal in numbers. It takes the raw picture and the human sentence at one end
 and emits movement at the other, with nothing in between that a person writes.
 
-That is a different shape from the other learned solutions in this book.
-Solution 4's learned part is a model of how the world changes, and a separate
-search uses it to choose. Solution 2's learned part is a ranker, and
-hand-written geometry proposes what it ranks. Here there is one network and it
-does the whole job, which is why a single borrowed file can be a complete
-answer to the problem, and also why there is no small piece of it that can be
-corrected when it is wrong.
+That is a different shape from the other learned solutions in this book. Solution 4's
+learned part is a model of how the world changes, and a separate search uses it to
+choose. Solution 2's learned part is a ranker, and hand-written geometry proposes what
+it ranks. Here there is one network and it does the whole job. This is why a single
+borrowed file can be a complete answer to the problem, and also why there is no small
+piece of it that can be corrected when it is wrong.
 
 ## 2. Where such a model gets its competence
 
@@ -56,14 +54,13 @@ A model with no knowledge of this cell can only be worth trying if it knows
 something general, so it is worth being precise about where that general
 knowledge comes from.
 
-It comes from **pretraining on very many recorded demonstrations, across many
-different robots and many different tasks**. Somebody collected an enormous
-pool of recordings in which a robot arm was driven by a person through some
-piece of manipulation — reaching for things, grasping them, moving them,
-putting them down — with the camera picture, the instruction and the joint
-readings all recorded together, and the model was fitted on all of it at once.
-SmolVLA's pool is **487 community datasets of real teleoperation**, which means
-real robots in real rooms, driven by real people.
+It comes from **pretraining on very many recorded demonstrations, across many different
+robots and many different tasks**. Somebody collected an enormous pool of recordings in
+which a robot arm was driven by a person through some piece of manipulation — reaching
+for things, grasping them, moving them, putting them down. With the camera picture, the
+instruction and the joint readings all recorded together, and the model was fitted on
+all of it at once. SmolVLA's pool is **487 community datasets of real teleoperation**,
+which means real robots in real rooms, driven by real people.
 
 What a model learns from a pool like that is not any one of those tasks. It is
 the shape that manipulation has in general: that an arm approaching an object
@@ -115,11 +112,10 @@ The first place it bites is at the output, and this section was written
 expecting a practical difficulty of translation. The difficulty turned out to
 be worse than that, and the measured version is the one worth reading.
 
-The expectation was this. A model fitted on recordings of particular robots
-emits actions in the layout and the units those robots used. The arm here is a
-UR5e with a two-finger gripper, and it is not the arm the recordings were made
-on, so the numbers coming back would be in somebody else's units and somebody
-would have to convert them.
+The expectation was this. A model fitted on recordings of particular robots emits
+actions in the layout and the units those robots used. The arm here is a UR5e with a
+two-finger gripper, and it is not the arm the recordings were made on. So the numbers
+coming back would be in somebody else's units and somebody would have to convert them.
 
 **What the checkpoint actually emits has no units at all.**
 `lerobot/smolvla_base` declares six action slots and six state slots, both
@@ -202,14 +198,13 @@ and nothing borrowed. So the natural question — what is the extra size buying?
 — has an answer that does not involve language at all. It is buying the
 pretraining, and only the pretraining.
 
-The second is a warning about reading the result. If this solution scores
-badly, it has not been shown that vision-language-action models are a poor
-idea. It has been shown that one such model, used with a constant instruction
-and a constant pose, on rendered pictures unlike its training pictures, with
-nothing fitted, scores badly — which leaves the model's actual selling point
-untested, because this problem never asks it to do the one thing the language
-half exists for. A single-task cell is simply not where that capability can be
-seen.
+The second is a warning about reading the result. If this solution scores badly, it has
+not been shown that vision-language-action models are a poor idea. It has been shown
+that one such model, used with a constant instruction and a constant pose, on rendered
+pictures unlike its training pictures, with nothing fitted, scores badly. Which leaves
+the model's actual selling point untested, because this problem never asks it to do the
+one thing the language half exists for. A single-task cell is simply not where that
+capability can be seen.
 
 ## 6. The force reading has nowhere to go
 
@@ -231,14 +226,13 @@ nowhere to enter. The examiner still produces that report when it carries out a
 run of waypoints; there is simply no slot to put it in. So the one channel
 through which friction is observable at all is, for this solution, closed.
 
-That does not leave the solution blind, and it is worth being exact about what
-remains. The arm looks again after every push, so the **outcome** of a push is
-visible in the next picture. What is lost is everything that happened *during*
-the push, which is where the force signal lives, and which is the part that
-distinguishes a glass that slid from a glass that leaned and settled back. So
-this solution can learn nothing from a push except where the glasses ended up,
-and it cannot even do that, because it learns nothing at all — it only sees the
-new arrangement and answers again.
+That does not leave the solution blind, and it is worth being exact about what remains.
+The arm looks again after every push, so the **outcome** of a push is visible in the
+next picture. What is lost is everything that happened *during* the push. This is where
+the force signal lives, and which is the part that distinguishes a glass that slid from
+a glass that leaned and settled back. So this solution can learn nothing from a push
+except where the glasses ended up. And it cannot even do that, because it learns nothing
+at all — it only sees the new arrangement and answers again.
 
 This is also the clearest statement of what solution 6 has to gain, and of how
 little. Continuing the training here cannot add an input slot. What it can do
@@ -316,20 +310,18 @@ them. The same run of waypoints travels 868 mm across the table in its 50
 steps, which is more than the width of the picture's frame, so the movement is
 large as well as high.
 
-Of the 80 pushes in that run that did touch something, 69 jammed. That is the
-other half of the measurement and it has the same cause: the waypoints come
-back 14.6 mm apart, and the examiner consumes one every 50 milliseconds, so
-they ask for the jaw to travel at more than the arm's own top speed and
-fourteen times the speed the push macro uses. A jaw arriving at a glass that
-fast wedges against it rather than sliding it along, and that is where the
-toppled glasses come from.
+Of the 80 pushes in that run that did touch something, 69 jammed. That is the other half
+of the measurement and it has the same cause: the waypoints come back 14.6 mm apart, and
+the examiner consumes one every 50 milliseconds. So they ask for the jaw to travel at
+more than the arm's own top speed and fourteen times the speed the push macro uses. A
+jaw arriving at a glass that fast wedges against it rather than sliding it along, and
+that is where the toppled glasses come from.
 
-So the chain of consequence runs the other way round from the one this document
-argued for. It is not choosing badly among pushes. It is mostly not arriving at
-the table, and when it does arrive it arrives too fast. The reasoning about the
-domain gap stands — the pictures are nothing like the model's own, and that is
-why it produces movement unrelated to this table — but the guess about which
-way that would show was wrong.
+So the chain of consequence runs the other way round from the one this document argued
+for. It is not choosing badly among pushes. It is mostly not arriving at the table, and
+when it does arrive it arrives too fast. The reasoning about the domain gap stands — the
+pictures are nothing like the model's own. That is why it produces movement unrelated to
+this table — but the guess about which way that would show was wrong.
 
 One claim in section 7 has to be withdrawn with it. The failure this document
 feared was one that nothing downstream would notice. This one is noticed: the

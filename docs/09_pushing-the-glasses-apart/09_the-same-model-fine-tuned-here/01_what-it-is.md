@@ -123,9 +123,9 @@ untouched.
 
 ## 2. A film of one table
 
-The introduction described what was done to the borrowed model's numbers and why,
-and the film here shows the corrected model on one table in the simulator,
-played at one and a half times real speed.
+The introduction described what was done to the borrowed model's numbers and why. And
+the film here shows the corrected model on one table in the simulator, played at one and
+a half times real speed.
 
 [The same borrowed model after fine-tuning here, on one table, 12 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/06-smolvla-fine-tuned.mp4 "video")
 
@@ -144,15 +144,13 @@ failure this cell cannot undo. The film and the one before it are the clearest
 statement of that in the book: the borrowed model never touches anything, and
 fitting it made it dangerous rather than useful.
 
-This solution draws its answer rather than computing it, so the film is one
-draw rather than an average. The scored runs on this table all ended wrong and
-averaged six pushes and two glasses racked, against the film's four pushes and
-one glass, so the film is a shorter draw than the middle one. Which draw a film
-shows is not a detail here, and [the
+This solution draws its answer rather than computing it, so the film is one draw rather
+than an average. The scored runs on this table all ended wrong and averaged six pushes
+and two glasses racked, against the film's four pushes and one glass. So the film is a
+shorter draw than the middle one. Which draw a film shows is not a detail here, and [the
 examiner](../01_the-problem/03_the-examiner.md#6-two-things-this-scorecard-needs-that-the-camera-works-did-not)
-explains why: a table filmed on its own is not the same table reached part-way
-through a run, because the tables before it have already moved the policy's
-random numbers along.
+explains why: a table filmed on its own is not the same table reached part-way through a
+run, because the tables before it have already moved the policy's random numbers along.
 
 All six solutions are filmed on this same table, so the films can be watched
 against each other. [The six films](../10_the-results.md#3-the-six-films-all-of-the-same-table)
@@ -161,13 +159,12 @@ one of the films has in common.
 
 ## 3. The problem this solves
 
-This book asks for a jaw trajectory, and then another, until every glass has
-about 76 mm of clear room around it or the glasses that are left have been
-refused with a reason. [The problem](../01_the-problem/01_what-is-asked-for.md)
-explains why that is hard, and the hardest part of it is a missing number:
-whether a pushed glass slides or tips depends on the friction between the glass
-and the table, **nothing in the cell measures friction**, and the examiner never
-tells any solution what it is using.
+This book asks for a jaw trajectory, and then another, until every glass has about 76 mm
+of clear room around it or the glasses that are left have been refused with a reason.
+[The problem](../01_the-problem/01_what-is-asked-for.md) explains why that is hard. And
+the hardest part of it is a missing number: whether a pushed glass slides or tips
+depends on the friction between the glass and the table, **nothing in the cell measures
+friction**. And the examiner never tells any solution what it is using.
 
 A learned policy answers that difficulty in the only way available to anything
 here, which is by sampling outcomes rather than deriving them. It is shown many
@@ -180,16 +177,15 @@ The question this solution exists to answer is therefore narrower and more
 interesting than "does learning help". It is: **having borrowed a policy, what
 is still wrong with it, and does training here fix that?**
 
-Three things are still wrong in solution 5, and all three have one cause. The
-model was fitted on 487 community datasets of real teleoperation — real
-cameras, real rooms, real robots of other shapes — and this cell hands it a
-view rendered by a simulator, of opaque glasses standing on a bare table, seen
-straight down from above. The pictures are of a world the weights never met.
-The numbers it produces are actions on the scale of the robots it was fitted
-on, so whether they are the right size for this jaw is left to chance. And
-underneath both, it has never seen the consequence of a push on this table.
-Continuing its training on pushes made here is the standard repair for all
-three at once.
+Three things are still wrong in solution 5, and all three have one cause. The model was
+fitted on 487 community datasets of real teleoperation — real cameras, real rooms, real
+robots of other shapes. This cell hands it a view rendered by a simulator, of opaque
+glasses standing on a bare table, seen straight down from above. The pictures are of a
+world the weights never met. The numbers it produces are actions on the scale of the
+robots it was fitted on, so whether they are the right size for this jaw is left to
+chance. And underneath both, it has never seen the consequence of a push on this table.
+Continuing its training on pushes made here is the standard repair for all three at
+once.
 
 ## 4. The main idea
 

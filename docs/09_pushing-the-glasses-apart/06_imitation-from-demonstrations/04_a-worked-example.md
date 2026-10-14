@@ -26,14 +26,13 @@ reason is that it tips before it slides". The examiner requires a refusal to
 carry a reason, so the thing it wants is a kind of answer this policy cannot
 produce.
 
-It is tempting to hope the policy learns to refuse by itself. It does not, and
-it is worth being exact about why. The teacher refuses those glasses, so the
-dataset contains no push on them — but **the absence of an example is not a
-label.** The network was never shown such a situation paired with an
-instruction to do nothing; it was shown nothing at all. Asked about one, it
-returns a chunk, because returning a chunk is the only thing it does. The one
-case where the arm must not act is the case where the policy is least anchored
-and least able to warn.
+It is tempting to hope the policy learns to refuse by itself. It does not, and it is
+worth being exact about why. The teacher refuses those glasses, so the dataset contains
+no push on them. But **the absence of an example is not a label.** The network was never
+shown such a situation paired with an instruction to do nothing; it was shown nothing at
+all. Asked about one, it returns a chunk, because returning a chunk is the only thing it
+does. The one case where the arm must not act is the case where the policy is least
+anchored and least able to warn.
 
 So the refusal is made in front of the policy, by the same arithmetic the two
 solutions before this one use, and the policy is never asked about a glass that
@@ -44,11 +43,11 @@ policy too.
 ![One pass of the run-time loop, with the two routes that take a glass out of play reaching the refusal without passing through the policy at all.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-where-a-refusal-comes-from.png)
 
 One difference from the teacher belongs here, because it is a cost of the same
-limitation. When the believed range of friction leaves the limit undecided,
-the teacher settles it with a 5 mm test push and a look before and after. This
-solution makes no test push: a chunk cannot ask a question, so the gate refuses
-only the glasses that tip rather than slide even at the lowest friction the
-project allows, and an undecided glass is handed to the policy as it is.
+limitation. When the believed range of friction leaves the limit undecided, the teacher
+settles it with a 5 mm test push and a look before and after. This solution makes no
+test push: a chunk cannot ask a question. So the gate refuses only the glasses that tip
+rather than slide even at the lowest friction the project allows, and an undecided glass
+is handed to the policy as it is.
 
 **The early abort matters more here than anywhere else.** A chunking policy is
 open-loop while its chunk runs, so a monitor reading the jaw's force during a

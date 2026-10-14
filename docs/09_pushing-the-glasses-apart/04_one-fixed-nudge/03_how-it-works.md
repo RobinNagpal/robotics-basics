@@ -19,14 +19,13 @@ not their content but the loop they sit inside. That loop has a name in control
 engineering, and the name is worth learning because the rest of this document
 uses it.
 
-A plan that is computed once and then carried out without reading anything back
-is **open loop**. It commits to the whole answer in advance, on the strength of
-whatever it believed when it started, and it has no way of noticing that the
-world disagreed. A plan that measures, acts, measures again and lets the second
-measurement change what it does next is **closed loop**. The three parts of a
-closed loop always have the same shape: a **measurement** of how things are, an
-**error** that says how far that is from how things should be, and a
-**correction** that is meant to reduce the error.
+A plan that is computed once and then carried out without reading anything back is
+**open loop**. It commits to the whole answer in advance, on the strength of whatever it
+believed when it started, and it has no way of noticing that the world disagreed. A plan
+that measures, acts, measures again and lets the second measurement change what it does
+next is **closed loop**. The three parts of a closed loop always have the same shape: a
+**measurement** of how things are, an **error** that says how far that is from how
+things should be. And a **correction** that is meant to reduce the error.
 
 The programming comparison is exact, and it is the clearest way to see the
 difference. Open loop is unrolling a loop into a fixed sequence of statements
@@ -91,12 +90,11 @@ neighbour is
     76 mm  +  half the neighbour's widest width  −  the distance between
     their middles
 
-and it is zero or less when that neighbour is not in the way. The glass's own
-shortfall is the largest of those values over every other glass on the table,
-and the neighbour that produced the largest value is the one whose edge is
-nearest to the glass's middle. So **the blocking neighbour and the deepest
-intruder are the same glass**, and the method needs no separate rule to find
-it.
+and it is zero or less when that neighbour is not in the way. The glass's own shortfall
+is the largest of those values over every other glass on the table. And the neighbour
+that produced the largest value is the one whose edge is nearest to the glass's middle.
+So **the blocking neighbour and the deepest intruder are the same glass**, and the
+method needs no separate rule to find it.
 
 Written as a subtraction the shortfall is three numbers. Drawn on the table it
 is one length, and it is the length the whole method is built around.
@@ -122,20 +120,19 @@ one glass at a time, as its error.
 
 ## 3. Why the push is a fraction of the shortfall rather than all of it
 
-With the error defined, the only remaining question is how large a correction
-to make from it, and the answer is the one place where the missing friction
-decides the design rather than merely complicating it.
+With the error defined, the only remaining question is how large a correction to make
+from it. And the answer is the one place where the missing friction decides the design
+rather than merely complicating it.
 
-Start by naming what nobody knows. Call the shortfall `s`, and call the
-fraction the method applies to it `k`, which is the gain. The jaw is therefore
-commanded to travel `k · s`. What the glass actually does is some other
-distance, because the jaw may slip against a curved wall, the glass turns as
-well as travels, the friction under its foot is not the same everywhere on that
-foot, and the glass may carry on a little after the jaw stops or stop a little
-before it. Write that unknown as a factor `g`, so the glass moves `g · k · s`.
-**Nothing in the cell measures `g`, and nothing bounds it tightly**, because
-every term that would settle it runs through the friction coefficient, and
-glass on a dry wooden top plausibly spans a range of more than two to one.
+Start by naming what nobody knows. Call the shortfall `s`, and call the fraction the
+method applies to it `k`, which is the gain. The jaw is therefore commanded to travel `k
+· s`. What the glass actually does is some other distance, because the jaw may slip
+against a curved wall, the glass turns as well as travels, the friction under its foot
+is not the same everywhere on that foot, and the glass may carry on a little after the
+jaw stops or stop a little before it. Write that unknown as a factor `g`, so the glass
+moves `g · k · s`. **Nothing in the cell measures `g`. And nothing bounds it tightly**,
+because every term that would settle it runs through the friction coefficient, and glass
+on a dry wooden top plausibly spans a range of more than two to one.
 
 Now the arithmetic. The shortfall after the push is
 
@@ -172,22 +169,21 @@ reduction divided by the logarithm of `1 − g · k`. A smaller gain is therefor
 safer and slower in a way that can be written down exactly, and the price is
 paid in arm time rather than in risk.
 
-One more point about the gain, and it is about honesty rather than about
-control. The gain could be chosen by trying many values over the training
-tables and keeping the best, and that would be **fitting a number to data**,
-which this solution is not allowed to do: [the overview of the
-six](../03_the-six-solutions/01_how-the-six-compare.md) records that this solution fits nothing, and a baseline
-that is quietly tuned until it is competitive has stopped being a baseline. So
-the gain is argued instead. It is chosen small enough that the convergence
-condition holds across the whole plausible friction range, and then frozen, and
-that argument is written down where anybody can disagree with it.
+One more point about the gain, and it is about honesty rather than about control. The
+gain could be chosen by trying many values over the training tables and keeping the
+best, and that would be **fitting a number to data**. This this solution is not allowed
+to do: [the overview of the six](../03_the-six-solutions/01_how-the-six-compare.md)
+records that this solution fits nothing. And a baseline that is quietly tuned until it
+is competitive has stopped being a baseline. So the gain is argued instead. It is chosen
+small enough that the convergence condition holds across the whole plausible friction
+range, and then frozen, and that argument is written down where anybody can disagree
+with it.
 
 ## 4. Why repeating replaces predicting
 
-The small gain buys convergence, and the loop buys correctness, so the method
-can now be stated in its strongest form: it never says where the glass will
-land, and therefore **it cannot be wrong about physics it never claimed to
-know**.
+The small gain buys convergence, and the loop buys correctness. So the method can now be
+stated in its strongest form: it never says where the glass will land, and therefore
+**it cannot be wrong about physics it never claimed to know**.
 
 It is worth being exact about what is and is not claimed. The method claims a
 direction, which does not need the friction. It claims that the shortfall is
@@ -270,18 +266,18 @@ real code is involved and it would be easy to over-claim.
 - the repeats and the compute column that [the examiner](../01_the-problem/03_the-examiner.md)
   describes for the scorecard.
 
-One measurement from the built code is worth quoting, with its attribution
-made clear. The programmed run reports in
+One measurement from the built code is worth quoting, with its attribution made clear.
+The programmed run reports in
 [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/results.json`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/results.json)
-that its pushed glasses stopped a median of 1.0 mm, and at worst 3.9 mm, from
-where they were aimed. **That run uses the searching planner rather than this
-solution's rule**, so the figure is not this solution's score. What it does say
-is something about the examiner rather than about any rule: in this simulator, a
-glass that is pushed follows the jaw closely, so the unknown factor `g` of the
-previous section sits near one here. No solution is told that, nothing in the
-cell would reveal it, and on a real table with a real cloth or a real spill it
-would not hold. It is a reason to expect this method to converge in few pushes
-on the examiner's tables, and not a reason to trust it anywhere else.
+that its pushed glasses stopped a median of 1.0 mm, and at worst 3.9 mm, from where they
+were aimed. **That run uses the searching planner rather than this solution's rule**, so
+the figure is not this solution's score. What it does say is something about the
+examiner rather than about any rule: in this simulator, a glass that is pushed follows
+the jaw closely. So the unknown factor `g` of the previous section sits near one here.
+No solution is told that, nothing in the cell would reveal it, and on a real table with
+a real cloth or a real spill it would not hold. It is a reason to expect this method to
+converge in few pushes on the examiner's tables, and not a reason to trust it anywhere
+else.
 
 ## 6. It produces nothing anybody can learn from
 
@@ -289,13 +285,13 @@ There is one thing this solution cannot do that its nearest neighbour in the
 set can, and because it is the single clearest difference between the two it
 belongs here rather than buried at the end.
 
-Solutions 3 and 6 are fitted to demonstrations, which means recorded examples
-of the task being done: what the arm saw, and the push that was made from
-there. Both of those documents say the examples come from solution 2 for
-nothing: solution 2 has geometry generate many candidate pushes for each
-crowded glass and then ranks them, so every push it makes is a demonstration
-and is also the best of a set that was written down and scored first. It is
-what earns solution 2 its place in the set beyond being a second baseline.
+Solutions 3 and 6 are fitted to demonstrations, which means recorded examples of the
+task being done: what the arm saw, and the push that was made from there. Both of those
+documents say the examples come from solution 2 for nothing: solution 2 has geometry
+generate many candidate pushes for each crowded glass and then ranks them. So every push
+it makes is a demonstration and is also the best of a set that was written down and
+scored first. It is what earns solution 2 its place in the set beyond being a second
+baseline.
 
 **This solution leaves behind nothing of the kind.** It generates exactly one
 push per pass and it scores nothing, because there is no alternative to

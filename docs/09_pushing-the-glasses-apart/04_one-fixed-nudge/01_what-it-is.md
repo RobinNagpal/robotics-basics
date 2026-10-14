@@ -151,14 +151,13 @@ close enough together that the open jaw cannot get round one of them without
 fouling the one beside it, and the arm has to move them apart by dragging them
 across the table rather than by lifting them.
 
-What makes that a problem rather than an exercise is one missing number. A
-pushed glass slides while the jaw touches it below a height set by its own foot
-and by the friction between the glass and the table, and tips above that
-height, which is the whole subject of [pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md). **The friction is never told to any
-solution and nothing in the cell measures it.** So how far a glass travels for
-a given push is unknown before the push is made, and it stays unknown
-afterwards except through what the table looks like next.
+What makes that a problem rather than an exercise is one missing number. A pushed glass
+slides while the jaw touches it below a height set by its own foot and by the friction
+between the glass and the table, and tips above that height. This is the whole subject
+of [pushing without toppling](../01_the-problem/05_pushing-without-toppling.md). **The
+friction is never told to any solution and nothing in the cell measures it.** So how far
+a glass travels for a given push is unknown before the push is made. And it stays
+unknown afterwards except through what the table looks like next.
 
 Everything the six solutions disagree about follows from that one gap. A
 solution can try to fill it, by estimating the friction, by learning a model of
@@ -203,12 +202,12 @@ Then the arm looks at the table again, and the four decisions are made afresh
 from the new measurements. Nothing is remembered from one pass to the next
 except how many pushes have been spent.
 
-The word **fixed** in the name needs care, because it does not mean a fixed
-number of millimetres. A rule that pushed the same distance every time would
-be badly wrong, since the glasses on a crowded table are short of anything
-from almost nothing to several tens of millimetres, and one distance cannot
-serve both ends of that range. What is fixed is the **fraction**: one constant,
-the same for every glass on every table, chosen once by argument and never
-changed. That single constant is the only free number in the entire method.
+The word **fixed** in the name needs care, because it does not mean a fixed number of
+millimetres. A rule that pushed the same distance every time would be badly wrong, since
+the glasses on a crowded table are short of anything from almost nothing to several tens
+of millimetres. And one distance cannot serve both ends of that range. What is fixed is
+the **fraction**: one constant, the same for every glass on every table, chosen once by
+argument and never changed. That single constant is the only free number in the entire
+method.
 
 ← [The same model, fine-tuned here](../03_the-six-solutions/07_the-same-model-fine-tuned-here.md) · [How it works](03_how-it-works.md) →

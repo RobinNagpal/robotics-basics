@@ -145,52 +145,49 @@ distribution to the elite, repeat. Planning a short sequence, executing only its
 first step and re-planning is **model-predictive control**, which is decades old
 and came from process control long before anybody applied it to robots.
 
-The cross-entropy method is normally right where the action has few dimensions,
-the cost is cheap to evaluate and the landscape is awkward — not smooth, full of
-hard limits, or both. It is normally wrong where the action has many dimensions,
-because the number of samples it needs to cover a space grows with the
-dimension, which is why no policy here is searched for this way and only pushes
-are. Model-predictive control is normally right whenever the model is imperfect
-but the state can be re-measured often, and normally wrong when measuring is
-slow or expensive, which would leave the plan running open-loop for exactly as
-long as it is unreliable.
+The cross-entropy method is normally right where the action has few dimensions, the cost
+is cheap to evaluate and the landscape is awkward — not smooth, full of hard limits, or
+both. It is normally wrong where the action has many dimensions, because the number of
+samples it needs to cover a space grows with the dimension. This is why no policy here
+is searched for this way and only pushes are. Model-predictive control is normally right
+whenever the model is imperfect but the state can be re-measured often, and normally
+wrong when measuring is slow or expensive. This would leave the plan running open-loop
+for exactly as long as it is unreliable.
 
 ### Learned world models with their own representation
 
 Hafner and colleagues' [*Learning Latent Dynamics for Planning from
 Pixels*](https://arxiv.org/abs/1811.04551) (PlaNet, 2018) and [*Dream to
-Control*](https://arxiv.org/abs/1912.01603) (Dreamer, 2019) established the
-other branch: do not predict the observation at all, learn a compact internal
-description and predict how *that* changes. Hansen, Wang and Su's
+Control*](https://arxiv.org/abs/1912.01603) (Dreamer, 2019) established the other
+branch: do not predict the observation at all, learn a compact internal description and
+predict how *that* changes. Hansen, Wang and Su's
 [TD-MPC](https://arxiv.org/abs/2203.04955) (2022) and
-[TD-MPC2](https://arxiv.org/abs/2310.16828) (2023) combine such a learned
-internal model with planning at run time and a learned value to stand in for
-everything beyond the planning horizon, which is how they avoid needing a deep
-rollout. TD-MPC2 is the second way. The library this project uses elsewhere
-ships TD-MPC rather than TD-MPC2, so it would have to be fetched from its own
-project.
+[TD-MPC2](https://arxiv.org/abs/2310.16828) (2023) combine such a learned internal model
+with planning at run time and a learned value to stand in for everything beyond the
+planning horizon. This is how they avoid needing a deep rollout. TD-MPC2 is the second
+way. The library this project uses elsewhere ships TD-MPC rather than TD-MPC2, so it
+would have to be fetched from its own project.
 
-This family is normally right where the situation cannot be written down — raw
-pictures, contact-rich manipulation, anything where the useful variables are
-not the measured ones. It is normally wrong, or at least wasteful, where the
-situation *can* be written down and already has been, which is the case here:
-the camera work that [tells the glasses
-apart](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md) has
-already measured the positions and widths, so a learned encoding is being asked
-to rediscover information the cell already supplies. That is the honest prior
-expectation for the second way here, and it is exactly the expectation the
-comparison exists to test.
+This family is normally right where the situation cannot be written down — raw pictures,
+contact-rich manipulation, anything where the useful variables are not the measured
+ones. It is normally wrong, or at least wasteful, where the situation *can* be written
+down and already has been. This is the case here: the camera work that [tells the
+glasses apart](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md) has
+already measured the positions and widths, so a learned encoding is being asked to
+rediscover information the cell already supplies. That is the honest prior expectation
+for the second way here, and it is exactly the expectation the comparison exists to
+test.
 
 ### Where the push data of record comes from
 
-Finally, for anyone who wants real pushes rather than simulated ones: Yu, Bauza,
-Fazeli and Rodriguez's [*More than a Million Ways to Be
-Pushed*](https://arxiv.org/abs/1604.04038) (2016) recorded a robot pushing
-objects across several different surfaces with the pusher's path, the object's
-motion and the contact forces all logged. What it buys is pushes on *more than
-one surface*, which is the only way to ask whether a fitted push model transfers
-at all — the question this solution cannot ask, because its examiner has one table
-with one friction. What it costs is a robot, a motion-capture rig and months.
+Finally, for anyone who wants real pushes rather than simulated ones: Yu, Bauza, Fazeli
+and Rodriguez's [*More than a Million Ways to Be
+Pushed*](https://arxiv.org/abs/1604.04038) (2016) recorded a robot pushing objects
+across several different surfaces with the pusher's path, the object's motion and the
+contact forces all logged. What it buys is pushes on *more than one surface*, which is
+the only way to ask whether a fitted push model transfers at all. The question this
+solution cannot ask, because its examiner has one table with one friction. What it costs
+is a robot, a motion-capture rig and months.
 
 ## 3. Where it sits among the other five
 
@@ -208,16 +205,16 @@ because a toppled glass cannot be stood back up. Against
 all that, the fixed nudge needs no data, no training and no weights, and it
 explains every one of its own failures.
 
-Against [geometry generates, a model ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md), the
-comparison is the closest in the set and the easiest to misread. Both search
-over candidate pushes and both score them with something fitted. The difference
-is what the fitted part returns. A ranker returns a score, which is enough to
-choose among the candidates in front of it and not enough to say what the table
-will look like, so it can never chain two pushes or be re-aimed at a different
-goal. This solution's model returns a table, which costs more to fit and buys
-both of those. Note also that the geometric solution is the teacher for the
-imitation solutions, and this one is not: it needs no demonstrations, because
-its labels come from the second look.
+Against [geometry generates, a model
+ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md), the comparison is the
+closest in the set and the easiest to misread. Both search over candidate pushes and
+both score them with something fitted. The difference is what the fitted part returns. A
+ranker returns a score, which is enough to choose among the candidates in front of it
+and not enough to say what the table will look like. So it can never chain two pushes or
+be re-aimed at a different goal. This solution's model returns a table, which costs more
+to fit and buys both of those. Note also that the geometric solution is the teacher for
+the imitation solutions, and this one is not: it needs no demonstrations, because its
+labels come from the second look.
 
 Against [imitation from demonstrations](../06_imitation-from-demonstrations/01_what-it-is.md),
 the comparison is one of the sharpest among the six: *plan with a model, or
@@ -229,14 +226,15 @@ again. This solution needs no demonstrations and no teacher, and it can be
 re-aimed by editing arithmetic. It pays for that in run-time compute and in
 machinery.
 
-Against [SmolVLA as it downloads](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) and [SmolVLA
-fine-tuned](../09_the-same-model-fine-tuned-here/01_what-it-is.md), the comparison is between a small thing
-that knows only this table and a large thing that has seen hundreds of real
-teleoperation datasets and knows almost nothing about this one. Those two are
-also policies, so they share the contrast with imitation above. The pair of them
-is the sharpest comparison in the whole set — the same model and the same
-weights, with the only difference being whether its training was continued
-here — and this solution is not part of that comparison at all.
+Against [SmolVLA as it
+downloads](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) and [SmolVLA
+fine-tuned](../09_the-same-model-fine-tuned-here/01_what-it-is.md), the comparison is
+between a small thing that knows only this table and a large thing that has seen
+hundreds of real teleoperation datasets and knows almost nothing about this one. Those
+two are also policies, so they share the contrast with imitation above. The pair of them
+is the sharpest comparison in the whole set. The same model and the same weights, with
+the only difference being whether its training was continued here — and this solution is
+not part of that comparison at all.
 
 And the comparison inside this solution is its own: five small networks written
 for this cell against TD-MPC2 off the shelf, which measures whether building the

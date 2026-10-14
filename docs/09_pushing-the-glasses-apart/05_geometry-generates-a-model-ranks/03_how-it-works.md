@@ -45,14 +45,13 @@ to the first clash is in it. `spread.json` holds the counts: over 269 crowded
 glasses on the training tables the middle one is offered 84 candidates, and over
 101 whole-table decisions the middle one is offered 261.
 
-The consequence of the first property is the most important thing in this
-document. Because each heading stops the moment the push works, **every
-job-finishing candidate lands on the same contour**: just past the line where
-the glass has the room it needs, plus the 10 mm of aiming margin the planner
-adds so that a push landing a little short still clears. They are the same
-achievement reached from different directions. So on the question the run is
-scored on — how many glasses have room afterwards — those candidates are a
-**tie**, and they differ only in how far the glass has to travel, which the
+The consequence of the first property is the most important thing in this document.
+Because each heading stops the moment the push works, **every job-finishing candidate
+lands on the same contour**: just past the line where the glass has the room it needs,
+plus the 10 mm of aiming margin the planner adds so that a push landing a little short
+still clears. They are the same achievement reached from different directions. So on the
+question the run is scored on — how many glasses have room afterwards — those candidates
+are a **tie**, and they differ only in how far the glass has to travel. This the
 geometry prints for nothing.
 
 ![On one crowded table the pushes that finish the job fan out in every direction, and because each heading stops at the first travel that works, every one of them leaves the glass within a millimetre of the same room margin and scores exactly the same; they differ only in how far the glass travels.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/06-the-room-test-and-the-fan.png)
@@ -68,11 +67,10 @@ guessing at a sequence of pushes rather than finishing the job in one.
 Three measurements over fifty held-out tables say how far that goes, and the
 three pictures below take them one at a time.
 
-The first counts what the enumerator produces for each crowded glass. The gap
-between the two bars is the whole story of this cell: the geometry can almost
-always find a push that is safe, and it can rarely find one that finishes the
-job, so 72 per cent of the time the planner falls back on a push that only helps
-a little.
+The first counts what the enumerator produces for each crowded glass. The gap between
+the two bars is the whole story of this cell: the geometry can almost always find a push
+that is safe. And it can rarely find one that finishes the job, so 72 per cent of the
+time the planner falls back on a push that only helps a little.
 
 ![Two bars, one for safe pushes with a median of 193 per crowded glass and one for the pushes that leave the glass with room, whose median is zero.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/06-what-the-enumerator-produces.png)
 
@@ -107,26 +105,24 @@ foot `2a` across, on a table it rubs against with friction `μ`, slides while
 
     h  <  a / μ
 
-and tips over above that. The height that counts is the **top edge of the
-jaw**, not its middle, because a glass that is wider higher up meets the top
-edge first. The middle of the jaw rides at 75 mm, which is as low as the
-hand reaches without its fingers striking the table, and its leading stretch is
-63 mm tall, so
-the top edge stands at 107 mm. Those are the gripper's own numbers and they do
-not change from one glass to the next. What changes is `a`, because every glass
-has its own foot, so **the limit is computed for each glass from its measured
-foot width** rather than agreed once for the whole kind.
+and tips over above that. The height that counts is the **top edge of the jaw**, not its
+middle, because a glass that is wider higher up meets the top edge first. The middle of
+the jaw rides at 75 mm. This is as low as the hand reaches without its fingers striking
+the table, and its leading stretch is 63 mm tall, so the top edge stands at 107 mm.
+Those are the gripper's own numbers and they do not change from one glass to the next.
+What changes is `a`, because every glass has its own foot, so **the limit is computed
+for each glass from its measured foot width** rather than agreed once for the whole
+kind.
 
-The term nobody has is `μ`. Nothing in the cell measures friction and the examiner
-never tells any solution the coefficients it runs the physics with, so the
-limit a solution computes is only as good as a guessed number. The geometry
-already in this repository handles that by carrying the whole range it is
-willing to believe, **0.2 to 0.5 for glass on a dry wooden top**, and asking a
-three-way question of every glass. If the limit clears the jaw's top edge even
-at the most pessimistic friction in that range, the glass is safe to push. If
-it fails even at the most generous one, the glass is refused. If the two ends of
-the range disagree, the arm settles it by making a **5 mm push** and looking
-before and after: a glass that slid has moved, and a glass that leaned instead
+The term nobody has is `μ`. Nothing in the cell measures friction and the examiner never
+tells any solution the coefficients it runs the physics with, so the limit a solution
+computes is only as good as a guessed number. The geometry already in this repository
+handles that by carrying the whole range it is willing to believe, **0.2 to 0.5 for
+glass on a dry wooden top**, and asking a three-way question of every glass. If the
+limit clears the jaw's top edge even at the most pessimistic friction in that range, the
+glass is safe to push. If it fails even at the most generous one, the glass is refused.
+If the two ends of the range disagree, the arm settles it by making a **5 mm push** and
+looking before and after: a glass that slid has moved. And a glass that leaned instead
 fell back where it stood.
 
 All of that runs inside the filter, which means it runs **before** the model.
@@ -160,26 +156,25 @@ gradient descent, where each step down the slope is taken by adding a small tree
 rather than by adjusting a coefficient. Two hundred trees, each three questions
 deep, is an ordinary size for the 4,844 rows this solution has.
 
-This solution uses the **regression** form, which predicts a number, and it
-uses it **pointwise**, which means the model is shown one candidate at a time
-and scores it on its own without being told what it is competing against. Each
-candidate gets one scalar score, and the candidates are then sorted by it. That
-is the simplest of the three ways a ranking can be fitted, and the section on
-general ideas below says what the other two are and what the choice costs.
+This solution uses the **regression** form, which predicts a number, and it uses it
+**pointwise**. This means the model is shown one candidate at a time and scores it on
+its own without being told what it is competing against. Each candidate gets one scalar
+score, and the candidates are then sorted by it. That is the simplest of the three ways
+a ranking can be fitted, and the section on general ideas below says what the other two
+are and what the choice costs.
 
 ### Why trees rather than a network
 
-A number predicted from a short table of quantities of different kinds — an
-angle, several lengths, a count, a ratio — is the case decision-tree boosting
-was made for, and three properties of a tree are the reason.
+A number predicted from a short table of quantities of different kinds — an angle,
+several lengths, a count, a ratio. Is the case decision-tree boosting was made for, and
+three properties of a tree are the reason.
 
-A tree does not care that its inputs are on different scales. An angle in
-radians, a distance in millimetres and a count of neighbours have three
-different ranges, and a network has to be handed them on comparable scales,
-because every input enters through a weighted sum and a large-valued input would
-otherwise dominate that sum before training begins. A tree never sums its
-inputs. It compares one input against one threshold, so rescaling any of them
-changes nothing at all.
+A tree does not care that its inputs are on different scales. An angle in radians, a
+distance in millimetres and a count of neighbours have three different ranges. And a
+network has to be handed them on comparable scales, because every input enters through a
+weighted sum and a large-valued input would otherwise dominate that sum before training
+begins. A tree never sums its inputs. It compares one input against one threshold, so
+rescaling any of them changes nothing at all.
 
 A threshold is also the natural shape of the answer here. Much of what makes a
 push good in this cell is a comparison against a limit: is the destination clear
@@ -265,16 +260,15 @@ number of tables.
 
 ![The same crowded pair drawn twice in the glass zone, once slid across it: the six inputs that are relations inside the arrangement are identical in both places, and the distance from the destination to the edge of the zone is 70 mm in one and 110 mm in the other.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-pages-the-inputs-slide.png)
 
-The other two do move, and they should. The distance to the edge of the glass
-zone and the distance to the rack are measured to features of the cell that did
-not slide with the glasses, so sliding the arrangement changes both. They are
-still relations rather than addresses, which is the distinction that matters: a
-destination 15 mm from a boundary has 15 mm of margin wherever that boundary is,
-and a push with very little margin really is a worse push than one with plenty.
-A coordinate pair carries no such meaning. The rule to carry away is that a
-model should be shown the quantities the physics depends on, and the physics of
-a push depends on distances, angles and widths. It does not depend on where the
-table's origin was put.
+The other two do move, and they should. The distance to the edge of the glass zone and
+the distance to the rack are measured to features of the cell that did not slide with
+the glasses. So sliding the arrangement changes both. They are still relations rather
+than addresses, which is the distinction that matters: a destination 15 mm from a
+boundary has 15 mm of margin wherever that boundary is. And a push with very little
+margin really is a worse push than one with plenty. A coordinate pair carries no such
+meaning. The rule to carry away is that a model should be shown the quantities the
+physics depends on, and the physics of a push depends on distances, angles and widths.
+It does not depend on where the table's origin was put.
 
 ## 5. How it is trained
 
@@ -352,16 +346,15 @@ this can fail comes from the arrangement and not from the model's accuracy.** A
 better model makes wasted pushes rarer. Only the geometry decides how bad things
 can get.
 
-This is precisely the position a learned ranker occupies in the work of telling
-the glasses apart in a picture. There, the shared machinery for [looking again
-at what was
+This is precisely the position a learned ranker occupies in the work of telling the
+glasses apart in a picture. There, the shared machinery for [looking again at what was
 hidden](../../08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md)
-has to decide which of several places to stand the camera should be tried first.
-The geometry works out every candidate position and rejects the ones that are
-unreachable or whose line of sight is blocked, and a small fitted model orders
-what is left by how much it would be worth looking from there. The reason given
-there is the reason here: where the model sits is why it is safe to have at all,
-because a bad ordering costs one wasted look and nothing worse.
+has to decide which of several places to stand the camera should be tried first. The
+geometry works out every candidate position and rejects the ones that are unreachable or
+whose line of sight is blocked. And a small fitted model orders what is left by how much
+it would be worth looking from there. The reason given there is the reason here: where
+the model sits is why it is safe to have at all, because a bad ordering costs one wasted
+look and nothing worse.
 
 The two cases differ in one respect, and it raises the bar here rather than
 lowering it. A wasted look costs seconds of arm movement. **A wasted push costs

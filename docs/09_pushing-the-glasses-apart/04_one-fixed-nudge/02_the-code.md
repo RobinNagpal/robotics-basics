@@ -87,10 +87,9 @@ Steps 2 and 3 are the one exception to that. A glass tall enough that even the
 short test push could lean it most of the way to falling is refused rather
 than tried, which is what the two arctangents compare.
 
-A glass that comes back "try" gets the fixed nudge, which is the same file's
-`probe`: the chosen push cut down to one constant length, aimed along the same
-line, and looked at before and after. It runs in three steps, numbered again
-from its own first line.
+A glass that comes back "try" gets the fixed nudge. This is the same file's `probe`: the
+chosen push cut down to one constant length, aimed along the same line, and looked at
+before and after. It runs in three steps, numbered again from its own first line.
 
 1. Turn the push's heading into a unit vector, which is what NumPy is here for.
 2. Step back from the aim by the whole travel, which lands on the glass's
@@ -125,13 +124,12 @@ def needs_probe(glass: Seen, proven: set[int]) -> bool:
     return slides(glass) == "try" and glass.id not in proven
 ```
 
-Read together, the two blocks show the whole bargain of this solution in a
-dozen lines: where the arithmetic can answer, it answers, and where it cannot —
-because the friction is missing from it — the method spends one short push to
-find out instead of guessing. Note which fixed nudge this is. The proportional
-nudge of [the main idea](01_what-it-is.md#4-the-main-idea) has no constant in the repository,
-while `PROBE` does, so the fixed length above is the one this code really
-commits to.
+Read together, the two blocks show the whole bargain of this solution in a dozen lines:
+where the arithmetic can answer, it answers, and where it cannot. Because the friction
+is missing from it — the method spends one short push to find out instead of guessing.
+Note which fixed nudge this is. The proportional nudge of [the main
+idea](01_what-it-is.md#4-the-main-idea) has no constant in the repository, while `PROBE`
+does, so the fixed length above is the one this code really commits to.
 
 ## 2. The pushes are what this contributes
 
@@ -162,34 +160,33 @@ statement of intent rather than a prediction of physics, and the method does
 nothing with the answer: it does not compare the outcome with the aim, adjust
 anything, or remember. It simply looks again.
 
-The approach to the glass is the one part of the push that is not arithmetic,
-and it matters more than it looks. The jaw does not drive to a computed contact
-point. It comes down behind the glass, a little outside the glass's widest
-part, and then feels forward slowly until the force it feels passes a small
-threshold. A motion commanded with a sensor condition that stops it early is
-called a **guarded move**, and it is used here because the glass's wall sits at
-its measured middle minus half its measured width, so the error in the position
-and the error in the width add together. A step that drove to that computed
-point would either stop short and push nothing or arrive past the wall at
+The approach to the glass is the one part of the push that is not arithmetic, and it
+matters more than it looks. The jaw does not drive to a computed contact point. It comes
+down behind the glass, a little outside the glass's widest part, and then feels forward
+slowly until the force it feels passes a small threshold. A motion commanded with a
+sensor condition that stops it early is called a **guarded move**. And it is used here
+because the glass's wall sits at its measured middle minus half its measured width, so
+the error in the position and the error in the width add together. A step that drove to
+that computed point would either stop short and push nothing or arrive past the wall at
 speed, which is a knock.
 
-The push then reports what the jaw felt: whether it was blocked on the way
-down, how far it travelled before touching or that it never touched, whether it
-jammed, the most force it felt, and how far it moved after touching. **This
-solution reads almost none of that report.** It uses only whether the jaw
-touched anything at all. That is a deliberate omission rather than an
-oversight, and it is the deepest reason this solution is the floor of the set:
-[the examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#why-the-force-reading-matters) points out that the force reading is the only
-channel through which the friction is observable at all, and every solution
-that does better than a blind nudge does so by reading that channel, either by
-reasoning about it or by learning from it. This one throws it away and relies on
-the next look instead.
+The push then reports what the jaw felt: whether it was blocked on the way down, how far
+it travelled before touching or that it never touched, whether it jammed, the most force
+it felt, and how far it moved after touching. **This solution reads almost none of that
+report.** It uses only whether the jaw touched anything at all. That is a deliberate
+omission rather than an oversight. And it is the deepest reason this solution is the
+floor of the set: [the
+examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#why-the-force-reading-matters)
+points out that the force reading is the only channel through which the friction is
+observable at all. And every solution that does better than a blind nudge does so by
+reading that channel, either by reasoning about it or by learning from it. This one
+throws it away and relies on the next look instead.
 
-Finally, the pushing is what this solution contributes and not the whole run.
-The runner racks every glass that already has clear room before it pushes
-anything, because a glass in the rack is a glass that is nobody's neighbour,
-and that step is shared machinery rather than part of this method. What this
-document describes is what happens to the glasses that are left.
+Finally, the pushing is what this solution contributes and not the whole run. The runner
+racks every glass that already has clear room before it pushes anything, because a glass
+in the rack is a glass that is nobody's neighbour. That step is shared machinery rather
+than part of this method. What this document describes is what happens to the glasses
+that are left.
 
 ## 3. How the concepts fit together
 

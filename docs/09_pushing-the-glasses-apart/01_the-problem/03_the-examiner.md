@@ -14,10 +14,9 @@ action, what the scorecard counts, and which two things this scorecard needs
 that the examiner for [telling the glasses
 apart](../../08_seeing-the-glasses/03_the-examiner/01_the-examiner.md) did not.
 
-What a solution is handed and what it hands back, through the examiner's
-`look()`, `push()` and `take()`, is on the page before this one, [what goes in
-and what comes out](02_what-goes-in-and-what-comes-out.md), and this page
-assumes it.
+What a solution is handed and what it hands back, through the examiner's `look()`,
+`push()` and `take()`, is on the page before this one, [what goes in and what comes
+out](02_what-goes-in-and-what-comes-out.md). And this page assumes it.
 
 The examiner is built. It lives in `code/src/09_pushing-the-glasses-apart/bench/`,
 and every solution in this book runs on it. Where this document describes
@@ -35,10 +34,10 @@ something that is a decision rather than working code, it says so.
 
 ## 2. Why there is an examiner at all
 
-Without one, each of the six would arrive with its own tables, its own idea of
-a good push and its own way of counting success, and nothing could be concluded
-by setting their results side by side. The examiner exists to remove every
-difference between the six except the one being studied.
+Without one, each of the six would arrive with its own tables, its own idea of a good
+push and its own way of counting success. And nothing could be concluded by setting
+their results side by side. The examiner exists to remove every difference between the
+six except the one being studied.
 
 It does that by holding three things fixed. The **input** is the same
 measurements of the same tables, in the same order. The **output** is the same
@@ -168,8 +167,8 @@ and that rule can simply be asked. Given the real gripper's measurements and
 each held-out glass's own shape, **it finds somewhere to hold only 97 of the
 251**.
 
-Read the table below a row at a time: each row is one kind of glass, and the
-numbers are how many of that kind the rule can hold out of how many there are.
+Read the table below a row at a time: each row is one kind of glass. And the numbers are
+how many of that kind the rule can hold out of how many there are.
 
 | kind | a grip found |
 |---|---|
@@ -199,24 +198,22 @@ I checked every side for the glasses the examiner says have room, over the first
 twenty of the fifty tables: **a clear way in exists for 14 of them, and for the
 other 5 the hand would have to stop short**.
 
-The films check the same thing before they draw a pick-up. The hand comes in
-from a side that is clear. When no side is clear, the hand is drawn stopping
-where it would have touched, and a line on the picture says so. This matters
-because a drawn hand cannot collide with anything, so without the check a film
-would show the hand passing straight through a glass, and a viewer would read
-that as room which is not there. Across the six films, eleven pick-ups are drawn
-and one of them stops short. That is rarer than the 5 in 19 above, and the
-reason is worth noticing: by the time a glass is racked, the solution has
-already pushed its neighbours away from it.
+The films check the same thing before they draw a pick-up. The hand comes in from a side
+that is clear. When no side is clear, the hand is drawn stopping where it would have
+touched, and a line on the picture says so. This matters because a drawn hand cannot
+collide with anything. So without the check a film would show the hand passing straight
+through a glass, and a viewer would read that as room which is not there. Across the six
+films, eleven pick-ups are drawn and one of them stops short. That is rarer than the 5
+in 19 above, and the reason is worth noticing: by the time a glass is racked, the
+solution has already pushed its neighbours away from it.
 
-This is a limit of the picking step rather than of anything in this book, and
-no solution's score depends on it, because all six are marked by the same
-examiner in the same way. The films are honest about it too: the pick-up each
-one draws is a stand-in, and the line on screen says that the real pick belongs
-to the cell's own grip rule. What the finding adds is that **spreading the
-glasses apart is not the whole of the job**. This book's half of the work can
-succeed completely and still leave a glass that the next half, closing the hand
-on it, cannot take.
+This is a limit of the picking step rather than of anything in this book. And no
+solution's score depends on it, because all six are marked by the same examiner in the
+same way. The films are honest about it too: the pick-up each one draws is a stand-in,
+and the line on screen says that the real pick belongs to the cell's own grip rule. What
+the finding adds is that **spreading the glasses apart is not the whole of the job**.
+This book's half of the work can succeed completely and still leave a glass that the
+next half, closing the hand on it, cannot take.
 
 **Pushes are counted against a budget.** The scorecard records how many pushes
 were spent in total, how many of them were repeat pushes on a glass already
@@ -276,12 +273,11 @@ table looked representative.
 ## 6. Two things this scorecard needs that the camera work's did not
 
 The examiner for [telling the glasses
-apart](../../08_seeing-the-glasses/03_the-examiner/01_the-examiner.md) could run each solution
-once and read the result. This one cannot, and there are two reasons. Both are
-consequences of four of the six solutions being trained rather than written,
-and both are now in `scoring.py`: `Repeats` holds several evaluation runs and
-reports the spread across every number, and `Scorecard` reports the time per
-push beside the counts.
+apart](../../08_seeing-the-glasses/03_the-examiner/01_the-examiner.md) could run each
+solution once and read the result. This one cannot, and there are two reasons. Both are
+consequences of four of the six solutions being trained rather than written. And both
+are now in `scoring.py`: `Repeats` holds several evaluation runs and reports the spread
+across every number, and `Scorecard` reports the time per push beside the counts.
 
 **One run is not a measurement.** The learned policies here are stochastic:
 asked the same question twice they may act differently, because the action is
@@ -295,13 +291,12 @@ evaluated over several runs, and the scorecard has to carry the **spread** and
 not only the middle. A result quoted without a spread is not a result. A method
 that wins by less than its own spread has not been shown to win.
 
-Drawing the action rather than computing it has one more consequence, and it is
-easy to be caught by. For such a solution **one table on its own is not the
-same table as that table reached in a run**, because every draw the policy made
-on the earlier tables has already moved its stream of random numbers along. So
-reproducing what a row says about the fourth table of a run means running the
-first three tables as well, and a solution filmed table by table will not
-always do what the scorecard says it did.
+Drawing the action rather than computing it has one more consequence, and it is easy to
+be caught by. For such a solution **one table on its own is not the same table as that
+table reached in a run**, because every draw the policy made on the earlier tables has
+already moved its stream of random numbers along. So reproducing what a row says about
+the fourth table of a run means running the first three tables as well. And a solution
+filmed table by table will not always do what the scorecard says it did.
 
 **Running cost differs by orders of magnitude, so it belongs on the
 scorecard.** The six are not equally expensive to run for a single push, and

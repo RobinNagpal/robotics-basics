@@ -57,16 +57,15 @@ never touched a glass at all, because the trajectories it returns stay roughly
 200 mm above the table. The pages that follow report that rather than the
 failure the design argued for.
 
-The design is worth writing down for two separate reasons, and it is worth
-separating them at the start because they pull in opposite directions. The
-first is that it is the cheapest thing in this book to try. There is nothing to
-collect and nothing to train, so the whole setup cost is a download. The second
-is that it was very likely to do badly. Those two facts are not in tension,
-because this solution's value is not its score. Its value is that it is the
-starting point of the sharpest comparison in the set: [solution
-6](../09_the-same-model-fine-tuned-here/01_what-it-is.md) is this same model with its training continued
-here, so the gap between the two measures what that training bought and
-measures nothing else.
+The design is worth writing down for two separate reasons, and it is worth separating
+them at the start because they pull in opposite directions. The first is that it is the
+cheapest thing in this book to try. There is nothing to collect and nothing to train, so
+the whole setup cost is a download. The second is that it was very likely to do badly.
+Those two facts are not in tension, because this solution's value is not its score. Its
+value is that it is the starting point of the sharpest comparison in the set: [solution
+6](../09_the-same-model-fine-tuned-here/01_what-it-is.md) is this same model with its
+training continued here. So the gap between the two measures what that training bought
+and measures nothing else.
 
 By the end of this document you will understand what kind of model this is,
 what goes into it and what comes out, where its competence comes from and why
@@ -81,22 +80,21 @@ poor result here is still the most useful thing in this book.
 
 ## 2. A film of one table
 
-The introduction described what it means to run a large borrowed model here with
-no fitting of any kind, and the film here shows that model on one table in the
-simulator, played at one and a half times real speed.
+The introduction described what it means to run a large borrowed model here with no
+fitting of any kind. And the film here shows that model on one table in the simulator,
+played at one and a half times real speed.
 
 [A large borrowed model used exactly as it downloads, on one table, 74 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/05-smolvla-as-it-downloads.mp4 "video")
 
 It holds six glasses where the average is five, and five of them have no room
 at the start.
 
-In the film the jaw sweeps across the table sixteen times without ever reaching
-a glass, because the borrowed model's chunks come back about 200 mm above the
-table. One of the six glasses is racked, and only because it already had room
-before anything was pushed. This is the longest of the six films and the
-emptiest, and that is the result rather than a fault in the recording: it is
-the plainest possible picture of a model whose idea of where the work happens
-comes from somebody else's robot.
+In the film the jaw sweeps across the table sixteen times without ever reaching a glass,
+because the borrowed model's chunks come back about 200 mm above the table. One of the
+six glasses is racked, and only because it already had room before anything was pushed.
+This is the longest of the six films and the emptiest. That is the result rather than a
+fault in the recording: it is the plainest possible picture of a model whose idea of
+where the work happens comes from somebody else's robot.
 
 This solution draws its answer rather than computing it, so the film is one
 draw rather than an average. The scored runs on this table racked one glass
@@ -125,14 +123,13 @@ builds a policy from recorded pushes, and solution 4 builds a model of the
 table and searches through it. Each of those costs work, and three of the four
 cost data collected in this cell.
 
-This solution responds differently. It observes that pushing an object across a
-flat surface with a gripper is not a task peculiar to this project, that very
-many people have recorded robots doing exactly that sort of thing, and that
-somebody has already fitted a single model on an enormous pool of those
-recordings. So instead of building a method for this table, it borrows a method
-for tables in general and asks whether the general thing is good enough for the
-particular one. That is a real question with a real answer, and the answer is
-worth knowing before anybody spends a week recording demonstrations.
+This solution responds differently. It observes that pushing an object across a flat
+surface with a gripper is not a task peculiar to this project, that very many people
+have recorded robots doing exactly that sort of thing. That somebody has already fitted
+a single model on an enormous pool of those recordings. So instead of building a method
+for this table, it borrows a method for tables in general and asks whether the general
+thing is good enough for the particular one. That is a real question with a real answer,
+and the answer is worth knowing before anybody spends a week recording demonstrations.
 
 ## 4. The main idea
 

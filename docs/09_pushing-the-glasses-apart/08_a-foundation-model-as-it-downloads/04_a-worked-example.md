@@ -12,18 +12,17 @@ teaches the wrong lesson.
 
 ## 1. When a glass cannot be pushed safely
 
-A glass slides while the jaw touches it below half its foot width divided by
-the friction, and tips above that. The height that counts is the jaw's **top
-edge** at 107 mm, not the 75 mm its middle rides at, and for a glass whose foot
-is narrow enough there is no contact height the arm can offer below the limit.
-The only correct answer for such a glass is to refuse, with the reason
-recorded, which marks the run *correct but incomplete* rather than wrong.
-[Pushing without toppling](../01_the-problem/05_pushing-without-toppling.md)
-sets all of that out once, including what is done when the unknown friction
-leaves the limit undecided. It is **arithmetic applied before any model is
-consulted**, in all six solutions: the rule is `slides()` in solution 1's
-`plan.py`, and this solution imports it rather than writing its own, so the six
-refuse exactly the same glasses.
+A glass slides while the jaw touches it below half its foot width divided by the
+friction, and tips above that. The height that counts is the jaw's **top edge** at 107
+mm, not the 75 mm its middle rides at, and for a glass whose foot is narrow enough there
+is no contact height the arm can offer below the limit. The only correct answer for such
+a glass is to refuse, with the reason recorded, which marks the run *correct but
+incomplete* rather than wrong. [Pushing without
+toppling](../01_the-problem/05_pushing-without-toppling.md) sets all of that out once,
+including what is done when the unknown friction leaves the limit undecided. It is
+**arithmetic applied before any model is consulted**, in all six solutions: the rule is
+`slides()` in solution 1's `plan.py`. And this solution imports it rather than writing
+its own, so the six refuse exactly the same glasses.
 
 **It is just as well that the refusal is arithmetic, and the reason is the
 point of this whole document.** Nothing in a borrowed model's pretraining knows
@@ -34,14 +33,13 @@ none of the three and cannot acquire them from a picture of plain shapes.
 Asking it to respect a limit it cannot compute would be asking it to guess, and
 a toppled glass is the one mistake this problem cannot absorb.
 
-There is a second half. Removing a glass from the task does not remove it from
-the picture, so a model that reads the picture can still aim at a refused
-glass, and a solution that emits waypoints freely can emit a contact higher
-than the jaw rides at. **So the trajectory that comes back is read rather than
-trusted**: one that would reach a refused glass is thrown away, and the heights
-in the rest are bounded into the range the jaw rides at. Both checks are built,
-in `clear.py` and `joining.py`, and they sit in this solution's own folder
-rather than in the examiner.
+There is a second half. Removing a glass from the task does not remove it from the
+picture, so a model that reads the picture can still aim at a refused glass. And a
+solution that emits waypoints freely can emit a contact higher than the jaw rides at.
+**So the trajectory that comes back is read rather than trusted**: one that would reach
+a refused glass is thrown away. And the heights in the rest are bounded into the range
+the jaw rides at. Both checks are built, in `clear.py` and `joining.py`, and they sit in
+this solution's own folder rather than in the examiner.
 
 How much that first check was needed is worth reporting, because the answer is
 not at all. Over the three runs the model was asked 1,855 times, and **not one
@@ -87,12 +85,11 @@ spends 620 pushes, which is a little over 12 per table against a budget of 16,
 so most tables run to the end of their budget. 506 of those 620 pushes
 never touched anything.
 
-The 80 that did touch something are the other half of the story. 69 of them
-jammed: the jaw arrived at a glass at more than the speed the arm is meant to
-move and wedged against it instead of sliding it along. That is where this
-solution's toppled glasses come from — 6 in this run, and between 5 and 8 in
-the three — and why a glass it does move lands a
-median of 74 mm from where the trajectory ended rather than the millimetre or
+The 80 that did touch something are the other half of the story. 69 of them jammed: the
+jaw arrived at a glass at more than the speed the arm is meant to move and wedged
+against it instead of sliding it along. That is where this solution's toppled glasses
+come from — 6 in this run, and between 5 and 8 in the three. Why a glass it does move
+lands a median of 74 mm from where the trajectory ended rather than the millimetre or
 two solution 1 manages.
 
 A table that goes that way ends with its already-free glasses racked, its
@@ -102,13 +99,13 @@ left over: 58 of the 251 glasses had room before anything was pushed, and 56
 were racked. Racking a glass loosens its neighbours, so a solution that freed
 anything at all would rack more than 58. This one racks fewer.
 
-The instructive part is what this run does **not** look like. The failure this
-solution was written to expect was a well-formed push aimed at the wrong glass,
-which nothing downstream would notice. That is not what happened, and the
-difference is worth holding on to, because a failure that the scorecard counts
-directly — a push that touched nothing — is a far easier thing to diagnose than
-a push that looks right and is not. The reasoning about the domain gap in [how
-it works](03_how-it-works.md#7-the-domain-gap-which-is-the-heart-of-this-document)
-stands. The guess about which way the gap would show did not.
+The instructive part is what this run does **not** look like. The failure this solution
+was written to expect was a well-formed push aimed at the wrong glass, which nothing
+downstream would notice. That is not what happened, and the difference is worth holding
+on to, because a failure that the scorecard counts directly. A push that touched nothing
+— is a far easier thing to diagnose than a push that looks right and is not. The
+reasoning about the domain gap in [how it
+works](03_how-it-works.md#7-the-domain-gap-which-is-the-heart-of-this-document) stands.
+The guess about which way the gap would show did not.
 
 ← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

@@ -46,11 +46,10 @@
 ## 1. Introduction
 
 This document explains how to [push the glasses
-apart](../01_the-problem/01_what-is-asked-for.md) by showing the arm examples
-of good pushes and training a model to copy them. The method has a name,
-**behaviour cloning**, and it is the plainest kind of learning there is: no
-reward, no exploration, no physics, only a large table of situations and the
-action somebody took in each one.
+apart](../01_the-problem/01_what-is-asked-for.md) by showing the arm examples of good
+pushes and training a model to copy them. The method has a name, **behaviour cloning**.
+And it is the plainest kind of learning there is: no reward, no exploration, no physics,
+only a large table of situations and the action somebody took in each one.
 
 **This is built, and it is worth being exact about which parts.** [The test
 examiner](../01_the-problem/03_the-examiner.md) is built, the programmed geometry that picks a
@@ -66,20 +65,18 @@ solution's own pushes, and run over the held-out tables. The code is in
 the numbers it scored are in that folder's `README.md`, not here: this document
 is the design, and a measurement quoted in two places drifts.
 
-Three things below are still prescriptions rather than code, and each says so
-where it appears: the DAgger round, the force monitor that would watch a chunk
-while it runs, and deliberately over-representing the crowded corner cases in
-the demonstration set.
+Three things below are still prescriptions rather than code. And each says so where it
+appears: the DAgger round, the force monitor that would watch a chunk while it runs, and
+deliberately over-representing the crowded corner cases in the demonstration set.
 
-The reason this solution is worth writing out in full is that it is the
-cheapest way of asking a question the other five cannot ask. The teacher,
-[geometry generates, a model ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md), is
-a program that chooses pushes well. If a network trained only to copy that
-program comes close to it, then the mapping from a picture of a crowded table
-to a good push is learnable, and the remaining error belongs to the teacher
-rather than to the idea. If the student falls a long way short, that is
-evidence about the policy class itself, and it is evidence gathered before any
-of the expensive solutions is attempted.
+The reason this solution is worth writing out in full is that it is the cheapest way of
+asking a question the other five cannot ask. The teacher, [geometry generates, a model
+ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md), is a program that
+chooses pushes well. If a network trained only to copy that program comes close to it,
+then the mapping from a picture of a crowded table to a good push is learnable. And the
+remaining error belongs to the teacher rather than to the idea. If the student falls a
+long way short, that is evidence about the policy class itself, and it is evidence
+gathered before any of the expensive solutions is attempted.
 
 By the end of this document you will understand what question this solution
 answers that none of the other five can ask, why the difficulty it attacks is
@@ -92,9 +89,9 @@ rest of the chapter unpacks.
 
 ## 2. A film of one table
 
-The introduction described a policy that was fitted by copying somebody else's
-pushes, and the film here shows what that policy actually does on one table in
-the simulator, played at one and a half times real speed.
+The introduction described a policy that was fitted by copying somebody else's pushes.
+And the film here shows what that policy actually does on one table in the simulator,
+played at one and a half times real speed.
 
 [A policy copied from demonstrations, on one table, 23 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/03-imitation-from-demonstrations.mp4 "video")
 
@@ -130,11 +127,11 @@ that are left have been refused with a reason. So the thing to be produced is a
 function: from the arrangement of a crowded table, to a motion of the jaw.
 
 That function is hard to write down, and [pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md) says exactly why.
-The relation between a push and the slide it produces runs through the friction
-between the glass and the table, nothing in this cell measures friction, and
-the examiner never tells any solution what it is. Predicting an outcome
-precisely needs numbers nobody here has.
+toppling](../01_the-problem/05_pushing-without-toppling.md) says exactly why. The
+relation between a push and the slide it produces runs through the friction between the
+glass and the table, nothing in this cell measures friction. And the examiner never
+tells any solution what it is. Predicting an outcome precisely needs numbers nobody here
+has.
 
 [Geometry generates, a model ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md)
 answers that difficulty by not predicting much. It enumerates pushes that are

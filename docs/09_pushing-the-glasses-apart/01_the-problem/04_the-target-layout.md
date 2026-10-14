@@ -57,26 +57,24 @@ it should make as small as possible:
 [Each condition, drawn](#3-each-condition-drawn) gives every one of them its
 own picture and says what goes wrong when it is broken.
 
-Now look at what those three conditions and that one preference need to know.
-They need where each glass stands and how wide it is, both of which `look()`
-reports. They need the
-gripper's clear room, the glass zone, the rack and the reach, all of which the
-cell publishes as constants. **They do not need friction, or weight, or how a
-glass behaves when it is shoved** — none of which anybody here knows. So every
-glass is a disc of known size at a known place on a flat rectangle, and the
-question is where to slide those discs so that none of them overlaps another's
-clear room, none leaves the rectangle, and the total sliding is least. That is
-a geometry exercise, it has no unknowns in it, and it can be solved completely
-before the arm touches anything.
+Now look at what those three conditions and that one preference need to know. They need
+where each glass stands and how wide it is, both of which `look()` reports. They need
+the gripper's clear room, the glass zone, the rack and the reach, all of which the cell
+publishes as constants. **They do not need friction, or weight, or how a glass behaves
+when it is shoved** — none of which anybody here knows. So every glass is a disc of
+known size at a known place on a flat rectangle. And the question is where to slide
+those discs so that none of them overlaps another's clear room, none leaves the
+rectangle, and the total sliding is least. That is a geometry exercise, it has no
+unknowns in it, and it can be solved completely before the arm touches anything.
 
 A list of conditions is hard to picture from words alone, so the next section
 draws each one in turn.
 
 ## 3. Each condition, drawn
 
-The previous section listed what the layout must satisfy, and this section
-shows each condition as a picture of a table that breaks it, so that the issue
-can be seen rather than worked out from numbers.
+The previous section listed what the layout must satisfy, and this section shows each
+condition as a picture of a table that breaks it. So that the issue can be seen rather
+than worked out from numbers.
 
 ### Every glass has its clear room
 
@@ -160,11 +158,11 @@ The exercise has several standard solutions, and they are worth knowing
 together because they trade different things against each other. Two words are
 needed first, because all four use them.
 
-An **objective** is the single number a method is trying to make as small as
-possible. Here it is the total travel: for each glass, the square of how far it
-moved, added up over all the glasses. Squaring is the usual choice because it
-makes the number smooth, which is what lets a method follow its slope downhill,
-and because it dislikes one long push more than it dislikes several short ones.
+An **objective** is the single number a method is trying to make as small as possible.
+Here it is the total travel: for each glass, the square of how far it moved, added up
+over all the glasses. Squaring is the usual choice because it makes the number smooth.
+This is what lets a method follow its slope downhill, and because it dislikes one long
+push more than it dislikes several short ones.
 
 A **constraint** is a condition the answer is not allowed to break, however
 good its objective would be. Here the constraints are the three conditions
@@ -213,15 +211,15 @@ optimum, which is the first of the two cautions at the end.
 
 ### Repulsive relaxation
 
-The second method does without a solver and uses physics instead. Give every
-pair of glasses a **repulsive potential**: a cost that is near zero while they
-are comfortably apart and climbs steeply as they close in on the required
-distance. Give every wall of the zone, and the rack, the same kind of cost. Add
-all those costs together and the whole layout has one number attached to it,
-which is high when anything is crowded and low when nothing is. Then move every
-glass a small step in the direction that lowers that number most, and repeat
-until nothing moves any further — which is an **equilibrium**, the state in
-which the repulsion on every glass from every side cancels.
+The second method does without a solver and uses physics instead. Give every pair of
+glasses a **repulsive potential**: a cost that is near zero while they are comfortably
+apart and climbs steeply as they close in on the required distance. Give every wall of
+the zone, and the rack, the same kind of cost. Add all those costs together and the
+whole layout has one number attached to it, which is high when anything is crowded and
+low when nothing is. Then move every glass a small step in the direction that lowers
+that number most, and repeat until nothing moves any further. Which is an
+**equilibrium**, the state in which the repulsion on every glass from every side
+cancels.
 
 This is exactly the move of letting a handful of like charges loose in a box.
 They repel, they spread, they stop when each one is being pushed equally from
@@ -233,13 +231,12 @@ before anything else has started. It is also crude: it has no idea that travel
 is supposed to be small, so it will cheerfully spread glasses further than the
 task requires, and the layout it settles on is not the nearest legal one.
 
-Its real advantage is something else, and it is a practical one. The method
-produces not one layout but a whole sequence of them, one per step, each a
-little less crowded than the last, every one of them free of overlaps. **That
-sequence is a set of waypoints.** A layout on its own says only where a glass
-should finish; this method also says a route it can take to get there without
-passing through a neighbour on the way, which is a question the other three
-methods leave entirely open.
+Its real advantage is something else, and it is a practical one. The method produces not
+one layout but a whole sequence of them, one per step, each a little less crowded than
+the last, every one of them free of overlaps. **That sequence is a set of waypoints.** A
+layout on its own says only where a glass should finish. This method also says a route
+it can take to get there without passing through a neighbour on the way. This is a
+question the other three methods leave entirely open.
 
 ### Assignment to slots
 
@@ -255,11 +252,11 @@ slots is legal by construction, and there is nothing left to check. All that
 remains is the choice of which glass takes which slot, and the cost of a choice
 is the total distance the glasses travel.
 
-That is a classical problem with a name worth knowing, the **assignment
-problem**: given a cost for every pairing of a worker with a job, choose a
-one-to-one pairing with the least total cost. It is solved exactly — not
-approximately — by the **Hungarian algorithm**, in time that grows as the cube
-of the number of items, which for four to six glasses is no time at all.
+That is a classical problem with a name worth knowing, the **assignment problem**: given
+a cost for every pairing of a worker with a job, choose a one-to-one pairing with the
+least total cost. It is solved exactly — not approximately — by the **Hungarian
+algorithm**, in time that grows as the cube of the number of items. This for four to six
+glasses is no time at all.
 
 **What it is good for** is certainty. The layout cannot be illegal, the answer
 is exact, there is no seed and no local optimum to worry about, and the same
@@ -271,9 +268,9 @@ legal and instantly available is worth more than an answer that is best.
 
 ### Lloyd's algorithm
 
-The fourth method comes from a different field and solves a slightly different
-question — spread points evenly through a region — but it answers this one
-nearly for free, so it is worth knowing.
+The fourth method comes from a different field and solves a slightly different question.
+Spread points evenly through a region — but it answers this one nearly for free, so it
+is worth knowing.
 
 First the idea it rests on. Take the glasses' middles and divide the whole glass
 zone by nearest middle: every point of the table belongs to whichever glass is
@@ -319,23 +316,22 @@ this document is a design for shared machinery, not code that runs today.
 Having seen that the layout is computable, the next question is who should
 compute it, and the answer is that it must not be each solution separately.
 
-Suppose every solution worked out its own targets. Then two solutions could
-score differently for two quite different reasons: one might genuinely push
-better, or one might simply have aimed at an easier arrangement. A solution that
-chose targets a long way apart would find the clearance easy to satisfy and
-would look good at pushing; a solution that chose targets close to the legal
-limit would have to be far more accurate to pass, and would look worse at
-pushing while being no worse at it. The difference in the score would be a
-difference in targets masquerading as a difference in skill, and the comparison
-would be worthless.
+Suppose every solution worked out its own targets. Then two solutions could score
+differently for two quite different reasons: one might genuinely push better, or one
+might simply have aimed at an easier arrangement. A solution that chose targets a long
+way apart would find the clearance easy to satisfy and would look good at pushing. A
+solution that chose targets close to the legal limit would have to be far more accurate
+to pass, and would look worse at pushing while being no worse at it. The difference in
+the score would be a difference in targets masquerading as a difference in skill, and
+the comparison would be worthless.
 
-One layout, computed once from the same measurements, handed to all six, removes
-that completely. Every solution that aims at a destination is then aiming at the
-same places, so the only thing that can differ between their scores is how well
-it gets the glasses there — which is the thing this book exists to compare. A
-solution is free to decline the layout and push a glass away from its neighbour
-rather than towards a place, and one of the six does; what that costs it is
-visible on the same scale, as travel against the floor described below.
+One layout, computed once from the same measurements, handed to all six, removes that
+completely. Every solution that aims at a destination is then aiming at the same places.
+So the only thing that can differ between their scores is how well it gets the glasses
+there — which is the thing this book exists to compare. A solution is free to decline
+the layout and push a glass away from its neighbour rather than towards a place. And one
+of the six does; what that costs it is visible on the same scale, as travel against the
+floor described below.
 
 This is precisely the argument the camera work's [test
 examiner](../../08_seeing-the-glasses/03_the-examiner/01_the-examiner.md#6-what-must-come-back)
@@ -368,23 +364,21 @@ wandering. And the scale is available **before any solution exists**, because it
 comes from the measurements and the constants and nothing else — no model, no
 training, no run. It cannot flatter a solution because it never saw one.
 
-The most useful reading is at the bottom of that scale, and it needs saying
-carefully. A solution close to the floor is not thereby a *good* solution.
-What being close to the floor means is that **its remaining error is not its
-fault**: the travel it spent was travel the task required, and no amount of
-further cleverness in choosing pushes could have spent less. That is the signal
-to stop optimising this part and look elsewhere, because effort put into a
-solution already at its floor buys nothing.
+The most useful reading is at the bottom of that scale, and it needs saying carefully. A
+solution close to the floor is not thereby a *good* solution. What being close to the
+floor means is that **its remaining error is not its fault**: the travel it spent was
+travel the task required. And no amount of further cleverness in choosing pushes could
+have spent less. That is the signal to stop optimising this part and look elsewhere,
+because effort put into a solution already at its floor buys nothing.
 
-The camera work has the same instrument and uses it the same way. Its examiner
-runs its own exact masks through the shared arithmetic to find [the best place
-and width that step could ever
-produce](../../08_seeing-the-glasses/03_the-examiner/04_comparing-the-outputs.md#7-the-best-possible-answer-and-the-trap-below-it),
-and a solution within a hair of that floor of error is, in that document's
-words, not a good solution so much as one whose remaining error is not its
-fault. The displacement floor is that measurement for this problem: computed
-from perfect information, independent of every method, and the thing that makes
-all the other numbers readable.
+The camera work has the same instrument and uses it the same way. Its examiner runs its
+own exact masks through the shared arithmetic to find [the best place and width that
+step could ever
+produce](../../08_seeing-the-glasses/03_the-examiner/04_comparing-the-outputs.md#7-the-best-possible-answer-and-the-trap-below-it).
+And a solution within a hair of that floor of error is, in that document's words, not a
+good solution so much as one whose remaining error is not its fault. The displacement
+floor is that measurement for this problem: computed from perfect information,
+independent of every method, and the thing that makes all the other numbers readable.
 
 ## 7. Two cautions
 

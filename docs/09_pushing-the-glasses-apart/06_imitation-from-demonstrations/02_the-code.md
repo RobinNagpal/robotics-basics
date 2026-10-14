@@ -47,21 +47,20 @@ and ask it for an answer, and they are in `policy.py`. Step 6 turns that answer
 back into waypoints, and it is in `chunks.py` again. Every code block below
 carries the same numbers.
 
-Steps 1 and 2 are one function, `push_segment`, and between them they drop the
-parts of a recorded path that the examiner does for itself. The giving up in
-step 1 matters because a push blocked on the way down demonstrates nothing. In
-step 2 the first and the last waypoint at push height bracket the part worth
-keeping, and the furthest the jaw travelled inside that bracket is where the
-push ended, because the jaw only goes forward until the back-off begins. The
-descent, the back-off and the lift are all gone, because the examiner does all
-three itself.
+Steps 1 and 2 are one function, `push_segment`, and between them they drop the parts of
+a recorded path that the examiner does for itself. The giving up in step 1 matters
+because a push blocked on the way down demonstrates nothing. In step 2 the first and the
+last waypoint at push height bracket the part worth keeping. And the furthest the jaw
+travelled inside that bracket is where the push ended, because the jaw only goes forward
+until the back-off begins. The descent, the back-off and the lift are all gone, because
+the examiner does all three itself.
 
 ![A recorded path drawn as height against distance: the jaw comes down from travel height, feels forward, pushes, backs off and lifts, and the demonstration is the two legs in the middle.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-what-a-demonstration-keeps.png)
 
-Step 3 is split across two functions of the same file. `to_action` writes what is
-left as the five columns the policy is fitted on, and `resample` stretches or
-squeezes that run onto the chunk's fixed length, which is the only part of the
-conversion that changes how fast the push is replayed.
+Step 3 is split across two functions of the same file. `to_action` writes what is left
+as the five columns the policy is fitted on, and `resample` stretches or squeezes that
+run onto the chunk's fixed length. This is the only part of the conversion that changes
+how fast the push is replayed.
 
 ```python
 def push_segment(waypoints: tuple[Waypoint, ...]) -> tuple[Waypoint, ...]:
@@ -145,21 +144,20 @@ own numbers into the units the table is measured in.
         return self.scale.back(answer[0].float().cpu().numpy())
 ```
 
-Three of those settings are the whole of what this solution insists on against
-LeRobot's own defaults: `pretrained_backbone_weights=None`, which switches off
-the ImageNet weights ACT would otherwise download for its vision backbone and
-is what makes "fitted from random numbers" true; `normalization_mapping`, which
-hands the scaling back to this solution's own code so that the numbers reaching
-the model are only ones written here; and `n_action_steps` set to the chunk's
-full length, because one push is one chunk and nothing re-plans part way
-through. The rest of the model is LeRobot's, untouched.
+Three of those settings are the whole of what this solution insists on against LeRobot's
+own defaults: `pretrained_backbone_weights=None`. This switches off the ImageNet weights
+ACT would otherwise download for its vision backbone and is what makes "fitted from
+random numbers" true; `normalization_mapping`. This hands the scaling back to this
+solution's own code so that the numbers reaching the model are only ones written here.
+`n_action_steps` set to the chunk's full length, because one push is one chunk and
+nothing re-plans part way through. The rest of the model is LeRobot's, untouched.
 
-The last step is the way back, in `chunks.py` again, in `to_waypoints`. Nothing
-stops a network asking for a position the arm does not have, so step 6 pulls
-every waypoint back onto the table and into the band of heights the jaw works
-at. It counts the waypoints it had to pull in, so that a chunk aimed off the
-table is reported rather than hidden, turns the cosine-and-sine pair back into
-one angle, and hands the examiner waypoints in its own shape.
+The last step is the way back, in `chunks.py` again, in `to_waypoints`. Nothing stops a
+network asking for a position the arm does not have, so step 6 pulls every waypoint back
+onto the table and into the band of heights the jaw works at. It counts the waypoints it
+had to pull in. So that a chunk aimed off the table is reported rather than hidden,
+turns the cosine-and-sine pair back into one angle, and hands the examiner waypoints in
+its own shape.
 
 ```python
 def to_waypoints(action: np.ndarray) -> tuple[tuple[Waypoint, ...], int]:
@@ -188,13 +186,12 @@ def to_waypoints(action: np.ndarray) -> tuple[tuple[Waypoint, ...], int]:
     return points, pulled
 ```
 
-Reading those three blocks together says where the measured shortfall has to
-sit, and it does sit there. The first two columns of the chunk come out roughly
-right — the policy puts the fingertips down in about the neighbourhood the
-teacher used — while the heading carried in the last two comes out about thirty
-degrees away from the teacher's, which is enough that on a crowded table the
-jaw meets a neighbour while it is still coming down, and the push ends before
-any glass is touched.
+Reading those three blocks together says where the measured shortfall has to sit, and it
+does sit there. The first two columns of the chunk come out roughly right — the policy
+puts the fingertips down in about the neighbourhood the teacher used. While the heading
+carried in the last two comes out about thirty degrees away from the teacher's. This is
+enough that on a crowded table the jaw meets a neighbour while it is still coming down,
+and the push ends before any glass is touched.
 
 ## 2. The pushes are what this contributes
 
@@ -252,10 +249,9 @@ rather than from being given a wider vocabulary.
 
 ## 3. How the concepts fit together
 
-The pieces now join into one pipeline. It has an offline half that happens once
-and an online half that happens on every push, and the halves are worth keeping
-apart because almost all the cost is in the first and almost all the risk is in
-the second.
+The pieces now join into one pipeline. It has an offline half that happens once and an
+online half that happens on every push. And the halves are worth keeping apart because
+almost all the cost is in the first and almost all the risk is in the second.
 
 **Offline, and once.** Tables are drawn from numbers below the dividing line.
 The teacher is run over them. For every push it chooses, three things are
@@ -265,14 +261,13 @@ afterwards. Pushes that failed are dropped and the dropping is counted, so the
 thinning is visible. Refusals are kept as refusals. What remains is a dataset
 of pairs — a picture, and a chunk of waypoints.
 
-One detail of the shape is worth naming, because the pages above do not settle
-it: a recorded path is a few hundred waypoints long and a chunk is a fixed,
-shorter run, so every demonstration is trimmed to the part at push height and
-resampled to the chunk's length. The trimming is free. The resampling is not:
-waypoints are consumed at a fixed rate, so squeezing a long push into a fixed
-chunk runs it faster than it was demonstrated. The chunk's length is therefore
-set near the median length of the teacher's own pushes, and a push longer than
-that is replayed quicker than it was made.
+One detail of the shape is worth naming, because the pages above do not settle it: a
+recorded path is a few hundred waypoints long and a chunk is a fixed, shorter run. So
+every demonstration is trimmed to the part at push height and resampled to the chunk's
+length. The trimming is free. The resampling is not: waypoints are consumed at a fixed
+rate, so squeezing a long push into a fixed chunk runs it faster than it was
+demonstrated. The chunk's length is therefore set near the median length of the
+teacher's own pushes, and a push longer than that is replayed quicker than it was made.
 
 ACT is then fitted on the dataset from random numbers, for hours. The second
 way fits Diffusion Policy on the same dataset, changing the model and nothing

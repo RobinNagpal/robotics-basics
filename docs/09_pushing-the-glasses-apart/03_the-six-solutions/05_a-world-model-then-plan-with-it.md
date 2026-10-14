@@ -27,24 +27,23 @@ returns the situation that follows. It is the thing a chess player uses when
 they picture the board after a move, and it is what lets you compare two actions
 without carrying either of them out.
 
-That is what this solution fits. The model takes the table as the camera
-measured it, plus one candidate push, and answers with the table afterwards:
-where every glass moves, whether anything topples, and whether the jaw is
-blocked on the way down. Because the answer is a **table** rather than a score,
-the same answer can be fed back in as the next question, which is what would let
-this solution plan a *sequence* of pushes — move one glass out of the way first
-so that a second glass has somewhere to go. No other solution here could do
-that. The planner that was built has a horizon of one push, so the sequence is a
-design in the full chapter rather than code that runs.
+That is what this solution fits. The model takes the table as the camera measured it,
+plus one candidate push, and answers with the table afterwards: where every glass moves,
+whether anything topples, and whether the jaw is blocked on the way down. Because the
+answer is a **table** rather than a score, the same answer can be fed back in as the
+next question. This is what would let this solution plan a *sequence* of pushes — move
+one glass out of the way first so that a second glass has somewhere to go. No other
+solution here could do that. The planner that was built has a horizon of one push, so
+the sequence is a design in the full chapter rather than code that runs.
 
 The reason to learn this particular quantity is the point of the whole solution.
-[Geometry generates, a model ranks](03_geometry-generates-a-model-ranks.md) fits
-a model of *how much a push would help*, which is a quantity the geometry
-already computes exactly from the destination. This solution fits a model of
-*what a push will actually do*, which is the quantity the geometry gets wrong,
-because predicting where a pushed glass stops needs the friction and the weight
-distribution that nobody in this cell has measured. Those are two different
-bets about which question deserved a model, and the examiner settles it.
+[Geometry generates, a model ranks](03_geometry-generates-a-model-ranks.md) fits a model
+of *how much a push would help*, which is a quantity the geometry already computes
+exactly from the destination. This solution fits a model of *what a push will actually
+do*. This is the quantity the geometry gets wrong, because predicting where a pushed
+glass stops needs the friction and the weight distribution that nobody in this cell has
+measured. Those are two different bets about which question deserved a model, and the
+examiner settles it.
 
 The first way is five copies of a small network written for this cell and trained
 here, with no downloaded weights of any kind. The second way would be TD-MPC2, the
@@ -86,23 +85,21 @@ hundred candidates are evaluated before every push the arm makes.
 **The best push is handed to the examiner** as three numbers, and the examiner's macro
 expands it into the jaw trajectory every solution here is judged on.
 
-Two honest gaps are worth knowing before the scores. The shared topple rule that
-every other solution applies as arithmetic *before* any model is consulted is
-not wired up in front of this one, so here the ceiling on how badly a push can
-go comes from the model rather than from arithmetic. And error compounds over
-depth, which caps how far a sequence could usefully be planned with a model
-trained on single pushes.
+Two honest gaps are worth knowing before the scores. The shared topple rule that every
+other solution applies as arithmetic *before* any model is consulted is not wired up in
+front of this one. So here the ceiling on how badly a push can go comes from the model
+rather than from arithmetic. And error compounds over depth, which caps how far a
+sequence could usefully be planned with a model trained on single pushes.
 
 ## 3. What it needs
 
-It needs **a physics engine and tens of thousands of pushes made in it**, and
-this is the real cost, which no other solution pays in the same currency. The
-first way records 38,012 pushes, collected in two rounds: a first round of
-random pushes, and a second round chosen by the planner using the first round's
-model, which fills the holes the search would otherwise exploit. Nobody labels
-any of it, because the answer to every example is simply what the second look
-found. That is the single biggest practical advantage this family has over
-anything trained on demonstrations.
+It needs **a physics engine and tens of thousands of pushes made in it**, and this is
+the real cost, which no other solution pays in the same currency. The first way records
+38,012 pushes, collected in two rounds: a first round of random pushes, and a second
+round chosen by the planner using the first round's model. This fills the holes the
+search would otherwise exploit. Nobody labels any of it, because the answer to every
+example is simply what the second look found. That is the single biggest practical
+advantage this family has over anything trained on demonstrations.
 
 It needs **a training run before it can answer anything**, which is five small
 networks and about half an hour on a laptop processor, with no accelerator at
@@ -110,10 +107,10 @@ all. That is unusual among the learned solutions here, and it follows from the
 model being small and its input being a few dozen numbers rather than a
 picture.
 
-The second way would need **rented hardware**. TD-MPC2 is reinforcement
-learning, it trains on far more interaction than a one-step fit needs, and it
-wants an accelerator: of order a hundred dollars for a weekend, or five hundred
-for a month if several training seeds are to be run.
+The second way would need **rented hardware**. TD-MPC2 is reinforcement learning, it
+trains on far more interaction than a one-step fit needs. And it wants an accelerator:
+of order a hundred dollars for a weekend, or five hundred for a month if several
+training seeds are to be run.
 
 It needs **run-time compute**, and this is where the solution is expensive.
 About fifteen hundred candidates, each put to five networks, for every crowded
@@ -142,20 +139,19 @@ this solution predicts the outcome instead and acts on the prediction, so it
 attempts the pushes the geometry turns down. 39 more glasses reach the rack that
 way, and 19 more end up on their side.
 
-It also finished the same number of tables, not more, and it cost something the
-geometry never costs. **It toppled one glass and lost one table to a state the
-cell should never reach.** A toppled glass is the one failure this cell cannot
-take back, so the two rows are not ordered on a single number. Replacing a rule
-that refuses whenever the arithmetic is unsure with a model that predicts an
-outcome means the model is right more often and also occasionally confidently
-wrong.
+It also finished the same number of tables, not more, and it cost something the geometry
+never costs. **It toppled one glass and lost one table to a state the cell should never
+reach.** A toppled glass is the one failure this cell cannot take back. So the two rows
+are not ordered on a single number. Replacing a rule that refuses whenever the
+arithmetic is unsure with a model that predicts an outcome means the model is right more
+often and also occasionally confidently wrong.
 
-Read together with the geometry's own finding — that its ranker, fitted on *how
-much a push helps*, lost to the printed rule it was meant to improve — this row
-gives the book its clearest conclusion. **The learning that paid attacked the
-quantity the geometry gets wrong, not the quantity it gets right.** So the
-useful question is not whether to learn, but which quantity is worth learning.
-The full table for all six solutions is in [the results](../10_the-results.md).
+Read together with the geometry's own finding — that its ranker, fitted on *how much a
+push helps*, lost to the printed rule it was meant to improve. This row gives the book
+its clearest conclusion. **The learning that paid attacked the quantity the geometry
+gets wrong, not the quantity it gets right.** So the useful question is not whether to
+learn, but which quantity is worth learning. The full table for all six solutions is in
+[the results](../10_the-results.md).
 
 ## 5. Where it is strong and where it breaks
 
@@ -180,24 +176,23 @@ geometry can, while being the most machinery of the six.
 
 ## 6. When to choose it
 
-Choose this when the thing you cannot write down is *what your actions do*, and
-when a simulator can produce the examples. Those two conditions together are
-what make it work here: friction is unknown, and the examiner will make thirty-eight
-thousand pushes in under an hour for nothing. In that position learning the
-forward model is the highest-value thing to learn, because everything else — the
-choosing, the scoring, the goal — can stay as arithmetic a person wrote and can
-be changed without retraining.
+Choose this when the thing you cannot write down is *what your actions do*, and when a
+simulator can produce the examples. Those two conditions together are what make it work
+here: friction is unknown, and the examiner will make thirty-eight thousand pushes in
+under an hour for nothing. In that position learning the forward model is the
+highest-value thing to learn, because everything else. The choosing, the scoring, the
+goal — can stay as arithmetic a person wrote and can be changed without retraining.
 
 Choose it also when the goal is likely to change, because this is the only
 solution here that can be re-aimed by editing a scoring function.
 
-Do not choose it when a rule already predicts your actions well enough, because
-then you are fitting a model of something you already know, which is what the
-ranked geometry did and why it lost. Do not choose it where a confidently wrong
-prediction is unacceptable unless something outside the model can veto it: on
-this examiner the missing arithmetic gate in front of the planner is exactly what
-the one toppled glass cost. And do not choose it when the run-time budget is
-tight, because searching is hundreds of times more expensive than answering.
+Do not choose it when a rule already predicts your actions well enough, because then you
+are fitting a model of something you already know. This is what the ranked geometry did
+and why it lost. Do not choose it where a confidently wrong prediction is unacceptable
+unless something outside the model can veto it: on this examiner the missing arithmetic
+gate in front of the planner is exactly what the one toppled glass cost. And do not
+choose it when the run-time budget is tight, because searching is hundreds of times more
+expensive than answering.
 
 The code is in
 [`src/09_pushing-the-glasses-apart/04-a-world-model/`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model)

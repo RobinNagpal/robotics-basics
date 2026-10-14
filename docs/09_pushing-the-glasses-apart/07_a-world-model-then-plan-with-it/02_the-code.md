@@ -175,16 +175,15 @@ def score(model: Ensemble, seen: list, target, kind: str, heading, offset, trave
     return cost, landing, {k: int(v.sum()) for k, v in dropped.items()}
 ```
 
-Those two blocks are where this solution's result comes from, in both
-directions. The displacements are **averaged** over the copies and the topple
-chance is taken as the **worst** of them, and taken again on each shifted copy
-of the table, so a push only has to look risky once to be dropped — which is
-why this solution racks more glasses than any other answer to this problem, in
-the fewest pushes, and why the glasses it gives up on are given up on with a
-reason. It is also where the one glass it topples comes from: `topple` is the
-model's opinion and nothing else's, so where all five copies are confident and
-all five are wrong, there is nothing left in the code above to disagree with
-them.
+Those two blocks are where this solution's result comes from, in both directions. The
+displacements are **averaged** over the copies and the topple chance is taken as the
+**worst** of them, and taken again on each shifted copy of the table. So a push only has
+to look risky once to be dropped. Which is why this solution racks more glasses than any
+other answer to this problem, in the fewest pushes, and why the glasses it gives up on
+are given up on with a reason. It is also where the one glass it topples comes from:
+`topple` is the model's opinion and nothing else's. So where all five copies are
+confident and all five are wrong, there is nothing left in the code above to disagree
+with them.
 
 ## 2. The pushes are what this contributes
 
@@ -200,13 +199,13 @@ forward until contact, the push at a steady speed, the back-off and the lift.
 This solution does not write that expansion and gains nothing from it, and
 neither does any other solution that thinks in pushes.
 
-Two of those numbers are arithmetic rather than model output, and saying so
-keeps the boundary clean. The fingertips come down 20 mm behind the glass's
-widest edge, which is the margin that clears it despite the camera's error. The
-jaw then feels forward until 10 mm past the glass's middle, because a stemmed
-glass is met at its stem, well inside its widest edge, and a jaw that misses and
-lifts under the bowl tips it. Neither number is learned, because neither depends
-on anything nobody knows. The search chooses the other three.
+Two of those numbers are arithmetic rather than model output, and saying so keeps the
+boundary clean. The fingertips come down 20 mm behind the glass's widest edge, which is
+the margin that clears it despite the camera's error. The jaw then feels forward until
+10 mm past the glass's middle, because a stemmed glass is met at its stem, well inside
+its widest edge. And a jaw that misses and lifts under the bowl tips it. Neither number
+is learned, because neither depends on anything nobody knows. The search chooses the
+other three.
 
 ![A push on one glass drawn from above with its five numbers marked: the fingertips come down 20 mm behind the widest edge and the jaw feels forward to 10 mm past the middle, both of which are arithmetic on the measured width, while the heading, the offset across the glass and the travel are the three numbers the search is free to choose.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-pages-what-the-push-says.png)
 
@@ -275,11 +274,10 @@ The loop ends when every glass has been racked, when the table's push budget is
 spent, or when no push the model expects to help survives the filters — and
 each glass left behind is reported with the reason it was left.
 
-Two guards sit around that loop and are worth naming because they are what stop
-it running for ever. A glass may be pushed only a few times before it is
-reported as refused, and the table has a budget of pushes for the whole run.
-Both are plain counters, both belong to the loop rather than to the model, and
-the budget must be the same number for all six or the push counts on the
-scorecard cannot be compared.
+Two guards sit around that loop and are worth naming because they are what stop it
+running for ever. A glass may be pushed only a few times before it is reported as
+refused, and the table has a budget of pushes for the whole run. Both are plain
+counters, both belong to the loop rather than to the model. And the budget must be the
+same number for all six or the push counts on the scorecard cannot be compared.
 
 ← [What it is](01_what-it-is.md) · [How it works](03_how-it-works.md) →

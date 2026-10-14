@@ -58,16 +58,15 @@ apart](../01_the-problem/01_what-is-asked-for.md) by learning a model of what a
 push does, and then choosing pushes by trying them out against that model
 rather than against the table.
 
-The idea worth holding on to while reading is a small one with large
-consequences. Every other solution here learns, or writes down, **what to do**.
-This one learns **what will happen**, and works out what to do from it. That
-single difference is what gives this solution the one capability none of the
-other five could have: it can be extended to plan a sequence. It can choose a
-push whose only value is that it makes room for the push after it — move one
-glass aside so a second glass has somewhere to be pushed to — because a model
-that returns a table can be asked again about the table it just returned. A
-method that scores a push without saying where the glasses end up has nothing
-to ask the second question of.
+The idea worth holding on to while reading is a small one with large consequences. Every
+other solution here learns, or writes down, **what to do**. This one learns **what will
+happen**, and works out what to do from it. That single difference is what gives this
+solution the one capability none of the other five could have: it can be extended to
+plan a sequence. It can choose a push whose only value is that it makes room for the
+push after it. Move one glass aside so a second glass has somewhere to be pushed to —
+because a model that returns a table can be asked again about the table it just
+returned. A method that scores a push without saying where the glasses end up has
+nothing to ask the second question of.
 
 By the end you will understand five things. What a forward model is, and why it
 is a different kind of object from a policy. How a push is chosen by sampling
@@ -91,9 +90,9 @@ solution adds learned evidence to is stated there.
 
 ## 2. A film of one table
 
-The introduction described a method that learns how the table changes and then
-searches for a push with that model, and the film here shows it on one table in
-the simulator, played at one and a half times real speed.
+The introduction described a method that learns how the table changes and then searches
+for a push with that model. And the film here shows it on one table in the simulator,
+played at one and a half times real speed.
 
 [A learned world model planning on one table, 44 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4 "video")
 
@@ -133,24 +132,24 @@ unknowns in it. What is left is the half that has unknowns in it: **what a
 given push will actually do**.
 
 That half is hard for one reason above all others, and [pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md) states it plainly. The rule that
-decides whether a glass slides or tips compares the contact height against half
-the foot width divided by the friction coefficient, and **nothing in this cell
-measures friction**. The examiner holds the coefficients privately and never tells
-anybody. So any solution that writes the rule down is writing down a rule with a
-guessed number in it, and the guess can be wrong by a factor that decides
-whether a glass should have been touched at all.
+toppling](../01_the-problem/05_pushing-without-toppling.md) states it plainly. The rule
+that decides whether a glass slides or tips compares the contact height against half the
+foot width divided by the friction coefficient, and **nothing in this cell measures
+friction**. The examiner holds the coefficients privately and never tells anybody. So
+any solution that writes the rule down is writing down a rule with a guessed number in
+it. And the guess can be wrong by a factor that decides whether a glass should have been
+touched at all.
 
-There are two honest ways out of that. One is to guess carefully, act, look at
-what happened, and correct — which is what [one fixed
+There are two honest ways out of that. One is to guess carefully, act, look at what
+happened, and correct — which is what [one fixed
 nudge](../04_one-fixed-nudge/01_what-it-is.md) and [geometry generates, a model
-ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md) do. The other is the one this document is about:
-**never write the rule down, and learn its consequences instead.** Push glasses
-thousands of times, record what happened each time, and fit a function to it.
-The friction coefficient is then not a number the solution holds. It is a
-regularity in the recorded pushes, absorbed along with everything else nobody
-wrote down — that the jaw has a body behind its fingers, that a tapered glass
-meets the jaw's top edge, that a glass turns as well as travels.
+ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md) do. The other is the one
+this document is about: **never write the rule down, and learn its consequences
+instead.** Push glasses thousands of times, record what happened each time, and fit a
+function to it. The friction coefficient is then not a number the solution holds. It is
+a regularity in the recorded pushes, absorbed along with everything else nobody wrote
+down. That the jaw has a body behind its fingers, that a tapered glass meets the jaw's
+top edge, that a glass turns as well as travels.
 
 ![Whether a push slides a glass or tips it over turns on a friction nothing in the cell measures and on the height the jaw really meets the glass at, which for a tapered glass is the jaw's top edge and not its middle; across the range the friction plausibly covers, the share of drawn glasses that can be pushed at all runs from most of them to none, and a model fitted to recorded pushes absorbs both without ever being told either.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/10-the-friction-it-absorbs.png)
 

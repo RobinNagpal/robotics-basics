@@ -20,10 +20,10 @@ of reading.
 
 ## 1. What it is
 
-The problem this book sets is that glasses stand too close together for the
-gripper to close round any of them, so the arm has to drag them apart first,
-without knocking any of them over. [What is asked
-for](../01_the-problem/01_what-is-asked-for.md) states that in full.
+The problem this book sets is that glasses stand too close together for the gripper to
+close round any of them. So the arm has to drag them apart first, without knocking any
+of them over. [What is asked for](../01_the-problem/01_what-is-asked-for.md) states that
+in full.
 
 The hard part is that nobody in this cell knows what a push will do. Where a
 pushed glass comes to rest depends on the friction between its base and the
@@ -162,21 +162,20 @@ other solution comes close on either, and [a world model, then plan with
 it](05_a-world-model-then-plan-with-it.md) racks 146 glasses to this one's 107
 by toppling twenty.
 
-It left 35 tables unfinished and refused 143 of the 251 glasses, which is where
-its score goes. A refusal is an acceptable answer on this scorecard, so none of
-those 143 cost it a wrong table. It is worth knowing what those refusals mostly
-are, because they are not failures of the method. 53 of them are *nowhere clear
-to push it to*, which is the hand being too wide to stand beside the glass, and
-87 are the glass tipping rather than sliding, which is the hand being unable to
-come lower than 75 mm. Both are the cell telling the method that this part of
-the job cannot be done as the cell is built.
+It left 35 tables unfinished and refused 143 of the 251 glasses, which is where its
+score goes. A refusal is an acceptable answer on this scorecard, so none of those 143
+cost it a wrong table. It is worth knowing what those refusals mostly are, because they
+are not failures of the method. 53 of them are *nowhere clear to push it to*, which is
+the hand being too wide to stand beside the glass, and 87 are the glass tipping rather
+than sliding. This is the hand being unable to come lower than 75 mm. Both are the cell
+telling the method that this part of the job cannot be done as the cell is built.
 
-One more property of this row is worth knowing. Nothing in this method was
-fitted and nothing in it is drawn at random, so it behaves the same way on the
-hundredth table as on the first. The repeated runs the examiner requires of the
-trained solutions, because their training and their actions both vary, are not
-needed here, so this is the one row in the book that carries no spread. The
-full table for all six is in [the results](../10_the-results.md).
+One more property of this row is worth knowing. Nothing in this method was fitted and
+nothing in it is drawn at random, so it behaves the same way on the hundredth table as
+on the first. The repeated runs the examiner requires of the trained solutions, because
+their training and their actions both vary, are not needed here. So this is the one row
+in the book that carries no spread. The full table for all six is in [the
+results](../10_the-results.md).
 
 ## 5. Where it is strong and where it breaks
 
@@ -219,26 +218,23 @@ solution has something to improve on.
 
 ## 6. When to choose it
 
-Choose this first, always. It is the cheapest way to get a real push happening
-against a real glass, every later solution needs the same contact sequence and
-the same refusals, and it gives the comparison its floor before anything
-expensive is built.
+Choose this first, always. It is the cheapest way to get a real push happening against a
+real glass, every later solution needs the same contact sequence and the same refusals.
+And it gives the comparison its floor before anything expensive is built.
 
-Think hard before shipping it, and the reason is not its score. It never asks
-whether a better push exists than the shortest one that works, and it has no
-way to tell that a glass should have been moved out of the way first so that a
-second glass had somewhere to go. On this book's fifty tables those limits cost
-it seventeen unfinished tables and nothing worse, because a refusal is an
-acceptable answer here. In a cell where a refusal is not acceptable, they would
-matter much more.
+Think hard before shipping it, and the reason is not its score. It never asks whether a
+better push exists than the shortest one that works. And it has no way to tell that a
+glass should have been moved out of the way first so that a second glass had somewhere
+to go. On this book's fifty tables those limits cost it seventeen unfinished tables and
+nothing worse, because a refusal is an acceptable answer here. In a cell where a refusal
+is not acceptable, they would matter much more.
 
-Read it in both directions. The usual reading is about the other five: if a
-model cannot beat a fixed nudge, it has earned nothing. The other reading is
-about the problem. This method works at all only because the glasses stand
-upright on a flat table, the gripper's clear room is a known constant, the
-camera reports a position and a width for every glass, and a refusal is an
-acceptable answer. **Each of the other five needs fewer of those promises than
-this one does**, and that is what they are for.
+Read it in both directions. The usual reading is about the other five: if a model cannot
+beat a fixed nudge, it has earned nothing. The other reading is about the problem. This
+method works at all only because the glasses stand upright on a flat table, the
+gripper's clear room is a known constant, the camera reports a position and a width for
+every glass. And a refusal is an acceptable answer. **Each of the other five needs fewer
+of those promises than this one does**, and that is what they are for.
 
 The code is in
 [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge)

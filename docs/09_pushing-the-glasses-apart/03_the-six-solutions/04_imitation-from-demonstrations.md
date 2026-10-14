@@ -1,15 +1,14 @@
 # Imitation from demonstrations
 
-This page describes the third of the six solutions in about eight minutes of
-reading. It is the first one in which everything is fitted here from nothing:
-the arm is shown what a good push looks like, many times over, and a network is
-trained to copy it, with no geometry and no friction model anywhere inside it.
-By the end of this page you will know what behaviour cloning is, where the
-demonstrations come from and what that costs, what it scored on the shared test
-examiner, and the one limit no amount of extra data removes. The full treatment is
-in [the chapter on this
-solution](../06_imitation-from-demonstrations/01_what-it-is.md), which is about
-an hour of reading.
+This page describes the third of the six solutions in about eight minutes of reading. It
+is the first one in which everything is fitted here from nothing: the arm is shown what
+a good push looks like, many times over. And a network is trained to copy it, with no
+geometry and no friction model anywhere inside it. By the end of this page you will know
+what behaviour cloning is, where the demonstrations come from and what that costs, what
+it scored on the shared test examiner, and the one limit no amount of extra data
+removes. The full treatment is in [the chapter on this
+solution](../06_imitation-from-demonstrations/01_what-it-is.md), which is about an hour
+of reading.
 
 ## Contents
 
@@ -90,9 +89,9 @@ It needs **LeRobot** and **PyTorch**. LeRobot is Apache-2.0, and because this
 solution downloads no weights, the weights file it produces inherits no terms
 from anybody. That is as simple as a licence position gets in this book.
 
-It needs **its teacher working**, which is a real dependency rather than a
-preference: without a program that chooses pushes well there are no
-demonstrations at all, which is why the two are built in that order.
+It needs **its teacher working**, which is a real dependency rather than a preference:
+without a program that chooses pushes well there are no demonstrations at all. This is
+why the two are built in that order.
 
 It needed **two things the examiner did not have**, and that was an honest cost of
 going off the shelf. The examiner returned numeric readings and rendered the world
@@ -102,25 +101,23 @@ a path that accepts a chunk of waypoints had to be built too. Both exist now,
 and every LeRobot policy would have needed them, because they all expect
 pictures and a control-rate action space.
 
-It needs **demonstrations**, which cost arm time and nothing else, drawn only
-from tables below the examiner's dividing line. One prescription here is **not**
-done and is worth knowing: the plan was to over-represent the crowded corner
-cases deliberately, so the edge of what the policy will face sits in the middle
-of what it was trained on, and in fact the demonstrations are drawn from
-consecutive table numbers, so the crowded corners are as rare in training as
-they are on the examiner's tables.
+It needs **demonstrations**, which cost arm time and nothing else, drawn only from
+tables below the examiner's dividing line. One prescription here is **not** done and is
+worth knowing: the plan was to over-represent the crowded corner cases deliberately. So
+the edge of what the policy will face sits in the middle of what it was trained on, and
+in fact the demonstrations are drawn from consecutive table numbers. So the crowded
+corners are as rare in training as they are on the examiner's tables.
 
-It needs **compute, and this is the cheapest entry among the six.** Training
-runs in hours on the graphics processor an Apple M4 already has. This document
-first budgeted tens of dollars for a rented accelerator and in the event none
-was needed, because the dataset is thousands of small pictures, the network is
-small beside a foundation model, and nothing has to be learned about vision in
-general.
+It needs **compute, and this is the cheapest entry among the six.** Training runs in
+hours on the graphics processor an Apple M4 already has. This document first budgeted
+tens of dollars for a rented accelerator and in the event none was needed, because the
+dataset is thousands of small pictures, the network is small beside a foundation model.
+And nothing has to be learned about vision in general.
 
-At run time it needs one forward pass per chunk, against a push the arm takes
-seconds to carry out. And once fitted it needs **a weights file kept in step
-with the examiner**: change how the top view is rendered, or the macro whose
-waypoints became the labels, and the file is quietly out of date.
+At run time it needs one forward pass per chunk, against a push the arm takes seconds to
+carry out. And once fitted it needs **a weights file kept in step with the examiner**:
+change how the top view is rendered, or the macro whose waypoints became the labels. And
+the file is quietly out of date.
 
 ## 4. What it scored
 
@@ -188,15 +185,13 @@ It is open-loop inside a chunk, and it cannot refuse. During a chunk nothing is
 read, and the policy's only output is waypoints, so a refusal has to come from
 the shared gate in front of it rather than from the policy itself.
 
-It needed examiner work the first two solutions did not, and two smaller costs
-are paid on every push: a glass and an aim have to be read back off the
-waypoints, and every chunk has to be pulled inside the jaw's limits before it
-is followed.
+It needed examiner work the first two solutions did not, and two smaller costs are paid
+on every push: a glass and an aim have to be read back off the waypoints. And every
+chunk has to be pulled inside the jaw's limits before it is followed.
 
-And it cannot explain itself, or say when it is lost. It has no confidence
-output, and the situation in which it is least reliable — a table unlike
-anything in its data — is indistinguishable in its output from the situation in
-which it is most reliable.
+And it cannot explain itself, or say when it is lost. It has no confidence output, and
+the situation in which it is least reliable — a table unlike anything in its data. Is
+indistinguishable in its output from the situation in which it is most reliable.
 
 ## 6. When to choose it
 
@@ -210,11 +205,11 @@ nothing in it evaluates an outcome. If what you need is a better choice than the
 teacher makes, you need a method that can compare outcomes, which is [a world
 model, then plan with it](05_a-world-model-then-plan-with-it.md).
 
-Do not choose it, either, where several good answers exist for one situation
-unless the model can represent more than one of them. That is the failure
-measured here, and it is the single most transferable lesson on this page: a
-policy fitted to copy disagreeing examples returns their average, and an average
-of good actions is often not an action at all.
+Do not choose it, either, where several good answers exist for one situation unless the
+model can represent more than one of them. That is the failure measured here, and it is
+the single most transferable lesson on this page: a policy fitted to copy disagreeing
+examples returns their average. And an average of good actions is often not an action at
+all.
 
 The code is in
 [`src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/`](../../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations)

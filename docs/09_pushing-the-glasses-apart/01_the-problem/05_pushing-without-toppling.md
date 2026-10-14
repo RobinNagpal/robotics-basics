@@ -38,13 +38,13 @@ contact and the glass, not the reasoning behind them. So the limit is a property
 of the situation rather than of the method, and it has to hold for all six in
 the same form.
 
-The second is that none of the six can predict where a pushed glass ends up.
-Friction under a foot is not the same everywhere on that foot, the contact
-between a flat jaw and a curved glass is a small patch rather than a point, and
-a glass turns as well as travels. Planar pushing is a well studied problem and
-the honest summary is that predicting an outcome precisely needs numbers nobody
-here has. So every solution has to act, measure what really happened, and
-correct — and that loop, like the limit, is shared.
+The second is that none of the six can predict where a pushed glass ends up. Friction
+under a foot is not the same everywhere on that foot, the contact between a flat jaw and
+a curved glass is a small patch rather than a point. And a glass turns as well as
+travels. Planar pushing is a well studied problem and the honest summary is that
+predicting an outcome precisely needs numbers nobody here has. So every solution has to
+act, measure what really happened, and correct — and that loop, like the limit, is
+shared.
 
 This document therefore holds those two things: **the limit, which says whether
 a push may happen at all**, and **the loop, which runs around every push that
@@ -55,13 +55,13 @@ does**.
 Start with what a push has to overcome, because the whole rule falls out of
 comparing two numbers.
 
-A glass standing on a table is held down by its own weight and held still by
-friction. Push it horizontally at some height and two different things can give
-way. The foot can **slide** over the table, which happens once the push exceeds
-the friction holding it, and friction is the friction coefficient multiplied by
-the weight. Or the glass can **tip**, turning about the bottom edge furthest
-from the jaw, which happens once the turning effect of the push about that edge
-exceeds the turning effect of the weight holding the glass down on its foot.
+A glass standing on a table is held down by its own weight and held still by friction.
+Push it horizontally at some height and two different things can give way. The foot can
+**slide** over the table, which happens once the push exceeds the friction holding it,
+and friction is the friction coefficient multiplied by the weight. Or the glass can
+**tip**, turning about the bottom edge furthest from the jaw. This happens once the
+turning effect of the push about that edge exceeds the turning effect of the weight
+holding the glass down on its foot.
 
 Those two give way at different pushes, and the one that gives way first is the
 one that happens. Write `h` for the height the jaw touches the glass and `a` for
@@ -90,50 +90,47 @@ slowly instead of quickly.
 Because `a` is half the foot width, and every glass has its own foot, the
 highest safe contact is a different number for every glass on the table.
 
-That is why the push height is **computed from the measurement rather than
-chosen once**. The camera work hands over [how wide each glass is at its
+That is why the push height is **computed from the measurement rather than chosen
+once**. The camera work hands over [how wide each glass is at its
 foot](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#4-what-must-come-out),
-so the limit can be evaluated for that glass before the arm commits to touching
-it. Agreeing a single safe height for the whole kind would mean choosing it low
-enough for the narrowest foot the kind allows, which refuses glasses that were
-perfectly pushable, or choosing it higher, which pushes glasses that were not.
-This is the pattern the whole project uses: compute what the measurement
-allows, rather than assume a tolerance that has to cover every case at once.
+so the limit can be evaluated for that glass before the arm commits to touching it.
+Agreeing a single safe height for the whole kind would mean choosing it low enough for
+the narrowest foot the kind allows, which refuses glasses that were perfectly pushable,
+or choosing it higher. This pushes glasses that were not. This is the pattern the whole
+project uses: compute what the measurement allows, rather than assume a tolerance that
+has to cover every case at once.
 
 ### The height that counts is the top edge of the jaw
 
 The arm does not get to choose `h` freely either, and the value to put in the
 rule is not the obvious one.
 
-The jaw is a solid object with a height of its own. Its middle rides as low as
-the hand can go, which is 75 mm above the table, and its leading stretch is
-63 mm tall, so the jaw's top edge stands at 107 mm. Those are the gripper's own
-numbers and they do not change between glasses. Both of them are larger than
-they would be for a thin blade, and the reason is worth carrying through this
-page: the hand is a real Robotiq 2F-85, it is 139 mm across its fingers when
-held the way the cell grips, and the glasses on these tables stand 150 mm apart
-at the closest. So it has to be turned a quarter turn onto its side to fit
-between them at all, and on its side it is 27 mm across but reaches 69 mm below
-its own middle. **Turning it buys the room to get in and costs the height**,
-and the height is what this section is about. What changes is which part of
-the jaw the glass meets, and **a glass that is wider higher up meets the top
-edge before any other part of the jaw touches it**. The tapered kind is wider
-higher up by definition, so for those glasses the contact is at the top edge.
+The jaw is a solid object with a height of its own. Its middle rides as low as the hand
+can go, which is 75 mm above the table, and its leading stretch is 63 mm tall, so the
+jaw's top edge stands at 107 mm. Those are the gripper's own numbers and they do not
+change between glasses. Both of them are larger than they would be for a thin blade. And
+the reason is worth carrying through this page: the hand is a real Robotiq 2F-85, it is
+139 mm across its fingers when held the way the cell grips. And the glasses on these
+tables stand 150 mm apart at the closest. So it has to be turned a quarter turn onto its
+side to fit between them at all, and on its side it is 27 mm across but reaches 69 mm
+below its own middle. **Turning it buys the room to get in and costs the height**, and
+the height is what this section is about. What changes is which part of the jaw the
+glass meets, and **a glass that is wider higher up meets the top edge before any other
+part of the jaw touches it**. The tapered kind is wider higher up by definition, so for
+those glasses the contact is at the top edge.
 
 So `h` is 107 mm for a glass of that shape, not the 75 mm the arm aims at. The
-difference is 32 mm on a limit that is itself often only a few tens of
-millimetres, so it is not a rounding question: checking the rule at the middle
-of the jaw declares far more glasses safe than really are. Measured across 400
-drawn tapered glasses at the friction the simulator uses, checking at the
-middle calls about one in eleven safe to push and checking at the top edge
-calls none of them safe. And the mistakes all
-point the same way.
-Every glass that the lenient check wrongly admits is a glass that will be
-touched above its limit and will go over, while the stricter check's mistakes
-are glasses left alone that could have been moved. One of those two errors
-costs a glass and cannot be undone; the other costs a refusal that can be
-reported. **Getting this wrong errs in the direction that cannot be recovered**,
-which is why it is stated here rather than left to each solution.
+difference is 32 mm on a limit that is itself often only a few tens of millimetres. So
+it is not a rounding question: checking the rule at the middle of the jaw declares far
+more glasses safe than really are. Measured across 400 drawn tapered glasses at the
+friction the simulator uses, checking at the middle calls about one in eleven safe to
+push and checking at the top edge calls none of them safe. And the mistakes all point
+the same way. Every glass that the lenient check wrongly admits is a glass that will be
+touched above its limit and will go over, while the stricter check's mistakes are
+glasses left alone that could have been moved. One of those two errors costs a glass and
+cannot be undone; the other costs a refusal that can be reported. **Getting this wrong
+errs in the direction that cannot be recovered**, which is why it is stated here rather
+than left to each solution.
 
 ### Some glasses cannot be pushed at all
 
@@ -206,17 +203,15 @@ of this document is about.
 So no solution here acts on a prediction and walks away. Every one of them acts,
 senses what really happened, and then decides again from what it sensed.
 
-The programming comparison is exact. A plan computed once and then executed
-blindly is a list of instructions written before the run and carried out
-without reading anything back, like unrolling a loop into a fixed sequence
-because you believe you know how many times it will run. What these solutions
-do instead is keep **state that is re-read**: the table's arrangement is a value
-that the arm measures, acts on, and then measures again, and the loop continues
-while that value says there is still work to do. The arm is not following a
-script of pushes. It is repeating one step — look at the table, choose one
-push, make it, look again — until every glass has the room it needs, or until
-the
-glasses that are left have all been refused.
+The programming comparison is exact. A plan computed once and then executed blindly is a
+list of instructions written before the run and carried out without reading anything
+back, like unrolling a loop into a fixed sequence because you believe you know how many
+times it will run. What these solutions do instead is keep **state that is re-read**:
+the table's arrangement is a value that the arm measures, acts on, and then measures
+again. And the loop continues while that value says there is still work to do. The arm
+is not following a script of pushes. It is repeating one step — look at the table,
+choose one push, make it, look again. Until every glass has the room it needs, or until
+the glasses that are left have all been refused.
 
 Each pass through that loop has three parts.
 
@@ -256,15 +251,13 @@ them differently, not because the repository contains them.
 The first would answer the question the looking step asks, which is harder than
 it sounds: did this push do what it was meant to do?
 
-The geometry answers part of that well. It can say how far the glass travelled
-and compare it with how far it was sent. What it answers badly is the part that
-matters most, because a camera looking straight down at a glass that has fallen
-over sees a blob that is wider than before — and a glass that merely slid a
-long way also leaves a blob somewhere new. A small trained model, shown the
-scene before the push and the scene after it, would answer three questions
-instead:
-did the intended glass move as intended, did anything else move, and has
-anything fallen over.
+The geometry answers part of that well. It can say how far the glass travelled and
+compare it with how far it was sent. What it answers badly is the part that matters
+most, because a camera looking straight down at a glass that has fallen over sees a blob
+that is wider than before. A glass that merely slid a long way also leaves a blob
+somewhere new. A small trained model, shown the scene before the push and the scene
+after it, would answer three questions instead: did the intended glass move as intended,
+did anything else move, and has anything fallen over.
 
 ![Seen from straight above, a glass that moved as intended, a glass whose neighbour moved too and a glass that fell over are three different results, and how far the middle travelled separates only the first from the third.](../../images/pushing-the-glasses-apart/pushing-without-toppling/07-what-the-overhead-view-reports.png)
 
@@ -291,12 +284,11 @@ not develop the same way as the push continues.
 
 ![A glass that is sliding needs the same force from start to finish, while a glass that has begun to turn needs less and less as it comes towards balance, and the wall it is pushed on rolls away down the face of the pad as it goes.](../../images/pushing-the-glasses-apart/pushing-without-toppling/08-slide-against-tip.png)
 
-A monitor reading that signal could stop the arm the moment the contact stops
-behaving like a slide, back the jaw off a short way along the line it was
-pushing, and hand over. A single force level would not do it: across the
-glasses a kind allows, every force a tip produces is a force some slide
-produces too, which is why the signal has to be read as it develops rather than
-compared against a threshold.
+A monitor reading that signal could stop the arm the moment the contact stops behaving
+like a slide, back the jaw off a short way along the line it was pushing, and hand over.
+A single force level would not do it: across the glasses a kind allows, every force a
+tip produces is a force some slide produces too. This is why the signal has to be read
+as it develops rather than compared against a threshold.
 
 ![Over four hundred drawn glasses of one kind, pushed at the jaw's top edge, the force a tip produces and the force a slide produces cover the same band, so no level of force tells the two apart.](../../images/pushing-the-glasses-apart/pushing-without-toppling/08-no-threshold-separates.png)
 
@@ -313,12 +305,11 @@ it. [Solution 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md),
 which is the only one that topples glasses often, is the measurement of what its
 absence costs.
 
-Its own powers are deliberately small. It cannot steer, it cannot choose a
-target and it cannot approve a push; it can only stop one. A monitor that fires
-when it should not have costs a push abandoned and a few seconds spent finding
-out why, which is the same shape of cost as a wrong verdict from the verifier,
-and for the same reason: neither of them can do anything except interrupt or
-describe.
+Its own powers are deliberately small. It cannot steer, it cannot choose a target and it
+cannot approve a push; it can only stop one. A monitor that fires when it should not
+have costs a push abandoned and a few seconds spent finding out why. This is the same
+shape of cost as a wrong verdict from the verifier, and for the same reason: neither of
+them can do anything except interrupt or describe.
 
 The two belong together rather than in competition. The monitor knows only that
 the contact stopped feeling like a slide, and cannot say what the glass did or
@@ -332,12 +323,11 @@ after an abort.
 Looking again is what recovers the run from a bad prediction, and it is worth
 being precise about which failures it recovers and which it does not.
 
-A push that fell short, a push that went too far, a glass that turned as it
-travelled, a glass that landed in a new crowd: all of these are states of the
-table, and the next pass through the loop measures them and plans against them.
-Nothing is lost, because the arrangement is re-read rather than assumed, and a
-wrong guess at the friction shows up here as a push that did not go where it was
-aimed.
+A push that fell short, a push that went too far, a glass that turned as it travelled, a
+glass that landed in a new crowd: all of these are states of the table. And the next
+pass through the loop measures them and plans against them. Nothing is lost, because the
+arrangement is re-read rather than assumed, and a wrong guess at the friction shows up
+here as a push that did not go where it was aimed.
 
 **But nothing in this loop stands a toppled glass back up.** No step in this
 book lifts anything, the arm has no way to right a glass lying on its side, and

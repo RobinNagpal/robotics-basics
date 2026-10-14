@@ -12,14 +12,13 @@ beside the other five.
 
 ## 1. Where it is strong and where it breaks
 
-Its strengths are four, and the first is the one its partner cannot claim: it
-is fitted on the inputs it will be shown, so the domain gap is closed by
-construction rather than left to hope. Its demonstrations cost nothing, because
-the teacher is a program, which removes the usual reason not to fine-tune a
-policy. Its training fits in the memory of a laptop and its run-time cost is
-its partner's exactly, since the correction folds into the weights. And it is
-one half of the cleanest comparison in this book, which is a strength of the
-arrangement rather than of the model.
+Its strengths are four, and the first is the one its partner cannot claim: it is fitted
+on the inputs it will be shown. So the domain gap is closed by construction rather than
+left to hope. Its demonstrations cost nothing, because the teacher is a program, which
+removes the usual reason not to fine-tune a policy. Its training fits in the memory of a
+laptop and its run-time cost is its partner's exactly, since the correction folds into
+the weights. And it is one half of the cleanest comparison in this book, which is a
+strength of the arrangement rather than of the model.
 
 **It also needs no reward function, and that is a larger advantage than it
 sounds**, because a reward is a score and what this problem has are
@@ -62,13 +61,12 @@ including where it is normally the wrong tool.
 
 ### Transfer learning and fine-tuning
 
-Take a model fitted on a large general task, keep its weights, and continue
-training on the new data. It works because the early layers of a model learn
-things common to the whole domain — edges and textures for vision, smoothness
-and approach for motion — and only the later layers learn what is specific to
-the original task. Yosinski and colleagues
-([arXiv:1411.1792](https://arxiv.org/abs/1411.1792)) measured that directly for
-vision, showing how well a layer transfers falling away with depth.
+Take a model fitted on a large general task, keep its weights, and continue training on
+the new data. It works because the early layers of a model learn things common to the
+whole domain. Edges and textures for vision, smoothness and approach for motion — and
+only the later layers learn what is specific to the original task. Yosinski and
+colleagues ([arXiv:1411.1792](https://arxiv.org/abs/1411.1792)) measured that directly
+for vision, showing how well a layer transfers falling away with depth.
 
 It is normally the right choice whenever data for the real task is scarce,
 which is almost always. It is normally the wrong choice when data is free and
@@ -140,12 +138,12 @@ and Cohen, and the modern treatment protects the weights that mattered most to
 the old task (Kirkpatrick and colleagues,
 [arXiv:1612.00796](https://arxiv.org/abs/1612.00796)).
 
-It matters a great deal when a model has to stay good at several things, which
-is why continual learning is a field at all. It matters little here, because
-the model is wanted for one examiner and nothing else, and that is the honest
-reason the usual precautions are not taken: not that the effect is absent, but
-that its cost in this project is close to zero. Low-rank adaptation happens to
-soften it for free, since the borrowed weights are never overwritten.
+It matters a great deal when a model has to stay good at several things, which is why
+continual learning is a field at all. It matters little here, because the model is
+wanted for one examiner and nothing else. That is the honest reason the usual
+precautions are not taken: not that the effect is absent, but that its cost in this
+project is close to zero. Low-rank adaptation happens to soften it for free, since the
+borrowed weights are never overwritten.
 
 ### Overfitting and the held-out split
 
@@ -162,12 +160,11 @@ collected, and more of them cost only simulator time. For more, see
 
 ### Action chunking
 
-Predict a short run of consecutive actions in one pass rather than one action
-at a time. It is the mechanism behind ACT and it is what SmolVLA emits. One
-action at a time makes a policy dither, and dither during a push is a knock; a
-chunk commits to a smooth short motion, which is what a push is, and it also
-cuts the number of decisions per table, which matters because compounding error
-compounds per decision.
+Predict a short run of consecutive actions in one pass rather than one action at a time.
+It is the mechanism behind ACT and it is what SmolVLA emits. One action at a time makes
+a policy dither, and dither during a push is a knock; a chunk commits to a smooth short
+motion. This is what a push is, and it also cuts the number of decisions per table. This
+matters because compounding error compounds per decision.
 
 It is right for smooth contact-rich motions, which is what this problem has. It
 is wrong where a fast reaction inside the chunk is needed, because the chunk is
@@ -184,15 +181,14 @@ ladder, ordered by how much of each one was fitted in this cell, and this one
 stands at the top of it, because all of its fitting happens on a borrowed
 model.
 
-Against [solution 5](../08_a-foundation-model-as-it-downloads/01_what-it-is.md)
-there is nothing to compare except the training, and that is the whole point.
-Same library, same model, same downloaded weights, same tables, same readings,
-same rendered view, same instruction, same output, same shared checks, same
-marking, same cost per forward pass, and the same agreed convention for reading
-a waypoint. Whatever separates the two scores is what fine-tuning bought, with
-the two qualifications this document has already made: the correction is
-low-rank, so the answer is a lower bound, and the agreed convention has to be
-chosen fairly or the gap measures that too. **If this document is read for one
+Against [solution 5](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) there is
+nothing to compare except the training, and that is the whole point. Same library, same
+model, same downloaded weights, same tables, same readings, same rendered view, same
+instruction, same output, same shared checks, same marking, same cost per forward pass.
+And the same agreed convention for reading a waypoint. Whatever separates the two scores
+is what fine-tuning bought, with the two qualifications this document has already made:
+the correction is low-rank. So the answer is a lower bound, and the agreed convention
+has to be chosen fairly or the gap measures that too. **If this document is read for one
 reason, it should be that one.**
 
 **And the measurement, now that it exists, answers it in a way this document
@@ -205,18 +201,17 @@ a run go over.
 
 ![Where the pushes went before and after the training: the borrowed model's pushes nearly all touch nothing, because its chunks stay 217 mm above the table, while the fine-tuned model's come down to the 75 mm the jaw pushes at and are then mostly stopped by a glass on the way down.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/smolvla-finetuned-where-the-pushes-went.png)
 
-Solution 5 stays out of the *wrong* column by never reaching a glass at all: it
-hovers, refuses nearly everything, and is marked correct but incomplete. So the
-gap between the two is not a measurement of training buying nothing. It is a
-measurement of training buying enough competence to act and not enough to act
-safely, on a scorecard where a toppled glass cannot be undone. **A policy that
-does nothing scores better than a policy that does the wrong thing**, and any
-reading of this pair that skips that sentence has misread it. The honest
-conclusion about the method is therefore still open, and what it is waiting on
-is more training — the compute spent here is about one part in three hundred of
-what the recipe asks — and DAgger, because "the jaw came down on a glass" is
-precisely a state the teacher never visits and so precisely what these
-demonstrations cannot teach.
+Solution 5 stays out of the *wrong* column by never reaching a glass at all: it hovers,
+refuses nearly everything, and is marked correct but incomplete. So the gap between the
+two is not a measurement of training buying nothing. It is a measurement of training
+buying enough competence to act and not enough to act safely, on a scorecard where a
+toppled glass cannot be undone. **A policy that does nothing scores better than a policy
+that does the wrong thing**, and any reading of this pair that skips that sentence has
+misread it. The honest conclusion about the method is therefore still open, and what it
+is waiting on is more training. The compute spent here is about one part in three
+hundred of what the recipe asks. DAgger, because "the jaw came down on a glass" is
+precisely a state the teacher never visits and so precisely what these demonstrations
+cannot teach.
 
 Against [solution 3](../06_imitation-from-demonstrations/01_what-it-is.md), the
 comparison is borrowing against building, and it is the second clean pair this
@@ -247,13 +242,12 @@ book to answer the question of whether any learning beats a fixed nudge at all.
 If this solution does not beat it by a margin larger than its own spread, the
 450 million parameters and the hours of training have bought nothing.
 
-Against [solution 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md),
-the comparison is planning against reacting. Solution 4 learns how the table
-changes and searches over candidate pushes at run time, so it can be told about
-a new constraint by changing what it searches for, and it pays for that in
-computation on every push. This solution holds its whole answer in its weights
-and emits a chunk in one pass, so it is a different kind of expense per push,
-and can only be changed by training it again.
+Against [solution 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md), the
+comparison is planning against reacting. Solution 4 learns how the table changes and
+searches over candidate pushes at run time. So it can be told about a new constraint by
+changing what it searches for, and it pays for that in computation on every push. This
+solution holds its whole answer in its weights and emits a chunk in one pass. So it is a
+different kind of expense per push, and can only be changed by training it again.
 
 Read as a ladder, the six measure what each increment of fitting buys. This
 solution is the way where all of the fitting happens on borrowed weights, and

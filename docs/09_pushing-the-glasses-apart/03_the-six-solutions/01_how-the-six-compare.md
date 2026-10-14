@@ -34,18 +34,16 @@ that derives it.
 
 ## 2. What all six share
 
-All six are given the same tables, the same measurements of them, the same push
-budget and the same scorecard, which is what lets a gap between two scores be
-read as a statement about the method. [The examiner](../01_the-problem/03_the-examiner.md)
-describes that arrangement in full and is the page to read before any solution
-document.
+All six are given the same tables, the same measurements of them, the same push budget
+and the same scorecard. This is what lets a gap between two scores be read as a
+statement about the method. [The examiner](../01_the-problem/03_the-examiner.md)
+describes that arrangement in full and is the page to read before any solution document.
 
-The one part of it worth repeating here is the part the tables below rest on.
-**The score is the table afterwards, not the push that changed it.** Three
-numbers and fifty waypoints are not the same kind of thing, so there is no
-shared language for an action here — but the table is the same table either
-way. A solution may therefore choose any action space it likes, and the
-outcome is measured identically for all six.
+The one part of it worth repeating here is the part the tables below rest on. **The
+score is the table afterwards, not the push that changed it.** Three numbers and fifty
+waypoints are not the same kind of thing. So there is no shared language for an action
+here — but the table is the same table either way. A solution may therefore choose any
+action space it likes, and the outcome is measured identically for all six.
 
 What every solution is handed, and what it may answer with, is small enough to
 show in full. Each one is handed a list like the first object below. It has one
@@ -80,18 +78,18 @@ is asked for, and they agree in what comes back.
 {"blocked": false, "touched": 0.0146, "jammed": false, "peak": 1.73, "pushed": 0.0660}
 ```
 
-Two parts of the job belong to no solution and are described elsewhere: where
-the glasses should end up, in [the target
-layout](../01_the-problem/04_the-target-layout.md), and the limit that decides
-whether a glass slides or tips, in [pushing without
+Two parts of the job belong to no solution and are described elsewhere: where the
+glasses should end up, in [the target
+layout](../01_the-problem/04_the-target-layout.md). And the limit that decides whether a
+glass slides or tips, in [pushing without
 toppling](../01_the-problem/05_pushing-without-toppling.md).
 
 ## 3. What each one is built from
 
-This is the shopping list. Read the right column as what you would have to
-install, collect and train in order to run that solution, and the order of the
-rows as how much of the pushing is fitted, from nothing fitted at the top to
-everything fitted at the bottom.
+This is the shopping list. Read the right column as what you would have to install,
+collect and train in order to run that solution. And the order of the rows as how much
+of the pushing is fitted, from nothing fitted at the top to everything fitted at the
+bottom.
 
 | Solution | What it is built from |
 |---|---|
@@ -208,15 +206,14 @@ written down, because no number in this project is an estimate.
 
 ### Where the refusal lives
 
-The refusal that matters is the one for a glass that tips before it slides,
-because a toppled glass is the failure this cell cannot take back. In five of
-the six, that refusal is arithmetic applied **before** any model is consulted,
-so no model can cause it: a better model makes bad pushes rarer, and only the
-arrangement puts a ceiling on how bad they get. Solution 4 is the exception. It
-holds no friction value to put in the limit and refuses on its own model's
-evidence instead, so there the ceiling comes from the model after all, and the
-one glass it toppled is what that is worth. [Pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md) sets out both
+The refusal that matters is the one for a glass that tips before it slides, because a
+toppled glass is the failure this cell cannot take back. In five of the six, that
+refusal is arithmetic applied **before** any model is consulted. So no model can cause
+it: a better model makes bad pushes rarer, and only the arrangement puts a ceiling on
+how bad they get. Solution 4 is the exception. It holds no friction value to put in the
+limit and refuses on its own model's evidence instead. So there the ceiling comes from
+the model after all, and the one glass it toppled is what that is worth. [Pushing
+without toppling](../01_the-problem/05_pushing-without-toppling.md) sets out both
 arrangements.
 
 ### Where the demonstrations come from

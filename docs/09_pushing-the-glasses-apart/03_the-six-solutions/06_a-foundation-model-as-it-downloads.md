@@ -23,12 +23,12 @@ about three quarters of an hour of reading.
 
 ## 1. What it is
 
-A **vision-language-action model** is a single network that takes a picture and
-an instruction written in ordinary words, and returns robot actions. The three
-parts of the name are its three inputs and outputs: it sees, it is told, and it
-acts. The idea is that a model trained on a very large and varied collection of
-robot recordings learns manipulation in general, so that it can be pointed at a
-new task by being told about it rather than by being trained on it.
+A **vision-language-action model** is a single network that takes a picture and an
+instruction written in ordinary words, and returns robot actions. The three parts of the
+name are its three inputs and outputs: it sees, it is told, and it acts. The idea is
+that a model trained on a very large and varied collection of robot recordings learns
+manipulation in general. So that it can be pointed at a new task by being told about it
+rather than by being trained on it.
 
 The model here is **SmolVLA**, taken from
 [LeRobot](https://github.com/huggingface/lerobot) exactly as it downloads. It is
@@ -164,23 +164,22 @@ at all.
 Its weaknesses divide into what the borrowing costs and what it cannot be asked
 to do.
 
-What the borrowing costs is accuracy and every lever for improving it. The
-domain gap is large, the force reading cannot reach the model, the actions
-arrive in somebody else's units, and the language half does no work. What it
-cannot be asked to do is anything that needs fitting: it cannot learn from a
-push that went wrong, cannot be corrected on the kind of glass it handles worst,
-and has no threshold to tune. **The one repair for all of that is to continue
-its training on this cell's own pushes**, which is a different solution with a
-different name, and that is exactly why the two are written as a pair.
+What the borrowing costs is accuracy and every lever for improving it. The domain gap is
+large, the force reading cannot reach the model, the actions arrive in somebody else's
+units, and the language half does no work. What it cannot be asked to do is anything
+that needs fitting: it cannot learn from a push that went wrong, cannot be corrected on
+the kind of glass it handles worst, and has no threshold to tune. **The one repair for
+all of that is to continue its training on this cell's own pushes**. This is a different
+solution with a different name, and that is exactly why the two are written as a pair.
 
 ## 6. When to choose it
 
-Choose this first and expect to replace it. Running a public model unchanged is
-the cheapest honest measurement of whether the problem needs fitting at all, and
-taking that measurement before recording demonstrations is simply good order of
-work. On a task close to what such a model was trained on — a real arm, a real
-camera, an ordinary room, an everyday object — it is sometimes good enough on
-its own, and then nothing more expensive is needed.
+Choose this first and expect to replace it. Running a public model unchanged is the
+cheapest honest measurement of whether the problem needs fitting at all, and taking that
+measurement before recording demonstrations is simply good order of work. On a task
+close to what such a model was trained on — a real arm, a real camera, an ordinary room,
+an everyday object. It is sometimes good enough on its own, and then nothing more
+expensive is needed.
 
 Do not choose it when the scene is unlike anything in the model's training, as
 here. Do not choose it when the signal that matters is one the model has no

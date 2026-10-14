@@ -37,13 +37,12 @@ that learn something were trained again against it first.
 
 ## 2. The results
 
-Read the table a column at a time rather than a row at a time, because no
-single column decides which solution is better. Each row is one solution and
-each column is one measurement, and the figure in bold is the best any of the
-six achieved in that column. The two columns that matter most are **tables
-wrong** and **toppled**: a table the run left in a state the cell should never
-reach, and a glass knocked over, which is the one failure this cell cannot take
-back.
+Read the table a column at a time rather than a row at a time, because no single column
+decides which solution is better. Each row is one solution and each column is one
+measurement, and the figure in bold is the best any of the six achieved in that column.
+The two columns that matter most are **tables wrong** and **toppled**: a table the run
+left in a state the cell should never reach, and a glass knocked over. This is the one
+failure this cell cannot take back.
 
 | | tables done | tables wrong | glasses racked | toppled | pushes | travel | thinking per push |
 |---|---|---|---|---|---|---|---|
@@ -54,25 +53,25 @@ back.
 | [5 SmolVLA as it downloads](../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads) | 1 (0–1) | 9 (6–10) | 48 (46–51) | 12 (10–14) | 620 (589–641) | 0.42× | 286 ms |
 | [6 SmolVLA fine-tuned](../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned) | 1 (0–2) | **36** (31–36) | 56 (50–65) | **40** (33–44) | 369 (351–374) | 1.68× | 404 ms |
 
-A table is **done** when every glass on it was picked up, and **wrong** when
-the run ended in a state the cell should never reach, which in practice means a
-glass lying on its side.
+A table is **done** when every glass on it was picked up, and **wrong** when the run
+ended in a state the cell should never reach. This in practice means a glass lying on
+its side.
 
-One word in that sentence promises more than it should, and it is worth knowing
-before reading the racked column. The examiner takes a glass away as soon as the
-glass has room around it. It never asks whether the cell could really have
-picked that glass up. Asked about the same 251 glasses, the cell's own grip rule
-finds somewhere to hold only 97 of them, and the hand has a clear way in to only
-14 of every 19 the examiner says have room. So *racked* means the job this book
-sets was done, not that the glass reached the rack. [What the examiner
-measures](01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) gives
-both figures and says where they come from. No comparison in the table above
-moves because of it, because all six solutions are marked the same way. Solutions 3, 5 and 6 are run three times each, because
-they sample while they answer and a single run of one of them is a single draw.
-For those three the figure shown is the middle run and the brackets beside it
-are the least and the most, so a reader can see which differences between rows
-are larger than the wobble within one. Solutions 1, 2 and 4 are the same every
-time and carry no brackets.
+One word in that sentence promises more than it should, and it is worth knowing before
+reading the racked column. The examiner takes a glass away as soon as the glass has room
+around it. It never asks whether the cell could really have picked that glass up. Asked
+about the same 251 glasses, the cell's own grip rule finds somewhere to hold only 97 of
+them. And the hand has a clear way in to only 14 of every 19 the examiner says have
+room. So *racked* means the job this book sets was done, not that the glass reached the
+rack. [What the examiner
+measures](01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) gives both
+figures and says where they come from. No comparison in the table above moves because of
+it, because all six solutions are marked the same way. Solutions 3, 5 and 6 are run
+three times each, because they sample while they answer and a single run of one of them
+is a single draw. For those three the figure shown is the middle run and the brackets
+beside it are the least and the most. So a reader can see which differences between rows
+are larger than the wobble within one. Solutions 1, 2 and 4 are the same every time and
+carry no brackets.
 
 **The job is much harder with a real hand than it was with the invented blade,
 and that is the first thing to read off the table.** 203 of the 251 glasses
@@ -90,11 +89,10 @@ this test. What is not in doubt is the toppling: solution 6 knocks over between
 33 and 44 glasses on every run, and solutions 1 and 2 knock over one in fifty
 tables.
 
-The thinking column is each solution's own time, with the simulator's time
-taken off, measured on an idle machine. That condition matters, because the
-same runs timed while other work was on the machine reported up to three and a
-half times these figures, so a compute column measured under load compares the
-load rather than the methods.
+The thinking column is each solution's own time, with the simulator's time taken off,
+measured on an idle machine. That condition matters, because the same runs timed while
+other work was on the machine reported up to three and a half times these figures. So a
+compute column measured under load compares the load rather than the methods.
 
 ## 3. The six films, all of the same table
 
@@ -136,27 +134,26 @@ scorecard above but counting one table instead of fifty.
 | 5 SmolVLA as it downloads | [74 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/05-smolvla-as-it-downloads.mp4) | incomplete | 1 of 6 | **0** | 16 |
 | 6 SmolVLA fine-tuned | [12 s](https://docs.dodao.io/videos/pushing-the-glasses-apart/06-smolvla-fine-tuned.mp4) | wrong | 1 of 6 | 1 | 4 |
 
-Each film also sits at the top of its own solution's first page, where what
-happens in it is described push by push. Taken together the six rows are this
-book's argument in miniature. **Solutions 1 and 2 do exactly the same thing**,
-making the same two pushes and racking the same glass, which is a result about
-the ranked geometry rather than a coincidence: when a table bottoms out on the
-hand's width and height, ordering the candidates differently changes nothing.
-**Solution 4 clears the whole table in three pushes**, which is what being able
-to predict where a glass will stop is worth. **Solutions 3 and 5 spend the
-table's budget and rack only the glass that already had room**, because the jaw
-is stopped on the way down in one case and never reaches the glasses at all in
-the other. **Solution 6 is the only one that ends the table wrong**, with a
-glass on its side, which is the price of acting competently enough to reach a
+Each film also sits at the top of its own solution's first page, where what happens in
+it is described push by push. Taken together the six rows are this book's argument in
+miniature. **Solutions 1 and 2 do exactly the same thing**, making the same two pushes
+and racking the same glass. This is a result about the ranked geometry rather than a
+coincidence: when a table bottoms out on the hand's width and height, ordering the
+candidates differently changes nothing. **Solution 4 clears the whole table in three
+pushes**, which is what being able to predict where a glass will stop is worth.
+**Solutions 3 and 5 spend the table's budget and rack only the glass that already had
+room**, because the jaw is stopped on the way down in one case and never reaches the
+glasses at all in the other. **Solution 6 is the only one that ends the table wrong**,
+with a glass on its side. This is the price of acting competently enough to reach a
 glass and not competently enough to miss it.
 
-One warning belongs with these films, and it applies to solutions 3, 5 and 6.
-Those three draw their actions rather than computing them, so a film of one of
-their tables is one draw and not an average, and it does not have to match the
-row the scorecard holds for that table.
-[The examiner](01_the-problem/03_the-examiner.md#6-two-things-this-scorecard-needs-that-the-camera-works-did-not)
-explains why, and each solution's own page says how its film compares with its
-scored runs on the same table.
+One warning belongs with these films, and it applies to solutions 3, 5 and 6. Those
+three draw their actions rather than computing them, so a film of one of their tables is
+one draw and not an average. And it does not have to match the row the scorecard holds
+for that table. [The
+examiner](01_the-problem/03_the-examiner.md#6-two-things-this-scorecard-needs-that-the-camera-works-did-not)
+explains why, and each solution's own page says how its film compares with its scored
+runs on the same table.
 
 A second warning applies to the racking at the end of every film. The examiner
 takes a glass away once it has room, without asking whether the cell could have
@@ -189,12 +186,12 @@ nudge is at 0.87 for a third reason, which is that it refuses 143 of the 251
 glasses and so never spends the travel they would have needed. **None of those
 three is economical. All three are simply not doing the work.**
 
-Among the solutions that do move most of the glasses the column does separate
-them. The world model spends 1.98 times the floor to rack 146 glasses, which is
-the dearest work on this page and also the most of it. Solution 6 spends 1.68
-to rack 56, which is the clearest bad bargain here: the fine-tuning taught it to
-move decisively without teaching it where to put the jaw down, so most of that
-travel is glasses being shoved somewhere unhelpful or knocked over.
+Among the solutions that do move most of the glasses the column does separate them. The
+world model spends 1.98 times the floor to rack 146 glasses, which is the dearest work
+on this page and also the most of it. Solution 6 spends 1.68 to rack 56, which is the
+clearest bad bargain here: the fine-tuning taught it to move decisively without teaching
+it where to put the jaw down. So most of that travel is glasses being shoved somewhere
+unhelpful or knocked over.
 
 ## 5. What the comparison says
 
@@ -277,11 +274,11 @@ The same line works for each of the other five, run from
 their training step first, and each solution folder's own README says which
 step that is and what it costs.
 
-Two things are worth knowing before running one. A run can be told to start at
-a chosen table rather than the first, which is how the films above were made,
-and every solution refuses to overwrite its committed scorecard unless it is
-running the official fifty tables from the official first seed. That guard
-matters more than it sounds: without it a short run of some other fifty tables
-would quietly replace the result this page quotes, and nothing would say so.
+Two things are worth knowing before running one. A run can be told to start at a chosen
+table rather than the first, which is how the films above were made. And every solution
+refuses to overwrite its committed scorecard unless it is running the official fifty
+tables from the official first seed. That guard matters more than it sounds: without it
+a short run of some other fifty tables would quietly replace the result this page
+quotes, and nothing would say so.
 
 ← [The same foundation model, fine-tuned here — how it compares](09_the-same-model-fine-tuned-here/06_how-it-compares.md)

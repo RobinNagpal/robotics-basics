@@ -107,12 +107,12 @@ def demonstration(path: tuple[Waypoint, ...]) -> np.ndarray | None:
     return action
 ```
 
-Step 2 is the line with a consequence in it. A chunk holds fifty
-waypoints, which is the borrowed model's own number, and a recorded push is two
-or three times that many once the examiner has sampled it. Squeezing the longer
-path into the shorter one does not change where the jaw goes; it changes how
-fast it gets there, because the examiner consumes waypoints a fixed fifty
-milliseconds apart whatever the gaps between them stand for.
+Step 2 is the line with a consequence in it. A chunk holds fifty waypoints, which is the
+borrowed model's own number, and a recorded push is two or three times that many once
+the examiner has sampled it. Squeezing the longer path into the shorter one does not
+change where the jaw goes. It changes how fast it gets there, because the examiner
+consumes waypoints a fixed fifty milliseconds apart whatever the gaps between them stand
+for.
 
 ![One recorded push of 75 mm drawn twice: as the teacher made it, where no waypoint is more than 1.0 mm from the last because the teacher never pushes faster than 20 mm/s, and as the fifty waypoints the model is trained to emit, 1.5 mm apart, which the examiner eats at the same rate and therefore carries out at 31 mm/s.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/finetuned-the-same-push-in-fewer-waypoints.png)
 
@@ -139,15 +139,14 @@ parameterised push into a jaw trajectory — and it never produces a
 parameterised push in any case. It emits waypoints, and the examiner carries
 them out as they are.
 
-That last point is the reason this solution is allowed to be itself. The
-examiner could have insisted that every solution hand back the same handful of
-push parameters, which sounds fairer and is not, because squeezing a chunked
-policy down to three numbers destroys the action chunking that makes it work.
-What the examiner does instead is score the outcome and never the action: which
-glasses have room, which are standing, where each one ended up, and how many
-pushes it took. So a three-number push and a chunk of fifty waypoints are
-compared on the only thing this problem actually cares about, which is the
-table afterwards.
+That last point is the reason this solution is allowed to be itself. The examiner could
+have insisted that every solution hand back the same handful of push parameters. This
+sounds fairer and is not, because squeezing a chunked policy down to three numbers
+destroys the action chunking that makes it work. What the examiner does instead is score
+the outcome and never the action: which glasses have room, which are standing, where
+each one ended up, and how many pushes it took. So a three-number push and a chunk of
+fifty waypoints are compared on the only thing this problem actually cares about, which
+is the table afterwards.
 
 It follows that **a difference in the score belongs to the chunks**. This
 solution contributes the chunks and so does solution 5, which is exactly why
@@ -155,15 +154,14 @@ the gap between the two is readable.
 
 ## 3. How the concepts fit together
 
-A model fitted on a very large pool of other people's teleoperation is
-downloaded, and its borrowed numbers are kept rather than replaced. Solution 2
-is run over the training half of the tables, and every push it makes is
-recorded together with the view from the top, the one instruction and the joint
-readings that were true at that moment. Those recordings are the examples, the
-ones in which something went wrong are discarded, and the training moves a
-small low-rank correction beside the borrowed numbers until the chunks the
-model emits look like the teacher's pushes. The correction is then folded into
-the weights, so what runs afterwards is a model of the original size and the
+A model fitted on a very large pool of other people's teleoperation is downloaded, and
+its borrowed numbers are kept rather than replaced. Solution 2 is run over the training
+half of the tables. And every push it makes is recorded together with the view from the
+top, the one instruction and the joint readings that were true at that moment. Those
+recordings are the examples, the ones in which something went wrong are discarded. And
+the training moves a small low-rank correction beside the borrowed numbers until the
+chunks the model emits look like the teacher's pushes. The correction is then folded
+into the weights, so what runs afterwards is a model of the original size and the
 original speed.
 
 What that buys is the domain gap closed, because the pictures the model was

@@ -74,14 +74,14 @@ pushes at, which is what its teacher's pushes did and what solution 5 never
 does. Then the chunk's first waypoint decides everything, and this is where the
 measurement is harsher than the expectation.
 
-The examiner carries out a chunk by placing the jaw clear above where the chunk
-starts and lowering it to the first waypoint. If that first waypoint stands
-behind the crowded glass, on the line leading away from its neighbour, the jaw
-reaches push height in open table and the rest of the chunk is a push. If it
-stands over a glass, the jaw meets the glass coming down, `follow()` reports
-the chunk **blocked on the way down**, and the jaw goes straight back up
-without pushing anything — or the glass goes over. The model learned the height
-and did not learn the place: about three of its pushes in five end that way.
+The examiner carries out a chunk by placing the jaw clear above where the chunk starts
+and lowering it to the first waypoint. If that first waypoint stands behind the crowded
+glass, on the line leading away from its neighbour, the jaw reaches push height in open
+table and the rest of the chunk is a push. If it stands over a glass, the jaw meets the
+glass coming down, `follow()` reports the chunk **blocked on the way down**. And the jaw
+goes straight back up without pushing anything — or the glass goes over. The model
+learned the height and did not learn the place: about three of its pushes in five end
+that way.
 
 ![One glass seen from the side with the jaw coming down to its first waypoint from two places: behind the glass, where the jaw reaches 75 mm in open table and the rest of the chunk pushes, and over the glass, where the jaw meets the rim on the way down and the chunk is abandoned without a push.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/finetuned-where-the-jaw-comes-down.png)
 
@@ -123,12 +123,11 @@ than a limit. In practice none of this bound: the counts in each folder's
 `asking.json` say it fired once in this solution's 1,248 answers and not at all
 in solution 5's 1,855.
 
-The honest summary of the example is that fine-tuning changes the first half of
-it and not the second. The chunk becomes a motion at the height a push happens
-at, in units this cell can carry out, informed by what pushes on this table
-actually did — and still aimed badly enough that it more often comes down on a
-glass than behind one. The refusal, the topple limit, the destinations and the
-loop are exactly where they were, because they were never the model's to begin
-with.
+The honest summary of the example is that fine-tuning changes the first half of it and
+not the second. The chunk becomes a motion at the height a push happens at, in units
+this cell can carry out, informed by what pushes on this table actually did. Still aimed
+badly enough that it more often comes down on a glass than behind one. The refusal, the
+topple limit, the destinations and the loop are exactly where they were, because they
+were never the model's to begin with.
 
 ← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

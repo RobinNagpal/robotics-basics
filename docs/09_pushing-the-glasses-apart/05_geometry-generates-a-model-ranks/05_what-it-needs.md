@@ -11,10 +11,10 @@ BSD 3-clause, so there is no licence condition to carry anywhere and nothing to
 revisit if this work were taken further.
 
 It needs the **enumerator**, which lives in
-`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py` and is loaded
-from there rather than copied, so the heading sweep, the stepped travel, the
-four tests and the tipping rule have one definition in this repository. It is
-also the part that decides the ceiling.
+`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py` and is loaded from there
+rather than copied. So the heading sweep, the stepped travel, the four tests and the
+tipping rule have one definition in this repository. It is also the part that decides
+the ceiling.
 
 It needs a **training set**, which was 4,844 pairs of a candidate and what
 happened to it, generated on 190 of the examiner's training tables and executed
@@ -30,17 +30,17 @@ those rows took 2.2 seconds on a laptop processor, with most of the five minutes
 nothing to rent for a weekend and nothing to rent by the month, so the figure to
 quote against the other solutions' rental costs is zero.
 
-At run time it needs **one pass of the trees per candidate**, which is
-arithmetic: each tree is three levels deep, so it asks three threshold
-questions, and there are two hundred of them, which is six hundred comparisons
-in all and no matrix multiplication anywhere. The whole of one pass of the loop,
-enumeration included, took 81 milliseconds against the printed rule's 82, so the
-trees are not what the thinking time is spent on, and the compute column on the
-scorecard is close to the fixed nudge's rather than to a foundation model's.
+At run time it needs **one pass of the trees per candidate**, which is arithmetic: each
+tree is three levels deep, so it asks three threshold questions, and there are two
+hundred of them. This is six hundred comparisons in all and no matrix multiplication
+anywhere. The whole of one pass of the loop, enumeration included, took 81 milliseconds
+against the printed rule's 82, so the trees are not what the thinking time is spent on.
+And the compute column on the scorecard is close to the fixed nudge's rather than to a
+foundation model's.
 
-And once fitted it needs **a model file kept in step with the cell**. Change
-the heading sweep, the step length, the glass zone or the way the examiner draws
-its crowded tables, and the fitted model quietly describes a cell that no
-longer exists, in a way no test of the code would notice.
+And once fitted it needs **a model file kept in step with the cell**. Change the heading
+sweep, the step length, the glass zone or the way the examiner draws its crowded tables.
+And the fitted model quietly describes a cell that no longer exists, in a way no test of
+the code would notice.
 
 ← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

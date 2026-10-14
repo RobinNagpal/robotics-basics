@@ -42,31 +42,29 @@ one and a half times real speed.
 
 [The job done once: a learned world model clears one table, 44 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4 "video")
 
-Three things in the film are worth watching for, because the rest of this
-document is about them. First, every glass is **dragged across the table and
-never lifted**, which is the restriction the next section explains. Second, the
-arm **pushes, looks again and pushes again** rather than working out the whole
-job in advance, because a push does not land where it was aimed. Third, a glass
-is carried away only once it has room around it, and the table counts as
-finished only when every glass has been taken, which is what [this page means
-by done](#10-what-done-means) further down.
+Three things in the film are worth watching for, because the rest of this document is
+about them. First, every glass is **dragged across the table and never lifted**, which
+is the restriction the next section explains. Second, the arm **pushes, looks again and
+pushes again** rather than working out the whole job in advance, because a push does not
+land where it was aimed. Third, a glass is carried away only once it has room around it,
+and the table counts as finished only when every glass has been taken. This is what
+[this page means by done](#10-what-done-means) further down.
 
-Two things in the film are not what a first viewing suggests, and both of them
-are about the hand. The first is that **the hand never opens while it is
-pushing.** The gripper is held shut for the whole of this problem and the closed
-hand is used as the pusher, so nothing is gripped and nothing is lifted during a
-push. The second is that **the pick-up at the end of a take is drawn rather than
-simulated.** The examiner takes a glass away by moving it off the table in one
-instant, so instead of showing a glass disappear the film draws a stand-in for a
-pick-up: the wrist rolls back level, the fingers open to the width the glass was
-measured to be, the hand reaches in so that the pads pass either side of the
-glass, the fingers close, and the glass is carried off. A line on the screen
-says so while it happens, in the words "problem 1 does the real pick". Problem 1
-is what the project that wrote this code calls the job of picking one glass up,
-which is a job this library has not yet made a book of, and its rule for where
-to hold a glass lives in the code the camera work shares. The drawing is not
-evidence that this cell can lift a glass, which is [why the arm drags instead of
-lifting](#3-why-dragging-and-not-lifting) in the first place.
+Two things in the film are not what a first viewing suggests, and both of them are about
+the hand. The first is that **the hand never opens while it is pushing.** The gripper is
+held shut for the whole of this problem and the closed hand is used as the pusher. So
+nothing is gripped and nothing is lifted during a push. The second is that **the pick-up
+at the end of a take is drawn rather than simulated.** The examiner takes a glass away
+by moving it off the table in one instant, so instead of showing a glass disappear the
+film draws a stand-in for a pick-up: the wrist rolls back level, the fingers open to the
+width the glass was measured to be, the hand reaches in so that the pads pass either
+side of the glass, the fingers close, and the glass is carried off. A line on the screen
+says so while it happens, in the words "problem 1 does the real pick". Problem 1 is what
+the project that wrote this code calls the job of picking one glass up. This is a job
+this library has not yet made a book of, and its rule for where to hold a glass lives in
+the code the camera work shares. The drawing is not evidence that this cell can lift a
+glass, which is [why the arm drags instead of lifting](#3-why-dragging-and-not-lifting)
+in the first place.
 
 The side the hand comes in from is chosen before it is drawn, and the reason is
 worth knowing. A drawn hand cannot collide with anything, so nothing stops it
@@ -84,17 +82,15 @@ hold it, and asked about all 251 glasses that rule finds a hold for only 97.
 [What the examiner measures](03_the-examiner.md#5-what-the-examiner-measures)
 gives the breakdown and says why no score in this book turns on it.
 
-The hand is also drawn twice over, and both drawings are worth looking at. The
-solid pieces are the hand's real mouldings, which are two fingertips, two
-fingers behind them and the gripper's body behind those. Around those pieces,
-as a faint shell, is the larger shape the simulator actually collides with.
-That shell fills in the 82 mm gap between the two fingers, because a glass
-standing in that gap would be swept along by the hand just the same, so the
-shell is the shape every solution has to plan its pushes around even though no
-metal is there. That same shape is measured in [how low the push has to
-be](#7-how-low-the-push-has-to-be-and-why-it-is-a-property-of-the-glass) below,
-where its width and its height turn out to decide whether a glass can be pushed
-at all.
+The hand is also drawn twice over, and both drawings are worth looking at. The solid
+pieces are the hand's real mouldings, which are two fingertips, two fingers behind them
+and the gripper's body behind those. Around those pieces, as a faint shell, is the
+larger shape the simulator actually collides with. That shell fills in the 82 mm gap
+between the two fingers, because a glass standing in that gap would be swept along by
+the hand just the same. So the shell is the shape every solution has to plan its pushes
+around even though no metal is there. That same shape is measured in [how low the push
+has to be](#7-how-low-the-push-has-to-be-and-why-it-is-a-property-of-the-glass) below,
+where its width and its height turn out to decide whether a glass can be pushed at all.
 
 One thing about the choice of film is worth saying straight away, because it is
 also the book's main finding. Every one of the six solutions is filmed on this
@@ -154,10 +150,10 @@ done or the budget is spent. An answer may describe a push by a few numbers,
 which the examiner expands into a trajectory, or give the waypoints directly.
 And a glass that cannot be moved safely is refused, with the reason.
 
-This matters more here than in the simpler jobs this cell was built for,
-because six quite different methods are compared on this question, and a
-comparison only means something when the question was identical. [The
-examiner](03_the-examiner.md) hands exactly this to every one of them.
+This matters more here than in the simpler jobs this cell was built for, because six
+quite different methods are compared on this question. And a comparison only means
+something when the question was identical. [The examiner](03_the-examiner.md) hands
+exactly this to every one of them.
 
 What goes in includes each glass's width, and the next section explains why the
 gap that decides gripping is not the plain gap between two glasses.
@@ -217,12 +213,11 @@ whose base is `2a` across, standing on a table it rubs against with friction
 
     h  <  a / μ
 
-and tips above it. Both ends of that fraction matter. A wide foot at the
-slippery end of the plausible friction range leaves room to push well above
-anything the gripper could reach, so such a glass is easy. A narrow foot at the
-grippy end leaves less room than the gripper can reach without fouling the
-table — and a glass like that cannot be pushed safely at all, so the only
-correct answer for it is to refuse.
+and tips above it. Both ends of that fraction matter. A wide foot at the slippery end of
+the plausible friction range leaves room to push well above anything the gripper could
+reach, so such a glass is easy. A narrow foot at the grippy end leaves less room than
+the gripper can reach without fouling the table. A glass like that cannot be pushed
+safely at all, so the only correct answer for it is to refuse.
 
 **The height to compare against is the top edge of the jaw, not the bottom.**
 The middle of the jaw rides at 75 mm, and the jaw is 63 mm tall, so its top edge
@@ -230,12 +225,11 @@ is at 107 mm. A glass that is wider higher up meets that top edge before
 anything else touches it, and the tapered kind is wider higher up by
 definition. So `h` in the rule above is 107 mm for these glasses, not 75.
 
-The difference is large, and it is large for **every** kind of glass rather
-than only the flaring one. Read the table below a row at a time: each row is
-one kind of glass, and the two columns are the share of that kind that could be
-pushed at all if the push landed at the jaw's middle, and the share that can
-really be pushed because it lands at the top edge. Both are measured at the
-friction this cell's examiner actually uses.
+The difference is large, and it is large for **every** kind of glass rather than only
+the flaring one. Read the table below a row at a time: each row is one kind of glass.
+And the two columns are the share of that kind that could be pushed at all if the push
+landed at the jaw's middle. And the share that can really be pushed because it lands at
+the top edge. Both are measured at the friction this cell's examiner actually uses.
 
 | kind | checking at the jaw's middle | checking at its top edge |
 |---|---|---|
@@ -248,26 +242,25 @@ Every one of those mistakes is in the direction that topples a glass, so
 checking at the middle is not a harmless simplification. It would declare most
 of these glasses safe to shove when they are not.
 
-It is worth knowing **why** the gap between the two columns is so wide, because
-the answer is the gripper rather than the rule. A 2F-85 held the way the cell
-grips, with its fingers side by side, is 139 mm across, and the glasses on
-these tables stand 150 mm apart at the closest, so held that way it has almost
-nowhere to go. The cell therefore turns it a quarter turn onto its side, which
-makes it 27 mm across and the task possible again. **Turning it costs height**,
-and that is the trade. On its side the hand reaches 69 mm below its own middle,
-so it cannot ride lower than 75 mm without its fingers striking the table, and
-its leading stretch is 63 mm tall, so the top edge stands 32 mm above the
-middle. Both of those raise `h`, and `h` is the quantity this rule is most
+It is worth knowing **why** the gap between the two columns is so wide, because the
+answer is the gripper rather than the rule. A 2F-85 held the way the cell grips, with
+its fingers side by side, is 139 mm across. And the glasses on these tables stand 150 mm
+apart at the closest, so held that way it has almost nowhere to go. The cell therefore
+turns it a quarter turn onto its side, which makes it 27 mm across and the task possible
+again. **Turning it costs height**, and that is the trade. On its side the hand reaches
+69 mm below its own middle. So it cannot ride lower than 75 mm without its fingers
+striking the table, and its leading stretch is 63 mm tall, so the top edge stands 32 mm
+above the middle. Both of those raise `h`, and `h` is the quantity this rule is most
 sensitive to.
 
 Rolling the hand has a second cost as well, and [the film of the
-job](#2-a-film-of-the-job) is where it can be seen. A glass can only be gripped
-with one finger on each side of it, so the fingers have to open sideways across
-the glass, which they cannot do while the hand is lying on its side. The roll
-therefore has to be undone before the hand can take anything at all. Pushing and
-gripping are two different poses of the same hand, and the wrist has to travel
-between them once for every glass that is taken, which is why the drawn pick-up
-at the end of each film begins by rolling the wrist back level.
+job](#2-a-film-of-the-job) is where it can be seen. A glass can only be gripped with one
+finger on each side of it, so the fingers have to open sideways across the glass. This
+they cannot do while the hand is lying on its side. The roll therefore has to be undone
+before the hand can take anything at all. Pushing and gripping are two different poses
+of the same hand, and the wrist has to travel between them once for every glass that is
+taken. This is why the drawn pick-up at the end of each film begins by rolling the wrist
+back level.
 
 Three things follow, and they are the shape of the problem:
 
@@ -320,9 +313,9 @@ to end up far enough apart.
 
 ## 10. What "done" means
 
-A run is **done** when every glass on the table has at least 76 mm of clear
-room around it, at least one usable viewpoint for a side-on photograph, and
-nothing has been knocked over.
+A run is **done** when every glass on the table has at least 76 mm of clear room around
+it, at least one usable viewpoint for a side-on photograph. And nothing has been knocked
+over.
 
 A run is **correct but incomplete** when a glass could not be moved safely and
 is reported with the reason — most often that it tips before it slides, or that

@@ -90,11 +90,10 @@ including where it is normally the wrong tool.
 
 ### Behaviour cloning
 
-Fit a policy by supervised learning on pairs of what the demonstrator saw and
-what the demonstrator did. It is the oldest and simplest form of imitation
-learning, going back to driving a vehicle from camera images with a small
-network trained on a person's steering, and it remains the first thing to try
-whenever demonstrations exist.
+Fit a policy by supervised learning on pairs of what the demonstrator saw and what the
+demonstrator did. It is the oldest and simplest form of imitation learning, going back
+to driving a vehicle from camera images with a small network trained on a person's
+steering. And it remains the first thing to try whenever demonstrations exist.
 
 It is normally the right choice when demonstrations are plentiful and the task
 is reactive — when what to do next really is a function of what is in front of
@@ -106,12 +105,12 @@ learning](https://en.wikipedia.org/wiki/Imitation_learning).
 
 ### Compounding error, and dataset aggregation
 
-A cloned policy's own small mistakes move it to states its demonstrations never
-covered, where it acts worse, which moves it further out. The standard analysis
-of this and the standard repair are both in **DAgger** — dataset aggregation —
-by Ross and colleagues ([arXiv:1011.0686](https://arxiv.org/abs/1011.0686)):
-run the policy, label the states it actually visits with what the expert would
-have done there, add them to the training set, and retrain.
+A cloned policy's own small mistakes move it to states its demonstrations never covered,
+where it acts worse, which moves it further out. The standard analysis of this and the
+standard repair are both in **DAgger** — dataset aggregation. By Ross and colleagues
+([arXiv:1011.0686](https://arxiv.org/abs/1011.0686)): run the policy, label the states
+it actually visits with what the expert would have done there, add them to the training
+set, and retrain.
 
 It is the right method whenever the expert can be queried at a state of your
 choosing, which is the case here because the expert is a program. It is wrong,
@@ -149,14 +148,13 @@ Policy](https://diffusion-policy.cs.columbia.edu/)** applies it to action
 chunks for robot control (Chi and colleagues,
 [arXiv:2303.04137](https://arxiv.org/abs/2303.04137)).
 
-It is right when the right answer is not unique — when several actions would
-all be good and a model forced to name one would return their average, which is
-often no answer at all. It is wrong when the answer genuinely is unique and
-speed matters, because the several denoising passes buy nothing and cost real
-time per decision. The honest reading in this problem is that uncrowding a
-table has many good answers, which argues for it, and that a push happens at
-the speed of an arm rather than of a processor, which means the extra passes are
-affordable.
+It is right when the right answer is not unique — when several actions would all be good
+and a model forced to name one would return their average. This is often no answer at
+all. It is wrong when the answer genuinely is unique and speed matters, because the
+several denoising passes buy nothing and cost real time per decision. The honest reading
+in this problem is that uncrowding a table has many good answers. This argues for it,
+and that a push happens at the speed of an arm rather than of a processor. This means
+the extra passes are affordable.
 
 ### Mode averaging under a single-answer loss
 
@@ -168,13 +166,12 @@ the something between them is frequently a third thing that is not sensible at
 all, and [how it works](03_how-it-works.md#5-a-second-way--diffusion-policy)
 draws one such third thing.
 
-It is worth knowing because the symptom is misleading. The model's training
-error looks reasonable and its behaviour looks timid, and the natural diagnosis
-— that it needs more data or more training — is the wrong one, since more
-examples of both choices make the averaging worse rather than better. The
-repairs are to represent a distribution rather than a point, as the denoising
-model does, or to remove the ambiguity from the data by making the choice part
-of the input.
+It is worth knowing because the symptom is misleading. The model's training error looks
+reasonable and its behaviour looks timid, and the natural diagnosis — that it needs more
+data or more training. Is the wrong one, since more examples of both choices make the
+averaging worse rather than better. The repairs are to represent a distribution rather
+than a point, as the denoising model does, or to remove the ambiguity from the data by
+making the choice part of the input.
 
 ### Distilling a planner or a program into a policy
 
@@ -183,14 +180,13 @@ network ends up doing at run time what the procedure did offline. This is a
 common and unglamorous pattern, and it is exactly what the relationship between
 the teacher and this solution is.
 
-It is right when the teacher is correct but too slow to run where it is needed,
-or when the teacher needs information at training time that is unavailable at
-run time. It is wrong when the student is expected to be better than the
-teacher, because distillation has no mechanism for improvement — it is copying,
-and copying has a ceiling. In this book the honest statement is that
-distillation is being used for its measurement value rather than for speed,
-since the teacher is not slow; what the pair establishes is whether the mapping
-is learnable at all.
+It is right when the teacher is correct but too slow to run where it is needed, or when
+the teacher needs information at training time that is unavailable at run time. It is
+wrong when the student is expected to be better than the teacher, because distillation
+has no mechanism for improvement — it is copying, and copying has a ceiling. In this
+book the honest statement is that distillation is being used for its measurement value
+rather than for speed, since the teacher is not slow. What the pair establishes is
+whether the mapping is learnable at all.
 
 ## 3. Where it sits among the other five
 
@@ -216,18 +212,18 @@ This student falls well short, and the code folder's `README.md` says by how
 much and reads the result.
 
 Against [a world model, then plan with
-it](../07_a-world-model-then-plan-with-it/01_what-it-is.md), the comparison is the sharpest
-question among the six after the foundation-model pair: plan with a model, or
-learn the push directly? That solution learns how the world changes and
-searches over candidate actions at run time, simulating each one forward before
-committing, so **it can find a push nobody ever demonstrated** — which is
-exactly the thing this solution cannot do. It pays for that on every push, in
-run-time cost that [the examiner](../01_the-problem/03_the-examiner.md) puts at hundreds
-or thousands of times the arithmetic a fixed nudge costs, and it pays again in
-needing a model of the world accurate enough to plan against, which is a harder
-thing to learn than a mapping. So the pair trades a ceiling against a cost:
-this solution is cheap and capped by its teacher, that one is expensive and
-capped by what its own encoding can express rather than by anybody else's work.
+it](../07_a-world-model-then-plan-with-it/01_what-it-is.md), the comparison is the
+sharpest question among the six after the foundation-model pair: plan with a model, or
+learn the push directly? That solution learns how the world changes and searches over
+candidate actions at run time, simulating each one forward before committing, so **it
+can find a push nobody ever demonstrated**. Which is exactly the thing this solution
+cannot do. It pays for that on every push, in run-time cost that [the
+examiner](../01_the-problem/03_the-examiner.md) puts at hundreds or thousands of times
+the arithmetic a fixed nudge costs. And it pays again in needing a model of the world
+accurate enough to plan against. This is a harder thing to learn than a mapping. So the
+pair trades a ceiling against a cost: this solution is cheap and capped by its teacher,
+that one is expensive and capped by what its own encoding can express rather than by
+anybody else's work.
 
 Against [SmolVLA as it downloads](../08_a-foundation-model-as-it-downloads/01_what-it-is.md),
 the comparison is fitting here against borrowing wholesale. That solution runs
@@ -240,19 +236,17 @@ examiner, this jaw and these four kinds of glass. Which of those two is the bett
 trade is precisely what this book is for.
 
 Against [SmolVLA fine-tuned](../09_the-same-model-fine-tuned-here/01_what-it-is.md), the
-comparison is where the fitting happens. That solution takes SmolVLA's borrowed
-weights and continues their training on this cell's own data with low-rank
-adaptation, which is this solution's method — imitation from demonstrations
-collected here — applied to somebody else's starting point instead of to random
-numbers. Reading the two together separates what the demonstrations are worth
-from what the pretraining is worth. And those two are the sharpest pair of the
-six in their own right: same model, same weights, and the only difference
-between them is that one has had its training continued here.
+comparison is where the fitting happens. That solution takes SmolVLA's borrowed weights
+and continues their training on this cell's own data with low-rank adaptation. This is
+this solution's method — imitation from demonstrations collected here — applied to
+somebody else's starting point instead of to random numbers. Reading the two together
+separates what the demonstrations are worth from what the pretraining is worth. And
+those two are the sharpest pair of the six in their own right: same model, same weights,
+and the only difference between them is that one has had its training continued here.
 
-Read as a ladder, the six measure what each increment of fitting buys. This one
-is the way where all the fitting is done here, from nothing, on examples a
-program produced for free — the cheapest honest attempt at learning this task
-that this book contains, and the one whose limits are easiest to state in
-advance.
+Read as a ladder, the six measure what each increment of fitting buys. This one is the
+way where all the fitting is done here, from nothing, on examples a program produced for
+free. The cheapest honest attempt at learning this task that this book contains, and the
+one whose limits are easiest to state in advance.
 
 ← [What it needs](05_what-it-needs.md) · [A world model, then plan with it — what it is](../07_a-world-model-then-plan-with-it/01_what-it-is.md) →

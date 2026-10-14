@@ -1,8 +1,8 @@
 # How it compares
 
-This page is the judgement on this solution. It says where the solution is
-strong and where it breaks, names the general ideas behind it, and places it
-beside the other five.
+This page judges this solution. It says where the solution is strong and where
+it breaks. It names the general ideas behind it. Then it places it beside the
+other five.
 
 ## Contents
 
@@ -12,181 +12,165 @@ beside the other five.
 
 ## 1. Where it is strong and where it breaks
 
-The strengths all come from the same source, which is that nothing is fitted.
+All of the strengths come from one fact: nothing is fitted.
 
-There is nothing to collect, nothing to train and nothing to keep in step with
-the cell, so this solution can be tried in an afternoon. It needs no
-accelerator. It gives this book a reading on what a borrowed robot model is
-worth before anybody spends a week recording pushes, which is a decision
-several of the other solutions depend on. It is a genuine upper bound on
-convenience, because no solution here can be cheaper to set up. And it is the
-clean half of this book's sharpest pair, which is the strength that does not
-depend on it working at all.
+There is nothing to collect, nothing to train and nothing to keep up to date.
+So this solution can be tried in an afternoon, without an accelerator. It tells
+you what a borrowed robot model is worth before anyone spends a week recording
+pushes. No solution here is cheaper to set up. And it is the clean half of this
+book's best-matched pair, which is useful even though it scores badly.
 
-The weaknesses divide into what the borrowing costs and what it cannot be asked
-to do.
+The weaknesses come in two kinds.
 
-What the borrowing costs is accuracy and every lever for improving it. The domain gap is
-large: the model learned from real cameras and cluttered rooms, and it is shown flat
-pale blue shapes on an empty rectangle. What it returns across that gap is not movement
-aimed at the wrong glass but movement that never reaches the table. A median lowest
-point 217 mm up, where the jaw has to be at 75 mm to move anything, and 506 pushes in
-620 touching nothing. The force reading cannot reach it, so the only channel that
-observes friction is closed. The actions arrive with no units in them, so a reading
-stands between the model and the jaw and a poor one would be blamed on the model. And
-both the instruction and the pose are the same at every ask, so the model is an
-expensive visuomotor policy here rather than the thing it was built to be.
+The first kind is what borrowing costs. [How it
+works](03_how-it-works.md) explains each of these in full:
 
-What it cannot be asked to do is anything that needs fitting. It cannot learn from a
-push that went wrong, because it does not learn. It cannot be corrected on the kind of
-glass it handles worst, because correcting it is training. It cannot have a threshold
-tuned, because it has no threshold. The one repair for all of that is to continue its
-training on this cell's own pushes. This is a different solution with a different name,
-and that is exactly why the two are written as a pair.
+- The [domain gap](03_how-it-works.md#7-the-domain-gap-which-is-the-heart-of-this-document)
+  is large, and most answers [never reach the
+  glasses](03_how-it-works.md#8-what-was-expected-and-what-happened).
+- The model has [no input for
+  force](03_how-it-works.md#6-the-force-reading-has-nowhere-to-go), so it never
+  sees the only evidence of friction.
+- The actions [have no
+  units](03_how-it-works.md#4-the-actions-arrive-with-no-units-in-them), so a
+  chosen scale stands between the model and the jaw.
+- The sentence and the pose [never
+  change](03_how-it-works.md#5-two-of-the-three-inputs-say-the-same-thing-every-time).
 
-The honest position is therefore that this is among the first things to run and
-not the one carried forward. Its value is the comparison it makes possible
-rather than the accuracy it delivers.
+The second kind is what it cannot do, because it does not learn. It cannot learn
+from a bad push. It cannot be corrected on the glass it handles worst. It has no
+threshold to tune. The one fix for all of this is more training on this cell's
+own pushes. That is a different solution, and that is why the two are written as
+a pair.
+
+So this is one of the first things to run, but not the one to keep. Its value is
+the comparison it allows, not its accuracy.
+
+Those are the strengths and weaknesses. The next section names the general ideas
+they come from.
 
 ## 2. The general ideas behind this
 
-Five named ideas sit under this solution, and each is worth knowing in its own
-right, including where it is normally the wrong tool.
+The last section judged this solution on its own. This section names five
+general ideas behind it, and says when each one is usually the wrong tool.
 
 ### Robot foundation models — one model pretrained for manipulation in general
 
-A **foundation model** is one fitted on a very large and very broad pool of
-data, with the intention that it be used on tasks nobody had in mind when it
-was fitted. The robot version pools demonstrations from many robots and many
-tasks, which is sometimes called **cross-embodiment** pretraining, because the
-robots in the pool are not the same machine.
-[LeRobot](https://github.com/huggingface/lerobot) carries several, among them
-π0, π0.5, GR00T N1.7 and SmolVLA.
+A **foundation model** is trained on a very large and broad set of data. It is
+meant to be used on tasks nobody planned for. The robot version uses
+demonstrations from many robots and many tasks. This is called
+**cross-embodiment** pretraining, because the robots in the data are different
+machines. [LeRobot](https://github.com/huggingface/lerobot) includes several,
+such as π0, π0.5, GR00T N1.7 and SmolVLA.
 
-This is normally the right move when your task resembles the pool and your own data is
-scarce, because you get a competent starting point for the price of a download. It is
-normally wrong when your input does not look like the pool's input, which is the case
-here, and wrong when the task needs a quantity the model has no input for. This is also
-the case here. It is also the wrong thing to reach for when a few lines of geometry
-would settle the question, which [solution
-2](../05_geometry-generates-a-model-ranks/01_what-it-is.md) is in this book to
-demonstrate.
+It is usually the right choice when your task looks like the training data and
+your own data is scarce. Then a download gives you a good starting point. It is
+usually wrong when your input looks different from the training data. It is
+also wrong when the task needs a value the model has no input for. Both are true
+here. And it is the wrong tool when a few lines of geometry would do. [Solution
+2](../05_geometry-generates-a-model-ranks/01_what-it-is.md) shows that case.
 
 ### Zero-shot transfer — using a model on a task it was never fitted for
 
-A model is used **zero-shot** when it is applied with no examples of the new
-task at all, relying entirely on what it learned elsewhere. It works when the
-new task is genuinely a special case of the old one.
+A model is used **zero-shot** when it gets no examples of the new task at all.
+It relies only on what it learned elsewhere. This works when the new task is
+really a special case of the old ones.
 
-It is normally the right first move whenever a general model exists and data is
-expensive, because it costs an afternoon and tells you how hard your problem really is.
-It is normally wrong as a final answer when the input differs visibly from what the
-model was fitted on, and the standard repair is to continue the training on your own
-data. This is [solution 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md). This
-book is built to measure exactly that repair.
+It is usually the right first step when a general model exists and data is
+costly. It takes an afternoon and shows how hard your problem really is. It is
+usually wrong as a final answer when your input looks different from the
+training data. The usual fix is more training on your own data. That is
+[solution 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md), and this
+book is built to measure that fix.
 
 ### Language conditioning — the sentence that selects the task
 
-Taking an instruction in ordinary words lets one set of weights serve many
-tasks, which is what the middle word of the model's name refers to.
+A model that takes an instruction in words can do many tasks with one set of
+weights. The sentence says which task to do.
 
-It is right whenever the tasks are many and the boundaries between them are the
-sort of thing a person can describe in a sentence, because then the sentence is
-doing real work and no code has to enumerate the cases. It is wrong — or rather
-simply idle — when there is one task, which is the situation here. A constant
-input carries no information, so the capability is paid for and not used, and
-nothing about this cell can be concluded about language conditioning in
+This is useful when there are many tasks and a person can describe each one in
+a sentence. It does nothing when there is only one task, as here. [How it
+works](03_how-it-works.md#5-two-of-the-three-inputs-say-the-same-thing-every-time)
+explains why. So this cell tells us nothing about language conditioning in
 general.
 
 ### Action chunking — predicting a run of movement rather than one step
 
-Policies in this family emit a short run of future actions together rather than
-one action at a time, which [solution
-3](../06_imitation-from-demonstrations/01_what-it-is.md) explains properly,
-since ACT is named for it. SmolVLA returns 50 at a time. The reason it matters
-here is the contract: because these architectures produce movement in runs,
-[the examiner](../01_the-problem/03_the-examiner.md) accepts a run of waypoints directly
-instead of demanding three numbers describing a push.
+Models of this kind give a short run of future actions at once, not one action
+at a time. [Solution
+3](../06_imitation-from-demonstrations/01_what-it-is.md) explains this in full.
+SmolVLA gives 50 at a time. Because models like this give movement in runs,
+[the examiner](../01_the-problem/03_the-examiner.md) accepts a run of waypoints
+directly.
 
-Predicting a run is right when the motion is a smooth committed thing, as a push is,
-because it keeps the policy consistent across the motion instead of wobbling from one
-step to the next. It is wrong when the situation can change faster than the run takes to
-execute, because a committed run cannot react inside itself. Which is the gap that [the
-learned early abort](../01_the-problem/05_pushing-without-toppling.md) exists to cover,
-and it is a shared mechanism rather than anything this solution provides.
+A run is right when the motion is smooth and steady, as a push is. It keeps the
+motion consistent from step to step. It is wrong when the scene can change
+faster than the run takes, because a run cannot react inside itself. [The early
+abort](../01_the-problem/05_pushing-without-toppling.md) covers that gap. It is
+shared by all six solutions, not part of this one.
 
 ### The domain gap, and the honest reading of a failure across one
 
-The difference between the data a model was fitted on and the data it is used on is the
-single most common reason a borrowed model disappoints. The characteristic symptom is
-usually confident wrong output rather than nonsense. And this run is a reminder that it
-is not always: here the output is confident, well formed as movement, and in the wrong
-half of the room.
+[How it
+works](03_how-it-works.md#7-the-domain-gap-which-is-the-heart-of-this-document)
+explains the domain gap and how this model failed across it.
 
-The useful discipline is to say which side of the gap you intend to move before you
-measure anything. Moving the model is fine-tuning, which is solution 6. Moving the data
-means making the rendered pictures resemble real ones, which is a large piece of work in
-its own right and is not attempted anywhere in this book. The failure to avoid is
-concluding that the method is poor when what has actually been measured is the gap. And
-the whole reason this document and the next are written as a pair is to make that
-confusion impossible.
+The useful habit is to decide which side of the gap you will move before you
+measure. Moving the model means more training, which is solution 6. Moving the
+data means making the drawn pictures look real. That is a large job, and this
+book does not try it. The mistake to avoid is to blame the method when you have
+really measured the gap. This chapter and the next are written as a pair to
+prevent that mistake.
+
+These are the ideas behind the solution. The last section places it among the
+other five.
 
 ## 3. Where it sits among the other five
 
-This solution sits at one end of this book's main axis, and the axis is the
-useful way to see all six.
+The last section named the ideas. This section places the solution on the one
+line that best sorts all six.
 
-The axis is **where the numbers came from**. [Solution
-1](../04_one-fixed-nudge/01_what-it-is.md) has no fitted numbers at all and no
-model; it is arithmetic and it is the floor. [Solution
-2](../05_geometry-generates-a-model-ranks/01_what-it-is.md) writes the
-candidates by hand and fits only the ranker, so one small component came from
-this cell. [Solution 3](../06_imitation-from-demonstrations/01_what-it-is.md)
-fits a whole policy on demonstrations recorded here, borrowing an architecture
-but no weights. [Solution
+That line is **where the numbers came from**. [Solution
+1](../04_one-fixed-nudge/01_what-it-is.md) has no fitted numbers and no model.
+It is arithmetic, and it is the floor. [Solution
+2](../05_geometry-generates-a-model-ranks/01_what-it-is.md) writes its
+candidates by hand and fits only the ranker. [Solution
+3](../06_imitation-from-demonstrations/01_what-it-is.md) fits a whole policy on
+demonstrations recorded here. It borrows a design but no weights. [Solution
 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md) fits a model of the
-table here and then searches through it at run time. This solution is the only
-one whose numbers came entirely from **somewhere else**, and [solution
+table here and searches through it. This solution is the only one whose numbers
+all came from **somewhere else**. [Solution
 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md) is the same numbers
 with this cell's own pushes added on top.
 
 Read in that order, [the six
-solutions](../03_the-six-solutions/01_how-the-six-compare.md) measure what each
-kind of fitting buys, and this one is the borrowed extreme they are read
-against. It is also, by a wide margin, the worst of the six: 56 of 251 glasses
-racked and one table finished, against 107 and 14 tables for the arithmetic of
-solution 1.
+solutions](../03_the-six-solutions/01_how-the-six-compare.md) show what each
+kind of fitting gives. This one is the borrowed end of the line, and it racks
+the fewest glasses of the six. It racked 48 of 251 glasses and finished 1 table. The
+arithmetic of solution 1 racked 107 and finished 14 tables. **The 48 it racked
+are exactly the 48 glasses that had room before anything was pushed.** Racking
+a glass gives its neighbours more room. So a solution that freed any glass would
+rack more than 48. This one frees none.
 
-One of those comparisons is sharper than the rest, and it is the reason this
-document and the next one should be read together. **Solution 6 is this same
-model, from this same library, starting from these same downloaded weights,
-with its training continued on this cell's own pushes, running on this same
-examiner.** The input is held still, the output is held still, the marking is
-held still, the reading that turns the model's actions into jaw waypoints is
-held still, and the topple refusal runs first in both. Nothing varies between
-the pair except the training. So the gap between their scores is a measurement
-of what that training bought and of nothing else, and no other pair in this
-book is that clean.
+One comparison is sharper than the rest, so read this chapter and the next
+together. **Solution 6 is this same model, with the same weights and the same
+examiner.** It only adds more training on this cell's own pushes. The input, the output, the marking, the scale and the topple rule are
+all the same. Only the training changes. So the gap between their scores
+measures what the training gave, and nothing else. No other pair in this book is
+that clean.
 
-Measured, that gap is not a simple improvement, and it is worth stating plainly here
-rather than leaving to the next document. Fine-tuning takes the glasses racked from 56
-to 77 and the tables finished from none to four. It also takes the glasses toppled from
-6 to 46 and the tables scored *wrong* from 5 to 38. Both of those are medians over three
-runs, and neither solution's three runs come anywhere near the other's: this one toppled
-between 5 and 8 glasses and solution 6 between 38 and 49. So what the training bought
-was a model that reaches the table, and the price was a model that reaches it hard
-enough to knock things over. Two qualifications belong with the number and solution 6
-makes both in full: the training there adapts the model through a low-rank correction
-rather than by moving every weight. So the gap is a lower bound on what fine-tuning
-could buy; and a solution that topples glasses has failed at the thing this problem
-cares most about.
+The gap is not a simple improvement. Training raises the glasses racked from 48
+to 56. It also raises the glasses toppled from 12 to 40, and the tables marked
+*wrong* from 9 to 36. These are medians over three runs. So training gave a
+model that reaches the table, but it hits the glasses hard enough to knock them
+over. [Solution 6's comparison
+page](../09_the-same-model-fine-tuned-here/06_how-it-compares.md) explains
+this result in full.
 
-That is also the closing argument for building this solution despite expecting it to do
-badly. A baseline is valuable in proportion to how cleanly it isolates one variable, and
-this one isolates fine-tuning exactly. If it scored well, there would be little room
-left for solution 6 to show anything. And the sharpest question these six were arranged
-to answer, what does fine-tuning a foundation model buy, would have no range to be
-answered in. A poor score here is therefore not a disappointing result. It is the
+This is also why the solution was worth building, even though it was expected
+to do badly. A baseline is useful when it isolates one change cleanly. This one
+isolates fine-tuning exactly. If it had scored well, solution 6 would have little
+room to show anything. So a poor score here is not a disappointment. It is the
 measurement working.
 
 ← [What it needs](05_what-it-needs.md) · [The same foundation model, fine-tuned here — what it is](../09_the-same-model-fine-tuned-here/01_what-it-is.md) →

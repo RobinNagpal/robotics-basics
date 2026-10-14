@@ -1,55 +1,55 @@
 # What it needs
 
-This page is the bill for this solution: the libraries it rests on, the
-machine it wants, the data somebody has to supply and, where there is one,
-the licence that comes with the weights.
+This page is the bill for this solution. It lists the libraries it uses, the
+machine it needs, the data someone must supply, and any licence that comes with
+the weights.
 
 ## 1. What it needs
 
-Everything the method requires is either already produced by [the camera work
-that measures the
-glasses](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md) or
-is a constant that belongs to the gripper, which is why it can be built first.
+Everything the method needs is either measured by [the camera
+work](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md) or is
+a fixed number of the gripper. That is why it can be built first.
 
-**The measurements, and nothing beyond them.** From `look()` it uses each
-glass's position and widest width, which are what the room test and the
-shortfall need, and each glass's foot width and height, which are what the
-tipping rule and its test push need. It does not use the rendered view from the
-top, it does not use the force report beyond whether the jaw touched anything,
-and it never reads the simulator's record.
+**It needs the measurements, and nothing more.** From `look()` it uses each
+glass's position and widest width, for the room test and the shortfall. It uses
+each glass's foot width and height, for the tipping rule and the test push. It
+does not use the top view. It uses only one thing from the force report:
+whether the jaw touched anything. It never reads the simulator's own record.
 
-**The gripper's own numbers.** The 76 mm of clear room, the 75 mm the jaw's
-middle rides at, the 63 mm height of the jaw that puts its top edge at 107 mm,
-the 266 mm of tool behind the fingertips and the three widths that tool has
-along its length. All of
-these belong to the hardware rather than to any glass, so the project allows
-them to be written down, and none of them is tuned.
+**It needs the gripper's own numbers.** These are the 76 mm of clear room, the
+jaw heights, and the size of the tool. [The
+examiner](../01_the-problem/03_the-examiner.md#3-what-the-examiner-draws) and
+[pushing without
+toppling](../01_the-problem/05_pushing-without-toppling.md#the-height-that-counts-is-the-top-edge-of-the-jaw)
+give these numbers. They belong to the hardware, not to any glass, and none of
+them is tuned.
 
-**One constant of its own**, which is the gain. It is chosen by [the
+**It needs one constant of its own, which is the gain.** It is chosen by [the
 convergence
 argument](03_how-it-works.md#3-why-the-push-is-a-fraction-of-the-shortfall-rather-than-all-of-it)
-and then frozen, and it is the entire configuration of the method.
+and then frozen. It is the whole setup of the method.
 
-**One library, and it is NumPy.** The arithmetic over a handful of positions
-and widths is all this solution does for itself. Carrying the jaw to the place
-that arithmetic names is not part of it, because every solution here hands the
-same kind of instruction to the same cell: the examiner carries the jaw with
-its physics engine, and the real cell carries it with MoveIt. Both libraries
-are permissively licensed, and because nothing is fitted there is no weights
-file to redistribute and no licence inherited with it.
+**It needs one library, which is NumPy.** This solution only does arithmetic.
+Moving the jaw is not part of it. The examiner moves the jaw with its physics
+engine, and the real cell moves it with MoveIt. Both libraries have permissive
+licences. Nothing is fitted, so there is no weights file and no licence that
+comes with one.
 
-**No compute to rent.** The room test compares a pair of distances for every
-pair of glasses, so its cost grows as the square of the number of glasses, and
-there are four to six of them. The shortfall, the heading and the travel are a
-few arithmetic operations each. The whole decision is a few hundred
-floating-point operations and it finishes in far less time than the arm takes
-to move anywhere. On the compute column that [the
-examiner](../01_the-problem/03_the-examiner.md) describes for the scorecard, this solution is
-the zero the others are read against, and a solution that plans through a
-learned model at run time or evaluates a large neural network sits hundreds or
-thousands of times above it.
+**It needs no rented compute.** The room test compares every pair of glasses,
+and there are only four to six. The shortfall, the direction and the push
+length take a few sums each. The whole decision is a few hundred operations. It
+finishes long before the arm moves. [The
+examiner](../01_the-problem/03_the-examiner.md) puts a compute column on the
+scorecard. On that column, this solution is **the zero the others are read
+against**. A solution that plans with a learned model, or runs a large neural
+network, costs hundreds or thousands of times more.
 
-**What it does need is arm time.** The honest cost of this method is pushes and
-looks, and the budget is what bounds them.
+**What it does need is arm time.** This is the one real cost of the method.
+Every push is a sequence of arm movements, and each one is followed by a fresh
+look. Each takes seconds. A small gain means more pushes for the same gap. So
+this method may use four pushes where a method that predicts uses one. That is
+four times the time and four times the travel. Travel matters, because travel
+is when a glass can be knocked. The examiner allows a fixed budget of pushes, so
+this cost has a hard limit.
 
 ← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

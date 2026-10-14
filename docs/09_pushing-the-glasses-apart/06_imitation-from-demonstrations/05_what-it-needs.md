@@ -1,78 +1,65 @@
 # What it needs
 
-This page is the bill for this solution: the libraries it rests on, the
-machine it wants, the data somebody has to supply and, where there is one,
-the licence that comes with the weights.
+This page is the bill for this solution. It lists the libraries, the machine,
+the data, and the licence of the weights.
 
 ## 1. What it needs
 
 It needs **[LeRobot](https://github.com/huggingface/lerobot)**, which holds ACT
-and Diffusion Policy as reference implementations, with **PyTorch** underneath.
-LeRobot is Apache-2.0, and because this solution downloads no weights, the
-weights file it produces is fitted entirely on data generated inside this
-project and inherits no terms from anybody. That is as simple as a licence
-position gets in this book: [SmolVLA as it
-downloads](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) and [SmolVLA
-fine-tuned](../09_the-same-model-fine-tuned-here/01_what-it-is.md) both carry borrowed weights,
-and this one carries none.
+and Diffusion Policy, with **PyTorch** underneath. LeRobot uses the Apache-2.0
+licence. This solution downloads no weights. Its weights file is trained only on
+data made in this project, so it carries nobody else's terms. By contrast,
+[SmolVLA as it downloads](../08_a-foundation-model-as-it-downloads/01_what-it-is.md)
+and [SmolVLA fine-tuned](../09_the-same-model-fine-tuned-here/01_what-it-is.md)
+both carry borrowed weights.
 
 It needs **[geometry generates, a model
-ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md) working**, because that solution
-is the teacher. This is a real dependency and not a preference: without a
-program that chooses pushes well, there are no demonstrations, and with a
-teacher that chooses badly the student has nothing worth copying. That is why
-the two are built in that order.
+ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md) to work**,
+because that solution is the teacher. Without a good teacher there are no good
+examples. That is why the teacher was built first.
 
-It needed **two things the examiner did not have**, and that was the third of the honest
-costs. Both were missing from the examiner's own `bench.py` when this solution was
-designed. The first was a **rendered view of the table from the top**: the examiner
-returned numeric readings. And it did render the world, but from the arm's side rather
-than straight down, and only for the films used to check a run by eye. The second was a
-**path that accepts a chunk of waypoints**: `push()` takes a parameterised push and *is*
-the macro that expands it, so there was no way in for a trajectory. Both are now built —
-`bench/top_view.py` and `Bench.follow` — and both were the real price of going off the
-shelf, because every LeRobot policy expects pictures and a control-rate action space.
-[One fixed nudge](../04_one-fixed-nudge/01_what-it-is.md) and the teacher need neither,
-which is one more reason to build them first.
+It needed **two parts the examiner did not have**. The first was a **picture of
+the table from straight above**. The examiner gave only numbers. It did render
+the world, but from the arm's side, and only for films. The second was **a way
+to follow a chunk of waypoints**. `push()` takes a few push numbers and expands
+them itself, so a full path had no way in. Both parts are now built, as
+`bench/top_view.py` and `Bench.follow`. Every LeRobot policy expects pictures
+and waypoints, so these two parts were the real cost of using LeRobot. [One
+fixed nudge](../04_one-fixed-nudge/01_what-it-is.md) and the teacher need
+neither.
 
-It needs **demonstrations**, which cost arm time on the examiner's tables and
-nothing else, drawn only from table numbers below the dividing line. The
-prescription here is to over-represent the crowded corner cases deliberately,
-so that the edge of what the policy will face sits somewhere in the middle of
-what it was trained on. **That part is not done**: the demonstration set is
-drawn from consecutive table numbers, so the crowded corners are as rare in the
-training set as they are on the examiner's tables.
+It needs **examples**, which cost only simulated arm time. They come only from
+training tables. Giving extra weight to crowded tables is still a plan, as
+[choosing which examples to
+keep](03_how-it-works.md#3-choosing-which-demonstrations-to-keep-and-the-bias-it-buys)
+explains.
 
-It needs **compute**, and this is the cheapest entry among the six. **Training runs in
-hours.** The reason it is so modest is worth stating, because it is easy to assume that
-anything with a transformer in it is expensive. The dataset is small — thousands of
-pushes, each a picture and a short chunk. The network is small by the standards of the
-foundation models in [SmolVLA as it
-downloads](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) and [SmolVLA
-fine-tuned](../09_the-same-model-fine-tuned-here/01_what-it-is.md). And nothing has to
-be learned about vision in general, only about this one cell's pictures of this one
-task.
+It needs **compute**, and it is the cheapest of the six to train. **Training
+takes hours.** A transformer sounds costly, but three things keep this one
+small. The data is small: thousands of pushes, each a picture and a short chunk.
+The network is small next to the foundation models in the SmolVLA chapters. And
+it learns only this cell's pictures, not vision in general.
 
-**In the end nothing was rented.** This document first budgeted tens of dollars
-for a small accelerator, and that is still the right figure for anybody who
-wants one. But a network of a few tens of millions of parameters on a few
-thousand small pictures fits on the graphics processor an Apple M4 already has,
-in about an hour per training seed, so the whole of this solution —
-demonstrations, several training seeds and the held-out run — was made on the
-machine the project is written on. Two choices made that possible, and both are
-recorded in the code folder's `README.md`: the policy reads the straight-down
-view at half the size the examiner renders it, because the vision backbone is
-most of the cost of a training step, and the demonstration set had to be four
-times the size of the first attempt before the fit stopped memorising it.
+**In the end nothing was rented.** This page first budgeted tens of dollars for
+a rented accelerator. That is still the right figure for anybody who wants one.
+But the network has a few tens of millions of parameters, and the data is a few
+thousand small pictures. That fits on the graphics processor of an Apple M4, in
+about an hour per training seed. So all of it was made on the project's own
+machine: the examples, several training seeds, and the test run. Two choices
+made this possible, and the code folder's `README.md` records both. First, the
+policy reads the picture at half the size the examiner draws it. The vision part
+is most of the cost of a training step, so this saves a lot. Second, the example set had to be four
+times larger than the first try before the network stopped memorising it.
 
-At run time it needs very little: **one forward pass per chunk** for ACT, and
-several passes per chunk for the denoising way, against a push that takes the
-arm seconds to carry out. The compute column on the scorecard is where that
-difference between the two ways becomes visible.
+At run time it needs very little. ACT makes **one forward pass per chunk**.
+Diffusion Policy would need several passes per chunk. Both are fast next to a
+push, which takes the arm seconds.
 
-And once fitted, it needs **a weights file kept in step with the examiner**. Change how
-the view from the top is rendered, or the macro whose waypoints became the labels, or
-the error the readings carry. And the file is quietly out of date in a way no test of
-the code would notice.
+Once trained, it needs **a weights file that matches the examiner**. Suppose you
+change how the top picture is drawn, or the macro that made the labels, or the
+error in the readings. Then the weights file is out of date, and no code test
+would notice.
+
+The next page judges this solution and places it beside the other five.
 
 ← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

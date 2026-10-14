@@ -1,9 +1,8 @@
 # A worked example
 
-This page follows this solution through one arrangement of glasses with real
-numbers, and then through the case this book keeps returning to, a glass that
-cannot be pushed safely, because a worked example that shows only the easy case
-teaches the wrong lesson.
+This page follows this solution through one table of glasses. It also covers
+the case this book keeps coming back to: a glass that cannot be pushed safely.
+An example that shows only the easy case would teach the wrong lesson.
 
 ## Contents
 
@@ -12,122 +11,101 @@ teaches the wrong lesson.
 
 ## 1. When a glass cannot be pushed safely
 
-A glass slides while the jaw touches it below half its foot width divided by the
-friction, and tips above that. [Pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md) sets that rule out
-once, with the jaw's two heights, the glasses it refuses outright, and what is
-done when the unknown friction leaves the answer undecided. What follows here is
-only what is this solution's own.
+The unsafe glass comes first, because the rule for it is the same in both
+halves of the pair. [Pushing without
+toppling](../01_the-problem/05_pushing-without-toppling.md#3-the-limit-slide-or-tip)
+sets that rule out once. It explains which glasses are refused and why the
+check sits outside every policy. This section adds only what belongs to this
+solution.
 
-**This is the one place where this solution and its untrained partner are
-guaranteed to behave the same**, because the thing that decides the outcome is
-the same code in both, reading the same readings and applying the same
-arithmetic. Any difference in their refusal counts comes from their pushes
-having left the glasses in different places, not from either being better at
-refusing.
+**Here this solution and solution 5 are sure to behave the same.** The same
+code decides, from the same readings, with the same arithmetic. So any
+difference in their refusal counts comes from where their pushes left the
+glasses. Neither one is better at refusing.
 
-Three reasons the check has to sit outside the policy are worth keeping
-together, because they are easy to lose in a document about training. A policy
-has no field in it for a rule, so it cannot be told. Its training set contained
-no refusals, because the teacher refused those glasses and what remains are
-recordings of pushes that happened. And the cost of being wrong is not
-symmetric: a glass left standing with a reason can be revisited by anything
-later, while a glass that went over is finished.
+Training adds one new fact. The training set holds no refusals, because the
+teacher refused those glasses and so never pushed them. The policy has never
+been shown a glass it must not push.
 
-Two qualifications keep that from sounding safer than it is. The check needs
-the friction, nobody has it, and the limit is only as good as the guess. And
-the guard against a guess that was too generous — the early abort that reads
-the jaw's force as the push happens — **is a design and not code**. So the only
-thing protecting a glass in either half of this pair is the limit computed
-before the jaw moves.
+The check needs the friction, and nobody has it. So the limit is only as good
+as the guess. The [early
+abort](../01_the-problem/05_pushing-without-toppling.md#an-early-abort-acting-during-the-push)
+that would catch a bad guess is a design, not code. So in both halves of the
+pair, the only protection is the limit worked out before the jaw moves.
+
+With the rule for unsafe glasses set, the next section follows one whole table.
 
 ## 2. A worked example
 
-Follow one table through, because the difference from solution 5 is easier to
-recognise once both have been run over the same one.
+The rule above applies to both halves of the pair. Now follow one table
+through both, because the difference is easier to see on a single table.
 
-**The table.** Five tapered glasses stand in the glass zone, drawn at
-proportions from across the kind's range, so they are not all the same height.
-Two of them stand as close together as the examiner allows, so neither has its
-76 mm of clear room measured to the other's edge, and because the test is to
-the edge rather than to the middle, the narrower of the two is crowded while
-the wider one may not be. A third glass, standing alone, is drawn with a foot
-narrow enough that its limit falls below the jaw's top edge. The examiner
-renders the view from the top and hands over the readings, each carrying the
-error that telling the glasses apart in a picture leaves in it.
+**The table.** Five tapered glasses stand in the glass zone. They have
+different heights. Two of them stand as close as the examiner allows. So
+neither has its 76 mm of clear room to the other's edge. The test is to the
+edge, not to the middle, so the narrower glass is crowded while the wider one
+may not be. A third glass stands alone. Its foot is so narrow that its tipping
+limit is below the jaw's top edge. The examiner renders the view from the top
+and hands over the readings, each with its usual error.
 
-**What solution 5 does.** The downloaded model is shown a rendered view of a
-kind it has never seen — pale blue glasses, opaque, shaded, standing on a tan
-table — together with an instruction, and it returns a chunk of waypoints on
-the scale of robots that are not this one, read through the convention the pair
-agreed in advance. What comes out is a smooth, well-formed jaw motion whose
-relationship to these five glasses is genuinely in doubt. Measured over the
-held-out tables, that motion stays a median of 217 mm above the table and runs
-868 mm across it, which is clear of every glass but the tallest, so nearly nine
-pushes in ten touch nothing at all. Nothing in the output looks wrong, which is
-the characteristic failure of a model used across a domain gap.
+**What solution 5 does.** Its model has never seen a picture like this one. It
+returns a smooth chunk of waypoints. But the chunk stays far above the glasses
+and runs across the whole table, so it nearly always touches nothing. [Solution
+5 gives the measured
+figures](../08_a-foundation-model-as-it-downloads/03_how-it-works.md#8-what-was-expected-and-what-happened).
 
-**What this solution does.** The corrected model is shown a view of a kind
-every example in its training set looked like, and returns a chunk in this
-cell's own units. It brings the jaw down to 75 mm, the height the gripper
-pushes at, which is what its teacher's pushes did and what solution 5 never
-does. Then the chunk's first waypoint decides everything, and this is where the
-measurement is harsher than the expectation.
+**What this solution does.** Its model has seen many pictures like this one in
+training. It returns a chunk in this cell's own units. It brings the jaw down
+to 75 mm, the height the gripper pushes at. Solution 5 never does that. Then
+the chunk's first waypoint decides everything.
 
-The examiner carries out a chunk by placing the jaw clear above where the chunk starts
-and lowering it to the first waypoint. If that first waypoint stands behind the crowded
-glass, on the line leading away from its neighbour, the jaw reaches push height in open
-table and the rest of the chunk is a push. If it stands over a glass, the jaw meets the
-glass coming down, `follow()` reports the chunk **blocked on the way down**. And the jaw
-goes straight back up without pushing anything — or the glass goes over. The model
-learned the height and did not learn the place: about three of its pushes in five end
-that way.
+The examiner carries out a chunk in two steps. First it places the jaw high
+above where the chunk starts. Then it lowers the jaw to the first waypoint.
+Suppose the first waypoint is behind the crowded glass, on the side away from
+its neighbour. Then the jaw reaches push height in open table, and the rest of
+the chunk is a push. Now suppose the first waypoint is over a glass. Then the
+jaw meets the glass on the way down, and `follow()` reports the chunk
+**blocked on the way down**. Either the jaw goes straight back up without
+pushing, or the glass falls over. The model learned the height but not the
+place. [How it
+compares](06_how-it-compares.md#3-where-it-sits-among-the-other-five) shows how
+often this happens.
 
 ![One glass seen from the side with the jaw coming down to its first waypoint from two places: behind the glass, where the jaw reaches 75 mm in open table and the rest of the chunk pushes, and over the glass, where the jaw meets the rim on the way down and the chunk is abandoned without a push.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/finetuned-where-the-jaw-comes-down.png)
 
-**Where this solution is only as good as its teacher.** Which of the crowded
-pair to move is a choice solution 2's ranker makes, and on a pair like this one
-it is close to arbitrary, because moving either one would give both their room.
-The policy inherits whatever the ranker tended to do, averaged over many
-tables. It does not improve on the choice, because nothing scored the choice.
+**Which glass to move comes from the teacher.** Solution 2's ranker chooses
+which of the crowded pair to move. On a pair like this, the choice is close to
+random, because moving either one frees both. The policy copies what the
+ranker tended to do. It cannot improve on that choice, because nothing scored
+the choice.
 
-**Where the look-again loop does the work in both.** A glass that was pushed
-does not land where it was aimed, because the friction guess was wrong and a
-glass rotates as well as slides. The arm looks again and sees where it really
-is. Here the two halves of the pair diverge in a way the scorecard can see: the
-fine-tuned policy has been fitted on recordings taken at every point in the
-teacher's own loop, including after a glass landed short, so the situation is
-one it has seen. The downloaded model is in the same position it was in before
-and has learned nothing from the attempt. Neither improves its own model of
-pushing during the run, because neither is being trained at run time. What
-differs is whether the model had ever seen this situation at all.
+**The look-again loop works in both.** A pushed glass does not stop exactly
+where it was aimed. The friction guess was wrong, and a glass turns as well as
+slides. So the arm looks again. Here the two halves differ. The trained policy
+saw recordings from every point in the teacher's loop, including after a glass
+stopped short. So it has seen this situation. Solution 5's model has not.
+Neither model learns during the run.
 
-**And the case neither can answer.** The third glass, with the narrow foot,
-cannot be pushed safely. The shared check computes the limit from the glass's
-measured foot width and the jaw's top edge, finds it below 107 mm, and refuses
-that glass with that reason before either model is asked anything. The glass is
-left standing and the table is marked *correct but incomplete*. The refusal, its
-reason and its correctness belong entirely to the shared geometry.
+**Neither model can answer the last case.** The third glass, with the narrow
+foot, cannot be pushed safely. The shared check works out its limit and finds
+it below 107 mm. It refuses that glass, with that reason, before either model
+is asked anything. The glass is left standing, and the table is marked
+*correct but incomplete*. The refusal belongs entirely to the shared geometry.
 
-**But the refused glass stays in the picture, and that is the part the code had
-to settle.** Neither model can be told to leave it alone — there is no field in
-a policy for a rule — so a chunk whose path runs into a refused glass is simply
-not carried out, and the loop asks again. That check reads the path, which the
-geometry can only do once the model has answered, so a rejected chunk is a
-forward pass spent for nothing. It is **not** charged to the push budget,
-though, because the budget is what makes the six solutions' push counts
-comparable and a rejected chunk never touches the table. What guards against a
-model that keeps aiming at a glass it may not touch is a separate cap on
-answers per table, set at three times the push budget, which is slack rather
-than a limit. In practice none of this bound: the counts in each folder's
-`asking.json` say it fired once in this solution's 1,248 answers and not at all
-in solution 5's 1,855.
+**But the refused glass is still in the picture.** Neither model can be told
+to leave it alone. So a chunk whose path runs into a refused glass is not
+carried out, and the loop asks again. The check needs the path, so it can only
+run after the model has answered. A rejected chunk is a wasted answer. It is
+**not** counted against the push budget, because it never touches the table.
+A separate cap allows three times the push budget in answers per table. The
+counts in each folder's `asking.json` show how often that cap was reached. It
+ended 5 tables in this solution's 1,515 answers over three runs, and none in
+solution 5's 1,855.
 
-The honest summary of the example is that fine-tuning changes the first half of it and
-not the second. The chunk becomes a motion at the height a push happens at, in units
-this cell can carry out, informed by what pushes on this table actually did. Still aimed
-badly enough that it more often comes down on a glass than behind one. The refusal, the
-topple limit, the destinations and the loop are exactly where they were, because they
-were never the model's to begin with.
+So the training changes the first half of the example and not the second. The
+chunk now comes down at push height, in units this cell can carry out. But it
+still often comes down on a glass instead of behind one. The refusal, the
+topple limit, the destinations and the loop stay where they were. They were
+never the model's job.
 
 ← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

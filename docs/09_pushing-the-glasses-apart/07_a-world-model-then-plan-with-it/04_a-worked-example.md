@@ -1,9 +1,10 @@
 # A worked example
 
-This page takes this solution's refusals first, because a worked example that
-shows only the easy case teaches the wrong lesson, and then follows the solution
-through three of the examiner's held-out tables with the numbers its own run
-recorded.
+This page starts with this solution's refusals, because an example that shows
+only the easy case teaches the wrong lesson. Then it follows the solution
+through three of the examiner's 50 test tables. Each number for a table comes
+from the run recorded in
+[`results-tables.json`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/results-tables.json).
 
 ## Contents
 
@@ -12,118 +13,104 @@ recorded.
 
 ## 1. When a glass cannot be pushed safely
 
-A glass slides while the jaw touches it below half its foot width divided by the
-friction, and tips above that. [Pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md) sets that rule out
-once, with the jaw's two heights, the glasses it refuses outright, and what is
-done when the unknown friction leaves the answer undecided. What follows here is
-only what is this solution's own.
+A planner must know when not to push. This section shows how this solution
+refuses a glass.
 
-**This is the one solution that does not apply that arithmetic, and that is a
-gap in it rather than a second opinion.** The built planner holds no friction
-value and no tipping formula, so the shared rule belongs in front of it and is
-not there yet.
+[Pushing without toppling](../01_the-problem/05_pushing-without-toppling.md)
+gives the shared rule for when a glass would tip instead of slide. This
+solution does not apply that rule yet. [The main
+idea](01_what-it-is.md#4-the-main-idea) explains this gap.
 
-What learning the physics adds is a **second** refusal, from the evidence rather
-than from the rule. The planner can turn a glass down in two different ways, and
-it records which. It can find that every one of the fifteen hundred candidate
-pushes was struck out by one of the three filters. In that case, no push on that
-glass got past five independently trained copies of the model asked on five
-readings of the table, and the reason it reports names whichever of the topple
-veto and the map struck out more of them. Or it can find that pushes survived
-and none of them was worth making, because the best one on the whole table would
-clear less than 2 mm of the room the table is missing.
+Instead, the planner has its own refusals, based on the model. It can refuse a
+glass in two ways, and it records which one.
 
-**On the fifty held-out tables only the second of those ever happened.** Of the
-48 glasses left behind, 44 were refused because no surviving push would have
-made enough room, one because it had already been pushed the four times any
-glass is allowed, and three because a glass had gone over on their table and
-nothing more is touched after that. Not one glass was refused for want of a push
-the model would allow. So the stronger refusal is machinery that exists and did
-not fire here, and the claim worth making for it is about the arithmetic it
-replaces — a judgement from fifteen hundred recorded-push comparisons rather
-than from a one-line inequality with a guessed number in it — not about how
-often it saved this run.
+- **Every candidate was dropped.** All 1,500 candidate pushes for that glass
+  failed one of the three filters. So no push got past all five copies of the
+  model on all five readings of the table. The reason names the filter that
+  dropped the most: the topple veto or the map.
+- **No push was worth making.** Some pushes passed the filters. But the best
+  push on the whole table would clear less than 2 mm of the missing room.
 
-The weakness has to be stated with it. **The model can be confidently wrong**, because
-the ensemble only disagrees where the training data was thin in a way the copies
-noticed. And a kind of failure absent from the data altogether produces five copies that
-agree wrongly. The record shows exactly that: one glass went over on the fifty held-out
-tables and one on a hundred tuning tables, and **the model had rated as safe every
-topple it missed.** Lowering a limit does not fix that, because these are pushes the
-model is confident about; more examples of those situations does.
+**On the 50 test tables, only the second kind ever happened.** The run left 85
+glasses behind, and
+[`results.json`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/results.json)
+gives each one's reason:
+
+- 53 were on a table where a glass had fallen over. Nothing more is touched on
+  such a table.
+- 14 had no push that the model expected to make room.
+- 10 were on a table whose 16 pushes were spent.
+- 8 had been pushed four times, the most any glass is allowed, and still had no
+  room.
+
+No glass was refused because every push was dropped. So the first kind of
+refusal exists in the code but did not fire here.
+
+The model has one serious weakness here. It can be sure and wrong, because all
+five copies can agree on a wrong answer. [Where it is strong and where it
+breaks](06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks)
+explains this.
+
+The next section follows the planner through single tables, step by step.
 
 ## 2. A worked example
 
-The first way can be traced step by step on any held-out table, and its folder writes
-the trace out: a picture of each step. And a file holding the thirty-four numbers the
-model was given, the fourteen each of the five copies gave back, and the fourteen that
-really happened. Four tables are worth tracing, and the three described here are among
-them.
+The section above showed the refusals. This section follows the planner
+through three single tables.
 
-Table 10004 is the ordinary case. The first look reports six readings of one
-kind of glass. Several pairs are closer than the 76 mm of clear room the gripper
-needs, so nothing can be taken yet, and the planner goes to work on every
-crowded glass in turn.
+The first way can trace any test table step by step. Its folder writes a
+picture for each step. It also writes a file with three things for each push:
+the 34 numbers the model was given, the 14 numbers each of the five copies gave
+back, and the 14 numbers that really happened.
 
-For the first of them, the search draws six hundred candidate pushes spread over every
-heading, every offset across the glass and every travel from a centimetre to ten. All of
-them go to the five copies, and most die on the table that comes back: the predicted
-landing is outside the glass zone, the jaw's own path leaves the arm's comfortable
-reach, or the predicted movement is far longer than the push that caused it. A further
-batch is struck out by the topple veto. Some because a short jab at a wide part of the
-glass genuinely looks like tipping it, and some because the five copies simply disagree.
-This counts the same way. What is left is scored by how much clear room is still missing
-on the table afterwards.
+**Table 10004 is the ordinary case.** The first look reports six glasses of one
+kind. Several pairs are closer than the 76 mm of clear room the gripper needs.
+So no glass can be taken yet, and the planner works on every crowded glass in
+turn.
 
-Three more rounds contract the cloud of candidates onto the region that scored
-best. The same search runs for each of the other crowded glasses, and the single
-best push over all of them is the one made.
+For the first glass, the search draws 600 candidate pushes. They cover every
+direction, every point across the glass, and every travel from one to ten
+centimetres. All of them go to the five copies, and most fail on the predicted
+table:
 
-The jaw comes down behind the glass, feels forward until it touches, pushes, and backs
-off. Then the arm looks again — and this is the step that makes the whole arrangement
-work, because the glass has not landed exactly where the model said it would. And the
-planner neither knows nor cares, since it re-plans from the measurement rather than from
-the prediction. Three pushes on three different glasses finish this table, and all six
-glasses are racked.
+- the glass would land outside the glass zone, or
+- the jaw's path would leave the arm's reach, or
+- the predicted movement is much longer than the push.
 
-The other two tables are the endings that are not that. On table 10006 a push is blocked
-on the way down: the jaw touches something before reaching the table, goes straight back
-up without pushing. And the loop simply looks again and plans afresh, so a blocked push
-costs a push and nothing else. That glass ends up pushed twice. On table 10012 two
-pushes are made and then no push is worth making, so three glasses are reported refused
-with their reasons and the table finishes **correct but incomplete**, which [the
-problem](../01_the-problem/01_what-is-asked-for.md) counts as a correct outcome rather
-than a failure.
+The topple veto drops more. Some of these really look like they would tip the
+glass, such as a short push high on a wide part. For others the five copies
+simply disagree. Both count the same. The rest are scored by how much clear
+room is still missing afterwards.
 
-Across the fifty held-out tables as a whole, the first way's recorded results — read
-from its own `results.json`. Are two hundred and two of two hundred and fifty-one
-glasses racked in a hundred and fourteen pushes, thirty-one tables finished, and the
-glasses that were left all reported with a reason. **That is the most glasses any of the
-six racks, and it is done in the fewest pushes.**
+Three more rounds narrow the candidates onto the region that scored best. The
+same search runs for each of the other crowded glasses. The single best push
+over all of them is the one made.
 
-One line of that record is worth reading against the written geometry, because it says
-something the totals hide. The scorecard measures how far each pushed glass stopped from
-where its solution aimed it, which for this solution is the model's own prediction. The
-median is 1.6 mm and the worst is 48.2 mm. The programmed run recorded in
-[`01-one-fixed-nudge/results.json`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/results.json),
-aiming by arithmetic, manages 1.0 mm and 3.9 mm. **So this solution wins while being the
-less accurate of the two**. And it wins because accuracy is not what the task pays for:
-the geometry knows exactly where a glass will go and not whether that makes room. So it
-pushes, looks and often pushes again. Ninety of its 182 pushes are repeats of a push
-that fell short, against 102 of this solution's 114.
+The jaw comes down behind the glass, moves forward until it touches, pushes,
+and backs off. Then the arm looks again. This step is what makes the method
+work. The glass did not land exactly where the model said. The planner does not
+need to know, because it plans again from the new look, not from the
+prediction. **Three pushes on three different glasses finish this table, and
+all six glasses are racked.**
 
-The line it loses on is the one that cannot be taken back. **One glass went over**. This
-makes that table wrong and makes this the only one of the three push-parameter solutions
-to topple anything at all — [one fixed nudge](../04_one-fixed-nudge/01_what-it-is.md)
-and [geometry generates, a model
-ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md) both topple none. Ten
-more pushes went wrong without breaking anything: seven blocked on the way down and
-three jammed, each caught by the next look. The section above on refusals says why the
-topple can happen: the model can be confidently wrong. And the shared topple gate that
-would have caught it is not in front of this planner yet. Those numbers are read against
-the other solutions on the shared scorecard, and against the displacement floor from
-[the target layout](../01_the-problem/04_the-target-layout.md), which says how little
-movement the task needed in the first place.
+**Table 10006 ends badly.** It holds five stemmed glasses. The planner makes two
+pushes, and one glass falls over. Nothing more is touched on a table with a
+glass lying on it. So the other glasses are refused, and the table counts as
+wrong.
+
+**Table 10012 ends well.** It holds five straight glasses. The planner makes
+three pushes, and all five glasses are racked.
+
+Some pushes go wrong without breaking anything. A push can be blocked on the
+way down, when the jaw touches something before it reaches the table. The jaw
+then goes straight back up. The loop simply looks again and plans again, so a
+blocked push costs one push and nothing else. A table can also end with glasses
+refused and nothing broken. The examiner counts that as **correct but
+incomplete**, as [the problem](../01_the-problem/01_what-is-asked-for.md)
+explains.
+
+This page followed single tables. [Where it sits among the other
+five](06_how-it-compares.md#3-where-it-sits-among-the-other-five) gives the
+score over all 50 tables.
 
 ← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

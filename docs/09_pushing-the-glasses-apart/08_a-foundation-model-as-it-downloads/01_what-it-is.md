@@ -1,34 +1,24 @@
 # What it is
 
-> **What it uses** — [LeRobot](https://github.com/huggingface/lerobot), the
-> library that holds reference implementations of every learned policy in this
-> book, with PyTorch underneath it, and one borrowed model taken exactly as it
-> downloads. That model is **SmolVLA**, about 450 million parameters, which
-> uses a few gigabytes while answering and runs on a laptop. Not one number in
-> it is fitted in this cell.
-> **What it does** — it shows the borrowed model the rendered view of the
-> table from the top, hands it one instruction written in plain English, hands
-> it the jaw's own pose in the slot the model keeps for an arm's joint
-> readings, and carries out the waypoints it returns. Then it looks at the
-> table again and asks once more, until every glass has its room or the push
-> budget is spent. There is no training step, no data collection and no fitted
-> parameter anywhere in the design.
-> **How the output is produced** — the picture, the sentence and the pose go
-> into the model; the model returns a run of 50 actions; those actions are read
-> as waypoints for the jaw and handed to the examiner, which carries them out
-> directly rather than through the push macro it owns. So the chain is short:
-> picture and words in, waypoints out, table changed, look again.
-> **What it costs** — no demonstrations, no labels, no training run and no
-> weights file to keep in step with the cell. It needs the library, the 2.9 GB
-> the library downloads, and a laptop. The expense that remains is time per
-> push, because every decision is a forward pass through a large network rather
-> than arithmetic: about a second each, measured, against 0.06 s for the
-> arithmetic of [solution 1](../04_one-fixed-nudge/01_what-it-is.md).
+> **What it uses.** It uses [LeRobot](https://github.com/huggingface/lerobot),
+> a library of robot learning code built on PyTorch. It also uses one borrowed
+> model, **SmolVLA**, exactly as it downloads. No number in the model is
+> fitted in this cell.
+> **What it does.** It shows the model a top-down picture of the table, one
+> fixed sentence, and the jaw's pose. It then carries out the waypoints the
+> model returns. Then it looks again and asks again. This repeats until every
+> glass has room or the push budget is spent.
+> **How the output is produced.** The model returns 50 actions. These are read
+> as waypoints for the jaw. The examiner moves the jaw along them directly,
+> without its push macro.
+> **What it costs.** It needs no demonstrations, no labels and no training. It
+> needs the library, a 2.9 GB download and a laptop. The remaining cost is time,
+> because every push needs a pass through a large network.
 
-> **The cell is described once, in [the cell](../../08_seeing-the-glasses/01_the-cell.md)** — the
-> layout, the two places the camera works from, from the top and from the
-> side, all four sensors, and the words this project uses them with. What
-> follows is only what is specific to this solution.
+> **The cell is described once, in [the cell](../../08_seeing-the-glasses/01_the-cell.md).**
+> That page covers the layout, the two camera positions, the four sensors, and
+> the words this project uses for them. This page covers only what is specific
+> to this solution.
 
 ## Contents
 
@@ -39,126 +29,115 @@
 
 ## 1. Introduction
 
-This document describes how [the problem this book
-sets](../01_the-problem/01_what-is-asked-for.md) is answered by downloading a
-general-purpose robot model and running it, with nothing collected, nothing
-trained and nothing fitted in this cell at all. The model is shown the table
-from the top, told in words what to do, and asked for actions. Whatever it
-returns is carried out.
+This chapter answers [the problem this book
+sets](../01_the-problem/01_what-is-asked-for.md) in the simplest possible way.
+It downloads a general robot model and runs it. Nothing is collected, trained
+or fitted in this cell. The model is shown the table, told in words what to do,
+and asked for actions. Whatever it returns is carried out.
 
-**This solution is built and has run.** It lives in
-[`05-smolvla-as-it-downloads/`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads),
-it downloads the weights and makes the pushes on the same 50 held-out tables as
-the other five, and
-[its README](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/README.md)
-carries the numbers. It did badly, which was expected, and it did badly in a
-way nobody here expected: of the 620 pushes it made in a run, about eight in ten
-never touched a glass at all, because the trajectories it returns stay roughly
-200 mm above the table. The pages that follow report that rather than the
-failure the design argued for.
+**This solution is built and has run.** The code is in
+[`05-smolvla-as-it-downloads/`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads).
+It runs on the same 50 held-out tables as the other five solutions. It did
+badly, and in an unexpected way: most of its pushes pass high above the glasses
+and touch nothing. [How it
+works](03_how-it-works.md#8-what-was-expected-and-what-happened) gives the
+measured details.
 
-The design is worth writing down for two separate reasons, and it is worth separating
-them at the start because they pull in opposite directions. The first is that it is the
-cheapest thing in this book to try. There is nothing to collect and nothing to train, so
-the whole setup cost is a download. The second is that it was very likely to do badly.
-Those two facts are not in tension, because this solution's value is not its score. Its
-value is that it is the starting point of the sharpest comparison in the set: [solution
-6](../09_the-same-model-fine-tuned-here/01_what-it-is.md) is this same model with its
-training continued here. So the gap between the two measures what that training bought
-and measures nothing else.
+There are two reasons to build it. First, it is the cheapest solution in this
+book to try, because the whole setup is a download. Second, it is the starting
+point of the cleanest comparison in the book. [Solution
+6](../09_the-same-model-fine-tuned-here/01_what-it-is.md) is this same model
+with more training done here. So the gap between the two measures what that
+training gave, and nothing else. This means the score of this solution matters
+less than the comparison it makes possible.
 
-By the end of this document you will understand what kind of model this is,
-what goes into it and what comes out, where its competence comes from and why
-that competence is general rather than local, and exactly what is borrowed and
-exactly what is not. The pages after it say why the difference between the
-pictures the model learned from and the pictures this examiner shows it is the
-central risk, why two of the model's three inputs carry no information in this
-problem, why the one channel that observes friction cannot reach it, and why a
-poor result here is still the most useful thing in this book.
+This page says what kind of model this is, what goes in and what comes out. The
+pages after it explain where the model's skill comes from, what it cannot use,
+and why a poor result here is still useful.
 
 ![The view from the top, one instruction in plain English and the arm's joint readings go into the downloaded model, which returns a run of actions that are read as waypoints and carried out, with no training step, no data collection and no fitted parameter anywhere in the chain.](../../images/pushing-the-glasses-apart/a-foundation-model-as-it-downloads/smolvla-flow-what-it-does.png)
 
+The introduction said what this solution is. The next section shows it at work
+on one table.
+
 ## 2. A film of one table
 
-The introduction described what it means to run a large borrowed model here with no
-fitting of any kind. And the film here shows that model on one table in the simulator,
-played at one and a half times real speed.
+The introduction described the borrowed model. This film shows it on one table
+in the simulator, at one and a half times real speed.
 
 [A large borrowed model used exactly as it downloads, on one table, 74 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/05-smolvla-as-it-downloads.mp4 "video")
 
-It holds six glasses where the average is five, and five of them have no room
-at the start.
+The table holds six glasses, where the average is five. Five of them have no
+room at the start.
 
-In the film the jaw sweeps across the table sixteen times without ever reaching a glass,
-because the borrowed model's chunks come back about 200 mm above the table. One of the
-six glasses is racked, and only because it already had room before anything was pushed.
-This is the longest of the six films and the emptiest. That is the result rather than a
-fault in the recording: it is the plainest possible picture of a model whose idea of
-where the work happens comes from somebody else's robot.
+In the film, the jaw sweeps across the table sixteen times. It never reaches a
+glass, because the model's answers stay high above the table. One glass is
+racked, and only because it already had room. This is the longest of the six
+films and the emptiest. That is the real result, not a fault in the recording.
 
-This solution draws its answer rather than computing it, so the film is one
-draw rather than an average. The scored runs on this table racked one glass
-each and spent thirteen pushes on average, against the film's sixteen, so the
-film is a slightly busier draw than the middle one.
+The model draws a fresh answer each time, so the film is one draw, not an
+average. The scored runs on this table racked one glass each and made thirteen
+pushes on average. So the film is a little busier than a typical run.
 
-All six solutions are filmed on this same table, so the films can be watched
-against each other. [The six films](../10_the-results.md#3-the-six-films-all-of-the-same-table)
-collects them, says how that table was chosen, and explains the two things every
-one of the films has in common.
+All six solutions are filmed on this same table. [The six
+films](../10_the-results.md#3-the-six-films-all-of-the-same-table) collects
+them and says how the table was chosen.
 
-The film shows a capable model acting in the wrong place, and the next section
-says which problem using one unchanged is meant to answer.
+The film shows a capable model acting in the wrong place. The next section says
+which problem an unchanged model is meant to answer.
 
 ## 3. The problem this solves
 
-[The problem](../01_the-problem/01_what-is-asked-for.md) asks for a jaw trajectory, and then another, until
-every glass on the table has about 76 mm of clear room in every direction and
-nothing has been knocked over. Choosing those trajectories is hard because a
-push does not go where it was aimed, for the reasons [pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md) sets out in full.
+The film showed what the model does. This section says why anyone would try an
+unchanged model at all.
 
-Every other solution in this book responds to that by building something.
-Solution 1 builds a rule, solution 2 builds geometry and a ranker, solution 3
-builds a policy from recorded pushes, and solution 4 builds a model of the
-table and searches through it. Each of those costs work, and three of the four
-cost data collected in this cell.
+[The problem](../01_the-problem/01_what-is-asked-for.md) asks for jaw
+movements, one after another, until every glass has about 76 mm of clear room
+and nothing has fallen over. This is hard because a push does not go where it
+was aimed. [Pushing without
+toppling](../01_the-problem/05_pushing-without-toppling.md) explains why.
 
-This solution responds differently. It observes that pushing an object across a flat
-surface with a gripper is not a task peculiar to this project, that very many people
-have recorded robots doing exactly that sort of thing. That somebody has already fitted
-a single model on an enormous pool of those recordings. So instead of building a method
-for this table, it borrows a method for tables in general and asks whether the general
-thing is good enough for the particular one. That is a real question with a real answer,
-and the answer is worth knowing before anybody spends a week recording demonstrations.
+Every other solution in this book builds something for this. Solution 1 builds
+a rule. Solution 2 builds geometry and a ranker. Solution 3 learns a policy from
+recorded pushes. Solution 4 learns a model of the table and searches through it.
+Each of these costs work, and three of them need data collected in this cell.
+
+This solution does something else. Pushing objects on a table is not special to
+this project. Many people have recorded robots doing this kind of thing. Someone
+has already trained one model on a huge pool of those recordings. So this
+solution borrows a model made for tables in general. It asks if that is good
+enough for this table. The answer is worth knowing before anyone spends a week
+recording demonstrations.
+
+The question is now clear. The next section gives the idea that answers it.
 
 ## 4. The main idea
 
-The idea is three steps, and there is nothing else in it.
+The last section said this solution borrows instead of builds. This section
+gives the three steps that make up the whole idea.
 
-**First, download the model and show it the table from the top.** The input is
-a picture of the table looking straight down, which [the test
-examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#3-what-look-hands-over) renders so that the solutions which read
-pictures get the same information as the solutions which read numbers. A fixed
-camera 750 mm above the middle of the glass zone, looking straight down, gives
-384 by 384 pixels of red, green and blue, the same frame on every table.
+**First, download the model and show it the table from the top.** [The test
+examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#3-what-look-hands-over)
+draws this picture so that solutions that read pictures get the same
+information as solutions that read numbers. A fixed camera 750 mm above the
+glass zone looks straight down. It gives a colour picture of 384 by 384 pixels.
 
-**Second, tell it in words what to do, and hand it a pose.** The instruction is
-one line of plain English, the same line every time: *the glasses are too close
-together, push them apart*. The pose goes in the slot the model keeps for an
-arm's joint readings. What this cell puts there is where the jaw is standing,
-because the model was fitted on a different arm and this cell's joint angles
-would mean nothing to it. That substitution looks small here and turns out to
-matter a great deal, which [how it works](03_how-it-works.md#5-two-of-the-three-inputs-say-the-same-thing-every-time) explains.
+**Second, tell it in words what to do, and give it a pose.** The instruction is
+the same every time: *the glasses are too close together, push them apart*.
+The pose goes in the slot the model keeps for an arm's joint readings. This
+cell puts the jaw's position there, because the model was trained on a
+different arm. This cell's joint angles would mean nothing to it. This small
+change turns out to matter a lot. [How it
+works](03_how-it-works.md#5-two-of-the-three-inputs-say-the-same-thing-every-time)
+explains why.
 
 **Third, carry out what comes back.** The model returns 50 actions. Read as
-waypoints for the jaw, those actions are already the shared output the contract
-asks for, so they go straight to the examiner. The examiner moves the jaw along
-them, the table changes, fresh measurements are taken, and the model is asked
-again from the new arrangement.
+waypoints for the jaw, they are already the output the examiner accepts. The
+examiner moves the jaw along them, and the table changes. The model is then
+asked again about the new table.
 
-So this solution contains no fitted numbers, no hand-written geometry and no
-search. It contains a download, an instruction and a loop. **That is the point
-to hold on to while reading the rest**, because almost every strength and every
-weakness below follows from it directly.
+So this solution has no fitted numbers, no hand-written geometry and no search.
+It has a download, a sentence and a loop. **Keep this in mind on the pages that
+follow**, because almost every strength and weakness comes from it.
 
 ← [A world model, then plan with it — how it compares](../07_a-world-model-then-plan-with-it/06_how-it-compares.md) · [How it works](03_how-it-works.md) →

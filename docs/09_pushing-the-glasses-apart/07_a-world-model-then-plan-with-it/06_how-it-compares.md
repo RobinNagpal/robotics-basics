@@ -1,8 +1,8 @@
 # How it compares
 
-This page is the judgement on this solution. It says where the solution is
-strong and where it breaks, names the general ideas behind it, and places it
-beside the other five.
+This page judges this solution. It says where the solution is strong and where
+it breaks. It names the published ideas behind it, and it places it beside the
+other five.
 
 ## Contents
 
@@ -12,104 +12,109 @@ beside the other five.
 
 ## 1. Where it is strong and where it breaks
 
-**It could plan a sequence, and nothing else here could.** That is the
-capability this document is built around, and it follows from the model
-returning a table rather than a score — though the built planner's horizon is
-one push, so the sequence is a design and not yet a result.
+The earlier pages showed how the solution works and what it costs. This section
+lists its strengths first, and then its weaknesses.
 
-**Its model needs no written physics, and so no guessed friction.** There is no
-friction value, no tipping formula and no rule about where the jaw fits
-anywhere inside it, and the only thing written down in the built planner is the
-map — where a glass may stand and where the arm can reach. The shared topple
-gate that belongs in front of it is not wired up yet, which is a gap rather
-than a virtue. Whatever decides whether a push slides,
-tips or is blocked is whatever the model saw happen, which means it also
-absorbs the things nobody thought to write down.
+**It could plan a sequence of pushes, and no other solution here could.** The
+built planner looks only one push ahead, so this is a design, not yet a result.
+[Planning a
+sequence](03_how-it-works.md#9-planning-a-sequence-which-only-this-solution-could-do)
+explains it.
 
-**It knows where it is ignorant, cheaply.** Five copies of a small network cost
-five times nothing, and their disagreement is a usable signal that the training
-data did not cover this push. Most learned methods give no such signal at all.
+**Its model needs no written physics.** It holds no friction value and no
+tipping formula. It learns from what it saw happen, including things nobody
+thought to write down. But the shared topple rule is also missing, as [the main
+idea](01_what-it-is.md#4-the-main-idea) explains.
 
-**Its training data costs no human time.** Every label is what the second look
-found. A demonstration-based method needs somebody to produce the
-demonstrations; this one needs only the simulator to run.
+**It knows cheaply where it is ignorant.** The five copies disagree where the
+training data did not cover a push. [Ensembles as a measure of
+ignorance](03_how-it-works.md#5-ensembles-as-a-measure-of-ignorance) explains
+this.
 
-**The same model serves a different goal.** Change the arithmetic that scores a
-predicted table and the solution aims somewhere else, with no retraining. A
-learned policy would have to be trained again.
+**Its training data costs no human time.** [What it
+needs](05_what-it-needs.md#1-what-it-needs) explains why.
 
-**It can be confidently wrong, and that is its worst failure.** Where the
-training data is thin in a way the copies did not notice, five copies agree and
-are wrong together. The two topples on record — one on the fifty held-out
-tables and one on a hundred tuning tables — were exactly this: the model had
-rated both of those pushes safe, and a lower limit does not catch that. It only
-refuses more.
+**The same model can serve a different goal without retraining.** [The main
+idea](01_what-it-is.md#4-the-main-idea) explains this.
 
-**Its model is only as wide as its encoding.** Five neighbours, five numbers
-each, and no representation of the jaw's body. Anything the thirty-four numbers
-cannot express cannot be learned however much data is collected, and the causes
-the README records for its topples are of that kind: the jaw's 90 mm body
-clipped a neighbour behind, which the thirty-four numbers do not describe at
-all, and a stemmed glass was met at its stem under the bowl, which they describe
-only as three widths.
+**Its worst failure is being sure and wrong.** The planner makes a push only
+when all five copies give it less than a 1% chance of a topple. So any push that
+toppled a glass was a push that all five copies had rated as safe. Where
+the training data was thin in a way the copies did not notice, **the five copies
+agree and are wrong together.** On the 50 test tables, this happened 20 times,
+on 19 tables. A lower topple limit does not fix this, because these are pushes
+the model was sure about. A lower limit only refuses more. More training
+examples of those situations would help.
 
-**It is the dearest of the four solutions that do not run a borrowed model.**
-0.41 seconds of thinking per push, against 0.01 to 0.08 for the other three, is
-the price of searching rather than answering. The two foundation models are
-still dearer, at 0.82 and 1.07.
+**Its model can only learn what its 34 numbers describe.** The inputs hold five
+neighbours with five numbers each. They say nothing about the body of the jaw.
+More data cannot teach the model what the inputs cannot express. The folder's
+README records causes of this kind. In one, the jaw's body hit a neighbour
+behind the pushed glass, and the 34 numbers do not describe that at all. In
+another, the jaw met a stemmed glass at its stem, under the bowl. The 34
+numbers describe that glass only as three widths.
 
-**It compounds error over depth**, which caps how far a sequence can usefully be
-planned, and the cap for a one-step-trained model is low.
+**It spends more computing time per push than the geometry solutions.** It
+searches before every push, while they compute an answer directly. [The
+results](../10_the-results.md#2-the-results) compare the times.
 
-**It cannot be inspected the way written geometry can.** When a written rule is
-wrong you can print one number and see why. Here you print thirty-four numbers,
-five answers and what really happened, and infer. That is far better than
-nothing — and it is better than the second way offers — but it is not an explanation.
+**Its error grows with depth.** This limits how far ahead a sequence could be
+planned. [Compounding error over a
+rollout](03_how-it-works.md#8-compounding-error-over-a-rollout) explains why.
 
-**And it is the most machinery of the six.** A data collector, a trainer, an
-ensemble, a search and a loop, against [one fixed nudge](../04_one-fixed-nudge/01_what-it-is.md),
-which is a page of arithmetic. That difference in setup cost is real and it
-should be weighed against the scores rather than hidden behind them.
+**It cannot be read the way written geometry can.** When a written rule is
+wrong, you can print one number and see why. Here you print 34 numbers, five
+answers and what really happened, and then you have to work out the cause.
+That is much better than nothing, and better than the second way. But it is
+not an explanation.
+
+**It needs the most machinery of the six.** It has a data collector, a trainer,
+five copies of a model, a search and a loop. [One fixed
+nudge](../04_one-fixed-nudge/01_what-it-is.md) is a page of arithmetic. This
+extra setup cost is real, and it should be weighed against the scores.
+
+The next section names the published ideas this solution is built from.
 
 ## 2. The general ideas behind this
 
-Five lines of published work meet in this solution, and they are worth
-separating because they are usually run together under the word "learning".
+The strengths and weaknesses above come from five lines of published work.
+This section separates them, because they are often mixed together under the
+one word "learning".
 
 ### Model-based against model-free control
 
-A **model-free** method learns what to do. A **model-based** method learns what
-will happen and computes what to do from it. The trade is well established in
-both directions. Model-based methods need far fewer interactions, because every
-interaction teaches them about the world rather than about one goal, and they
-can be re-aimed at a new goal without new data. Model-free methods reach a
-higher ceiling, because they never have to be right about the world, only about
-the action.
+A **model-free** method learns what to do. A **model-based** method learns
+what will happen, and works out what to do from that.
 
-It is normally right where interactions are expensive or irreversible and the
-goal may change. It is normally wrong where interactions are cheap and plentiful
-and the goal is fixed for ever, because then the extra machinery buys nothing a
-policy would not have learned anyway. In this cell a topple is irreversible,
-which argues for model-based; but simulator pushes are cheap and the goal has
-not changed, which argues the other way. That tension is real and it is part of
-what the comparison with the other five is meant to settle.
+Each has a known advantage. Model-based methods need far fewer interactions,
+because each interaction teaches them about the world, not about one goal. They
+can also be aimed at a new goal without new data. Model-free methods can reach
+a higher ceiling, because they only need to be right about the action, not
+about the world.
+
+Model-based is usually right when interactions are costly or cannot be undone,
+and when the goal may change. It is usually wrong when interactions are cheap
+and the goal never changes. In that case the extra machinery adds nothing that
+a policy would not learn anyway. In this cell, a topple cannot be undone, which
+favours model-based. But simulator pushes are cheap and the goal has not
+changed, which favours model-free. The comparison with the other five is meant
+to test this.
 
 ### Fitting a dynamics model to recorded interaction
 
 Nagabandi, Kahn, Fearing and Levine's [*Neural Network Dynamics for Model-Based
 Deep Reinforcement Learning with Model-Free
-Fine-Tuning*](https://arxiv.org/abs/1708.02596) (2017) is the clearest statement
-of the recipe the first way follows: fit a plain network to situation, action and
-next situation gathered by random exploration, then control with
-model-predictive control on top of it. Its headline result is sample
-efficiency — far fewer interactions than a model-free policy needs for the same
-task.
+Fine-Tuning*](https://arxiv.org/abs/1708.02596) (2017) describes the recipe the
+first way follows. It fits a plain network to situation, action and next
+situation, collected by random exploration. Then it controls the robot with
+model-predictive control on top. Its main result is that it needs far fewer
+interactions than a model-free policy for the same task.
 
-It is normally right when the situation can be written down as a short list of
-measured numbers, which is exactly this problem once [the glasses have been
-told apart](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md)
-and measured. It is normally wrong when it cannot, because then the model has
-to predict pictures, which is a far harder fit for a far worse prediction.
+This recipe is usually right when the situation can be written as a short list
+of measured numbers. That is true here once [the glasses have been told
+apart](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md) and
+measured. It is usually wrong when the situation cannot be written that way.
+Then the model has to predict pictures, which is much harder.
 
 ### Ensembles, and planning with them
 
@@ -119,127 +124,126 @@ Ensembles*](https://arxiv.org/abs/1612.01474) (2016) is the reference for
 training the same network several times and reading the spread between the
 copies as uncertainty. Chua, Calandra, McAllister and Levine's [*Deep
 Reinforcement Learning in a Handful of Trials using Probabilistic Dynamics
-Models*](https://arxiv.org/abs/1805.12114) (2018), usually called PETS, is the
-version that plans with the cross-entropy method against such an ensemble and
-keeps track of where the copies disagree. **The first way is a simplified PETS**:
-five networks, the cross-entropy method, and a veto driven by the worst copy
-rather than the average.
+Models*](https://arxiv.org/abs/1805.12114) (2018) is usually called PETS. It
+plans with the cross-entropy method against such a set of copies, and it tracks
+where the copies disagree. **The first way is a simple version of PETS**: five
+networks, the cross-entropy method, and a veto based on the worst copy, not the
+average.
 
-An ensemble is normally right wherever a model will be searched against, because
-a search finds a model's blind spots on purpose. It is normally wrong as a
-complete account of uncertainty: copies trained on the same data can agree
-confidently about a situation none of them has seen, which is precisely the
-failure recorded above. For a method that does report when it has left the
-region it knows, Bauza and Rodriguez's [*A Probabilistic Data-Driven Model for
-Planar Pushing*](https://arxiv.org/abs/1704.03033) (2017) fits a Gaussian
-process to pushing data and returns a spread with every value. It is slower to
-query and does not scale to tens of thousands of examples, which is the trade an
-ensemble takes the other side of.
+A set of copies is usually right wherever a search will run against the model,
+because a search finds a model's weak spots on purpose. It is not a complete
+measure of doubt. Copies trained on the same data can agree about a situation
+none of them has seen. That is the failure described in the section above.
+Bauza and Rodriguez's [*A Probabilistic Data-Driven Model for Planar
+Pushing*](https://arxiv.org/abs/1704.03033) (2017) does report when it is
+outside what it knows. It fits a Gaussian process to pushing data, and it
+returns a spread with every value. But it is slower to ask, and it does not
+scale to tens of thousands of examples. A set of copies makes the opposite
+trade.
 
 ### The cross-entropy method, and model-predictive control
 
-The search is Rubinstein's **cross-entropy method**, described for a general
-audience in de Boer, Kroese, Mannor and Rubinstein's *A Tutorial on the
-Cross-Entropy Method* (2005): sample, keep the elite, refit the sampling
-distribution to the elite, repeat. Planning a short sequence, executing only its
-first step and re-planning is **model-predictive control**, which is decades old
-and came from process control long before anybody applied it to robots.
+The search is Rubinstein's **cross-entropy method**. De Boer, Kroese, Mannor and
+Rubinstein's *A Tutorial on the Cross-Entropy Method* (2005) describes it for a
+general reader. It samples, keeps the best, fits the sampling to the best, and
+repeats. Planning a short sequence, making only its first step, and planning
+again is called **model-predictive control**. It is decades old, and it came
+from industrial process control before it was used on robots.
 
-The cross-entropy method is normally right where the action has few dimensions, the cost
-is cheap to evaluate and the landscape is awkward — not smooth, full of hard limits, or
-both. It is normally wrong where the action has many dimensions, because the number of
-samples it needs to cover a space grows with the dimension. This is why no policy here
-is searched for this way and only pushes are. Model-predictive control is normally right
-whenever the model is imperfect but the state can be re-measured often, and normally
-wrong when measuring is slow or expensive. This would leave the plan running open-loop
-for exactly as long as it is unreliable.
+The cross-entropy method is usually right when the action has few numbers, the
+cost is cheap to compute, and the cost is not smooth or has hard limits. It is
+usually wrong when the action has many numbers, because the samples it needs
+grow with the number of dimensions. This is why only pushes are searched for
+this way here, and no policy is. Model-predictive control is usually right
+when the model is imperfect but the state can be measured often. It is usually
+wrong when measuring is slow or costly, because then the plan runs without
+checks for too long.
 
 ### Learned world models with their own representation
 
 Hafner and colleagues' [*Learning Latent Dynamics for Planning from
 Pixels*](https://arxiv.org/abs/1811.04551) (PlaNet, 2018) and [*Dream to
-Control*](https://arxiv.org/abs/1912.01603) (Dreamer, 2019) established the other
-branch: do not predict the observation at all, learn a compact internal description and
-predict how *that* changes. Hansen, Wang and Su's
+Control*](https://arxiv.org/abs/1912.01603) (Dreamer, 2019) started the other
+branch. They do not predict what the camera sees. They learn a short internal
+description and predict how that changes. Hansen, Wang and Su's
 [TD-MPC](https://arxiv.org/abs/2203.04955) (2022) and
-[TD-MPC2](https://arxiv.org/abs/2310.16828) (2023) combine such a learned internal model
-with planning at run time and a learned value to stand in for everything beyond the
-planning horizon. This is how they avoid needing a deep rollout. TD-MPC2 is the second
-way. The library this project uses elsewhere ships TD-MPC rather than TD-MPC2, so it
-would have to be fetched from its own project.
+[TD-MPC2](https://arxiv.org/abs/2310.16828) (2023) add planning at run time to
+such an internal model. They also learn a value that stands in for everything
+past the end of the plan. This is how they avoid long rollouts. TD-MPC2 is the
+second way, and [what it needs](05_what-it-needs.md#1-what-it-needs) says where
+it would come from.
 
-This family is normally right where the situation cannot be written down — raw pictures,
-contact-rich manipulation, anything where the useful variables are not the measured
-ones. It is normally wrong, or at least wasteful, where the situation *can* be written
-down and already has been. This is the case here: the camera work that [tells the
-glasses apart](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md) has
-already measured the positions and widths, so a learned encoding is being asked to
-rediscover information the cell already supplies. That is the honest prior expectation
-for the second way here, and it is exactly the expectation the comparison exists to
-test.
+This family is usually right when the situation cannot be written down. For
+example, the input may be raw pictures, or the task may have many contacts. It
+is usually wasteful when the situation can be written down and already has
+been. That is the case here. The camera work that [tells the glasses
+apart](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md)
+already measured the positions and widths. A learned internal description would
+have to find that information again. So the expected result is that the second
+way does no better here. Building it would test that expectation.
 
 ### Where the push data of record comes from
 
-Finally, for anyone who wants real pushes rather than simulated ones: Yu, Bauza, Fazeli
+Some readers will want real pushes instead of simulated ones. Yu, Bauza, Fazeli
 and Rodriguez's [*More than a Million Ways to Be
-Pushed*](https://arxiv.org/abs/1604.04038) (2016) recorded a robot pushing objects
-across several different surfaces with the pusher's path, the object's motion and the
-contact forces all logged. What it buys is pushes on *more than one surface*, which is
-the only way to ask whether a fitted push model transfers at all. The question this
-solution cannot ask, because its examiner has one table with one friction. What it costs
-is a robot, a motion-capture rig and months.
+Pushed*](https://arxiv.org/abs/1604.04038) (2016) recorded a robot pushing
+objects across several surfaces. It logged the pusher's path, the object's
+motion and the contact forces. Its value is pushes on *more than one surface*.
+That is the only way to ask whether a learned push model works on a new
+surface. This solution cannot ask that, because its examiner has one table with
+one friction. The cost of such data is a robot, a motion-capture system and
+months of work.
+
+The next section places this solution beside the other five.
 
 ## 3. Where it sits among the other five
 
-This solution is the only one that learns what will happen rather than what to
-do, and its place in the comparison follows from that rather than from its
-score.
+The ideas above explain how this solution works. This section compares its
+result with the other five. It is the only solution that learns what will
+happen instead of what to do.
 
-Against [one fixed nudge](../04_one-fixed-nudge/01_what-it-is.md), the comparison
-is whether any learning beats no learning, and the answer on the shared scorecard
-is split. This solution racks 146 glasses to the written geometry's 107, and
-finishes 20 tables to its 14. It breaks 20 glasses doing it, where the written
-geometry breaks one. **Thirty-nine more glasses racked for nineteen more
-toppled is the whole of the trade**, and it is a trade rather than a win
-because a toppled glass cannot be stood back up. Against
-all that, the fixed nudge needs no data, no training and no weights, and it
-explains every one of its own failures.
+The scores come from one run on the 50 test tables, in
+[`results.json`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/results.json).
+It racks 146 of the 251 glasses in 221 pushes. It finishes 20 tables and leaves
+19 tables wrong. It topples 20 glasses.
 
-Against [geometry generates, a model
-ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md), the comparison is the
-closest in the set and the easiest to misread. Both search over candidate pushes and
-both score them with something fitted. The difference is what the fitted part returns. A
-ranker returns a score, which is enough to choose among the candidates in front of it
-and not enough to say what the table will look like. So it can never chain two pushes or
-be re-aimed at a different goal. This solution's model returns a table, which costs more
-to fit and buys both of those. Note also that the geometric solution is the teacher for
-the imitation solutions, and this one is not: it needs no demonstrations, because its
-labels come from the second look.
+**Against [one fixed nudge](../04_one-fixed-nudge/01_what-it-is.md)**, the
+question is whether any learning beats none. The answer is split. This solution
+racks 146 glasses to the fixed nudge's 107, and it finishes 20 tables to its 14.
+But it topples 20 glasses, where the fixed nudge topples one. **So it racks 39
+more glasses and topples 19 more.** That is a trade, not a win, because a
+toppled glass cannot be stood up again. Also, the fixed nudge needs no data, no
+training and no weights, and it can explain each of its own failures.
 
-Against [imitation from demonstrations](../06_imitation-from-demonstrations/01_what-it-is.md),
-the comparison is one of the sharpest among the six: *plan with a model, or
-learn the push directly*. A policy answers in one pass with no search, which
-makes it far cheaper to run, and it needs no explicit idea of the world at all.
-But it needs demonstrations, which somebody or something has to produce; it
-inherits whatever its teacher did wrong; and changing the goal means training
-again. This solution needs no demonstrations and no teacher, and it can be
-re-aimed by editing arithmetic. It pays for that in run-time compute and in
-machinery.
+**Against [geometry generates, a model
+ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md)**, the
+difference is what the learned part returns. Both search over candidate pushes,
+and both score them with something learned. The ranker returns a score. A score
+can choose among candidates, but it cannot say what the table will look like.
+So the ranker can never chain two pushes or aim at a new goal. This solution's
+model returns a table, which costs more to train and allows both. [What the
+comparison says](../10_the-results.md#5-what-the-comparison-says) compares the
+two scores.
 
-Against [SmolVLA as it
-downloads](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) and [SmolVLA
-fine-tuned](../09_the-same-model-fine-tuned-here/01_what-it-is.md), the comparison is
-between a small thing that knows only this table and a large thing that has seen
-hundreds of real teleoperation datasets and knows almost nothing about this one. Those
-two are also policies, so they share the contrast with imitation above. The pair of them
-is the sharpest comparison in the whole set. The same model and the same weights, with
-the only difference being whether its training was continued here — and this solution is
-not part of that comparison at all.
+**Against [imitation from
+demonstrations](../06_imitation-from-demonstrations/01_what-it-is.md)**, the
+question is: plan with a model, or learn the push directly? A policy answers in
+one step with no search, so it is much cheaper to run. But it needs
+demonstrations, and a new goal means training again. This solution needs no
+demonstrations and no teacher. It can take a new goal by changing arithmetic.
+It pays for that with computing time and machinery.
 
-And the comparison inside this solution is its own: five small networks written
-for this cell against TD-MPC2 off the shelf, which measures whether building the
-model by hand was worth the effort. The honest expectation is that in a cell
-this narrow, with the state already measured, the hand-built model is
-competitive. Finding out is the point.
+**Against [SmolVLA as it
+downloads](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) and
+[SmolVLA fine-tuned](../09_the-same-model-fine-tuned-here/01_what-it-is.md)**,
+the contrast is size. This solution is small and knows only this table.
+SmolVLA is large, has seen many real robot datasets, and knows almost nothing
+about this table. Both SmolVLA solutions are policies, so the contrast with
+imitation above applies to them too.
+
+**Inside this solution**, the comparison is the hand-built model against
+TD-MPC2. It would show whether building the model by hand was worth it. In a
+cell this narrow, with the state already measured, the hand-built model should
+do about as well. Building the second way is how to find out.
 
 ← [What it needs](05_what-it-needs.md) · [A foundation model as it downloads — what it is](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) →

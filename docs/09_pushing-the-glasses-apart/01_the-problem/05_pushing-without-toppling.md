@@ -2,18 +2,18 @@
 
 ## 1. Introduction
 
-A glass pushed sideways across a table either slides or falls over, and which
-of the two happens is not luck. It is settled before the arm moves, by how far
-up the glass the jaw touches it. This document explains the rule that settles
-it, why that rule has to be worked out again for every glass rather than agreed
-once, why some glasses have to be refused rather than pushed, and what the arm
-does about the fact that the rule contains a number nothing in this cell can
-measure. It is deliberately separate from the six solutions because **every one
-of them needs it and none of them differs in it**. By the end you will
-understand why the height that matters is not the height the arm aims at, why a
-refusal is a result rather than a failure, why every solution here acts and then
-measures instead of acting on a prediction, and where a trained model can sit
-inside that loop without being able to break it.
+A glass pushed sideways across a table either slides or falls over. This is not
+luck. The height where the jaw touches the glass decides it, before the arm
+moves. This page gives the rule that decides it. It explains why the rule is
+worked out again for every glass. It explains why some glasses must be refused.
+It also explains what the arm does about friction, a number in the rule that
+nothing in this cell can measure.
+
+All six solutions need this page, and none of them differs in it. By the end
+you will know four things. The height that matters is not the height the arm
+aims at. A refusal is a result, not a failure. Every solution acts and then
+measures, instead of trusting a prediction. And a trained model can help inside
+that loop without being able to break it.
 
 ## Contents
 
@@ -27,316 +27,313 @@ inside that loop without being able to break it.
 
 ## 2. Why no solution can answer this on its own
 
-The six solutions differ in how they choose a push: which glass to move, in
-which direction, and how far. That difference stops at the edge of this
-document, for two reasons.
+The six solutions differ in how they choose a push. They choose which glass to
+move, in which direction, and how far. That difference stops at this page, for
+two reasons.
 
-The first is that the table does not know which method chose the push. A glass
-touched above its own limit goes over whether a few lines of geometry picked the
-contact or a large trained policy did, because what decides the outcome is the
-contact and the glass, not the reasoning behind them. So the limit is a property
-of the situation rather than of the method, and it has to hold for all six in
-the same form.
+First, the table does not know which method chose the push. A glass touched too
+high falls over, whether simple geometry chose the contact or a large trained
+model did. The contact and the glass decide the outcome. So the limit belongs to
+the situation, not to the method, and it must be the same for all six.
 
-The second is that none of the six can predict where a pushed glass ends up. Friction
-under a foot is not the same everywhere on that foot, the contact between a flat jaw and
-a curved glass is a small patch rather than a point. And a glass turns as well as
-travels. Planar pushing is a well studied problem and the honest summary is that
-predicting an outcome precisely needs numbers nobody here has. So every solution has to
-act, measure what really happened, and correct — and that loop, like the limit, is
-shared.
+Second, none of the six can predict exactly where a pushed glass will stop.
+Friction is not the same everywhere under the foot of a glass. The flat jaw
+touches the curved glass on a small patch, not at one point. And a glass turns
+as well as moves. A precise prediction needs numbers that nobody here has. So
+every solution must act, measure what really happened, and correct. This loop
+is shared too.
 
-This document therefore holds those two things: **the limit, which says whether
-a push may happen at all**, and **the loop, which runs around every push that
-does**.
+So this page holds two things. **The limit says whether a push may happen at
+all.** **The loop runs around every push that does happen.** The next section
+starts with the limit.
 
 ## 3. The limit: slide, or tip
 
-Start with what a push has to overcome, because the whole rule falls out of
-comparing two numbers.
+The rule comes from comparing two forces, so this section starts with those two
+forces.
 
-A glass standing on a table is held down by its own weight and held still by friction.
-Push it horizontally at some height and two different things can give way. The foot can
-**slide** over the table, which happens once the push exceeds the friction holding it,
-and friction is the friction coefficient multiplied by the weight. Or the glass can
-**tip**, turning about the bottom edge furthest from the jaw. This happens once the
-turning effect of the push about that edge exceeds the turning effect of the weight
-holding the glass down on its foot.
+A glass on a table is held down by its weight. Friction holds it still. Push it
+sideways at some height, and one of two things gives way first. The foot can
+**slide** over the table. This happens once the push is larger than friction.
+Friction is the friction coefficient times the weight. Or the glass can **tip**.
+It turns about the bottom edge furthest from the jaw. This happens once the
+turning effect of the push is larger than the turning effect of the weight.
 
-Those two give way at different pushes, and the one that gives way first is the
-one that happens. Write `h` for the height the jaw touches the glass and `a` for
-half the width of the foot the glass stands on, and write `μ` for the friction
-coefficient between the glass and the table. Sliding needs a push of `μ` times
-the weight. Tipping needs a push of the weight times `a / h`, because the push
-acts at `h` from the table and the weight acts at `a` from the edge the glass
-would turn about. Sliding comes first while
+Use these letters:
+
+- `h` is the height where the jaw touches the glass.
+- `a` is half the width of the glass's foot.
+- `μ` (the Greek letter mu) is the friction coefficient between glass and table.
+  It is a plain number that says how much the two surfaces grip each other.
+
+Sliding needs a push of `μ` times the weight. Tipping needs a push of the
+weight times `a / h`. This is because the push acts at height `h`, and the
+weight acts at distance `a` from the edge the glass turns about. So the glass
+slides first while
 
     h  <  a / μ
 
-and tipping comes first above it.
+and it tips first above that height.
 
 ![Pushed low, a glass slides; pushed high, it turns about the bottom edge furthest from the jaw, and the height where the behaviour changes is set by the glass's own foot.](../../images/pushing-the-glasses-apart/pushing-without-toppling/push-low-or-it-topples.png)
 
-Two things about that rule are worth noticing straight away, because they are
-what make pushing attractive in the first place. The weight appears on both
-sides and cancels, so **the limit does not depend on how heavy the glass is**,
-which is exactly as well, since nothing weighs a glass before it is pushed. And
-nothing in it depends on how hard or how fast the jaw pushes, so a gentler push
-does not make a high contact safe. A push that is too high tips the glass over
-slowly instead of quickly.
+Two facts about this rule help a lot. First, the weight appears on both sides
+and cancels. So **the limit does not depend on how heavy the glass is**. This
+is good, because nothing weighs a glass before it is pushed. Second, the rule
+does not depend on how hard or how fast the jaw pushes. So a gentle push does
+not make a high contact safe. A push that is too high tips the glass slowly
+instead of quickly.
+
+The rule uses three numbers, and the next three parts look at them in turn:
+the foot, the height, and the case where no height works.
 
 ### The push height is worked out per glass
 
-Because `a` is half the foot width, and every glass has its own foot, the
-highest safe contact is a different number for every glass on the table.
+The rule uses `a`, which is half the foot width. Every glass has its own foot.
+So the highest safe contact is a different number for every glass.
 
-That is why the push height is **computed from the measurement rather than chosen
-once**. The camera work hands over [how wide each glass is at its
-foot](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#4-what-must-come-out),
-so the limit can be evaluated for that glass before the arm commits to touching it.
-Agreeing a single safe height for the whole kind would mean choosing it low enough for
-the narrowest foot the kind allows, which refuses glasses that were perfectly pushable,
-or choosing it higher. This pushes glasses that were not. This is the pattern the whole
-project uses: compute what the measurement allows, rather than assume a tolerance that
-has to cover every case at once.
+This is why the push height is **computed from the measurement, not chosen
+once**. The camera work reports [how wide each glass is at its
+foot](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#4-what-must-come-out).
+So the arm can check the limit for that glass before it touches it. One safe
+height for every glass would not work. A low height refuses glasses that could
+have been pushed. A higher height pushes glasses that will fall. The whole
+project follows this pattern: compute what the measurement allows for each
+case.
 
 ### The height that counts is the top edge of the jaw
 
-The arm does not get to choose `h` freely either, and the value to put in the
-rule is not the obvious one.
+The arm cannot choose `h` freely either. And the right value for `h` is not the
+obvious one.
 
-The jaw is a solid object with a height of its own. Its middle rides as low as the hand
-can go, which is 75 mm above the table, and its leading stretch is 63 mm tall, so the
-jaw's top edge stands at 107 mm. Those are the gripper's own numbers and they do not
-change between glasses. Both of them are larger than they would be for a thin blade. And
-the reason is worth carrying through this page: the hand is a real Robotiq 2F-85, it is
-139 mm across its fingers when held the way the cell grips. And the glasses on these
-tables stand 150 mm apart at the closest. So it has to be turned a quarter turn onto its
-side to fit between them at all, and on its side it is 27 mm across but reaches 69 mm
-below its own middle. **Turning it buys the room to get in and costs the height**, and
-the height is what this section is about. What changes is which part of the jaw the
-glass meets, and **a glass that is wider higher up meets the top edge before any other
-part of the jaw touches it**. The tapered kind is wider higher up by definition, so for
-those glasses the contact is at the top edge.
+The middle of the jaw rides at 75 mm above the table. This is as low as the
+hand can go. The front part of the jaw is 63 mm tall, so its top edge stands at
+107 mm. These numbers come from the gripper, and they do not change between
+glasses. They are large because the hand is turned on its side to fit between
+the glasses. [The gap that
+matters](01_what-is-asked-for.md#6-the-gap-that-matters-is-not-the-gap-between-the-glasses)
+explains why it is turned.
 
-So `h` is 107 mm for a glass of that shape, not the 75 mm the arm aims at. The
-difference is 32 mm on a limit that is itself often only a few tens of millimetres. So
-it is not a rounding question: checking the rule at the middle of the jaw declares far
-more glasses safe than really are. Measured across 400 drawn tapered glasses at the
-friction the simulator uses, checking at the middle calls about one in eleven safe to
-push and checking at the top edge calls none of them safe. And the mistakes all point
-the same way. Every glass that the lenient check wrongly admits is a glass that will be
-touched above its limit and will go over, while the stricter check's mistakes are
-glasses left alone that could have been moved. One of those two errors costs a glass and
-cannot be undone; the other costs a refusal that can be reported. **Getting this wrong
-errs in the direction that cannot be recovered**, which is why it is stated here rather
-than left to each solution.
+A glass that is wider higher up touches the top edge of the jaw first. The
+tapered glasses here are wider higher up. So for them the contact is at the top
+edge, and `h` is 107 mm, not the 75 mm the arm aims at.
+
+The difference is 32 mm. The limit itself is often only a few tens of
+millimetres, so this difference matters a lot. Checking at the middle of the
+jaw calls far too many glasses safe. For example, take 400 drawn tapered
+glasses at the friction the simulator uses. A check at the middle calls about
+one in eleven safe to push. A check at the top edge calls none of them safe.
+
+The same is true for every kind of glass, not only the tapered one. The table
+below has one row for each kind. The first column is the share that a check at
+the middle of the jaw calls safe. The second column is the share that is really
+safe, because the contact is at the top edge. Both use the friction the
+simulator uses.
+
+| kind | check at the jaw's middle | check at its top edge |
+|---|---|---|
+| straight | 57% | 7% |
+| tapered | 10% | none |
+| stemmed | 86% | 22% |
+| short stemmed | 55% | none |
+
+The two checks make different kinds of mistake. The middle check admits glasses
+that will be touched too high, and those glasses fall. The top-edge check
+leaves some glasses alone that could have moved. A fallen glass is lost for
+good. A refused glass is only a refusal in the report. **So the wrong choice
+here makes the mistake that cannot be undone.** This is why this page fixes the
+rule, instead of leaving it to each solution.
 
 ### Some glasses cannot be pushed at all
 
-Put the two previous sections together and a third consequence follows that is
-easy to miss, because it looks like a gap rather than an answer.
+The two parts above lead to a third fact. It is easy to miss, because it looks
+like a gap rather than an answer.
 
 The limit `a / μ` is small when the foot is narrow or the friction is high. It
-can be smaller than 107 mm, and it can even be smaller than the 75 mm the jaw
-rides at, which is already the lowest the gripper reaches without fouling the
-table. For such a glass there is no contact height the arm can offer that is
-below the limit. The glass tips before it slides, whatever the arm does.
+can be below 107 mm. It can even be below 75 mm, the lowest the jaw can go
+without hitting the table. For such a glass, no contact height is safe. The
+glass tips before it slides, whatever the arm does.
 
-**The only correct answer for that glass is to refuse it**, and a refusal is a
-result rather than a failure. The run ends as *correct but incomplete*: the
-glass is left standing where it was and reported with the reason it could not
-be moved. This matters because the alternative is worse in a way that cannot be
-repaired. A glass that was refused is still a glass standing on a table, and
-anything later in the project may yet move it, measure it or be told to leave
-it. A glass that was pushed and went over is finished, and the arm carries on
-working beside it. The project takes the same line wherever contact is
-involved: anything doubtful ends with the glass untouched and a line in the
-report, and no solution may add a fallback that tries anyway.
+**The only correct answer for that glass is to refuse it.** The glass stays
+standing where it was, and the report gives the reason. The run then ends as
+*correct but incomplete*. [The
+examiner](03_the-examiner.md#5-what-the-examiner-measures) explains how
+refusals are counted, and why a refusal is a result. A refused glass is still
+standing, so something later may move it. A fallen glass is lost. So anything
+doubtful ends with the glass untouched and a line in the report. No solution
+may add a fallback that tries anyway.
 
-**How a solution reaches that refusal is not the same for all six.** Five of
-them evaluate the rule above from the measured foot width before any model is
-consulted, which is what puts a ceiling on how badly a model can fail. The
-solution that learns what a push does holds no friction value to put in the
-rule, so it refuses instead when every push its search examined was turned down
-by its own learned model. That refusal rests on more evidence, and its ceiling
-comes from the model rather than from the arrangement. The limit is the same
-either way; what differs is what is trusted to apply it.
+**The safety check sits outside the policy.** A policy is the part of a
+solution that chooses the push. Five of the six solutions check the rule from
+the measured foot width before any model is asked. So a bad model cannot
+approve a push that tips a glass. The world-model solution is different. It
+holds no friction value, so it cannot use the rule. It refuses a glass when its
+own learned model turns down every push it tried. The limit is the same in
+both cases. Only the thing trusted to apply it is different.
+
+All of this depends on `μ`. The next section looks at where that number comes
+from.
 
 ## 4. The number nobody has
 
-Everything above rests on `μ`, so it is time to be plain about where that
-number comes from, which is nowhere.
+The rule above needs `μ`, so this section asks where `μ` comes from.
 
-**The friction coefficient is never told to any solution, and nothing in the
-cell measures it.** The cell has four sensors, and none of them reports how
-slippery the table is. The examiner holds the coefficients it runs the physics with
-privately, and uses them to move the glasses and to score the outcome, but they
-are never an input to any decision the arm makes. The arm's situation is
-therefore not that it knows the friction imprecisely. It is that it has to
-supply a number the world never gave it.
+No solution is ever told the friction, and nothing in the cell measures it.
+[What a solution is never
+told](02_what-goes-in-and-what-comes-out.md#4-what-a-solution-is-never-told)
+explains this in full. So every solution has to guess `μ`.
 
-That matters because glass on a dry wooden top plausibly spans a range from
-roughly 0.2 to 0.5, and `a / μ` at the top of that range is less than half what
-it is at the bottom. So the limit a solution computes is only as good as its
-guess, and the guess can be wrong by a factor that decides whether a glass
-should have been pushed at all.
+The guess matters a lot. Glass on a dry wooden top has a friction coefficient
+of about 0.2 to 0.5. At 0.5, the limit `a / μ` is less than half of what it is
+at 0.2. So a wrong guess can decide whether a glass should be pushed at all.
 
 ![The highest safe contact moves a long way between one plausible friction and another, so a limit worked out from a guessed coefficient declares glasses safe that the real table tips over.](../../images/pushing-the-glasses-apart/pushing-without-toppling/07-the-safety-net.png)
 
-Two habits follow, and both of them are followed by all six solutions.
+The programmed geometry handles this by using the whole range, 0.2 to 0.5. It
+asks one of three questions about each glass:
 
-**Push as low as the gripper can reach, always.** Since the height is fixed at
-the lowest the hardware allows, the arm is never trading safety for anything,
-and the only remaining question is whether even that lowest contact is below the
-glass's limit. There is nothing to tune, and there is no case where pushing
-higher would help.
+- If the glass is safe even at the worst friction, it is pushed.
+- If the glass is unsafe even at the best friction, it is refused.
+- If the two ends disagree, the arm makes a **5 mm test push**. It looks before
+  and after. A glass that slid has moved. A glass that leaned has fallen back
+  to where it stood.
 
-**Watch what actually happens, rather than trusting the prediction.** If the
-guessed friction is too low, the limit comes out too generous, and the only
-thing that can catch it is evidence from the table itself. That evidence arrives
-while the arm is pushing and just after it has finished, which is what the rest
-of this document is about.
+All six solutions also follow two habits.
+
+**They always push as low as the gripper can reach.** The height is already the
+lowest the hardware allows. So there is nothing to tune. Pushing higher never
+helps.
+
+**They watch what really happens, instead of trusting the prediction.** If the
+guessed friction is too low, the limit comes out too high. Only evidence from
+the table can catch this. That evidence comes during the push and just after
+it. The next section describes the loop that collects it.
 
 ## 5. The loop: plan, feel, look again
 
-So no solution here acts on a prediction and walks away. Every one of them acts,
-senses what really happened, and then decides again from what it sensed.
+No solution here acts on a prediction and walks away. Each one acts, senses
+what happened, and decides again. This section describes that loop.
 
-The programming comparison is exact. A plan computed once and then executed blindly is a
-list of instructions written before the run and carried out without reading anything
-back, like unrolling a loop into a fixed sequence because you believe you know how many
-times it will run. What these solutions do instead is keep **state that is re-read**:
-the table's arrangement is a value that the arm measures, acts on, and then measures
-again. And the loop continues while that value says there is still work to do. The arm
-is not following a script of pushes. It is repeating one step — look at the table,
-choose one push, make it, look again. Until every glass has the room it needs, or until
-the glasses that are left have all been refused.
+A programming comparison helps. One way is to compute a plan once and then run
+it blindly. This is like unrolling a loop into a fixed list of steps, because
+you think you know how many times it will run. These solutions do something
+else. They keep **state that is re-read**. The arrangement of the table is a
+value. The arm measures it, acts on it, and measures it again. The loop
+continues while that value says there is still work to do. So the arm repeats
+one step: look at the table, choose one push, make it, look again. It stops
+when every glass has its room, or when every glass left has been refused.
 
-Each pass through that loop has three parts.
+Each pass through the loop has three parts.
 
-**Plan.** From the measurements, choose which glass to move, where to move it
-to, and which way the jaw comes in. The topple limit is checked here, and a
-glass that fails it never reaches the next part.
+**Plan.** The solution uses the measurements. It chooses which glass to move,
+where to move it, and which way the jaw comes in. The topple limit is checked
+here. A glass that fails the check never reaches the next part.
 
-**Feel.** The jaw does not drive to a computed contact point, because every
-measurement carries error and a step that drives to a computed position is a
-step that strikes a glass the day a measurement is a couple of millimetres out.
-Instead the closed jaw comes down behind the glass, moves forward slowly until
-it touches, pushes, backs off, and **reports what it felt**. The last
-millimetres are felt rather than driven, which is how this project handles
-contact everywhere. The programmed approach built here goes one step further and
-makes a small test push first, to see how the glass responds before committing
-to the full one.
+**Feel.** The jaw does not drive to a computed contact point. Every measurement
+has some error. So a jaw driven to a computed point will hit a glass whenever a
+measurement is a few millimetres wrong. Instead, the closed jaw comes down
+behind the glass. It moves forward slowly until it touches. Then it pushes,
+backs off, and **reports the force it felt**. The last millimetres are felt,
+not driven. The whole project handles contact this way.
 
 ![Driving to a contact point worked out from the measurements aims at a part of the glass the jaw never meets, and the reading it was worked out from carries error, so the jaw misses; feeling forward until the force reads finds where the glass really is.](../../images/pushing-the-glasses-apart/pushing-without-toppling/03-feel-do-not-drive.png)
 
-**Look again.** Fresh measurements say where the glass really ended up, which
-is compared with where it was sent. The difference is the only honest
-information anyone has about a push, since no model in the cell could have
-produced it in advance. The loop then starts over with the arrangement as it
-now is, not as it was planned to be.
+**Look again.** New measurements show where the glass really stopped. This is
+compared with where it was sent. The difference is the only true information
+about the push, because no model could have known it in advance. Then the loop
+starts again from the table as it is now.
 
-Inside that loop there is room for two learned helpers, and because they sit
-inside a loop rather than replacing it, they can be judged by what a wrong
-answer from them would cost. **Neither of them is a solution in its own right.**
-Neither chooses a push, neither chooses a destination, and neither can approve
-anything. They are checkers, placed either side of the moment the jaw moves.
-Both are **prescriptions in this project rather than built code**: they are
-described here because every solution could use them and none of them would use
-them differently, not because the repository contains them.
+There is room for two learned helpers inside this loop. Because they sit inside
+the loop, we can judge them by what a wrong answer would cost. **Neither one is
+a solution.** Neither chooses a push or a destination, and neither can approve
+anything. They are checkers, one after the push and one during it. **Both are
+designs, not code.** This page describes them because every solution could use
+them in the same way. The repository does not contain them.
 
 ### A change verifier, placed after the action
 
-The first would answer the question the looking step asks, which is harder than
-it sounds: did this push do what it was meant to do?
+The first helper answers the question that the look-again step asks: did this
+push do what it was meant to do?
 
-The geometry answers part of that well. It can say how far the glass travelled and
-compare it with how far it was sent. What it answers badly is the part that matters
-most, because a camera looking straight down at a glass that has fallen over sees a blob
-that is wider than before. A glass that merely slid a long way also leaves a blob
-somewhere new. A small trained model, shown the scene before the push and the scene
-after it, would answer three questions instead: did the intended glass move as intended,
-did anything else move, and has anything fallen over.
+Geometry answers part of this well. It can say how far the glass moved, and
+compare that with how far it was sent. But it answers the most important part
+badly. A camera looking straight down at a fallen glass sees a wider shape than
+before. A glass that slid a long way also leaves a shape in a new place. A small
+trained model could look at the scene before and after the push. It would answer
+three questions. Did the chosen glass move as intended? Did anything else move?
+Has anything fallen over?
 
 ![Seen from straight above, a glass that moved as intended, a glass whose neighbour moved too and a glass that fell over are three different results, and how far the middle travelled separates only the first from the third.](../../images/pushing-the-glasses-apart/pushing-without-toppling/07-what-the-overhead-view-reports.png)
 
-**Where that model sits is the reason it is safe to have.** It runs after the
-push, so it can only ever be wrong about something that has already happened. It
-cannot cause a topple, because by the time it speaks the push is over. It cannot
-cause a collision, because it does not choose where the arm goes. The worst a
-wrong verdict costs is a few seconds of arm movement, when it reports a problem
-that was not there and the arm takes another look to settle it, or a run stopped
-when it need not have been. Compare that with a model placed *before* the
-action, which would be choosing contacts, and whose mistakes would be made with
-the arm. A checker after the fact has a ceiling on how bad it can be, and the
-ceiling comes from the arrangement rather than from the model being good.
+**This model is safe because of where it sits.** It runs after the push. So it
+can only be wrong about something that already happened. It cannot tip a glass,
+because the push is over when it speaks. It cannot cause a collision, because it
+does not choose where the arm goes. A wrong answer costs only a few seconds. For
+example, the arm takes one more look, or a run stops early. A model placed
+before the push is different. It would choose contacts, and its mistakes would
+be made with the arm. So a checker after the push has a limit on how much harm
+it can do. That limit comes from where it sits, not from how good it is.
 
 ### An early abort, acting during the push
 
-The second helper answers a different question, and the difference is entirely
-one of timing.
+The second helper answers a different question. The difference is when it acts.
 
-The jaw reports the force it feels while it is pushing, at a far higher rate
-than any camera reports pictures. A glass that is sliding and a glass that has
-begun to turn over do not feel the same through that signal, because the two do
-not develop the same way as the push continues.
+The jaw reports the force it feels while it pushes. It reports far more often
+than a camera takes pictures. A sliding glass and a tipping glass feel different
+through this signal, because the force changes in a different way over the push.
 
 ![A glass that is sliding needs the same force from start to finish, while a glass that has begun to turn needs less and less as it comes towards balance, and the wall it is pushed on rolls away down the face of the pad as it goes.](../../images/pushing-the-glasses-apart/pushing-without-toppling/08-slide-against-tip.png)
 
-A monitor reading that signal could stop the arm the moment the contact stops behaving
-like a slide, back the jaw off a short way along the line it was pushing, and hand over.
-A single force level would not do it: across the glasses a kind allows, every force a
-tip produces is a force some slide produces too. This is why the signal has to be read
-as it develops rather than compared against a threshold.
+A monitor could read this signal. When the contact stops feeling like a slide,
+it would stop the arm and back the jaw off a little. One force level is not
+enough to do this. Across the glasses of one kind, every force a tip produces
+is also a force some slide produces. So the monitor must read how the signal
+changes, not compare it with one fixed value.
 
 ![Over four hundred drawn glasses of one kind, pushed at the jaw's top edge, the force a tip produces and the force a slide produces cover the same band, so no level of force tells the two apart.](../../images/pushing-the-glasses-apart/pushing-without-toppling/08-no-threshold-separates.png)
 
-**That is what separates it from the verifier: it acts during the push rather
-than after it.** The verifier can only describe a glass that is already on its
-side, because its evidence is a picture and the picture cannot be taken until
-the arm has finished moving and carried the camera somewhere useful. The monitor
-is in contact with the glass while the glass is still deciding what to do. So
-**an early abort would be the only thing in this problem that could prevent a
-topple rather than report one**, and that is the whole argument for building
-one. It is an argument and not a description: nothing in this project
-implements it, and the solutions that topple glasses topple them for want of
-it. [Solution 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md),
-which is the only one that topples glasses often, is the measurement of what its
-absence costs.
+**This monitor acts during the push, and the verifier acts after it.** The
+verifier needs a picture, and a picture can only be taken after the arm stops.
+By then a fallen glass is already on its side. The monitor touches the glass
+while the glass is still starting to move. So **an early abort is the only
+thing here that could prevent a topple, instead of reporting one.** That is the
+reason to build it. But it is only a design. Nothing in this project
+implements it. The solutions that topple glasses do so partly because it is
+missing. [Solution 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md)
+topples glasses most often, so it shows what the missing monitor costs.
 
-Its own powers are deliberately small. It cannot steer, it cannot choose a target and it
-cannot approve a push; it can only stop one. A monitor that fires when it should not
-have costs a push abandoned and a few seconds spent finding out why. This is the same
-shape of cost as a wrong verdict from the verifier, and for the same reason: neither of
-them can do anything except interrupt or describe.
+The monitor has very little power on purpose. It cannot steer, choose a target
+or approve a push. It can only stop a push. If it fires when it should not, it
+costs one push and a few seconds. This is the same kind of cost as a wrong
+verifier answer. Neither helper can do anything except stop or describe.
 
-The two belong together rather than in competition. The monitor knows only that
-the contact stopped feeling like a slide, and cannot say what the glass did or
-whether a neighbour was involved, because a force signal has one contact in it
-and the table has several glasses on it. The verifier can say exactly that, from
-a viewpoint chosen for the question, and it would be the natural thing to ask
-after an abort.
+The two helpers work together. The monitor knows only that the contact stopped
+feeling like a slide. It cannot say what the glass did, or whether a neighbour
+moved, because the force signal comes from one contact. The verifier can say
+this from a picture. So after an abort, the verifier is the natural next check.
+
+The loop recovers from many mistakes, but not from all of them. The next
+section says which ones it cannot recover from.
 
 ## 6. The honest limit
 
-Looking again is what recovers the run from a bad prediction, and it is worth
-being precise about which failures it recovers and which it does not.
+Looking again saves the run from a bad prediction. This section says which
+failures it saves, and which it does not.
 
-A push that fell short, a push that went too far, a glass that turned as it travelled, a
-glass that landed in a new crowd: all of these are states of the table. And the next
-pass through the loop measures them and plans against them. Nothing is lost, because the
-arrangement is re-read rather than assumed, and a wrong guess at the friction shows up
-here as a push that did not go where it was aimed.
+Many failures are just new states of the table. For example, a push can stop
+short or go too far. A glass can turn as it moves, or end up in a new crowd.
+The next pass through the loop measures each of these and plans against it.
+Nothing is lost, because the table is measured again, not assumed. A wrong
+guess at friction also shows up here, as a push that did not go where it was
+aimed.
 
-**But nothing in this loop stands a toppled glass back up.** No step in this
-book lifts anything, the arm has no way to right a glass lying on its side, and
-everything downstream carries on working beside it. That single fact is why the
-topple limit is written as a refusal rule rather than as a risk to be weighed
-against the value of moving the glass. A risk worth taking is one whose bad
-outcome the system can absorb. This one it cannot, so the arithmetic is used to
-say no, and the two helpers above exist to catch the cases where the arithmetic
-said yes on the strength of a number nobody had.
+**But nothing in this loop stands a fallen glass back up.** No step in this book
+lifts anything. The arm has no way to stand a glass up again. Everything after
+that point works around the fallen glass. This is why the topple limit is a
+refusal rule, and not a risk to weigh against the value of moving the glass. A
+risk is worth taking only if the system can recover from the bad outcome. Here
+it cannot. So the rule is used to say no. The two helpers exist to catch the
+cases where the rule said yes because of a wrong guess at friction.
 
 ## 7. Where to go next
 

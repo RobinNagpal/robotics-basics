@@ -1,9 +1,9 @@
 # A worked example
 
-This page follows this solution through one arrangement of glasses with real
-numbers, and then through the case this book keeps returning to, a glass that cannot be pushed safely,
-because a worked example that shows only the easy case teaches the wrong
-lesson.
+This page follows this solution through real numbers. It starts with the hard
+case, a glass that cannot be pushed safely. Then it follows one table through
+the whole method. An example that shows only the easy case would teach the
+wrong lesson.
 
 ## Contents
 
@@ -12,96 +12,87 @@ lesson.
 
 ## 1. When a glass cannot be pushed safely
 
-A glass slides while the jaw touches it below half its foot width divided by the
-friction, and tips above that. [Pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md) sets that rule out
-once, with the jaw's two heights, the glasses it refuses outright, and what is
-done when the unknown friction leaves the answer undecided. What follows here is
-only what is this solution's own.
+The hard case comes first, because it decides which glasses the model never
+sees. A glass tips if the jaw touches it too high for its foot and the
+friction. [Pushing without
+toppling](../01_the-problem/05_pushing-without-toppling.md) explains that rule
+once, for every solution.
 
-**The refusal belongs entirely to the arithmetic and the model is never
-consulted about it.** The topple test runs inside the filter, so a glass it
-refuses produces no candidates at all, and the second reason — every candidate
-along every heading clashed with a neighbour, left the glass zone or left the
-arm's reach — leaves the candidate set empty. **A ranking over an empty set is
-still empty.**
+**The model is never asked about a refusal.** A glass can be refused for two
+reasons. Either it would tip, or every push for it clashes with a neighbour,
+leaves the zone or leaves the arm's reach. Both reasons leave the glass with no
+candidate pushes. **Ranking an empty list still gives an empty list.**
 
-Which of the two does the work was measured, and the answer is lopsided. In the
-record this solution extends, `01-one-fixed-nudge/results.json`, **all 56 of the
-glasses left on the table were refused for having nowhere clear to go, and not
-one for tipping**. This solution's own run splits that reason in two, separating
-the glasses that had no candidate at all from those whose candidates were all
-too slight to be worth making. It refuses 66 glasses rather than 56, because it
-leaves ten more on the table: 61 for still being without room after pushing, 4
-for having nowhere clear to go, and **1 for tipping before it slides**. One glass in fifty tables is what the topple rule costs, and it is a
-refusal rather than a breakage.
+The refusals were counted. Over the fifty held-out tables, this solution refused
+143 of the 251 glasses, the same number as the printed rule. Its own
+`results.json` gives the reasons:
 
-![The topple limit is evaluated at the jaw's top edge across the whole believed range of friction, and in the record this solution extends it refuses nothing: every refusal there is a glass with nowhere clear to push it to.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/06-where-the-refusals-come-from.png)
+- 47 glasses tipped when the 5 mm test push was tried;
+- 41 glasses would tip before they slide, so they were not pushed;
+- 43 glasses were still without room after pushing;
+- 9 glasses had nowhere clear to be pushed;
+- 3 glasses were left because another glass on the table had fallen over.
+
+So tipping causes 88 of the 143 refusals. The model can do nothing about any
+of them, because they are settled before it is asked.
+
+The hard case is clear. The next section follows an easier table, where the
+model does get a list to order.
 
 ## 2. A worked example
 
-Follow one crowded table through the whole method, because the argument is
-easier to recognise once the candidate set has a shape.
+The previous section showed glasses the model never sees. This section follows
+one table where it does see pushes. The idea is easier to see once the list of
+pushes has a shape.
 
-**The table.** Four tapered glasses stand in the glass zone, drawn at
-proportions from across that kind's range, so they are not all the same size.
-Two of them stand comfortably clear of everything. The other two stand close
-enough together that neither has the room the open jaw needs, and because the
-room test measures to the neighbour's edge rather than to its middle, the two
-are short by slightly different amounts even though they stand the same
-distance apart — the narrower of the pair is the more crowded, because its
-wider neighbour's rim reaches further into the gap.
+**The table.** Four tapered glasses stand in the glass zone. They have
+different sizes. Two of them stand well clear of everything. The other two
+stand too close together, so neither has the room the open jaw needs. The room
+test measures to the neighbour's edge, not its middle. So the narrower glass of
+the pair is more crowded, because its wider neighbour reaches further into the
+gap.
 
-**Two glasses leave before any push is planned.** The two that already have
-room are racked and taken away, so the push planner is asked about a two-glass
-table rather than a four-glass one. That is the cheapest thing in this whole
-problem, and it happens first on every table.
+**Two glasses leave first.** The two glasses that already have room are racked.
+So the planner now has a table of two glasses, not four. This is the cheapest
+step, and it happens first on every table.
 
-**The topple limit runs next, and defers.** Both remaining glasses stand on
-feet whose measured width puts the limit above the jaw's top edge at the
-pessimistic end of the believed friction range and below it at the generous end,
-so the arithmetic returns neither "safe" nor "refused" but "try". The arm makes a
-5 mm push on each and looks before and after. Both move, so both are proven to
-slide and the run continues. Had either failed at both ends of the range it would
-have been refused here, with its reason, and the model would never have seen a
-candidate for it.
+**The tipping test runs next, and it cannot decide.** For both glasses, the
+answer depends on the friction, which nobody knows. So the arm makes a 5 mm
+test push on each glass and looks before and after. Both glasses slide, so the
+run goes on. A glass that failed the test would be refused, and the model would
+never see it.
 
-**The geometry proposes, at length.** For each of the two glasses the
-enumerator sweeps 72 headings and steps the travel out in 2 mm to 150 mm,
-discarding every step at which the glass's path, the fingers' swept path, the
-body's swept path, the zone or the reach fails. What survives is a large set:
-over the training tables the middle crowded glass is left with 84 candidates and
-the middle whole-table decision with 261, because most headings admit many
-lengths before anything clashes.
+**The geometry lists many pushes.** For each glass, the enumerator tries 72
+headings and steps out in 2 mm steps up to 150 mm. It drops every step where a
+path clashes, or the end point leaves the zone or the reach. Many pushes are
+left. On the training tables, the middle crowded glass has 84 candidates, and
+the middle whole-table decision has 261.
 
-**A minority of those finish the job.** For each glass they fall into two arcs:
-one pointing roughly away from the neighbour, and one pointing round the
-neighbour the other way. There is at most one per heading, so there are at most
-72 of them per glass.
+**Only a few of them finish the job.** For each glass, these fall in two
+groups. One group points roughly away from the neighbour. The other points
+round the neighbour the other way. Each heading gives at most one such push, so
+each glass has at most 72.
 
-**And every one of them scores the same.** Each leaves both glasses with room,
-so the label is the same whichever is chosen, and each comes to rest just past
-the line it had to clear plus the planner's 10 mm of aiming margin, because the
-enumerator stopped each heading the moment the push worked. Measured over 161
-such groups on the training tables, the best and the worst of them differ by
-0.0 mm of room at the median. The only thing separating them is how far the
-glass has to travel, and the geometry prints that number for every candidate
-without being asked.
+**All of them score the same.** Each one leaves both glasses with room, so each
+gets the same label. Each one ends just past the line it had to clear, plus the
+10 mm aiming margin, because the enumerator stops each heading as soon as the
+push works. Over 161 such groups on the training tables, the best and worst
+push in a group differ by 0.0 mm of room at the median. They differ only in how
+far the glass travels, and the geometry already knows that distance.
 
-**The printed rule takes the shortest.** A model asked to order those
-candidates can agree with that choice, or disagree with it and prefer a longer
-push, or take longer to produce the same answer. There is no fourth thing it can
-do, because the candidates are not distinguishable on the quantity the model was
-fitted to predict.
+**The printed rule takes the shortest one.** A model can agree with that choice.
+It can disagree and pick a longer push. Or it can take longer to give the same
+answer. It can do nothing else, because these pushes all have the same label.
 
-**The wider set is where the model would have something to say.** Beyond the
-job-finishing arcs, each glass has a large number of pushes that ease the
-crowding without clearing it, and those do differ from one another: the same
-measurement puts the best and the worst of them 11.9 mm of room apart at the
-median. They are also the pushes whose real outcome depends most on the friction
-and on how the weight sits under the glass — which is to say on exactly the
-quantities a ranker is not being asked about, and exactly the quantities
-[solution 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md) fits a model
-of.
+**The model only has something to say about the other pushes.** Each glass also
+has many pushes that ease the crowding without finishing the job. These do
+differ. The same measurement puts the best and worst of them 11.9 mm of room
+apart at the median. Their real result depends most on friction and on how the
+weight sits under the glass. A ranker is not asked about those quantities.
+[Solution 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md) fits a
+model of exactly them.
+
+This example showed what the model gets to choose from. The next page, [what it
+needs](05_what-it-needs.md), lists what the solution costs to run.
 
 ← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

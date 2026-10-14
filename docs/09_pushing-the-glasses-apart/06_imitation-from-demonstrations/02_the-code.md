@@ -1,9 +1,8 @@
 # The code
 
-This page shows the code at the heart of this solution, says what the solution
-hands back to the rest of the cell, and then puts the two together as the one
-pipeline they make. The second explains the first, which is why they are on one
-page.
+This page shows the main code of this solution. Then it says what the solution
+hands back to the rest of the cell. Last, it joins the two into one pipeline.
+They share a page because each one helps explain the other.
 
 ## Contents
 
@@ -13,15 +12,14 @@ page.
 
 ## 1. The code at the heart of it
 
-This solution lives or dies on one join. A demonstration is the path the jaw
-really followed, written down waypoint by waypoint by the examiner; a policy's
-answer is an **action chunk**, a block of numbers of fixed shape. The code that
-turns the first into something the model can be fitted on, and turns the model's
-answer back into waypoints the examiner will carry out, is this solution's own
-contribution, and beside it sits the single call that reaches into the borrowed
-library.
+This section comes first because the whole solution depends on one join. A
+demonstration is the path the jaw really followed, written down waypoint by
+waypoint. A policy's answer is an **action chunk**, a block of numbers of fixed
+shape. This solution's own code turns the first into the second for training.
+It also turns the model's answer back into waypoints. One call reaches into
+the borrowed library.
 
-The whole join is six numbered steps.
+The join has six steps.
 
 1. Pick out every waypoint the jaw took at push height, and give up on a path
    that never got down there.
@@ -39,28 +37,25 @@ The whole join is six numbered steps.
    works at, count the ones pulled in, turn the cosine-and-sine pair back into
    one angle, and hand the examiner waypoints in its own shape.
 
-Steps 1 to 3 turn a recorded path into numbers a model can be fitted on, and
-they are in
-[`code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/chunks.py`](../../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/chunks.py),
-which holds no model and no geometry of pushing. Steps 4 and 5 build the model
-and ask it for an answer, and they are in `policy.py`. Step 6 turns that answer
-back into waypoints, and it is in `chunks.py` again. Every code block below
-carries the same numbers.
+Steps 1 to 3 are in
+[`code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/chunks.py`](../../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/chunks.py).
+That file holds no model and no geometry of pushing. Steps 4 and 5 are in
+`policy.py`. Step 6 is in `chunks.py` again. The code blocks below carry the
+same step numbers.
 
-Steps 1 and 2 are one function, `push_segment`, and between them they drop the parts of
-a recorded path that the examiner does for itself. The giving up in step 1 matters
-because a push blocked on the way down demonstrates nothing. In step 2 the first and the
-last waypoint at push height bracket the part worth keeping. And the furthest the jaw
-travelled inside that bracket is where the push ended, because the jaw only goes forward
-until the back-off begins. The descent, the back-off and the lift are all gone, because
-the examiner does all three itself.
+Steps 1 and 2 are one function, `push_segment`. It drops the parts of a path
+that the examiner does by itself. Step 1 gives up on a path that never reached
+push height, because a push blocked on the way down shows nothing. In step 2,
+the first and last waypoints at push height mark the part worth keeping. The
+furthest point the jaw reached is where the push ended. After that, the jaw
+only backs off. So the descent, the back-off and the lift are all dropped,
+because the examiner does all three itself.
 
 ![A recorded path drawn as height against distance: the jaw comes down from travel height, feels forward, pushes, backs off and lifts, and the demonstration is the two legs in the middle.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-what-a-demonstration-keeps.png)
 
-Step 3 is split across two functions of the same file. `to_action` writes what is left
-as the five columns the policy is fitted on, and `resample` stretches or squeezes that
-run onto the chunk's fixed length. This is the only part of the conversion that changes
-how fast the push is replayed.
+Step 3 uses two functions in the same file. `to_action` writes each waypoint as
+five numbers. `resample` stretches or squeezes the run to the chunk's fixed
+length. This is the only step that changes how fast the push is replayed.
 
 ```python
 def push_segment(waypoints: tuple[Waypoint, ...]) -> tuple[Waypoint, ...]:
@@ -92,24 +87,21 @@ def to_action(waypoints: tuple[Waypoint, ...]) -> np.ndarray:
     )
 ```
 
-Five columns rather than four, and the extra one is worth a sentence. The first
-three are where the jaw is. The last two are its heading, carried as the
-heading's cosine and its sine rather than as the angle itself. An angle
-wraps: two pushes two degrees apart can have numbers at opposite ends of the
-range, and a model fitted on that number learns the wrap as a cliff that is not
-in the pushes. Two numbers that do not wrap cost one column and remove it.
+There are five columns, not four. The first three say where the jaw is. The
+last two give its heading, which is the direction the jaw points. The heading
+is stored as its cosine and its sine, not as an angle. This is because an
+angle wraps round. Two pushes two degrees apart can get numbers at opposite
+ends of the range. A model would then learn a sudden jump that is not in the
+pushes. The cosine and sine do not wrap, so the jump goes away.
 
 ![The same two pushes, two degrees apart on the table, drawn as one angle in degrees, where they sit at opposite ends of the range, and as a cosine and sine pair, where they sit on top of each other.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-heading-as-cosine-and-sine.png)
 
-The borrowed model is reached in one place, in
-[`code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/policy.py`](../../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/policy.py):
-one call that builds LeRobot's ACT, and one that asks it for a chunk. Step 4 is
-that first call, with the four settings this solution chooses written into it:
-two fix how long an answer is and that the whole of it is carried out, and two
-switch off the LeRobot defaults this solution will not have. Step 5 is the
-asking, which puts a fitted model into answering mode rather than fitting mode,
-hands it one picture of the table, takes one chunk back, and turns the model's
-own numbers into the units the table is measured in.
+The borrowed model is used in one file,
+[`code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/policy.py`](../../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/policy.py).
+Step 4 builds LeRobot's ACT with four settings. Two settings fix the length of
+an answer and say that all of it is carried out. The other two switch off
+LeRobot defaults. Step 5 asks the trained model for one chunk from one picture.
+Then it turns the model's numbers back into table units.
 
 ```python
     if kind == "act":
@@ -144,20 +136,20 @@ own numbers into the units the table is measured in.
         return self.scale.back(answer[0].float().cpu().numpy())
 ```
 
-Three of those settings are the whole of what this solution insists on against LeRobot's
-own defaults: `pretrained_backbone_weights=None`. This switches off the ImageNet weights
-ACT would otherwise download for its vision backbone and is what makes "fitted from
-random numbers" true; `normalization_mapping`. This hands the scaling back to this
-solution's own code so that the numbers reaching the model are only ones written here.
-`n_action_steps` set to the chunk's full length, because one push is one chunk and
-nothing re-plans part way through. The rest of the model is LeRobot's, untouched.
+Three settings differ from LeRobot's defaults, and the rest of the model is
+LeRobot's own.
 
-The last step is the way back, in `chunks.py` again, in `to_waypoints`. Nothing stops a
-network asking for a position the arm does not have, so step 6 pulls every waypoint back
-onto the table and into the band of heights the jaw works at. It counts the waypoints it
-had to pull in. So that a chunk aimed off the table is reported rather than hidden,
-turns the cosine-and-sine pair back into one angle, and hands the examiner waypoints in
-its own shape.
+- `pretrained_backbone_weights=None` stops ACT from downloading ImageNet weights
+  for its vision part. This is why the model truly starts from random numbers.
+- `normalization_mapping` leaves the scaling to this solution's own code.
+- `n_action_steps` is set to the full chunk length. One push is one chunk, and
+  nothing re-plans in the middle.
+
+Step 6 is the way back, in `to_waypoints` in `chunks.py`. A network can ask for
+a position the arm cannot reach. So step 6 pulls every waypoint back onto the
+table and into the jaw's height range. It counts the waypoints it pulled in, so
+that a bad chunk is reported and not hidden. Then it turns the cosine and sine
+back into one angle.
 
 ```python
 def to_waypoints(action: np.ndarray) -> tuple[tuple[Waypoint, ...], int]:
@@ -186,118 +178,100 @@ def to_waypoints(action: np.ndarray) -> tuple[tuple[Waypoint, ...], int]:
     return points, pulled
 ```
 
-Reading those three blocks together says where the measured shortfall has to sit, and it
-does sit there. The first two columns of the chunk come out roughly right — the policy
-puts the fingertips down in about the neighbourhood the teacher used. While the heading
-carried in the last two comes out about thirty degrees away from the teacher's. This is
-enough that on a crowded table the jaw meets a neighbour while it is still coming down,
-and the push ends before any glass is touched.
+These three blocks show where the trained policy goes wrong. The first two
+columns come out about right, so the fingertips land near where the teacher put
+them. The heading comes out about 25 degrees away from the teacher's. On a
+crowded table, that turns the jaw over a neighbour while it comes down, so the
+push stops before any glass is touched. [The heading
+error](04_a-worked-example.md#2-a-worked-example) works this through with real
+sizes.
+
+The next section says what this code hands back to the rest of the cell.
 
 ## 2. The pushes are what this contributes
 
-One point about the output has to be clear, because it decides what a
-comparison with this solution is a comparison of.
+The code above makes waypoints, so this section says what those waypoints are
+compared against.
 
-**This solution emits waypoints directly, and nothing expands them.** [The test
-examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#6-what-must-come-out) owns a macro that turns a parameterised push into a
-descent, a feel, a slide, a back-off and a lift, and the solutions that think
-in parameterised pushes go through it. A chunk is already a jaw trajectory, so
-there is nothing for the macro to do. The examiner carries the waypoints out as
-given, through `Bench.follow`, which is built.
+**This solution gives waypoints, and nothing expands them.** Other solutions
+give a few numbers, and the examiner's macro turns them into a motion. A chunk
+is already [a full jaw
+path](../01_the-problem/02_what-goes-in-and-what-comes-out.md#6-what-must-come-out),
+so the examiner follows it as given, through `Bench.follow`.
 
-**Two small things travel beside the waypoints, and they are not the
-policy's.** The examiner's chunk carries the glass it is meant to move and the
-place the solution expects that glass to arrive, because the scorecard counts
-pushes per glass and measures how far each glass ended from its aim. A policy
-whose output is a run of waypoints produces neither. Both are therefore read
-back off the chunk after the fact: the glass is the one the jaw ends up
-against, and the aim is that last fingertip moved forward by half the glass's
-measured width, which is the convention [one fixed
-nudge](../04_one-fixed-nudge/01_what-it-is.md) uses. Nothing about that reaches the policy or
-changes the motion. It is bookkeeping for the scorecard, and it is named here
-because it is the one place where this solution's output is not literally the
-whole answer.
+**Two small things travel beside the waypoints, and the policy does not make
+them.** The scorecard needs to know which glass a push was for, and where that
+glass was meant to end up. The policy gives neither. So both are read off the
+chunk afterwards. The glass is the one the jaw ends up against. The aim is the
+last fingertip point moved forward by half the glass's width. [One fixed
+nudge](../04_one-fixed-nudge/01_what-it-is.md) uses the same rule. This is only
+bookkeeping, and it never changes the motion.
 
-**The score is the outcome, not the action.** The examiner does not ask whether
-the chunk was the chunk it would have chosen, or whether the waypoints were
-smooth. It looks only at the table afterwards: which glasses have room, which
-are standing, where each one ended up, and how many pushes it took. That is
-what makes a three-number push and a chunk of 120 waypoints comparable at all,
-and it is the only reason this solution and its teacher can be set side by side.
+**The examiner scores the table, not the action.** This is why a push of three
+numbers and a chunk of 120 waypoints can be compared at all. [The
+examiner](../01_the-problem/03_the-examiner.md#4-the-score-is-the-outcome-not-the-action)
+explains this rule.
 
-**Everything else in the pipeline is shared, so a difference in the score
-belongs to the policy.** The tables are the examiner's. The measurements are the
-examiner's, carrying the measured error of [telling the glasses
+**Everything else is shared, so a change in the score comes from the policy.**
+The tables and the measurements are the examiner's. The measurements carry the
+error of [telling the glasses
 apart](../../08_seeing-the-glasses/11_the-results.md). The destinations come
-from [the target layout](../01_the-problem/04_the-target-layout.md), computed
-once per arrangement, so every solution that aims at a destination aims at the
-same places. The topple limit and the refusal rule come from [pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md). What this solution
-contributes is one mapping — from a picture of the table to a short run of
-waypoints — and nothing else.
+from [the target layout](../01_the-problem/04_the-target-layout.md). The topple
+limit and the refusal rule come from [pushing without
+toppling](../01_the-problem/05_pushing-without-toppling.md). This solution adds
+only one mapping, from a picture to a short run of waypoints.
 
-One detail of how the shared parts reach this solution is worth noticing,
-because it says what the policy is really learning. The
-target layout never appears inside the network. It reached the demonstrations,
-because the teacher aimed at it, and the demonstrations are all the policy ever
-saw. In the same way, the examiner's macro never appears inside the network, but
-the waypoints it produced are the labels the network was fitted to, so **the
-student's action space is the teacher's macro, written down as motion.** The
-policy begins by being able to express only what the macro expressed, and
-whatever it learns beyond that comes from generalising between those examples
-rather than from being given a wider vocabulary.
+The target layout and the macro never appear inside the network. But the
+teacher aimed at the layout, and the macro made the waypoints the network
+copied. So **the policy can at first only make the motions the macro made.**
+Anything new must come from blending its examples.
+
+The next section joins the code and the output into one pipeline.
 
 ## 3. How the concepts fit together
 
-The pieces now join into one pipeline. It has an offline half that happens once and an
-online half that happens on every push. And the halves are worth keeping apart because
-almost all the cost is in the first and almost all the risk is in the second.
+The two sections above described the parts, and this one joins them. The
+pipeline has an offline half that runs once and an online half that runs on
+every push. Almost all the cost is in the first half. Almost all the risk is in
+the second.
 
-**Offline, and once.** Tables are drawn from numbers below the dividing line.
-The teacher is run over them. For every push it chooses, three things are
-recorded: the view of the table from the top at that moment, the waypoints the
-examiner's macro produced, and the examiner's verdict on what happened to the table
-afterwards. Pushes that failed are dropped and the dropping is counted, so the
-thinning is visible. Refusals are kept as refusals. What remains is a dataset
-of pairs — a picture, and a chunk of waypoints.
+**Offline, and once.** Tables are drawn from the training numbers. The teacher
+runs over them. For every push, three things are recorded: the picture from the
+top, the waypoints the jaw followed, and the examiner's verdict. Failed pushes
+are dropped, and the drops are counted. Refusals are kept as refusals. What is
+left is a set of pairs: a picture and a chunk of waypoints.
 
-One detail of the shape is worth naming, because the pages above do not settle it: a
-recorded path is a few hundred waypoints long and a chunk is a fixed, shorter run. So
-every demonstration is trimmed to the part at push height and resampled to the chunk's
-length. The trimming is free. The resampling is not: waypoints are consumed at a fixed
-rate, so squeezing a long push into a fixed chunk runs it faster than it was
-demonstrated. The chunk's length is therefore set near the median length of the
-teacher's own pushes, and a push longer than that is replayed quicker than it was made.
+A recorded path has a few hundred waypoints, but a chunk has a fixed, shorter
+length. So every path is cut to the part at push height and resampled to the
+chunk's length. Waypoints are followed at a fixed rate, so squeezing a long push
+makes it run faster. For this reason, the chunk length is set near the median
+length of the teacher's pushes.
 
-ACT is then fitted on the dataset from random numbers, for hours. The second
-way fits Diffusion Policy on the same dataset, changing the model and nothing
-else. Both are fitted several times with different seeds, because one training
-run is not a measurement.
+ACT is then trained on this data from random numbers, for hours. It is trained
+several times with different seeds, because [one run is not a
+measurement](../01_the-problem/03_the-examiner.md). Diffusion Policy would use
+the same data with a different model.
 
-**Online, on every push.** The arm looks at the table and racks every glass
-that already has room. The shared topple limit is then evaluated on every
-glass still standing there, before the policy is asked anything, and a glass
-that fails it is refused with its reason and taken out of play. Only then does
-the straight-down view go into the policy, which returns one action chunk; the
-chunk is charged to one of the glasses the limit left in play, so a refused
-glass can never be pushed. The examiner carries the chunk out: the closed jaw is
-placed clear above the first waypoint, comes down to it, follows the waypoints
-one control period apart, and lifts clear, reporting what it felt in the same
-words a parameterised push reports. The arm looks again, and the loop repeats
-until every glass has room, or the glasses that are left have all been refused,
-or the push budget is spent.
+**Online, on every push.** The arm looks at the table and racks every glass that
+already has room. Then the shared topple limit is checked on every glass still
+standing. A glass that fails is refused with its reason. Only then does the
+picture go into the policy, which returns one chunk. The chunk is charged to a
+glass the limit left in play, so a refused glass is never pushed. The jaw comes
+down to the first waypoint, follows the waypoints, and lifts clear. It reports
+what it felt, in the same words a normal push uses. Then the arm looks again.
+The loop stops when every glass has room, or the rest are refused, or the push
+budget is spent.
 
-Two things are worth holding on to from all of that.
+Two points sum up the pipeline.
 
-**Nothing in the method represents pushing.** There is no friction coefficient,
-no slide prediction, no candidate list and no geometry inside the policy. What
-the network holds is a mapping, not an understanding. This is the most
-economical of the six in terms of what somebody had to know in order to build
-it.
+**Nothing in the method models pushing.** The policy holds no friction value,
+no slide prediction, no candidates and no geometry. It holds a mapping, not an
+understanding. Of the six, it needs the least knowledge from its builder.
 
-**The ceiling is the teacher.** Every label this policy ever saw came from the
-teacher, and nothing in behaviour cloning evaluates an outcome. So the student
-has no mechanism by which to discover a better choice of glass, or a better
-destination, than the one it was shown.
+**The policy can only be as good as its teacher.** [Where it is strong and
+where it breaks](06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks)
+explains why.
+
+The next page explains how each of these parts works.
 
 ← [What it is](01_what-it-is.md) · [How it works](03_how-it-works.md) →

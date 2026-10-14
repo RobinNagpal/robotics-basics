@@ -2,25 +2,21 @@
 
 ## 1. Introduction
 
-This book asks the arm to drag crowded glasses apart until each one has room
-for the gripper, without knocking any of them over. [What is asked
-for](../01_the-problem/01_what-is-asked-for.md) sets out that question in full.
-This chapter answers it six times over, with six quite different methods, and
-the point of having six is **not** that one of them is the answer. The point is
-to be able to compare them, and then to choose one knowing what the choice
-costs.
+This book asks the arm to push crowded glasses apart. Each glass must end with
+room for the gripper, and no glass may fall over.
+[What is asked for](../01_the-problem/01_what-is-asked-for.md) sets out the task
+in full. This chapter answers it in six different ways. The point is not to
+find one winner. The point is to compare the six, so that you can choose one and
+know what the choice costs.
 
-This page is the map of all six, and it is three tables. The first says **what
-each one is built from**, which is the model, the library and the licence. The
-second says **how each one works**, in a few sentences each. The third says
-**what each one scored**, and the prose after it explains the results that are
-worth more than the rest.
+This page is the map of all six. It has three tables. The first says what each
+solution is built from. The second says how each one works. The third says what
+each one scored.
 
-After this page, **this chapter holds a short page for each of the six**, about
-eight minutes each, and six separate chapters later in the book treat the same
-six in full at roughly an hour each. So the order to read in is this page, then
-the short page for any solution that interests you, and only then the chapter
-that derives it.
+After this page, the chapter has one short page for each solution. Each short
+page takes about eight minutes. Later in the book, six full chapters cover the
+same six solutions in about an hour each. So read this page first, then the short
+page for a solution that interests you, and then its full chapter.
 
 ## Contents
 
@@ -34,24 +30,18 @@ that derives it.
 
 ## 2. What all six share
 
-All six are given the same tables, the same measurements of them, the same push budget
-and the same scorecard. This is what lets a gap between two scores be read as a
-statement about the method. [The examiner](../01_the-problem/03_the-examiner.md)
-describes that arrangement in full and is the page to read before any solution document.
+Before the six differ, it helps to see what they have in common. All six get the
+same tables, the same measurements, the same push budget and the same
+scorecard. So a gap between two scores says something about the method.
+[The examiner](../01_the-problem/03_the-examiner.md) describes this setup in full.
 
-The one part of it worth repeating here is the part the tables below rest on. **The
-score is the table afterwards, not the push that changed it.** Three numbers and fifty
-waypoints are not the same kind of thing. So there is no shared language for an action
-here — but the table is the same table either way. A solution may therefore choose any
-action space it likes, and the outcome is measured identically for all six.
-
-What every solution is handed, and what it may answer with, is small enough to
-show in full. Each one is handed a list like the first object below. It has one
-row per standing glass, and the lengths are in metres. The three solutions that
-read pictures are handed a 384 by 384 colour picture of the same table instead.
-Each solution then answers in one of the two forms below that. The first is a
-push described by numbers, which the examiner turns into a path. The second is a
-short run of waypoints, which the jaw follows exactly as given.
+The examiner scores the table after the pushes, not the pushes themselves. This
+means a solution may answer in any form it likes. Each solution gets a list of
+glasses like the first object below, with lengths in metres. Three solutions get
+a 384 by 384 colour picture of the table instead. A solution then answers in one
+of the two forms below it. The first is a push given as numbers, which the
+examiner turns into a path. The second is a short list of waypoints, which the
+jaw follows as given.
 
 ```json
 [{"id": 0, "x": 0.4570, "y": -0.4170, "height": 0.1554, "widest": 0.0740, "foot": 0.0419, "standing": true}]
@@ -68,194 +58,145 @@ short run of waypoints, which the jaw follows exactly as given.
                {"x": 0.3726, "y": -0.4500, "z": 0.2900, "heading": 1.5708}]}
 ```
 
-Either way the reply has the same five fields. They say whether the jaw was
-blocked on the way down, how far it went before touching anything, whether it
-jammed, the largest force it felt, and how far it really pushed. This is why two
-different kinds of answer can be compared at all. The two forms differ in what
-is asked for, and they agree in what comes back.
+Both forms get the same reply, with five fields.
+[What goes in and what comes out](../01_the-problem/02_what-goes-in-and-what-comes-out.md#5-what-push-does-and-what-it-reports-back)
+explains each field.
 
 ```json
 {"blocked": false, "touched": 0.0146, "jammed": false, "peak": 1.73, "pushed": 0.0660}
 ```
 
-Two parts of the job belong to no solution and are described elsewhere: where the
-glasses should end up, in [the target
-layout](../01_the-problem/04_the-target-layout.md). And the limit that decides whether a
-glass slides or tips, in [pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md).
+Two parts of the job belong to no solution. Where the glasses should end up is
+in [the target layout](../01_the-problem/04_the-target-layout.md). Whether a glass
+slides or tips is in
+[pushing without toppling](../01_the-problem/05_pushing-without-toppling.md).
+With the shared parts set aside, the next table shows what each solution adds.
 
 ## 3. What each one is built from
 
-This is the shopping list. Read the right column as what you would have to install,
-collect and train in order to run that solution. And the order of the rows as how much
-of the pushing is fitted, from nothing fitted at the top to everything fitted at the
-bottom.
+This table shows what you must install, collect and train to run each solution.
+Read the right column as that shopping list. The rows go from nothing fitted at
+the top to everything fitted at the bottom.
 
 | Solution | What it is built from |
 |---|---|
 | **1. [One fixed nudge](02_one-fixed-nudge.md)** | NumPy, and nothing else. Nothing is fitted, so there is no model, no training set and no weights file. No licence condition of any kind. |
-| **2. [Geometry generates, a model ranks](03_geometry-generates-a-model-ranks.md)** | Gradient-boosted regression trees from scikit-learn, about two hundred of them, three levels deep, sitting on top of solution 1's own candidate geometry. Needs a few thousand candidate-and-outcome pairs, which the examiner labels for free. Permissively licensed. |
+| **2. [Geometry generates, a model ranks](03_geometry-generates-a-model-ranks.md)** | Gradient-boosted regression trees from scikit-learn, about two hundred of them, three levels deep, on top of solution 1's own candidate geometry. Needs a few thousand candidate-and-outcome pairs, which the examiner labels for free. Permissively licensed. |
 | **3. [Imitation from demonstrations](04_imitation-from-demonstrations.md)** | ACT, an action chunking transformer, taken from LeRobot and fitted here from random numbers. Needs demonstrations, which solution 2 produces. A second way swaps ACT for Diffusion Policy. Apache-2.0, and nothing is downloaded but the library. |
 | **4. [A world model, then plan with it](05_a-world-model-then-plan-with-it.md)** | Five copies of a small network written for this cell, in PyTorch, with a sampling search on top. Needs tens of thousands of pushes made in a physics engine, which nobody labels. A second way would use TD-MPC2 off the shelf, and is not built. Permissively licensed. |
 | **5. [A foundation model as it downloads](06_a-foundation-model-as-it-downloads.md)** | SmolVLA from LeRobot, about 450 million parameters, used exactly as it downloads. Nothing is fitted here, so there is no training set and no training run. The library is Apache-2.0 and **the weights carry their own terms**, which this project does not record. |
 | **6. [The same model, fine-tuned here](07_the-same-model-fine-tuned-here.md)** | The same SmolVLA and the same downloaded weights as solution 5, with a low-rank correction of about four million numbers trained on this cell's own pushes. Needs the demonstrations solution 2 produces. The same terms on the weights, inherited by anything trained from them. |
 
+The list says what each solution needs. The next table says what each one does
+with it.
+
 ## 4. How each one works
 
-The same six in the same order, now by what actually happens when the arm looks
-at a table. Each one is a different answer to the single difficulty this book
-sets, which is that nobody in this cell knows what a push will do: where a
-pushed glass comes to rest depends on the friction between its base and the
-table, and nothing here measures that.
+This table follows the same six in the same order. It says what happens when the
+arm looks at a table. Each row is one answer to the same difficulty. Nobody here
+knows where a pushed glass will stop, because nobody has measured the friction.
 
 | Solution | How it works |
 |---|---|
-| **1. One fixed nudge** | It stops predicting. The geometry writes down every push that is safe for the glass in front of it — every heading, every travel, with the arm's reach, the glass zone, the neighbours and the tipping rule all checked — and a printed rule takes the shortest one that leaves a glass with room. Then it looks again. Nothing is fitted and nothing is drawn at random, so it behaves the same way on the hundredth table as on the first. |
-| **2. Geometry generates, a model ranks** | The same geometry writes down the same candidates, and a fitted model puts them in order instead of the printed rule. The model can never add a push to the list and never bring back one the geometry rejected, so the worst a badly fitted model can do is waste a push. Its scored candidates are recorded pushes, which makes it the teacher for solutions 3 and 6. |
-| **3. Imitation from demonstrations** | A view of the table from the top goes in and a short run of jaw waypoints comes out. Nobody writes down how to push a glass: solution 2's successful pushes are recorded, a network is fitted to copy them, and the fitted network's answer is carried out directly. Nothing in it ever evaluates an outcome, so it cannot discover that a different push would have been better. |
-| **4. A world model, then plan with it** | It learns what a push *does* rather than what to do. Five copies of a small network are fitted on pushes really made in the simulator, each answering "if I make this push, what will the table look like afterwards?". Before every push the arm makes, about fifteen hundred candidates are drawn, put to all five copies, discarded if any copy thinks something might topple, and scored by how much room is still missing. The best one is carried out. |
-| **5. A foundation model as it downloads** | A model somebody else trained on hundreds of real robot datasets is shown the table from the top, told in plain English what to do, and asked for actions. Its answer is read as waypoints and carried out. There is no training step, no data collection and no fitted parameter anywhere in the chain. |
-| **6. The same model, fine-tuned here** | The same chain as solution 5, with a training step put in front of it. The borrowed weights stay as they are and a small correction is learned beside them, from solution 2's recorded pushes, so that the chunks come out in this cell's own range. The correction then folds into the weights, so running it costs exactly what running solution 5 costs. |
+| **1. One fixed nudge** | Geometry lists every safe push for the glass. A printed rule takes the shortest one that gives a glass room. Then the arm looks again. Nothing is fitted. |
+| **2. Geometry generates, a model ranks** | The same geometry lists the same safe pushes. A fitted model puts them in order. The model cannot add a push or bring back a rejected one. Its recorded pushes teach solutions 3 and 6. |
+| **3. Imitation from demonstrations** | A top view goes in and a short run of jaw waypoints comes out. A network is fitted to copy solution 2's successful pushes. It never judges an outcome. |
+| **4. A world model, then plan with it** | Five copies of a small network learn what a push does to the table. Before each push, about 1,500 candidates are tested on all five copies. The best safe one is carried out. |
+| **5. A foundation model as it downloads** | A model trained elsewhere on real robot data gets a top view and a plain-English instruction. Its answer is carried out as waypoints. Nothing is trained here. |
+| **6. The same model, fine-tuned here** | The same model as solution 5, with a small correction trained on solution 2's pushes. The correction is folded into the weights, so it runs at the same cost. |
 
 ![The six set out as a ladder from a model that only prefers to a model that decides, with what a wrong answer costs beside each rung, and the one solution whose refusal rests on its own model rather than on arithmetic.](../../images/pushing-the-glasses-apart/how-the-six-compare/six-where-the-learned-part-sits.png)
 
-Each box on the left is one solution, and its colour says what the fitted model
-does in that solution. A **white** box has no fitted model at all. A **green** box
-has a fitted model that only ranks pushes the written geometry has already
-approved, so it can choose badly among safe pushes and cannot add an unsafe one.
-A **red** box has a fitted model whose answer is the push, or the prediction the
-push is chosen from, so the arm carries out what the model produced. The grey label beside the boxes groups them: the top two are solutions where
-the model at most **prefers** one safe push over another, and the lower four are
-solutions where the model **decides** what the arm does.
+The picture above is a ladder. Each box on the left is one solution. Its colour
+says what the fitted model does:
 
-The boxes on the right say what one wrong answer costs in each solution. In the
-top two the cost is nothing or one wasted push, because the geometry never offers a
-bad push. In the lower four a wrong answer is a push made on the real table, and a
-glass can fall over. So reading the ladder downwards, a model gains more control
-and the cost of its mistakes grows with it.
+- A **white** box has no fitted model.
+- A **green** box has a model that only orders pushes the geometry has already
+  approved. It can choose badly, but it cannot add an unsafe push.
+- A **red** box has a model whose answer becomes the push, so the arm does what
+  the model says.
+
+The grey label groups the boxes. In the top two, the model at most **prefers**
+one safe push. In the lower four, the model **decides** what the arm does.
+
+The boxes on the right say what one wrong answer costs. In the top two, it costs
+nothing or one wasted push. In the lower four, it is a real push, and a glass can
+fall over. So lower on the ladder, the model has more control, and its mistakes
+cost more. The next table shows how that played out in the scores.
 
 ## 5. What each one scored
 
-Every solution is run against the same **50 arrangements** of glasses on the
-table. Each arrangement is one iteration, and each holds 4, 5 or 6 glasses: 16 of
-them hold 4, 17 hold 5 and 17 hold 6. Across the 50 there are 251 glasses, and 203
-of those have no room for the gripper at the start. Every solution spends the same
-budget of 4 pushes per glass and 16 per arrangement, and is judged by the same
-scorecard.
+Now that you know how the six work, this section shows the result of each.
+Every solution runs on the same **50 arrangements** of glasses. Each arrangement
+holds 4, 5 or 6 glasses. Together they hold 251 glasses, and 203 of them have no
+room for the gripper at the start. Every solution gets 4 pushes per glass and 16
+per arrangement.
 
 An arrangement is **done** when every glass in it could be picked up. A glass is
-**racked** when it was picked up and put away, and **toppled** when it ended the
-run lying down, which is the one failure this cell cannot take back. The first
-number in each row below is therefore not a count of arrangements attempted, which
-is 50 for every solution. It is how many of those 50 ended **done**, and that is
-the figure that differs between solutions.
+**racked** when it was picked up and put away. A glass is **toppled** when it
+ends the run lying down. A toppled glass cannot be stood up again.
 
-Solutions 3, 5 and 6 fit something and then draw their actions from it, so the
-examiner runs each of them three times over the same 50 arrangements. Their
-figures below are the middle run with the lowest and highest in brackets, and where those brackets overlap this
-test has not separated two solutions. Solutions 1, 2 and 4 are reported from a
-single run and carry no brackets: nothing in the first two is drawn at random
-at all, and solution 4's sampling search draws from a generator seeded by the
-table number, so its run repeats exactly. [The results](../10_the-results.md)
-has the full numbers with every column.
+Solutions 3, 5 and 6 draw their actions at random from a fitted model. So the
+examiner runs each of them three times. Their figures are the middle run, with
+the lowest and highest runs in brackets. Solutions 1, 2 and 4 repeat exactly, so
+they show one run and no brackets.
 
-The table below has one row for each solution. Read the left cell as the
-solution, and the right cell from the top: its three numbers come first, and the
-sentence after them says why it scored that way.
+Read the table below one row at a time. The left cell names the solution. The
+right cell gives three numbers, then one sentence on why.
 
 | Solution | Results, then why |
 |---|---|
-| **1. [One fixed nudge](02_one-fixed-nudge.md)** | Arrangements done, of 50: 14<br>Glasses racked, of 251: 107<br>Glasses toppled: **1**<br>The geometry refuses rather than guesses whenever the arithmetic is unsure, so it almost never breaks anything. What it gives up is the 143 glasses it refused rather than racked, and with this gripper most of those refusals are the cell's doing rather than the method's: there is nowhere to stand the hand, or no height at which the glass would slide. |
-| **2. [Geometry generates, a model ranks](03_geometry-generates-a-model-ranks.md)** | Arrangements done, of 50: 14<br>Glasses racked, of 251: 107<br>Glasses toppled: **1**<br>It reaches *exactly* the same arrangements and the same glasses as the printed rule it was meant to improve, for nine more pushes and half again the travel. The ordering could not help, because when a table bottoms out on the hand's own width and height there is only a very short list of legal pushes to order. |
-| **3. [Imitation from demonstrations](04_imitation-from-demonstrations.md)** | Arrangements done, of 50: 2 (1–3)<br>Glasses racked, of 251: 63 (51–64)<br>Glasses toppled: 12 (7–13)<br>It places the start of a push roughly right and gets the heading 22 to 27 degrees out, and the hand's own 266 mm of body then meets a neighbour on the way down. That is the policy averaging over teacher pushes that disagree, not a shortage of examples: four times the data removed the memorising and took about a fifth off the error. |
-| **4. [A world model, then plan with it](05_a-world-model-then-plan-with-it.md)** | Arrangements done, of 50: **20**<br>Glasses racked, of 251: **146**<br>Glasses toppled: 20<br>It racks more glasses than anything else in the book and finishes the most arrangements, because a push aimed with a model of where the glass will stop rarely has to be tried again. It also topples 20 glasses, and the model had rated every one of those pushes safe. |
-| **5. [A foundation model as it downloads](06_a-foundation-model-as-it-downloads.md)** | Arrangements done, of 50: 1 (0–1)<br>Glasses racked, of 251: 48 (46–51)<br>Glasses toppled: 12 (10–14)<br>Its 48 racked glasses are exactly the 48 that already had room, so its pushes achieve nothing at all. The trajectories it returns hold the jaw about 200 mm above the table. It is not choosing badly among pushes; it is mostly not arriving at the table. That is the domain gap arriving exactly as predicted. |
-| **6. [The same model, fine-tuned here](07_the-same-model-fine-tuned-here.md)** | Arrangements done, of 50: 1 (0–2)<br>Glasses racked, of 251: 56 (50–65)<br>Glasses toppled: 40 (33–44)<br>The training brought the jaw down to the table without teaching it where to put the jaw down. About two of its pushes in three are blocked coming down, and the glasses that go over are what that costs. |
+| **1. [One fixed nudge](02_one-fixed-nudge.md)** | Arrangements done, of 50: 14<br>Glasses racked, of 251: 107<br>Glasses toppled: **1**<br>It refuses when unsure, so it almost never breaks a glass. |
+| **2. [Geometry generates, a model ranks](03_geometry-generates-a-model-ranks.md)** | Arrangements done, of 50: 14<br>Glasses racked, of 251: 107<br>Glasses toppled: **1**<br>It reaches exactly the same glasses as the printed rule, with nine more pushes. |
+| **3. [Imitation from demonstrations](04_imitation-from-demonstrations.md)** | Arrangements done, of 50: 2 (1–3)<br>Glasses racked, of 251: 63 (51–64)<br>Glasses toppled: 12 (7–13)<br>Its push heading is often wrong, so the hand hits a neighbour on the way down. |
+| **4. [A world model, then plan with it](05_a-world-model-then-plan-with-it.md)** | Arrangements done, of 50: **20**<br>Glasses racked, of 251: **146**<br>Glasses toppled: 20<br>It racks the most glasses, but its model rated each of the 20 toppling pushes as safe. |
+| **5. [A foundation model as it downloads](06_a-foundation-model-as-it-downloads.md)** | Arrangements done, of 50: 1 (0–1)<br>Glasses racked, of 251: 48 (46–51)<br>Glasses toppled: 12 (10–14)<br>Its 48 racked glasses already had room. Its jaw mostly stays far above the table. |
+| **6. [The same model, fine-tuned here](07_the-same-model-fine-tuned-here.md)** | Arrangements done, of 50: 1 (0–2)<br>Glasses racked, of 251: 56 (50–65)<br>Glasses toppled: 40 (33–44)<br>Its jaw now reaches the table, but about three pushes in five are blocked on the way down. |
 
 ![Glasses racked against glasses toppled, one point for each of the six: solutions 1 and 2 share a single point in the bottom right because they reach the same glasses, the world model sits far to the right and well above them, and the three that produce the push themselves are poorer on both axes at once.](../../images/pushing-the-glasses-apart/how-the-six-compare/six-racked-against-toppled.png)
 
-Three results in that table are worth more than the others.
+[The results](../10_the-results.md) has every column, and
+[what the comparison says](../10_the-results.md#5-what-the-comparison-says)
+explains what the scores mean. Three results stand out:
 
-**The first is that one learned solution clears many more glasses and breaks
-far more.** The world model racks 146 against the written geometry's 107, which
-is more than a third again, and it topples 20 against 1. So the honest summary
-is not that learning won or lost. The same mechanism — predicting an outcome
-instead of refusing whenever the arithmetic is unsure — is what buys the extra
-glasses and what breaks the extra ones, and the two cannot be separated by
-tuning a threshold. Everything built on a borrowed model, meanwhile, finishes
-almost nothing. That is the result, not a disappointment: the control was built
-first precisely so that the five expensive answers would have something honest
-to be measured against.
+- The world model racks the most glasses. It also topples 20, where the
+  geometry topples 1.
+- Solution 2 and solution 4 both fit a model. Only solution 4 gains, because it
+  learns the thing the geometry gets wrong.
+- Solutions 5 and 6 differ only in training. The trained one topples far more
+  glasses.
 
-**The second is solution 2 against solution 4, and it is the most useful
-comparison in the book.** Both fit a model, both keep the written geometry
-around it, and they fit models of different quantities. Solution 2 fits a model
-of *how much a push would help*, which the geometry already computes exactly
-from the destination. Solution 4 fits a model of *what a push will actually
-do*, which is the quantity the geometry gets wrong, because predicting where a
-pushed glass stops needs the friction nobody here has measured. The first reached exactly the same arrangements and the same
-glasses as the printed rule it was meant to beat; the second racked more
-glasses than anything else in the book. **The learning that paid attacked the quantity the geometry gets wrong,
-not the quantity it gets right.** So the useful question is not whether to
-learn, but which quantity is worth learning.
-
-**The third is solution 5 against solution 6, and it is the cleanest pair.**
-Same library, same model, same downloaded weights, same examiner, same input,
-same output and the same marking. The only difference is that one of them has
-had its training continued on this cell's own pushes. Both finish about one
-arrangement in fifty, but the fine-tuned half topples 40 glasses a run where its
-partner topples 12, which puts 36 of its 50 arrangements in the "wrong" column
-against its partner's 9. **Fine-tuning bought enough competence to act and not
-enough to act safely**, and on a scorecard where a toppled glass cannot be
-undone that is worse than inaction. The fine-tuned model is also the one with
-the heaviest caveat on its row: it received about one part in three hundred of
-the training its own library's recipe asks for, and its correction was still
-improving when that budget ran out.
-
-One cost does not appear in any of the three tables. Solutions 5 and 6 carry
-whatever terms the SmolVLA weights carry, and a file produced by continuing
-their training inherits those terms. Nothing in this project records what they
-are, and a reader taking this work forward would have to read them before
-anything shipped. Everything else here is permissively licensed.
-
-All six are built, and all six have been run by the examiner. Two things are
-designed rather than coded and are named where they belong: solution 1's own
-rule for choosing a heading and a distance, which [one fixed
-nudge](02_one-fixed-nudge.md) is careful about, and solution 4's second way.
-Where something could not be run, the result is absent and the reason is
-written down, because no number in this project is an estimate.
+Solutions 5 and 6 also carry the SmolVLA weights' own licence terms. This
+project does not record those terms, so read them before you ship anything built
+on them. Two parts are designs and were not run. These are solution 1's own
+choosing rule and solution 4's second way. Two more patterns cut across all six,
+and the next section names them.
 
 ## 6. Two things that cut across the six
 
+The scores above come from six separate runs. This section names two facts that
+link the solutions to each other.
+
 ### Where the refusal lives
 
-The refusal that matters is the one for a glass that tips before it slides, because a
-toppled glass is the failure this cell cannot take back. In five of the six, that
-refusal is arithmetic applied **before** any model is consulted. So no model can cause
-it: a better model makes bad pushes rarer, and only the arrangement puts a ceiling on
-how bad they get. Solution 4 is the exception. It holds no friction value to put in the
-limit and refuses on its own model's evidence instead. So there the ceiling comes from
-the model after all, and the one glass it toppled is what that is worth. [Pushing
-without toppling](../01_the-problem/05_pushing-without-toppling.md) sets out both
-arrangements.
+The most important refusal is for a glass that would tip before it slides. In
+five of the six solutions, plain arithmetic makes that refusal before any model
+is asked. Solution 4 is the exception, because it refuses on its own model's
+prediction. [Pushing without toppling](../01_the-problem/05_pushing-without-toppling.md)
+explains both cases.
 
 ### Where the demonstrations come from
 
-Solutions 3 and 6 learn by copying, and what they copy is solution 2's ranked
-geometric pushes. That is cheap, because a push on the examiner's tables costs
-milliseconds and nobody holds a controller at any point. It also has a
-consequence worth stating plainly.
+Solutions 3 and 6 learn by copying solution 2's pushes. So their scores depend
+on solution 2, and they cannot do better than it.
+[It is the teacher](../05_geometry-generates-a-model-ranks/03_how-it-works.md#7-it-is-the-teacher)
+explains why. Solutions 2 and 4 collect their own data, so they depend on no
+other solution.
 
 ![Solution 2's recorded pushes feeding solutions 3 and 6, with the three solutions that owe nothing to a sibling set out beside them.](../../images/pushing-the-glasses-apart/how-the-six-compare/six-who-learns-from-whom.png)
 
-**Those two inherit solution 2's ceiling**, because nothing in copying a
-teacher ever compares one outcome against another. Filtering the recordings to
-the pushes that worked then trains them on the half of its experience the
-teacher found easy. So **solutions 3 and 6 are the only ones whose score
-depends on another solution's**. Solution 2 labels its own candidates from the
-examiner, and solution 4 collects its own pushes — random ones first, then its
-own planner's — so neither owes anything to a sibling. That is a real asymmetry
-in the comparison, not a detail.
+With the map and these two links in hand, the last section lists where to read
+next.
 
 ## 7. Where to go next
 

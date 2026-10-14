@@ -1,10 +1,8 @@
 # The code
 
-This page shows the code at the heart of this solution, and says what the
-solution hands back to the rest of the cell. It follows [what it
-is](01_what-it-is.md), and [how it works](03_how-it-works.md) explains, part by
-part, what the code below is doing. The second explains the first,
-which is why they are on one page.
+This page shows the main code of this solution. It also says what the solution
+hands to the rest of the cell. [How it works](03_how-it-works.md) then explains
+each part of this code.
 
 ## Contents
 
@@ -14,37 +12,29 @@ which is why they are on one page.
 
 ## 1. The code at the heart of it
 
-Everything this solution adds to [solution 1](../04_one-fixed-nudge/01_what-it-is.md)
-sits in two places, and they are small enough to read here. The first is the model
-itself: scikit-learn's boosted trees, fitted once and then asked for one number per
-candidate so that the candidates can be sorted. The second is the number those trees are
-asked to predict, which is measured by making the push on the examiner and reading the
-table afterwards. The candidates themselves are not this solution's own — they come from
-solution 1's enumerator unchanged. So the choosing is the only thing that differs, and
-the label is what the choosing is taught to want.
+This solution adds two small things to [solution
+1](../04_one-fixed-nudge/01_what-it-is.md). The first is the model: boosted
+trees from scikit-learn. They are fitted once, and then they give one score to
+each candidate push. The second is the label, which is the number the trees
+learn to predict. The label is measured by making the push in the simulator and
+looking at the table afterwards. The candidate pushes come from solution 1's
+code, unchanged. So only the choice is new.
 
-The borrowed library does its work in a constructor and one call to `fit`, and
-the sort that follows is the model's entire effect on the run. Both are in
-`src/09_pushing-the-glasses-apart/02-geometry-ranked/ranker.py`, and the steps
-below are marked in it with the same numbers.
+The model code is in
+`src/09_pushing-the-glasses-apart/02-geometry-ranked/ranker.py`. It has four
+steps, and the code marks them with the same numbers. Steps 1 and 2 run once,
+before the arm moves. Steps 3 and 4 run once for each push.
 
-The file runs in four steps, in two bursts. The first two happen once, before
-any run of the arm, and the last two run once per push.
-
-1. Set up the trees without showing them anything, fixing how many there are,
-   how deep each one asks its questions, and how small a correction each one may
-   add.
-2. Fit them to the training table, which is one row of numbers per candidate and
-   one measured outcome per row, then hand the fitted trees back wrapped in an
-   object that answers with one score per candidate.
-3. Ask the geometry for every safe push on the table, along with the reason any
-   refused glass has none, and return straight away when the geometry allowed
-   nothing, because there is then nothing to put in order.
-4. Turn each surviving push into its eight numbers, ask the model to score it,
-   sort those scores highest first by a stable sort, and hand back the sorted
-   pushes, their scores in the same order, and the refusals. The sort is stable
-   so that candidates the model scored equally keep the order the geometry wrote
-   them in.
+1. Set up the trees. This fixes how many trees there are, how deep each one is,
+   and how small a correction each one may add.
+2. Fit the trees to the training table. The table has one row of numbers for
+   each candidate and one measured result for each row.
+3. Ask the geometry for every safe push on the table, and for the reason any
+   glass was refused. If there is no safe push, stop, because there is nothing
+   to order.
+4. Turn each safe push into its eight numbers and ask the model for a score.
+   Sort the pushes by score, highest first. The sort is stable, which means
+   that pushes with equal scores keep the order the geometry gave them.
 
 ```python
 from sklearn.ensemble import GradientBoostingRegressor
@@ -83,21 +73,17 @@ def ranked(
     return [kept[i] for i in order], scores[order], why
 ```
 
-What `labels` holds is the whole design decision, and it is produced by making
-one candidate on the examiner's tables and measuring what it did, in
-`src/09_pushing-the-glasses-apart/02-geometry-ranked/rollout.py`. Its steps are
-numbered from one again, because this is a separate file and it runs before any
-of the four above.
+The label is the most important design choice. It is made in
+`src/09_pushing-the-glasses-apart/02-geometry-ranked/rollout.py`, which tries
+one candidate push and measures what it did. Its steps are numbered from one
+again, because it is a separate file. It runs before any of the steps above.
 
-1. Put the table back exactly as it was, so that every candidate is judged from
-   the same arrangement, then make the push for real and keep what the jaw felt
-   while it pushed.
-2. Look at the table again with the camera, exactly as the arm would during a
-   run, and measure the room gained by taking the table's shortfall of room
-   afterwards away from its shortfall before.
-3. Ask whether any glass is now leaning further than a standing glass ever
-   leans, and write the label down. A topple scores worse than any push can be
-   good, and anything else scores the room it gained.
+1. Put the table back exactly as it was, so every candidate starts from the
+   same table. Then make the push, and keep what the jaw felt.
+2. Look at the table again with the camera. Measure the room gained: the
+   table's lack of room before the push, minus its lack of room after.
+3. Check whether any glass now leans more than a standing glass can. A topple
+   gets a worse label than any push. Any other push gets the room it gained.
 
 ```python
 def roll(table: Bench, before: Before, candidate: Candidate) -> Rolled:
@@ -119,78 +105,73 @@ def roll(table: Bench, before: Before, candidate: Candidate) -> Rolled:
     )
 ```
 
-Two things are visible in those blocks together. `survivors` is called before the model
-and `score` only reorders what it returns, which is the safety argument this whole
-document rests on. And the label is `gained`, metres of room the whole table gained,
-while the run is marked on how many glasses end up grippable. The mismatch that costs
-the ranker the comparison with the printed rule.
+Two things show in these blocks. First, `survivors` runs before the model, and
+`score` only reorders what it returns. This is why the model is safe, as [what
+it is](01_what-it-is.md#1-introduction) explains. Second, the label is `gained`,
+which is the room the whole table gained. But the run is scored on how many
+glasses can be gripped. These two are not the same, and [how it
+compares](06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks)
+shows what that difference costs.
+
+The code shows how a push is chosen. The next section says what the chosen push
+looks like when it leaves this solution.
 
 ## 2. The pushes are what this contributes
 
-One point about the output has to be clear, because it decides what a
-comparison with the other five is a comparison of.
+The previous section ended with a chosen push. This section says what form that
+push takes.
 
-This solution thinks in **parameterised pushes**: which glass to move, where to put the
-fingertips down. This way to point the jaw, how far to feel forward and how far to push
-once it has touched. That is exactly what the examiner's `push()` already accepts, and
-**the expansion of those numbers into a jaw trajectory is a macro the examiner owns.**
-The examiner brings the closed jaw down at the chosen start point, feels forward slowly
-until the force passes a small threshold, pushes the asked-for distance, backs off a
-couple of centimetres and lifts clear. Every parameterised push is expanded the same way
-by the same code, so this solution gains nothing and loses nothing in that step.
+This solution outputs a **parameterised push**. That is a push described by a
+few numbers: which glass, where the fingertips come down, which way the jaw
+points, how far to feel forward, and how far to push. The examiner's `push()`
+takes exactly these numbers. The examiner's own code turns them into a jaw
+movement, the same way for every solution. [What goes in and what comes
+out](../01_the-problem/02_what-goes-in-and-what-comes-out.md) describes that
+step.
 
 ![One glass, with the five numbers of a parameterised push marked on it: where the fingertips come down, which way the jaw points, how far forward it feels, and how far the glass travels, all of them on the same straight line.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-pages-a-push-is-five-numbers.png)
 
-So **what this solution contributes is the choice of push and nothing else**. The
-trajectory is the examiner's, the physics is MuJoCo's, and the marking reads the table
-afterwards rather than the action. This is what lets a five-number push and a chunk of
-waypoints from a learned policy be compared at all. [The
+So **this solution adds only the choice of push**. The movement belongs to the
+examiner, and the physics belongs to MuJoCo. The score looks at the table
+afterwards, not at the action, as [the
 examiner](../01_the-problem/03_the-examiner.md#4-the-score-is-the-outcome-not-the-action)
-states that once so that no solution has to argue it again.
+explains.
 
-The limitation that follows is genuine rather than a formality. A parameterised
-push is a straight drag along one heading. A policy that emits waypoints
-directly can describe a push that curves, slows, or changes direction partway
-through, and no member of this solution's candidate set can express any of
-those. That is part of the ceiling named in the previous section, and it is the
-clearest example of what the enumeration costs.
+This has a real limit. A parameterised push is a straight push along one line.
+A policy that outputs waypoints can make a push that curves, slows down or
+turns. This solution cannot make any of those pushes.
+
+The push is now defined. The next section joins all the parts into one loop.
 
 ## 3. How the concepts fit together
 
-The pieces now join into one loop, and the loop is the one [pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md) describes: plan, feel, look again.
+The two sections above showed the parts. This section puts them in the order
+they run. The loop is the one in [pushing without
+toppling](../01_the-problem/05_pushing-without-toppling.md#5-the-loop-plan-feel-look-again):
+plan, feel, look again.
 
-Before any of it, and once, the model is fitted. Candidates are generated geometrically
-on the training tables, every one of them is executed on the examiner, each is labelled
-with the clear room the table gained and with whether the glass toppled. And a few
-hundred boosted regression trees are fitted to those labels on a table of a few thousand
-rows.
+Before any run, the model is fitted once. Pushes are listed on the training
+tables. Each one is made in the simulator and labelled with the room gained and
+whether a glass toppled. Then the trees are fitted to those labels.
 
-At run time, one pass of the loop goes like this. `look()` hands over where each glass
-stands and how wide it is at its widest and at its foot, carrying the measurement error
-[the camera work reports](../../08_seeing-the-glasses/11_the-results.md). Any glass that
-already has room is racked and removed from the problem. For each glass that is still
-crowded, the topple limit is evaluated from its measured foot across the believed range
-of friction. And a glass that tips before it slides at every friction in that range is
-refused with the reason. For the glasses that remain, the enumerator sweeps the
-headings, steps the travel out, applies its four tests and keeps the survivors. Each
-survivor is turned into the short list of lengths, angles, counts and ratios described
-above, the model scores it, and the candidates are sorted. The highest-scoring push is
-handed to the examiner, which expands it into a trajectory, carries it out, and reports
-what the jaw felt. Then the arm looks again, and the loop repeats with the arrangement
-as it now is rather than as it was planned to be.
+During a run, one pass of the loop goes like this.
 
-Two things are worth holding on to from that.
+1. `look()` gives the place and widths of each glass.
+2. Any glass that already has room is racked.
+3. For each crowded glass, the tipping test runs. A glass that would tip is
+   refused, with its reason.
+4. For the other glasses, the geometry lists the safe pushes.
+5. The model scores each push, and the pushes are sorted.
+6. The best push goes to the examiner, which makes it and reports what the jaw
+   felt.
+7. The arm looks again, and the loop starts over from the table as it is now.
 
-**The loop is what recovers from a bad prediction.** Nothing here trusts that a
-push lands where it was aimed. The arrangement is re-read after every push, so a
-push that fell short, went too far or turned the glass is simply the state of the
-table that the next pass plans against. That is why a wrong ordering costs a push
-rather than a run.
+The loop reads the table again after every push. So a push that went too far or
+too short is not a disaster. The next pass simply plans from where the glass
+really is. This is why a bad order costs one push and not a whole run.
 
-**What the loop cannot recover is a toppled glass**, because nothing here lifts
-anything. That single fact is why the topple limit is a refusal rule rather than
-a risk weighed against the value of moving the glass, and it is why the model's
-position after the refusal matters more than the model's accuracy.
+The loop cannot fix a toppled glass, because nothing here lifts a glass. That
+is why tipping is a refusal and not a risk to weigh. The next page, [how it
+works](03_how-it-works.md), explains each part of this loop in detail.
 
 ← [What it is](01_what-it-is.md) · [How it works](03_how-it-works.md) →

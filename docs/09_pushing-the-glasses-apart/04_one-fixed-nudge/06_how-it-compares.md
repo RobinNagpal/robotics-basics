@@ -1,8 +1,8 @@
 # How it compares
 
-This page is the judgement on this solution. It says where the solution is
-strong and where it breaks, names the general ideas behind it, and places it
-beside the other five.
+This page judges this solution. It says where the solution is strong and where
+it breaks. It names the older ideas behind it. Then it places it beside the
+other five.
 
 ## Contents
 
@@ -12,251 +12,252 @@ beside the other five.
 
 ## 1. Where it is strong and where it breaks
 
-The strengths all follow from how little the method claims, and the weaknesses
-all follow from the same thing, which is what makes it a clean control rather
-than merely a weak solution.
+The earlier pages showed the method at work. This section adds up its
+strengths and weaknesses. Both come from the same fact: the method claims very
+little. That is what makes it a clean control.
 
-**It cannot be wrong about pushing, because it says nothing about pushing.**
-Every other solution has a prediction somewhere that can be wrong. This one
-has only a direction, which is right for any friction, and a distance that is
-deliberately too small.
+### Its strengths
 
-**Its answer can be read.** Every step is a number that can be printed, so a
-wrong answer is something a person reads rather than something they guess at,
-and every refusal has a reason that can be checked with a ruler.
+**It cannot be wrong about pushing, because it predicts nothing about
+pushing.** Every other solution has a prediction that can be wrong. This one
+has only a direction, which is right for any friction. Its distance is small on
+purpose.
 
-**One run of it is a measurement.** Nothing in it was fitted and nothing in it
-is drawn at random, so it behaves the same way on the hundredth table as on the
-first. The repeats that [the examiner](../01_the-problem/03_the-examiner.md) requires of the trained
-solutions, because their training and their actions both vary, are not needed
-here, and that makes it the one solution in the set whose number carries no
-spread.
+**Its answer can be read.** Every step is a number that can be printed. So a
+person can read why it went wrong, instead of guessing. Every refusal has a
+reason you can check with a ruler.
 
-**It exercises the whole contact sequence.** Closing the jaw, dropping to
-height, feeling in until the force threshold fires, pushing slowly along a
-line, retreating before lifting: every one of those steps is where a real glass
-gets knocked over, and this method runs all of them with no planning code in
-the way. When something falls over while the work in this book is being built,
-this method tells you the fault was in the contact, because there was no plan
-to be wrong.
+**One run of it is a measurement.** Nothing in it is fitted, and nothing is
+random. So it behaves the same way on the hundredth table as on the first. [The
+examiner](../01_the-problem/03_the-examiner.md#6-two-things-this-scorecard-needs-that-the-camera-works-did-not)
+asks the trained solutions for several runs, because they vary. This one does
+not need that. Its number has no spread.
 
-**Short pushes are safe pushes.** Every millimetre of travel is a millimetre in
-which something can be knocked, so a method whose instinct is to move a glass
-as little as possible has a good instinct, and the small gain gives it that
-instinct for free.
+**It tests the whole contact sequence.** The jaw closes, drops to height, feels
+forward until the force fires, pushes along a line, backs off and lifts. A real
+glass can be knocked over at any of these steps. This method runs all of them
+with no planning code in the way. So if a glass falls while you build this
+project, the fault is in the contact, not in a plan.
 
-The weaknesses divide into one that makes the others academic and several that
-matter in their own right.
+**Short pushes are safe pushes.** A glass can be knocked during any millimetre
+of travel. This method moves each glass as little as it can. The small gain
+gives it that habit.
 
-**It has nowhere to stand.** The approach runs along the same line as the
-push, so pushing a glass straight away from its neighbour asks the arm to put
-266 mm of tool where the neighbour is. The honest reading is that **the
-approach is a harder constraint than the departure**, and this solution is the
-one that cannot choose its approach at all.
+### Its weaknesses
 
-**It cannot help a glass that is crowded from two sides.** A push away from
-one neighbour is a push towards the other, so the method oscillates until the
-budget stops it. No gain fixes that, because the difficulty is in the
-direction.
+One weakness matters more than the rest, so it comes first.
 
-**It never looks at the free table.** The shortfall says how far, and nothing
-in the method says where to. It does not ask whether the place the glass is
-being sent is empty, inside the glass zone, inside the arm's reach or clear of
-the rack, and it does not ask whether another glass is standing in the corridor
-the glass will travel down. A push that drives one glass into another is the
-failure this creates, and it is also the failure that cannot be recovered,
-because a collision between two upright glasses is how a glass goes over.
+**It has nowhere to stand.** The jaw pushes in the direction it points. So the
+arm comes in along the same line as the push. To push a glass straight away
+from its neighbour, the arm must come in from the neighbour's side. The tool is
+long and gets wider behind the fingertips. All of it is at the height of the
+push, so all of it must miss every glass on the table.
+[What the examiner draws](../01_the-problem/03_the-examiner.md#3-what-the-examiner-draws)
+gives the tool's sizes. In a tight group, the neighbour stands exactly where the
+tool would need to be. This method has only one direction to offer. So when
+that direction is blocked, it must refuse the glass. **Every solution that
+searches over directions can ask for a different approach. This one cannot.**
+So for this method, where the arm comes in from matters more than where the
+glass goes.
+
+![The glass to be pushed, the neighbour it is being pushed away from, and the closed jaw drawn to scale on the line between them: the fingertips come down 10 mm outside the glass, and the 266 mm of tool behind them lies along the same line, straight through the place the neighbour is standing.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-pages-nowhere-to-stand.png)
+
+**It cannot help a glass crowded from two sides.** A push away from one
+neighbour is a push towards the other.
+[A table where it does not](04_a-worked-example.md#a-table-where-it-does-not)
+shows this.
+
+**It never looks at the free table.** The shortfall says how far, but nothing
+says where to. The method does not check that the place it sends a glass is
+empty. It does not check that the place is in the glass zone, in the arm's
+reach, or clear of the rack. It does
+not check for a glass in the path either. So it can drive one glass into
+another. That cannot be undone, because two upright glasses that hit each other
+is how a glass falls over.
 
 **It does not use the shared target layout.** [The target
-layout](../01_the-problem/04_the-target-layout.md) computes where every glass should finish and
-reports the least travel the task could possibly need, and this method consults
-neither. It pushes away rather than towards, so its total travel will sit well
-above the displacement floor, and reading it against that floor is the clearest
-way to see what choosing a destination is worth.
+layout](../01_the-problem/04_the-target-layout.md) works out where every glass
+should finish, and the least travel the task needs. This method uses neither.
+It pushes away, not towards a goal. So its travel will be well above that
+least travel.
 
-**It does not choose the safer glass of a pair.** Of two crowded glasses, the
-one standing on the wider foot has the more room under the tipping limit, so it
-is the safer one to push. This rule always pushes the glass that is short of
-room, which may be the narrower of the two, and when that glass fails the
-tipping check the method refuses rather than pushing the other one. That is
-safe, but it costs yield, and it is the kind of easy improvement a baseline has
-to decline in order to remain a baseline.
+**It does not pick the safer glass of a pair.** Of two crowded glasses, the one
+on the wider foot is safer to push. This rule always pushes the glass that is
+short of room, which may be the narrower one. If that glass fails the tipping
+check, the method refuses it. It does not try the other one. That is safe, but
+it racks fewer glasses. A baseline must turn down easy fixes like this to stay a
+baseline.
 
-**It throws away the force report.** The force the jaw felt and the distance
-the glass moved for it are consequences of the friction, so they are the only
-evidence about the friction that this cell can produce. The method reads none
-of it, which is exactly why every other solution has something to improve on.
+**It throws away the force report.** The jaw reports how hard it pushed and how
+far the glass moved. Both depend on the friction. So they are the only clue
+about the friction that this cell gives.
+[Why the force reading matters](../01_the-problem/02_what-goes-in-and-what-comes-out.md#why-the-force-reading-matters)
+explains this. This method reads none of it. It only checks whether the jaw
+touched anything. This is the deepest reason it is the weakest of the six.
+Every solution that does better reads that report in some way.
 
-**It pays in pushes, and the budget is finite.** A method whose only recovery
-is to repeat can run out of recoveries on a table that needs many.
+**It pays in pushes, and the budget is limited.** Its only way to recover is to
+push again. A table that needs many pushes can use up the budget.
+
+These strengths and weaknesses are not new. The next section names the older
+ideas the method is made of.
 
 ## 2. The general ideas behind this
 
-Nothing here was invented for glassware. Knowing which older ideas the method
-is made of says where it should be expected to work and where it should not.
+The last section judged the method on its own. This section names the older
+ideas it is built from. Knowing them tells you where to expect it to work and
+where not.
 
 ### Proportional control
 
-A correction that is the measured error multiplied by a fixed gain is a **proportional
-controller**, the simplest member of the family usually written as PID. This adds a term
-for the accumulated error and a term for its rate of change. **Where it is normally
-right:** when the error can be measured, when the correction is known to act in the
-right direction, and when the factor relating the correction to its effect is at least
-bounded, a small gain is stable with no model of the system whatever. That is a
-remarkably weak set of requirements, and it is the reason proportional control is
-everywhere. **Where it is not right:** a proportional controller is slow when an
-accurate model is available, because a model lets one step do what the controller does
-in several. It leaves a steady error whenever the system has a constant offset pulling
-against it. This is the usual reason for adding the integral term. Here the second
-objection does not bite, because the measurement is of position and the correction moves
-position, so there is no offset to accumulate against. The first objection bites
-exactly, and the whole set of six exists to find out what an accurate model would be
-worth.
+A correction equal to the error times a fixed gain is a **proportional
+controller**. It is the simplest member of a family called PID. PID adds a term
+for the error added up over time, and a term for how fast the error changes.
+
+It works well when three things are true. The error can be measured. The
+correction acts in the right direction. And the effect of the correction is at
+least within known limits. Then a small gain is stable with no model at all.
+These are weak needs, which is why proportional control is used everywhere.
+
+It has two known weak points. First, it is slow when a good model exists,
+because a model can do in one step what the controller does in several.
+Second, it leaves a steady error if something keeps pulling against it. The
+second point does not apply here, because nothing pulls the glass back. The
+first point applies fully. The six solutions exist to find out what a good
+model is worth.
 
 ### Singulation
 
-Separating crowded objects so that they can be picked up one at a time is
-called **singulation**, and it is the word to search for. Chang, Smith and
-Fox's *Interactive Singulation of Objects from a Pile* (ICRA 2012) named the
-problem for manipulation, and it already contains the structure this solution
-uses: act on the pile, look again, repeat. **Where it is normally right:** bin
-picking and warehouse work, where a pile has to become a sequence of graspable
-objects and the only question is access. **Where it is not:** the setting that
-work assumes has walls that stop an object leaving the workspace and objects
-lying flat that cannot be knocked over. Neither is true on an open table of
-upright glasses, so the structure carries over and the safety does not.
+Separating crowded objects so they can be picked one at a time is called
+**singulation**. Chang, Smith and Fox's *Interactive Singulation of Objects
+from a Pile* (ICRA 2012) named this problem for robot handling. It already uses
+the same pattern as this solution: act on the pile, look again, repeat.
+
+It works well in bin picking and warehouse work, where the only question is how
+to reach each object. It fits less well here. That work assumes walls that
+keep objects in, and objects lying flat that cannot fall over. An open table of
+upright glasses has neither. So the pattern carries over, but the safety does
+not.
 
 ### Fixed push policies
 
-Pushing a short fixed distance along a direction chosen by a simple rule is a real
-method rather than a straw man. Danielczuk and colleagues' *Linear Push Policies to
-Increase Grasp Access in Dense Clutter* (IEEE CASE 2018) is the clearest statement of
-it, and its finding is the one this solution relies on: such pushes are cheap and often
-sufficient to open enough space for a grasp. **Where it is normally right:** dense
-clutter inside a bin, where a push cannot do much harm. **Where it is not:** here, for
-the two reasons above and for a third that is specific to upright objects. A flat object
-in a bin can be pushed from a direction the gripper can easily occupy, while an upright
-glass must be pushed from the side. And the side is where the neighbour is.
+Pushing a short fixed distance in a direction chosen by a simple rule is a real
+method. Danielczuk and others' *Linear Push Policies to Increase Grasp Access
+in Dense Clutter* (IEEE CASE 2018) describes it clearly. They found that such
+pushes are cheap, and often open enough space for a grasp. This solution relies
+on that finding.
+
+It works well for dense clutter in a bin, where a push does little harm. It
+fits less well here, for the reasons in the last section and one more. A flat
+object in a bin can be pushed from a side the gripper can easily reach. An
+upright glass must be pushed from its side, and the side is where the neighbour
+is.
 
 ### Quasi-static planar pushing, which this solution deliberately does not use
 
-There is a well developed theory of what happens when an object is pushed
-across a table. Mason's *Mechanics and Planning of Manipulator Pushing
-Operations* (IJRR 1986) established the result the field rests on, usually
-called the voting theorem: which way a pushed object rotates is decided by
-where the line of pushing passes relative to the object's centre of friction.
-That can be worked out without knowing the pressure under the object in
-detail. Lynch and Mason's *Stable Pushing: Mechanics, Controllability and
-Planning* (IJRR 1996) turned it into planned pushes that carry an object along
-a chosen path. **Where it is normally right:** when the friction and the way
-the object's weight sits on its foot are known or can be measured. **Where it
-is not:** here, because nothing in this cell measures either. Yu, Bauza, Fazeli
-and Rodriguez's *More than a Million Ways to Be Pushed* (IROS 2016) is the
-honest measurement of what that costs: they pushed the same objects the same
-way many thousands of times and recorded how far the outcomes scatter, and the
-scatter is neither small nor noise that averages away. So the choice is between
-a prediction that needs a number nobody has and no prediction at all. This
-solution takes no prediction at all. [Solution
-4](../07_a-world-model-then-plan-with-it/01_what-it-is.md) takes the other branch and learns the model instead.
+There is a well-developed theory of what happens when an object is pushed
+slowly across a table. Mason's *Mechanics and Planning of Manipulator Pushing
+Operations* (IJRR 1986) gave the main result, called the voting theorem. It
+says which way a pushed object turns. That depends on where the line of the
+push passes, compared with the object's centre of friction. Lynch and Mason's
+*Stable Pushing: Mechanics, Controllability and Planning* (IJRR 1996) used this
+to plan pushes that carry an object along a chosen path.
+
+This theory works when the friction, and how the weight sits on the foot, are
+known or can be measured. Here, neither is measured. Yu, Bauza, Fazeli and
+Rodriguez's *More than a Million Ways to Be Pushed* (IROS 2016) measured what
+that costs. They pushed the same objects the same way many thousands of times.
+The results spread out widely, and the spread does not average away. So the
+choice is between a prediction that needs an unknown number, and no prediction.
+This solution makes no prediction. [Solution
+4](../07_a-world-model-then-plan-with-it/01_what-it-is.md) makes the other
+choice and learns a model instead.
 
 ### Guarded moves
 
-Ending a motion on a sensed condition rather than at a computed coordinate is a
-**guarded move**, and it is one of the oldest ideas in robot assembly. Lozano-Pérez,
-Mason and Taylor's *Automatic Synthesis of Fine-Motion Strategies for Robots* (IJRR
-1984) is the reference statement of why: when the position of a thing is uncertain, a
-motion that stops on a sensor is reliable where a motion that stops at a coordinate is
-not. **Where it is normally right:** every contact made against an object whose position
-was measured from a distance, which is every contact in this project. **Where it is not
-a complete answer:** a guarded move tells the arm where the surface is and says nothing
-about what to do once it is found. So it removes a class of collisions and solves no
-part of the planning.
+A motion that ends when a sensor fires, not at a computed point, is a **guarded
+move**. It is one of the oldest ideas in robot assembly. Lozano-Pérez, Mason and
+Taylor's *Automatic Synthesis of Fine-Motion Strategies for Robots* (IJRR 1984)
+explains why it helps. When an object's position is uncertain, a motion that
+stops on a sensor is reliable. A motion that stops at a computed point is not.
+
+It helps with every contact against an object measured from a distance. That is
+every contact in this project. But it is not a full answer. A guarded move
+finds the surface. It does not say what to do next. So it prevents some
+collisions, but it does no planning.
 
 ### Baselines, as a discipline
 
-The last thing this solution is, is a **baseline**: the simplest method that
-does the job at all, built first and kept as the number everything else is
-scored against. The practice does not come from robotics. It is what keeps a
-claim honest, because a method that beats nothing has not been shown to be
-good. **Where it is normally right:** whenever several methods are compared,
-and especially when some of them are expensive, because a price can only be
-judged against a free alternative. **Where it goes wrong:** a baseline that is
-quietly improved until it is competitive has stopped being a baseline, and the
-improvements are usually small and reasonable one at a time. This method has
-exactly one place where that could happen, which is the gain, and that is why
-the gain is argued rather than swept over the training tables. The discipline
-also requires that the baseline be measured on the same tables with the same
-scoring as the methods meant to beat it, which is what [the
-examiner](../01_the-problem/03_the-examiner.md) is for.
+Last, this solution is a **baseline**. A baseline is the simplest method that
+does the job at all. It is built first and kept as the number every other
+method is scored against. A method that beats nothing has not been shown to be
+good.
+
+Baselines matter most when several methods are compared and some are
+expensive. A price can only be judged against a free choice. A baseline goes
+wrong when someone keeps improving it until it competes. Each small change
+seems reasonable, but together they spoil it. This method has one place where
+that could happen, which is the gain. That is why the gain is argued, not tuned
+on the training tables. A baseline must also be scored on the same tables, in
+the same way, as the methods meant to beat it. [The
+examiner](../01_the-problem/03_the-examiner.md) does that.
+
+These ideas say what kind of method this is. The next section places it beside
+the other five solutions.
 
 ## 3. Where it sits among the other five
 
-[The overview of the six](../03_the-six-solutions/01_how-the-six-compare.md) states the question this solution
-answers in one line: **does any learning beat a fixed nudge?** It is answered
-by comparing this solution against all five of the others, and that is the only
-comparison in the set with this shape, because every other comparison is
-between two methods that both cost something.
+The last section named the ideas inside the method. This section compares it
+with the other five. [The overview of the
+six](../03_the-six-solutions/01_how-the-six-compare.md) states the question it
+answers: **does any learning beat a fixed nudge?** [What it
+is](01_what-it-is.md#1-introduction) says why a solution that cannot beat it has
+earned nothing. The scores are in [the results](../10_the-results.md#2-the-results).
 
-**Against [solution 2](../05_geometry-generates-a-model-ranks/01_what-it-is.md)** the gap is a search and a
-ranker. Solution 2 uses the same input, the same room test and the same tipping
-rule, and then has geometry generate many candidate pushes for each crowded
-glass and gradient-boosted trees rank them. Two of this solution's three
-structural weaknesses are weaknesses solution 2 does not have, because a method
-that may choose its direction can find a push out of the gap between two
-neighbours and can find an approach the tool actually fits into. Solution 2 also
-has the one thing this solution does not, which is that its scored candidates
-are demonstrations, so it is the teacher for solutions 3 and 6 and this one is
-the teacher for nobody.
+**Against [solution 2](../05_geometry-generates-a-model-ranks/01_what-it-is.md),**
+the difference is a search and a ranker. Solution 2 uses the same input, room
+test and tipping rule. Then geometry makes many possible pushes for each
+crowded glass, and a model ranks them. Because it can choose its direction, it
+avoids two of this solution's main weaknesses. Its scored pushes are also
+examples that other solutions can learn from. So it teaches solutions 3 and 6,
+and this solution teaches nobody.
 
-**Against [solution 3](../06_imitation-from-demonstrations/01_what-it-is.md)** the gap is
-everything fitted. Solution 3 fits ACT, and then Diffusion Policy, to those
-demonstrations, and emits a chunk of waypoints rather than a push. The
-demonstrations themselves are free, so what it pays is a training run with
-several seeds. That run was budgeted for a rented accelerator and in the event
-needed none, so the price is hours of this laptop rather than money. If it does
-not clear more tables than a fixed nudge, every one of those prices bought
-nothing.
+**Against [solution 3](../06_imitation-from-demonstrations/01_what-it-is.md),**
+the difference is everything that is fitted. Solution 3 learns from solution
+2's examples, and outputs a chunk of waypoints instead of a push. The examples
+are free, so it pays for training runs on this laptop. If it does not clear
+more tables than a fixed nudge, that training bought nothing.
 
-**Against [solution 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md)** the comparison is the sharpest
-statement of what this document is about. Solution 4 learns a model of what a
-push does and plans through it at run time, first with the small ensemble
-already written in this project and then with TD-MPC2 off the shelf. It is
-buying exactly the prediction this solution refuses to make, and it pays twice:
-once in training data and once in planning time per push, which the compute
-column records. So the pair of them asks the question directly: **is a
-prediction worth more than a repetition?**
+**Against [solution 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md),**
+the comparison is the sharpest. Solution 4 learns a model of what a push does,
+and plans with it while it runs. It buys exactly the prediction this solution
+refuses to make. It pays twice: once for training data, and once for planning
+time on every push. So this pair asks the question directly: **is a prediction
+worth more than a repeat?**
 
-**Against [solution 5](../08_a-foundation-model-as-it-downloads/01_what-it-is.md)** the two of them are the
-only solutions in the set that fit nothing here, which makes the pair worth
-reading together even though they have nothing else in common. This one
-carries one argued constant. Solution 5 carries SmolVLA as it downloads, about
-450 million parameters pretrained on 487 community datasets of real
-teleoperation, so it fits nothing in *this cell* while resting entirely on
-fitting done somewhere else. **Against [solution
-6](../09_the-same-model-fine-tuned-here/01_what-it-is.md)**, which is the same SmolVLA weights with their
-training continued here by low-rank adaptation, the fixed nudge is the floor
-that both halves of that pair have to clear before the difference between them
-is worth discussing at all.
+**Against [solution 5](../08_a-foundation-model-as-it-downloads/01_what-it-is.md),**
+the link is that both fit nothing in this cell. This one has one argued
+constant. Solution 5 uses a large model trained somewhere else.
+**Against [solution
+6](../09_the-same-model-fine-tuned-here/01_what-it-is.md),** which is that same
+model trained further here, the fixed nudge is the floor. Both solutions 5 and 6
+must clear it before the difference between them matters.
 
-The right way to think about this method, then, is as **the first thing to
-build and the last thing to ship**. Build it first, because it is the cheapest
-way to get a real push happening against a real glass, and because everything
-after it needs the same contact sequence and the same refusals. Do not ship it,
-because it has one heading to offer, it cannot help a glass crowded from two
-sides, and it never asks whether the place it is sending a glass is clear.
+So think of this method as **the first thing to build and the last thing to
+ship**. Build it first. It is the cheapest way to get a real push against a
+real glass. Everything after it needs the same contact steps and the same
+refusals. Do not ship it, because of the weaknesses in [where it is strong and
+where it breaks](#1-where-it-is-strong-and-where-it-breaks).
 
-And read it in both directions, as the book on telling the glasses apart reads [its own
-written rule](../../08_seeing-the-glasses/05_rules-on-the-table/01_what-it-is.md). The
-usual reading is about the other five: if a model cannot beat a fixed nudge, it has
-earned nothing, because it cost data, training time and hardware that this one did not.
-So matching it is not a result. The other reading is about the problem. This method
-works at all only because the glasses stand upright on a flat table, because the
-gripper's clear room is a known constant, because [the camera
-work](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md) reports a
-position and a width for every glass, and because a refusal is an acceptable answer.
-Each of the other five needs fewer of those promises than this one does. So a reader who
-finds a fixed nudge convincing should read that as a statement about how generous this
-book's promises are. And the value of the other five is what they do when the promises
-stop.
+Also read it the other way round, as the book on telling the glasses apart
+reads [its own written
+rule](../../08_seeing-the-glasses/05_rules-on-the-table/01_what-it-is.md). This
+method works at all only because of four promises. The glasses stand upright on
+a flat table. The gripper's clear room is a known constant. [The camera
+work](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md)
+reports a position and a width for every glass. And a refusal is an acceptable
+answer. Each of the other five needs fewer of these promises. So if a fixed
+nudge looks good to you, that says how generous this book's promises are. The
+value of the other five is what they do when those promises fail.
 
 ← [What it needs](05_what-it-needs.md) · [Geometry generates, a model ranks — what it is](../05_geometry-generates-a-model-ranks/01_what-it-is.md) →

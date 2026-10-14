@@ -1,9 +1,8 @@
 # The code
 
-This page shows the code at the heart of this solution, and says what the
-solution hands back to the rest of the cell. It follows [what it
-is](01_what-it-is.md), and [how it works](03_how-it-works.md) explains, part by
-part, what the code below is doing.
+This page shows the main code of this solution. It also says what the solution
+hands back to the rest of the cell. [How it works](03_how-it-works.md) explains
+what the code is doing, part by part.
 
 ## Contents
 
@@ -13,35 +12,32 @@ part, what the code below is doing.
 
 ## 1. The code that does the work
 
-Nothing here is fitted, so the only code this project wrote is the join between what the
-borrowed model emits and what this cell's jaw is. [How it
-works](03_how-it-works.md#4-the-actions-arrive-with-no-units-in-them) explains why that
-join turned out to be the whole solution: the released checkpoint saves its
-normalisation statistics under keys the normaliser never looks up. So the actions arrive
-as z-scores with no units in them at all, and a scale had to be chosen rather than
-converted.
+Nothing here is fitted. So the only code this project wrote is the join between
+the model's output and this cell's jaw. The model's actions come out with no
+units. [How it
+works](03_how-it-works.md#4-the-actions-arrive-with-no-units-in-them) explains
+why. So a scale had to be chosen, not converted.
 
-The borrowed library does its work in one call, in
+The library does its work in one call, in
 [`05-smolvla-as-it-downloads/policy.py`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/policy.py).
-`predict_action_chunk` is LeRobot's; `self.pre` and `self.post` are the
-processors the checkpoint ships, which are the ones that do nothing here; and
-`to_jaw` is this project's.
+`predict_action_chunk` comes from LeRobot. `self.pre` and `self.post` are the
+processors that ship with the model, and here they do nothing. `to_jaw` is this
+project's own code.
 
 That call runs in four steps.
 
-1. Build what the model is given, which is the straight-down picture as an array
-   with the colour channels first and the values between 0 and 1 instead of 0
-   and 255, the jaw's own pose written in the units the answers come back in,
-   and the instruction, which is the same sentence every time.
-2. Make the single forward pass, which draws 50 actions.
-3. Divide every action by `ACTION_SPAN` and clip what is left over, so that two
-   standard deviations of the model's output reach the edge of the picture's
-   frame and nothing reaches past it.
-4. Read the slots that matter: two give a position on the table measured from
-   the centre of that frame, a third gives a height between the height the jaw
-   pushes at and the height it travels at, and a fourth gives a heading.
+1. Build the model's input. This is the top-down picture, with the colour
+   channels first and values from 0 to 1. It also includes the jaw's pose, and
+   the instruction, which is the same sentence every time.
+2. Run the model once. It returns 50 actions.
+3. Divide every action by `ACTION_SPAN`, and cut off anything past the limit.
+   This makes two standard deviations of output reach the edge of the picture's
+   frame, and nothing goes past it.
+4. Read the four slots that matter. Two give a position on the table, measured
+   from the centre of the frame. One gives a height between the pushing height
+   and the travel height. One gives a heading.
 
-Steps 1 and 2 are in `policy.py`, and steps 3 and 4 are the whole of `to_jaw`.
+Steps 1 and 2 are in `policy.py`. Steps 3 and 4 are the whole of `to_jaw`.
 
 ```python
     def ask(self, picture: np.ndarray, jaw: Waypoint) -> np.ndarray:
@@ -61,14 +57,12 @@ Steps 1 and 2 are in `policy.py`, and steps 3 and 4 are the whole of `to_jaw`.
         return to_jaw(self.post(actions)[0].numpy().astype(float), self.up)
 ```
 
-The scale that `to_jaw` applies is in
-[`05-smolvla-as-it-downloads/joining.py`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/joining.py),
-and the whole of the choice is one constant and the four lines that spend it.
-
-Steps 3 and 4 are that choice. Step 3 is the one constant, and step 4 is the four
-lines that spend it, one for each slot the cell can use. The remaining two of the
-model's six slots are dropped, because this cell holds the jaw level and closed
-and offers no way to change either.
+The scale that `to_jaw` uses is in
+[`05-smolvla-as-it-downloads/joining.py`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/joining.py).
+The whole choice is one constant, which is step 3, and four lines that use it,
+which is step 4. There is one line for each slot the cell can use. The model has
+six slots, and the other two are dropped. This is because this cell keeps the
+jaw level and closed, so it cannot change either.
 
 ```python
 # Which of SmolVLA's six slots carries what, in the reading above.
@@ -103,92 +97,88 @@ def to_jaw(action: np.ndarray, up: float = UP_HIGHER) -> np.ndarray:
     )
 ```
 
-The only object in this solution that has both a metric extent and is seen by the model
-is the frame of the straight-down picture, which is 717 mm across the table top. So
-`ACTION_SPAN = 2.0` is the decision that two standard deviations of the model's output
-span that frame, which makes one standard deviation 179 mm across the table and 62 mm of
-height. That is the reading that lets the model put the jaw anywhere it can see and
-nowhere it cannot. And it is the one property a join has to have if the score is to be
-about the model rather than about the join.
+The model can see only one thing that has a size in millimetres: the frame of
+the top-down picture, which is 717 mm across. So `ACTION_SPAN = 2.0` means that
+two standard deviations of output cover that frame. This makes one standard
+deviation equal to 179 mm across the table and 62 mm of height. With this
+choice, the model can put the jaw anywhere it can see, and nowhere it cannot.
+A join needs that property, so that the score measures the model and not the
+join.
 
-It has a price that is easy to miss. The examiner consumes waypoints a fixed
-period apart, 50 milliseconds, so **how far apart the waypoints are is how fast
-the jaw is being asked to travel**. Fixing the frame therefore fixes the speed
-as well as the reach, and the two cannot be chosen separately. Measured, the
-model's waypoints come back 14.6 mm apart, which asks for more than the arm's
-own top speed and fourteen times the speed the examiner's push macro moves at.
+This choice has a cost that is easy to miss. The examiner uses one waypoint
+every 50 milliseconds. So **the distance between waypoints sets how fast the
+jaw is asked to move**. Fixing the frame fixes the speed as well as the reach.
+The two cannot be chosen separately. Measured, the model's waypoints come back
+14.6 mm apart. That asks for more than the arm's top speed. It is also fourteen
+times the speed of the examiner's push macro.
 
 ![At the examiner's fixed waypoint period of 50 milliseconds, the spacing of the waypoints is the speed: 1 mm apart is the push macro's speed, 10 mm apart is the fastest the arm moves, and the model's own answers come back 14.6 mm apart.](../../images/pushing-the-glasses-apart/a-foundation-model-as-it-downloads/smolvla-the-spacing-is-the-speed.png)
 
-Nothing in this solution clips that to something gentler, because a gentler limit would
-be a number chosen to make this solution look better and this solution fits nothing. The
-examiner does hold a commanded path to the fastest speed the cell ever moves the jaw.
-This is a different thing: that limit belongs to the arm, it applies to all six
-solutions, and it never binds on a path the examiner itself produced.
+This solution does not slow that down to a gentler speed. A gentler limit would
+be a number chosen to make the solution look better, and this solution fits
+nothing. The examiner does hold every path to the fastest speed the cell ever
+moves the jaw. That limit belongs to the arm, and it applies to all six
+solutions.
+
+The code turns the model's answer into jaw waypoints. The next section says
+where this solution's work stops and the examiner's begins.
 
 ## 2. The pushes are what this contributes
 
-It is worth stating plainly where this solution stops, because the boundary is
-the same for all six and is what makes them comparable.
+The last section showed what the code produces. This section says where the
+solution stops, because that boundary is the same for all six solutions and
+makes them comparable.
 
-The input is fixed by [the examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#3-what-look-hands-over). This solution may
-read what `look()` returns and the rendered view of the same table from the
-top. In practice it reads mostly the picture, because the picture is what the
-model takes. It may not read the simulator's record of what was placed, and it
-is not told the friction, and neither of those exceptions is relaxed for a
-borrowed model.
+[The examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#3-what-look-hands-over)
+fixes the input. This solution may read what `look()` returns and the top-down
+picture. In practice it reads mostly the picture, because that is what the
+model takes. It may not read the simulator's record of the table, and it is
+not told the friction. A borrowed model gets no exception.
 
-The output is fixed too: **a jaw trajectory**. This solution emits one
-directly, as a run of 50 waypoints, rather than as a parameterised push
-expanded by the examiner's macro. Both forms are accepted and the examiner
-treats them alike, because **what is scored is the table afterwards rather than
-the push that changed it**. That is the only arrangement under which a push
-described by three numbers and a run of fifty waypoints can be compared at all.
+The output is fixed too: **a jaw trajectory**. This solution gives one
+directly, as 50 waypoints. It does not use the examiner's push macro. The
+examiner accepts both forms, because **it scores the table afterwards, not the
+push**.
 
-One consequence of that is worth naming, because it changes how one column of the
-scorecard should be read. The examiner records how far a pushed glass landed from where
-the solution aimed it. The other five solutions supply that aim as a prediction. This
-one cannot, because the model was never asked where it expected a glass to end up, so
-the aim is read back off the path afterwards as the point where the path ends. The 74 mm
-median this solution reports is therefore the distance from the end of a trajectory to
-the glass it happened to move. This is not the same quantity as solution 1's 1.0 mm. It
-is bookkeeping rather than a failed prediction.
+This changes how one column of the scores should be read. The examiner records
+how far a pushed glass ended from where the solution aimed it. The other five
+solutions give that aim as a prediction. This model is never asked where a
+glass should end up. So the aim is taken as the end of the path. The median
+distance of 71.5 mm is therefore the distance from the end of a path to the
+glass it moved. It is a different quantity from solution 1's 1.7 mm, so it is
+not a failed prediction.
 
-One thing about the repeats is specific to this solution. The examiner requires
-every trained solution to be trained with several seeds and evaluated over
-several runs, because training varies with its seed and one run is not a
-measurement. **This solution has no training seed**, since it trains nothing,
-so its only variation is in how its actions are drawn when it answers: the
-policy denoises from fresh noise every time. Its spread should therefore be
-narrower than solution 6's, and it is. Over three runs this solution racked 52,
-57 and 56 glasses, a standard deviation of 2.6, against solution 6's 5.7 on the
-same count.
+One thing about repeated runs is special here. The examiner asks for several
+runs, because one run is not a measurement. **This solution has no training
+seed**, because it trains nothing. Its only variation comes from the model
+drawing each answer from fresh noise. So its spread should be smaller than
+solution 6's, and it is. Over three runs it racked 48, 51 and 46 glasses, a
+standard deviation of 2.5. Solution 6 has 7.6 on the same count.
+
+The boundary is now clear. The next section puts all the pieces of this
+solution together into one picture.
 
 ## 3. How the concepts fit together
 
-The pieces now connect into one picture, and it is a short picture because the
-solution is short.
+The last two sections showed the code and its limits. This section joins them
+into one short picture, because the solution is short.
 
-A model fitted on an enormous pool of real teleoperation across many robots and
-many tasks is downloaded unchanged and shown this examiner's rendered view of
-the table from the top, together with one unvarying English sentence and the
-jaw's own pose. It returns 50 actions, which somebody has to read as waypoints
-for this jaw, because the numbers it emits carry no units of their own. The
-examiner carries those waypoints out, the table changes, fresh measurements are
-taken, and the model is asked again.
+A model trained on a huge pool of real robot data is downloaded unchanged. It is
+shown the top-down picture, one fixed sentence and the jaw's pose. It returns 50
+actions. Somebody has to read them as waypoints for this jaw, because they have
+no units. The examiner carries them out, the table changes, and the model is
+asked again.
 
-What the model brings to that loop is a general sense of how manipulation goes, and
-nothing about this cell. What it is denied is the force reading, because its three
-inputs do not include one for force. And what stands between its general competence and
-this particular table is a large domain gap: it learned from real cameras, real light
-and cluttered rooms. And it is shown flat pale blue shapes on an empty rectangle. Across
-that gap it produces movement unrelated to this table. In the measured case, movement
-that stays about 200 mm in the air and crosses most of a metre of table in one answer.
+The model brings a general sense of how handling objects goes. It knows nothing
+about this cell. It never gets the force reading, because it has no input for
+force. And [the domain
+gap](03_how-it-works.md#7-the-domain-gap-which-is-the-heart-of-this-document)
+between its training pictures and these drawn ones is large. So it gives
+movement that does not fit this table.
 
-Every one of those is a consequence of one decision: **fit nothing here**. That
-decision is what makes the solution free to try, and it is also what removes
-every lever that would normally be pulled to fix the problems above. Pulling
-exactly one of those levers is [solution
-6](../09_the-same-model-fine-tuned-here/01_what-it-is.md).
+All of this follows from one decision: **fit nothing here**. That decision makes
+the solution free to try. It also removes every way to fix the problems above.
+[Solution 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md) uses
+exactly one of those ways.
 
 ← [What it is](01_what-it-is.md) · [How it works](03_how-it-works.md) →

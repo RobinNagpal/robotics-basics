@@ -1,41 +1,26 @@
 # What it is
 
-> **What it uses** — NumPy for the geometry, and scikit-learn for the one
-> fitted part. The model is **two hundred gradient-boosted regression trees**,
-> which is the standard tool for predicting a number from a short list of
-> quantities of different kinds. There is no neural network anywhere in it and
-> no accelerator is needed to train it.
-> **What it does** — plain geometry writes down every push that is legal, which
-> means every push that the arm can reach, that drags the glass and swings the
-> jaw clear of every neighbour, that lands inside the glass zone, and that
-> touches the glass below the height at which it would tip over instead of
-> sliding. That is usually a large set rather than a single answer, so
-> something has to choose one of them. The fitted model does that and only
-> that: it gives each surviving candidate one score, the candidates are sorted
-> by it, and the arm makes the first push on the sorted list. The model can
-> never add a push to the list and never bring back one the geometry rejected,
-> so it decides the order of the attempts and nothing about whether an attempt
-> is safe.
-> **How the output is produced** — `look()` hands over where each glass stands
-> and how wide it is at its widest and at its foot. The geometry sweeps every
-> heading round each crowded glass, steps the travel out along each heading,
-> applies its tests, and keeps what survives. Each survivor is described by a
-> short list of lengths, angles, counts and ratios, and the model turns that
-> list into one number. The highest-scoring push is handed to the examiner as a
-> parameterised push, and the examiner's own macro expands it into the jaw
-> trajectory that every solution here is judged on.
-> **What it costs** — the labels are free, because the examiner measures the
-> table after every push in any case. The training set is 4,844 pairs of a
-> candidate and what happened to it, which is minutes of examiner time, because
-> a push in MuJoCo is cheap. Fitting the trees on those rows took 2.2 seconds on
-> an ordinary processor, so there is no accelerator to rent and the running cost
-> per push is arithmetic. scikit-learn and NumPy are both BSD 3-clause, so the
-> licence costs nothing either.
+> **What it uses.** It uses NumPy for the geometry and scikit-learn for the
+> one fitted part. The fitted part is a model of **two hundred
+> gradient-boosted regression trees**. This is the standard tool for
+> predicting one number from a short list of mixed quantities. There is no
+> neural network in it, and it needs no accelerator.
+> **What it does.** Plain geometry writes down every push that is safe and
+> allowed. A fitted model then gives each of those pushes a score. The arm
+> makes the push with the highest score.
+> **How the output is produced.** `look()` gives the place and the widths of
+> each glass. The geometry lists the safe pushes. The model scores each one.
+> The best push goes to the examiner as a parameterised push, which is a push
+> described by a few numbers. The examiner turns it into a movement of the jaw.
+> **What it costs.** The labels are free, because the examiner measures the
+> table after every push anyway. The training set is 4,844 pushes with their
+> results, and it takes minutes of simulator time. scikit-learn and NumPy are
+> both under the BSD 3-clause licence, so the licence costs nothing.
 
-> **The cell is described once, in [the cell](../../08_seeing-the-glasses/01_the-cell.md)** — the
-> layout, the two places the camera works from, from the top and from the
-> side, all four sensors, and the words this project uses them with. What
-> follows is only what is specific to this solution.
+> **The cell is described once, in [the cell](../../08_seeing-the-glasses/01_the-cell.md).**
+> That page gives the layout, the two camera positions (from the top and from
+> the side), all four sensors, and the words this project uses. This page
+> covers only what is special to this solution.
 
 ## Contents
 
@@ -46,167 +31,140 @@
 
 ## 1. Introduction
 
-This document explains the safest way there is to put a fitted model inside a
-machine that can break something, and then says honestly what that particular
-model is worth on these particular tables.
+This page explains a safe way to put a fitted model inside a machine that can
+break things. It is for a reader who has read the problem chapter and wants to
+see the simplest solution that learns anything.
 
-The arrangement has a name worth learning, because it recurs wherever learning
-meets hardware: **generate, veto, then rank**. Arithmetic writes down every
-action that is allowed. Arithmetic then rejects the ones that are not. A model
-that has been fitted to data is handed whatever survives, and its only job is
-to put that list in order. The arm makes the first push on the list. The model
-cannot invent a push and cannot overturn a rejection, so **the worst a wrong
-prediction can do is waste one attempt**. In a cell where a toppled glass
-cannot be stood back up by anything in this project, that property is worth a
-great deal.
+The method has a name: **generate, veto, then rank**. It has three steps.
 
-All of this is built, and the result is worth stating before anything else, because it
-is the finding rather than a footnote. The candidate generation and the printed rule
-that takes the shortest push which finishes the job are both in
-`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`. The trees described below
-are in `src/09_pushing-the-glasses-apart/02-geometry-ranked`, fitted, and run over the
-same fifty held-out tables as the rule. So that both sides see exactly the same
-candidates and the only difference between the two runs is who picks. **The ranker does
-not win that comparison.** It racked 107 of the 251 glasses in 182 pushes where the
-printed rule racked the same 107 in 173, finishing two fewer tables and toppling nothing
-either way; `results.json` is the ranker's run and `rule.json` is the rule's. Why it
-loses is explained in [where it is strong and where it
-breaks](06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks). And the short
-answer is that the model is fitted on room gained while the run is scored on glasses
-racked, and those are not the same quantity.
+1. Arithmetic writes down every push that is allowed. This is the "generate"
+   step.
+2. Arithmetic removes every push that is not safe. This is the "veto" step. A
+   veto is a refusal that nothing later can undo.
+3. A fitted model puts the pushes that are left in order. This is the "rank"
+   step. The arm makes the first push on the list.
 
-By the end of this document you will understand what a decision tree is and
-what boosting a set of them means, why a handful of geometric quantities suits
-trees better than it suits a network, why every input is a length, a count or
-a ratio and never an address on the table, how the training set is collected
-and labelled for nothing, and two things about this solution that matter more
-than wherever it lands on the scorecard.
+The model cannot invent a push. It also cannot bring back a push that the
+geometry removed. So **the worst a wrong model can do is waste one push**. It
+cannot topple a glass, because the tipping test in [pushing without
+toppling](../01_the-problem/05_pushing-without-toppling.md) runs before the
+model is asked. Everything that could cause a failure that cannot be undone is
+settled before the model sees anything. This matters a lot here, because
+nothing in this project can stand a toppled glass up again.
 
-**The first is where the learned part sits.** Geometry generates every
-candidate and refuses the unsafe ones, and the model only orders what survives.
-So a wrong answer costs one wasted push and nothing worse. It cannot topple a
-glass, because the topple limit described in [pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md) is a refusal
-applied before the model is consulted at all. That is the same position the
-learned ranker in [looking again at what was
-hidden](../../08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md)
-occupies, for the same reason, and the parallel is drawn out below.
+The same idea is used in the camera book. There, a fitted model orders the
+places to look from, in [looking again at what was
+hidden](../../08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md).
+The geometry removes the bad places first, for the same reason.
 
-**The second is that this solution is the teacher.** Solutions 3 and 6 learn
-from demonstrations, and a solution that generates safe pushes geometrically
-and ranks them supplies those demonstrations for nothing. That is the largest
-single thing this solution contributes, and it comes with an honest cost: the
-two solutions that learn from it inherit its ceiling, and keeping only the
-demonstrations that succeeded trains them on a biased sample of what this
-solution happens to do well.
+The main result comes first, because it is the finding. The fitted model does
+**not** beat the plain printed rule, which takes the shortest push that
+finishes the job. Both see the same pushes. They rack the same number of
+glasses, but the model uses more pushes. [Where it is strong and where it
+breaks](06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks) gives
+the numbers and the reason.
+
+This solution also matters for a second reason. It is the teacher for two
+other solutions, which learn by copying its pushes. [It is the
+teacher](03_how-it-works.md#7-it-is-the-teacher) explains what that gives them
+and what it costs them.
 
 ![Geometry sweeps every heading and steps the travel out along each one, geometry then discards every candidate that cannot be reached, that clashes with a neighbour, that leaves the zone or that would tip the glass, and only the survivors are put in order by the fitted trees.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-flow-what-it-does.png)
 
 ![Everything that could cause an unrecoverable failure is settled before the model is consulted, the model can never add a candidate or bring back one the geometry rejected, and deleting the model leaves a working system behind.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-flow-where-the-model-sits.png)
 
+The introduction said what the method does. The next section shows it working
+on one table.
+
 ## 2. A film of one table
 
-The introduction described how this method generates candidate pushes and lets a fitted
-model choose between them. And the film here shows it doing that on one table in the
-simulator, played at one and a half times real speed.
+This film shows the method on one table in the simulator. It plays at one and a
+half times real speed.
 
 [Geometry generates and a model ranks, on one table, 13 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/02-geometry-ranked.mp4 "video")
 
-It holds six glasses where the average is five, and five of them have no room
-at the start.
+The table holds six glasses. The average table holds five. Five of the six
+glasses have no room at the start.
 
-In the film this solution makes the same two pushes the printed rule makes,
-racks the same one glass and refuses the same five. It describes the refusals
-slightly differently — two tip before they slide, two tipped when tried, and
-one is still without room after being pushed — but the table ends in the same
-place.
+In the film, this solution makes the same two pushes as the printed rule. It
+racks the same one glass and refuses the same five. It gives slightly different
+reasons for the refusals, but the table ends in the same state.
 
-That is the result rather than a coincidence, and it is the point of the comparison
-running through this document. Ranking candidates can only help when there is more than
-one candidate worth having. On a table where the hand's own width and height rule out
-almost every push, the ranker and the printed rule are choosing from the same very short
-list. So they choose the same thing.
+This is not luck. Ranking can only help when there is more than one good push to
+choose from. On this table, the width and height of the hand rule out almost
+every push. So the model and the rule choose from the same very short list, and
+they choose the same push.
 
-All six solutions are filmed on this same table, so the films can be watched
-against each other. [The six films](../10_the-results.md#3-the-six-films-all-of-the-same-table)
-collects them, says how that table was chosen, and explains the two things every
-one of the films has in common.
+All six solutions are filmed on this same table, so you can compare the films.
+[The six films](../10_the-results.md#3-the-six-films-all-of-the-same-table)
+collects them and says how the table was chosen.
 
-The film shows the method at work, and the next section says which problem
-generating candidates and ranking them is meant to solve.
+The film shows the method at work. The next section says which problem it is
+meant to solve.
 
 ## 3. The problem this solves
 
-[Pushing the glasses apart](../01_the-problem/01_what-is-asked-for.md) hands
-the arm a table with four to six glasses on it, some standing too close
-together for the open jaw to fit round one without fouling its neighbour. The
-arm has to drag them apart, because it may not lift them: lifting needs a
-measured profile, measuring needs a clear view from the side, and a clear view
-from the side is exactly what the crowding has taken away.
+The film showed the method choosing a push. This section says why choosing is
+the problem.
 
-A push therefore needs three things decided — which glass to move, in which direction,
-and how far. The honest difficulty is that the first attempt at this produces far too
-many answers rather than too few. Sweep the headings round one crowded glass and step
-the travel out along each of them, and a large number of those pushes turn out to be
-perfectly legal. So the problem this solution addresses is not how to find a safe push.
-It is **how to choose among safe pushes**, which is a different question and a smaller
-one.
+[Pushing the glasses apart](../01_the-problem/01_what-is-asked-for.md) gives
+the arm a table of four to six glasses. Some stand too close together for the
+open jaw to fit round them. The arm must push them apart.
 
-The complaint it is aimed at is therefore not safety. The geometry already in
-this repository toppled nothing at all over the examiner's fifty held-out
-tables, as `01-one-fixed-nudge/results.json` records. The complaint is the
-number of attempts: that run spent **213 pushes on 251 glasses, and 90 of those
-were repeat pushes of a glass it had already moved once**. A repeat push is a
-push that did not achieve what it was chosen for, so a method that chose better
-among the same candidates would spend fewer of them. That is the gap a ranker is
-pointed at.
+A push needs three decisions: which glass, which direction, and how far. The
+geometry can find many safe pushes for one crowded glass. So the hard question
+is not how to find a safe push. It is **how to choose among safe pushes**.
 
-The other number in that same file is worth naming, because this solution does not touch
-it. **56 of the 251 glasses were refused for having nowhere clear to push them to.**
-That is a shortage of candidates rather than a bad ordering of them. And a ranking over
-an empty set is still empty. So whatever this solution is worth, it is worth nothing at
-all against the largest single failure in that record.
+The problem is not safety. The geometry in this repository toppled only one
+glass over the examiner's fifty held-out tables, as
+`01-one-fixed-nudge/results.json` records. The problem is the number of pushes.
+That run made **173 pushes, and 63 of them were repeat pushes of a glass it had
+already moved**. A repeat push means the first push did not do its job. A
+better choice among the same pushes should need fewer of them. That is the gap
+a ranker aims at.
+
+One number in that file is out of this solution's reach. **53 of the 251
+glasses were refused because there was nowhere clear to push them.** That is a
+lack of pushes, not a bad order of pushes. Ranking an empty list still gives an
+empty list. So this solution cannot help with those glasses.
+
+The problem is now clear. The next section gives the idea that answers it.
 
 ## 4. The main idea
 
-The idea is one sentence long: ask the geometry for **every** safe push rather
-than for the best one, and let a fitted model put the survivors in order.
+The previous section said the task is to choose among safe pushes. The idea is
+one sentence: ask the geometry for **every** safe push, and let a fitted model
+put them in order.
 
-Three things follow from that sentence, and they are the shape of the whole
-solution.
+Three things follow from this.
 
-**Everything that can reject a push is arithmetic.** Reach, the swept paths of
-the glass and of the jaw, the glass zone, the rack and the topple limit are all
-tests, they all run before the model, and each of them can remove a candidate
-outright. None of them consults the model, so the model has no way to make an
-unsafe push available.
+First, **every test that can reject a push is arithmetic.** The tests check
+reach, the paths of the glass and the jaw, the glass zone, the rack and
+tipping. They all run before the model, as [the
+introduction](#1-introduction) explains.
 
-**The model's entire output is an ordering.** It produces one number per
-candidate, the candidates are sorted by that number, and nothing downstream
-reads the number itself. A model that was wrong by the same amount on every
-candidate would still order them perfectly, which is a much weaker thing to ask
-of a fitted function than predicting the outcome correctly.
+Second, **the model only gives an order.** It gives one number for each push,
+and the pushes are sorted by that number. Nothing else reads the number. So the
+model does not need to predict the result correctly. It only needs to put the
+pushes in the right order.
 
-**The method degrades to what already exists.** Delete the fitted model, keep
-the printed rule that takes the shortest job-finishing push, and the run is the
-geometry in `src/09_pushing-the-glasses-apart/01-one-fixed-nudge` exactly. So
-this solution extends that code rather than replacing it, and it can be tried
-and then abandoned at no cost.
+Third, **without the model, you still have a working system.** Delete the model
+and keep the printed rule, and you get the geometry in
+`src/09_pushing-the-glasses-apart/01-one-fixed-nudge` exactly. So you can try
+this solution and drop it at no cost.
 
-The contrast that makes the arrangement worth understanding is with the obvious
-alternative, which is to let a model choose the push directly. Such a model
-reads the arrangement and emits a heading and a distance, so **its output space
-is every push there is, safe or unsafe**. Nothing in the shape of the model
-says which of the two it just produced, so a check has to be placed after it,
-and once that check is there it is doing the same safety work the geometry does
-here, for a model that is far harder to fit. Solutions 3, 5 and 6 are all of
-that kind, and [solution
-4](../07_a-world-model-then-plan-with-it/01_what-it-is.md) searches the same open
-space with a fitted model of what a push will do answering the safety question.
-None of them is wrong to be built that way: a model that chooses the push can
-express pushes the enumerator never offers. The point of this solution is the
-opposite trade, and the next sections are the two halves of it.
+The obvious alternative is a model that chooses the push directly. It reads the
+table and outputs a direction and a distance. That model can output **any push
+at all, safe or not**. So a safety check must be added after it, and that check
+does the same work as the geometry here. Solutions 3, 5 and 6 work this way.
+[Solution 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md) uses a
+fitted model of what a push will do to judge safety. Those designs are not
+wrong. A model that chooses the push can make pushes that the geometry never
+lists. This solution makes the opposite choice: it gives up those pushes to
+keep safety in the arithmetic.
 
 ![The enumerator writes down every push, the filter keeps only the safe ones, and the model reorders what is left, so nothing it can emit is unsafe; a model that chooses the push instead has every push in its output space and needs a geometric check bolted on after it.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/06-generate-veto-then-rank.png)
+
+The next page, [the code](02_the-code.md), shows how this idea is written.
 
 ← [One fixed nudge — how it compares](../04_one-fixed-nudge/06_how-it-compares.md) · [How it works](03_how-it-works.md) →

@@ -1,16 +1,10 @@
 # A foundation model as it downloads
 
-This page describes the fifth of the six solutions in about seven minutes of
-reading. It is the cheapest of the six to set up, because nothing in it is
-fitted here: a large model that somebody else trained on hundreds of real robot
-datasets is downloaded, shown a picture of the table, told in plain English what
-to do, and asked for actions. By the end of this page you will know what kind of
-model it is, why the instruction it is given does almost no work here, what it
-scored on the shared examiner, and why a poor score from it is the
-measurement working rather than a disappointment. The full treatment is in [the
-chapter on this
-solution](../08_a-foundation-model-as-it-downloads/01_what-it-is.md), which is
-about three quarters of an hour of reading.
+This page is a short summary of the fifth solution. This solution downloads a
+large robot model that others trained, and uses it unchanged. Nothing in it is
+trained here. The page says what it does, what it scored, and its one main
+lesson. The full story is in [the chapter on this
+solution](../08_a-foundation-model-as-it-downloads/01_what-it-is.md).
 
 ## Contents
 
@@ -23,179 +17,88 @@ about three quarters of an hour of reading.
 
 ## 1. What it is
 
-A **vision-language-action model** is a single network that takes a picture and an
-instruction written in ordinary words, and returns robot actions. The three parts of the
-name are its three inputs and outputs: it sees, it is told, and it acts. The idea is
-that a model trained on a very large and varied collection of robot recordings learns
-manipulation in general. So that it can be pointed at a new task by being told about it
-rather than by being trained on it.
+A **vision-language-action model** is one network that takes a picture and a
+written instruction, and returns robot actions. The model here is **SmolVLA**,
+from [LeRobot](https://github.com/huggingface/lerobot). It runs on a laptop.
 
-The model here is **SmolVLA**, taken from
-[LeRobot](https://github.com/huggingface/lerobot) exactly as it downloads. It is
-about 450 million parameters, uses a few gigabytes while answering, and runs on
-a laptop. **Not one number in it is fitted in this cell.**
-
-It exists in this book for one reason above all others. [The same model,
-fine-tuned here](07_the-same-model-fine-tuned-here.md) is this same model, from
-this same library, starting from these same downloaded weights, with its
-training continued on this cell's own pushes. Everything else is held still: the
-same examiner, the same input, the same output, the same marking, and the same
-refusal rule running first. Nothing varies between the pair except the training,
-so the gap between their scores measures what that training bought and nothing
-else. No other pair in this book is that clean.
+This solution is in the book mainly for one reason. [The same model, fine-tuned
+here](07_the-same-model-fine-tuned-here.md) uses the same model and the same
+starting weights. The only difference is extra training on this cell's pushes.
+So the gap between the two scores shows what that training did.
 
 ![The view from the top, one instruction in plain English and the arm's joint readings go into the downloaded model, which returns a run of actions that are read as waypoints and carried out, with no training step, no data collection and no fitted parameter anywhere in the chain.](../../images/pushing-the-glasses-apart/a-foundation-model-as-it-downloads/smolvla-flow-what-it-does.png)
 
+The next section shows the steps from a picture to a push.
+
 ## 2. How it works
 
-The chain is short, which is the point.
+This section follows one decision from start to end.
 
-**The model is shown the table from the top**, as the examiner renders it, together
-with **one instruction written in plain English** and **the arm's own joint
-readings**.
+1. The model gets a view of the table from the top, one instruction in plain
+   English, and the arm's joint readings.
+2. It returns a short run of jaw waypoints, and the examiner follows them.
+3. The arm looks again, and the loop repeats.
 
-**It returns a run of actions**, which are read as waypoints for the jaw and
-handed to the examiner. The examiner carries them out directly rather than through the
-push macro it owns, because a run of waypoints already is a trajectory.
-
-**Then the arm looks again** and the model is asked once more, until every glass
-has its room or the push budget is spent. There is no training step, no data
-collection and no fitted parameter anywhere in the design.
-
-Three things about that chain matter more than they look, and the full chapter
-is careful about each.
-
-**The actions arrive in somebody else's units.** The model was trained on other
-robots, so an interpretation stands between its output and this jaw. A poor
-interpretation would be blamed on the model.
-
-**The instruction does almost no work.** This task has exactly one instruction,
-so the language half of the model is nearly dead weight here. A model built to
-be pointed at many tasks by words is being used as an expensive visuomotor
-policy.
-
-**The force reading has nowhere to go.** What the jaw felt is the only evidence
-this cell can produce about the friction, and this model has no input for it, so
-the one channel that observes friction is closed.
-
-Behind all three sits the **domain gap**, which is the difference between what
-the model was trained on and what it is shown. It learned from real cameras in
-cluttered rooms, and it is being shown flat pale shapes on an empty rectangle.
+The model was trained on real cameras in real rooms. Here it sees flat shapes
+on an empty table. This difference is called the **domain gap**. [How it
+works](../08_a-foundation-model-as-it-downloads/03_how-it-works.md#7-the-domain-gap-which-is-the-heart-of-this-document)
+explains it, and the other limits of the model. The next section says what this
+costs.
 
 ## 3. What it needs
 
-Less than anything else in this book, which is the whole point.
+This section lists the cost of the solution before we look at its score.
 
-For software it needs **LeRobot**, licensed Apache-2.0, and PyTorch underneath
-it, licensed under the three-clause Berkeley Software Distribution licence.
-Both are permissive, so neither obliges this project to publish its own source.
-**The weights carry their own terms**, which are a separate question from the
-licence on the library that loads them, and nothing in this project records
-what they are. A reader taking this forward would have to read them before
-shipping anything.
-
-Beyond that it needs **the weights themselves**, downloaded and used unchanged,
-about 450 million parameters.
-
-For hardware it needs **a laptop**. There is nothing to train, so there is no
-accelerator to rent for this solution at all. The one case where renting would
-be sensible is evaluation throughput rather than capability, because the
-scorecard asks for several runs and many forward passes on a laptop take a
-while.
-
-It needs **no data at all**: no demonstrations, no labels, no held-out set, and
-nothing to keep in step with the cell when the cell changes.
-
-The examiner had to grow **two parts** for it: a rendered view of the table from
-the top, and a path that accepts a run of waypoints without the push macro.
-Both are shared with two other solutions, so the cost was paid once for three
-rather than for this one.
+It needs less than any other solution. It needs LeRobot, the downloaded
+weights, and a laptop. It needs no data and no training. [What it
+needs](../08_a-foundation-model-as-it-downloads/05_what-it-needs.md) gives the
+details. The next section shows what the model did with no training.
 
 ## 4. What it scored
 
-All six solutions are given the same 50 tables holding 251 glasses, of which 203
-have no room at the start. This solution is run several times and the figure
-shown is the middle one.
+This section shows the score. The model had the same 50 tables as the other
+solutions. It was run three times, and the table shows the middle run.
 
 | tables done | tables wrong | glasses racked | toppled | pushes | thinking per push |
 |---|---|---|---|---|---|
 | 1 | 9 | 48 | 12 | 620 | slow |
 
-**It finished one table in fifty**, racked about a fifth of the glasses,
-toppled twelve of them, and spent more pushes than any other solution in the
-book. The racked figure needs reading carefully: the 48 glasses it racked are
-exactly the 48 that already had room before anything was pushed, so the arm
-could have made no push at all and scored the same. It is
-also the slowest of the six per push, because every decision is a forward pass
-through a large network rather than arithmetic.
-
-The reason is specific and was measured rather than guessed. About eight of its
-pushes in ten touch nothing at all, because the trajectories it returns hold the
-jaw well above the glasses. Over the 1,855 chunks it was asked for across the
-three runs, the lowest point of a chunk is a median of 217 mm above the table,
-where a push happens at 75 mm.
+It finished one table in fifty. It racked 48 glasses, but those 48 had room
+before any push. The reason is simple. The model holds the jaw too high, so
+most of its pushes touch nothing.
 
 ![The heights at which the jaw can travel, where it has to ride to move a glass, how tall the glasses are, and the 217 mm the downloaded model's chunks stop at.](../../images/pushing-the-glasses-apart/a-foundation-model-as-it-downloads/smolvla-the-jaw-hovers.png)
 
-So it is not failing to choose a good push; it is mostly not reaching the
-table. That is the domain gap arriving exactly as predicted: the model produces
-confident, plausible actions, and nothing downstream looks suspicious until the
-glasses have not moved.
-
-**A poor score here is the measurement working**, which is worth stating plainly
-because it reads like an excuse and is not. The pair this solution belongs to
-isolates fine-tuning exactly. If this half had scored well, there would be
-little room left for the fine-tuned half to show anything, and the sharpest
-question these six were arranged to answer would have had no range to be
-answered in. The full table for all six is in [the
-results](../10_the-results.md).
+[What was expected, and what
+happened](../08_a-foundation-model-as-it-downloads/03_how-it-works.md#8-what-was-expected-and-what-happened)
+gives the measured heights. All six scores are in [the
+results](../10_the-results.md). The next section says what this score teaches.
 
 ## 5. Where it is strong and where it breaks
 
-Its strengths all come from the same source, which is that nothing is fitted.
-There is nothing to collect, nothing to train and nothing to keep in step with
-the cell, so it can be tried in an afternoon once the examiner's two missing parts
-exist. It needs no accelerator. It gives the book a reading on what a borrowed
-robot model is worth before anybody spends a week recording pushes, which is a
-decision several of the other solutions depend on. And it is the clean half of
-the book's sharpest pair, which is a strength that does not depend on it working
-at all.
+This section uses the score above to show the method's good and bad sides.
 
-Its weaknesses divide into what the borrowing costs and what it cannot be asked
-to do.
-
-What the borrowing costs is accuracy and every lever for improving it. The domain gap is
-large, the force reading cannot reach the model, the actions arrive in somebody else's
-units, and the language half does no work. What it cannot be asked to do is anything
-that needs fitting: it cannot learn from a push that went wrong, cannot be corrected on
-the kind of glass it handles worst, and has no threshold to tune. **The one repair for
-all of that is to continue its training on this cell's own pushes**. This is a different
-solution with a different name, and that is exactly why the two are written as a pair.
+It is cheap and quick to try. But it has no input for the force the jaw felt,
+and it cannot learn from its mistakes. The one repair is more training on this cell's
+pushes, and that is the next solution. [How it
+compares](../08_a-foundation-model-as-it-downloads/06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks)
+gives the evidence. The next section turns this into advice.
 
 ## 6. When to choose it
 
-Choose this first and expect to replace it. Running a public model unchanged is the
-cheapest honest measurement of whether the problem needs fitting at all, and taking that
-measurement before recording demonstrations is simply good order of work. On a task
-close to what such a model was trained on — a real arm, a real camera, an ordinary room,
-an everyday object. It is sometimes good enough on its own, and then nothing more
-expensive is needed.
+This section says when this method is the right choice.
 
-Do not choose it when the scene is unlike anything in the model's training, as
-here. Do not choose it when the signal that matters is one the model has no
-input for, which here is the force the jaw felt. And do not choose it when the
-run-time budget is tight, because a forward pass through a large network per
-push is hundreds of times the cost of arithmetic.
+Try it first, and expect to replace it. It is the cheapest way to learn whether
+the task needs any training at all. It can be good enough when the task looks
+like the model's own training data. Do not choose it when the scene is very
+different, as it is here.
 
-The honest position is that this is among the first things to run and very
-unlikely to be carried forward. **Its value is the comparison it makes possible
-rather than the accuracy it delivers.**
+The main lesson is that a poor score here is still useful. It gives the
+fine-tuned model a clear starting point to compare against.
 
 The code is in
-[`src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads)
-and it writes its own `results.json` beside itself. The full treatment, with
-where such a model gets its competence, why the instruction is nearly dead
-weight, and the domain gap set out in full, starts at [what it
+[`src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads).
+The full chapter starts at [what it
 is](../08_a-foundation-model-as-it-downloads/01_what-it-is.md).
 
 ← [A world model, then plan with it](05_a-world-model-then-plan-with-it.md) · [The same model, fine-tuned here](07_the-same-model-fine-tuned-here.md) →

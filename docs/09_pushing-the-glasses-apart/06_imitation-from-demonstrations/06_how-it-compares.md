@@ -1,8 +1,8 @@
 # How it compares
 
-This page is the judgement on this solution. It says where the solution is
-strong and where it breaks, names the general ideas behind it, and places it
-beside the other five.
+This page judges this solution. It says where the solution is strong and where
+it breaks, names the general ideas behind it, and places it beside the other
+five.
 
 ## Contents
 
@@ -12,241 +12,220 @@ beside the other five.
 
 ## 1. Where it is strong and where it breaks
 
-**Nothing has to be written about pushing.** No friction model, no candidate
-generator, no features chosen by hand, no geometry. The method's entire content
-is a dataset and a fitting procedure, and the dataset was produced by a program
-that already exists. Of the six, this is the one that demands the least prior
-understanding of the task from whoever builds it.
+The earlier pages showed how the solution works, so this section weighs it up.
+It has five strengths.
 
-**The output is native.** This solution emits a chunk because a chunk is what
-it is built to emit, so nothing is squeezed or expanded on the way out, and the
-examiner's decision to accept waypoints costs it nothing.
+**Nothing about pushing has to be written.** There is no friction model, no
+candidate generator, no hand-chosen features and no geometry. The method is a
+data set and a training run. A program that already exists made the data. Of
+the six, this one needs the least knowledge from its builder.
 
-**Labels are free and plentiful.** The usual reason not to attempt imitation
-learning — that somebody has to demonstrate the task by hand, many times — does
-not apply, because the teacher is code and the tables are simulated.
+**The output fits the examiner as it is.** The policy gives a chunk, and the
+examiner accepts chunks. Nothing is squeezed or expanded on the way out.
 
-**It is cheap to train and cheap to run.** Hours on a laptop's own graphics
-processor, and one forward pass per push.
+**Labels are free and plentiful.** Usually, someone must show the task by hand
+many times. Here the teacher is code and the tables are simulated, so that cost
+is gone.
 
-**It is a measurement.** Student against teacher, on the same tables with the
-same scorecard, with every shared part held still. Even if this solution were
-not the one carried forward, that reading would have earned its place.
+**It is cheap to train and cheap to run.** It takes hours on a laptop's
+graphics processor, and one forward pass per push.
 
-Against that, five weaknesses. The first cannot be engineered away at all, and
-none of the rest goes away with more data.
+**It is a measurement.** The student is tested against its teacher on the same
+tables, with the same scorecard. That reading has value even if this solution
+is not the one kept.
 
-**The ceiling is the teacher's quality.** Every label came from the teacher,
-and nothing in behaviour cloning ever evaluates an outcome, so **this solution
-cannot beat its teacher by much on the pushes it imitates.** The two narrow
-ways it might exceed its teacher are real but small: it can smooth away some of
-the teacher's inconsistency, since a fitted function averages over many
-examples and so is steadier than any one of them; and it can express motions
-the examiner's macro cannot, since its output is waypoints rather than push
-parameters. What it cannot do is discover that a different glass should have
-been moved, or a different destination chosen, because no mechanism in it
-compares one outcome against another. [A world model, then plan with
-it](../07_a-world-model-then-plan-with-it/01_what-it-is.md) has such a
-mechanism, which is the sharpest difference between the two.
+It also has five weaknesses. The first one cannot be engineered away. None of
+them goes away with more data.
 
-**Filtering the demonstrations biases it towards what the teacher does well.**
-Keeping only the pushes that succeeded is necessary, because a cloned policy
-copies failures as readily as successes, and it thins the dataset exactly in
-the situations where the teacher struggled. Measured, that bias is small here:
-almost everything the collection drops is the teacher's own 5 mm test push,
-which is not a push at the task, and only a few real pushes in a hundred are
-lost. The weakness is real in a method of this shape and it was not what held
-this solution back.
+**It cannot do much better than its teacher.** Every label came from the
+teacher. And nothing in behaviour cloning ever checks an outcome. So it has no
+way to find that a different glass, or a different destination, would have been
+better. It can beat its teacher in only two small ways. A trained network
+averages many examples, so it can be steadier than any one of them. And it can
+make motions the macro cannot make. [A world model, then plan with
+it](../07_a-world-model-then-plan-with-it/01_what-it-is.md) can compare
+outcomes. That is the sharpest difference between the two.
 
-**It needed examiner work the first two solutions did not.** A straight-down
-rendered view and a waypoint path, both missing when this solution was designed
-and both now built. That cost is paid, but two smaller ones are paid on every
-push rather than once. The examiner's chunk wants a glass and an aim that the
-policy does not produce, so both are read back off the waypoints outside it.
-And nothing stops a network emitting a coordinate the jaw cannot reach, so
-every chunk is pulled inside the jaw's limits before it is followed, and how
-often that happens has to be counted and reported rather than hidden.
+**Keeping only good pushes biases its data.** Here that bias turned out small,
+and it did not hold this solution back. [Choosing which examples to
+keep](03_how-it-works.md#3-choosing-which-demonstrations-to-keep-and-the-bias-it-buys)
+explains it.
 
-**It is open-loop inside a chunk, and it cannot refuse.** During a chunk
-nothing is read, and the monitor that would watch the force is not built, so
-the only thing stopping a chunk is the jam threshold. And the policy's only
-output is waypoints, so a refusal has to come from the shared gate in front of
-it rather than from the policy itself.
+**It needed extra work from the examiner.** [What it
+needs](05_what-it-needs.md) describes the two parts that had to be built. Two
+small costs also come on every push. The glass and the aim must be read off the
+waypoints afterwards. And every chunk must be pulled inside the jaw's reach,
+and the pulls counted.
 
-**And it cannot explain itself, or say when it is lost.** When the teacher is
-wrong you can print the candidates and the scores and see which step went
-astray. When this policy is wrong you can look at the picture and guess. It has
-no confidence output, and the situation in which it is least reliable — a table
-unlike anything in its data — is indistinguishable in its output from the
-situation in which it is most reliable. Training also varies with its own seed,
-which is why the examiner insists that one run is not a measurement and that a
-result quoted without a spread is not a result.
+**It is blind inside a chunk, and it cannot refuse.** Nothing is read while a
+chunk runs, as [action
+chunking](03_how-it-works.md#4-action-chunking-and-why-it-matters) explains.
+Refusals must come from the shared gate in front of the policy, as [when a
+glass cannot be pushed
+safely](04_a-worked-example.md#1-when-a-glass-cannot-be-pushed-safely)
+explains.
+
+**It cannot explain itself, or say when it is lost.** When the teacher is
+wrong, you can print its candidates and scores and find the bad step. When this
+policy is wrong, you can only look at the picture and guess. It gives no
+confidence value. Its output looks the same on a strange table as on a familiar
+one. Training also changes with the seed, so [one run is not a
+measurement](../01_the-problem/03_the-examiner.md).
+
+The next section names the general ideas behind these strengths and weaknesses.
 
 ## 2. The general ideas behind this
 
-Nothing in this solution was invented for glassware. Every part of it is a
-standard piece of modern practice, and each is worth knowing on its own,
-including where it is normally the wrong tool.
+The strengths and weaknesses above come from standard ideas, not from anything
+made for glasses. This section names each idea and says when it is the right
+tool and when it is the wrong one.
 
 ### Behaviour cloning
 
-Fit a policy by supervised learning on pairs of what the demonstrator saw and what the
-demonstrator did. It is the oldest and simplest form of imitation learning, going back
-to driving a vehicle from camera images with a small network trained on a person's
-steering. And it remains the first thing to try whenever demonstrations exist.
+Fit a policy by supervised learning on pairs of what the teacher saw and what
+it did. It is the oldest and simplest kind of imitation learning. An early
+example drove a car from camera images with a small network trained on a
+person's steering. It is still the first thing to try when examples exist.
 
-It is normally the right choice when demonstrations are plentiful and the task
-is reactive — when what to do next really is a function of what is in front of
-you. It is normally the wrong choice when demonstrations are scarce, when the
-task needs a long-horizon plan that no single observation implies, or when the
-demonstrator cannot be consulted again, because then the compounding error
-below has no cheap repair. For more, see [imitation
-learning](https://en.wikipedia.org/wiki/Imitation_learning).
+It is usually right when examples are plentiful and the task reacts to what is
+in front of it. It is usually wrong when examples are scarce, or when the task
+needs a long plan, or when the teacher cannot be asked again. For more, see
+[imitation learning](https://en.wikipedia.org/wiki/Imitation_learning).
 
 ### Compounding error, and dataset aggregation
 
-A cloned policy's own small mistakes move it to states its demonstrations never covered,
-where it acts worse, which moves it further out. The standard analysis of this and the
-standard repair are both in **DAgger** — dataset aggregation. By Ross and colleagues
-([arXiv:1011.0686](https://arxiv.org/abs/1011.0686)): run the policy, label the states
-it actually visits with what the expert would have done there, add them to the training
-set, and retrain.
+A cloned policy's small mistakes take it to states its examples never covered.
+There it acts worse, which takes it further out. **DAgger**, or dataset
+aggregation, is the standard fix, by Ross and colleagues
+([arXiv:1011.0686](https://arxiv.org/abs/1011.0686)). Run the policy, label
+the states it reaches with the expert's answer, add them to the data, and
+train again.
 
-It is the right method whenever the expert can be queried at a state of your
-choosing, which is the case here because the expert is a program. It is wrong,
-or rather unavailable, when the expert is a person, because asking a person to
-label thousands of states the policy wandered into is slower and more
-unpleasant than asking them to demonstrate the task properly in the first
-place. That asymmetry is the main reason a programmed teacher is worth so much
-more than a human one for this particular method.
+It works when the expert can be asked about any state, as here, where the
+expert is a program. It is hard to use when the expert is a person. [Compounding
+error](03_how-it-works.md#6-compounding-error) explains why it is cheap here.
 
 ### Action chunking
 
-Predict a short sequence of future actions in one pass and execute it, rather
-than predicting one action per control step. ACT introduced this for fine
-manipulation learned from inexpensive hardware (Zhao and colleagues,
-[arXiv:2304.13705](https://arxiv.org/abs/2304.13705)) and it has become a
-standard component of imitation policies, including the vision-language-action
-models [SmolVLA as it downloads](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) and
-[SmolVLA fine-tuned](../09_the-same-model-fine-tuned-here/01_what-it-is.md) use.
+Predict a short run of future actions in one pass, and carry it out. ACT
+introduced this for fine manipulation with low-cost hardware (Zhao and
+colleagues, [arXiv:2304.13705](https://arxiv.org/abs/2304.13705)). It is now a
+standard part of imitation policies. The vision-language-action models in
+[SmolVLA as it downloads](../08_a-foundation-model-as-it-downloads/01_what-it-is.md)
+and [SmolVLA fine-tuned](../09_the-same-model-fine-tuned-here/01_what-it-is.md)
+use it too.
 
-It is right for continuous, committed motions — a push, a wipe, a pour — where
-re-deciding every instant produces dithering and averages away the commitment
-the motion needs. It is wrong when the environment can change faster than a
-chunk takes to run, because a chunk is blind while it executes: a policy
-chunking through a moving obstacle is a policy driving with its eyes closed.
-This cell is quasi-static and nothing moves except what the arm moves, which is
-why chunking is safe here and would not be in a scene with people in it.
+It is right for steady motions such as a push, a wipe or a pour. It is wrong
+when the scene can change faster than a chunk runs, because a chunk is blind
+while it runs. In this cell nothing moves except what the arm moves. So
+chunking is safe here, but it would not be safe near people.
 
 ### Denoising diffusion, and Diffusion Policy
 
-Learn to remove noise from a corrupted sample, then generate by starting from
-pure noise and removing a little at a time. The modern form of this is the
-denoising diffusion probabilistic model (Ho and colleagues,
-[arXiv:2006.11239](https://arxiv.org/abs/2006.11239)), and **[Diffusion
-Policy](https://diffusion-policy.cs.columbia.edu/)** applies it to action
-chunks for robot control (Chi and colleagues,
+Train a model to remove noise from a damaged sample. Then make new samples by
+starting from pure noise and removing a little at a time. The modern form is
+the denoising diffusion probabilistic model (Ho and colleagues,
+[arXiv:2006.11239](https://arxiv.org/abs/2006.11239)). **[Diffusion
+Policy](https://diffusion-policy.cs.columbia.edu/)** uses it on action chunks
+for robot control (Chi and colleagues,
 [arXiv:2303.04137](https://arxiv.org/abs/2303.04137)).
 
-It is right when the right answer is not unique — when several actions would all be good
-and a model forced to name one would return their average. This is often no answer at
-all. It is wrong when the answer genuinely is unique and speed matters, because the
-several denoising passes buy nothing and cost real time per decision. The honest reading
-in this problem is that uncrowding a table has many good answers. This argues for it,
-and that a push happens at the speed of an arm rather than of a processor. This means
-the extra passes are affordable.
+It is right when there are several good answers, because a one-answer model
+would average them. It is wrong when there is only one answer and speed
+matters, because the extra passes cost time. Moving glasses apart has many good
+answers. And a push runs at the speed of an arm, not of a processor. So the
+extra passes are affordable here.
 
 ### Mode averaging under a single-answer loss
 
-The failure the previous idea repairs deserves its own name, because it is
-general and it catches people out. Fitting a model to produce one output while
-minimising its average error over examples that disagree makes the model produce
-something between those examples. Where the examples are two sensible choices,
-the something between them is frequently a third thing that is not sensible at
-all, and [how it works](03_how-it-works.md#5-a-second-way--diffusion-policy)
-draws one such third thing.
+This is the failure that diffusion fixes. Train a model to give one output, on
+examples that disagree. It will then give something between them. When the
+examples are two good choices, the answer between them is often a bad third
+choice. [A second way](03_how-it-works.md#5-a-second-way--diffusion-policy)
+draws one such case.
 
-It is worth knowing because the symptom is misleading. The model's training error looks
-reasonable and its behaviour looks timid, and the natural diagnosis — that it needs more
-data or more training. Is the wrong one, since more examples of both choices make the
-averaging worse rather than better. The repairs are to represent a distribution rather
-than a point, as the denoising model does, or to remove the ambiguity from the data by
-making the choice part of the input.
+The symptom misleads people. The training error looks fine, and the behaviour
+looks timid. The natural guess is that the model needs more data. That guess is
+wrong, because more examples of both choices make the averaging worse. There
+are two real fixes. One is to predict a spread of answers, as diffusion does.
+The other is to make the choice part of the input.
 
 ### Distilling a planner or a program into a policy
 
-Use a slow but good procedure as the teacher for a fast network, so that the
-network ends up doing at run time what the procedure did offline. This is a
-common and unglamorous pattern, and it is exactly what the relationship between
-the teacher and this solution is.
+Use a slow but good program as the teacher for a fast network. The network then
+does at run time what the program did. This is a common pattern, and it is
+exactly how this solution relates to its teacher.
 
-It is right when the teacher is correct but too slow to run where it is needed, or when
-the teacher needs information at training time that is unavailable at run time. It is
-wrong when the student is expected to be better than the teacher, because distillation
-has no mechanism for improvement — it is copying, and copying has a ceiling. In this
-book the honest statement is that distillation is being used for its measurement value
-rather than for speed, since the teacher is not slow. What the pair establishes is
-whether the mapping is learnable at all.
+It is right when the teacher is correct but too slow, or when the teacher uses
+information that is missing at run time. It is wrong when the student is meant
+to beat the teacher, because copying has a ceiling. Here the teacher is not
+slow. So this pair is used to measure something: whether a good push can be
+learned at all.
+
+The next section places this solution beside the other five.
 
 ## 3. Where it sits among the other five
 
-[The six solutions](../03_the-six-solutions/01_how-the-six-compare.md) form a ladder, ordered by how much of each one
-was fitted in this cell, and this solution is the first way on which
-everything was.
+The general ideas above explain this solution on its own, and this section
+compares it with the rest. [The six
+solutions](../03_the-six-solutions/01_how-the-six-compare.md) form a ladder,
+ordered by how much of each one was trained in this cell. This solution is the
+first where everything was trained here.
 
-Against [one fixed nudge](../04_one-fixed-nudge/01_what-it-is.md), the comparison is the basic
-one this whole book is built around: does any learning beat a fixed nudge? That
-solution fits nothing, pushes the same distance in the same way every time, and
-looks again. It is arithmetic and it costs essentially nothing to run. If this
-solution cannot clear more tables than that, no part of the machinery above has
-earned its place.
+Against [one fixed nudge](../04_one-fixed-nudge/01_what-it-is.md), the question
+is whether any learning beats a fixed rule. Every learned solution must pass
+that test.
 
 Against [geometry generates, a model
-ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md), the comparison is student
-against teacher, and it is the most informative pairing this solution has.
-What the gap measures is not which method is better but whether the mapping
-from a picture to a good push is learnable. A student that nearly matches its
-teacher says the policy class is adequate and the remaining error belongs to
-the teacher's geometry. A student that falls well short says the opposite.
-This student falls well short, and the code folder's `README.md` says by how
-much and reads the result.
+ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md), the student
+meets its teacher. This is the most useful pair for this solution. The gap
+does not say which method is better. It says whether a good push can be learned
+from a picture. A student close to its teacher would mean yes. A student far
+behind means no, at least for this kind of policy.
+
+This student is far behind. The table below gives the median of three seeds,
+with the range in brackets, on the 50 test tables. Read each row as one
+measure, with the student on the left and the teacher on the right.
+
+| | ACT (this solution) | Teacher |
+|---|---|---|
+| Tables done | 2 (1–3) | 14 |
+| Tables wrong | 11 (7–13) | 1 |
+| Glasses racked | 63 (51–64) | 107 |
+| Glasses toppled | 12 (7–13) | 1 |
+| Pushes spent | 438 (414–497) | 182 |
+| Thinking per push | 11 ms | 102 ms |
+
+The student clears far fewer tables and topples far more glasses. Most of its
+pushes are stopped on the way down, for the reason [the worked
+example](04_a-worked-example.md#2-a-worked-example) gives. It is faster to
+think, but the arm, not the thinking, sets the pace. [The
+results](../10_the-results.md#2-the-results) compare all six.
 
 Against [a world model, then plan with
-it](../07_a-world-model-then-plan-with-it/01_what-it-is.md), the comparison is the
-sharpest question among the six after the foundation-model pair: plan with a model, or
-learn the push directly? That solution learns how the world changes and searches over
-candidate actions at run time, simulating each one forward before committing, so **it
-can find a push nobody ever demonstrated**. Which is exactly the thing this solution
-cannot do. It pays for that on every push, in run-time cost that [the
-examiner](../01_the-problem/03_the-examiner.md) puts at hundreds or thousands of times
-the arithmetic a fixed nudge costs. And it pays again in needing a model of the world
-accurate enough to plan against. This is a harder thing to learn than a mapping. So the
-pair trades a ceiling against a cost: this solution is cheap and capped by its teacher,
-that one is expensive and capped by what its own encoding can express rather than by
-anybody else's work.
+it](../07_a-world-model-then-plan-with-it/01_what-it-is.md), the question is
+whether to plan with a model or learn the push directly. That solution learns
+how the world changes. It tries many pushes in its model before acting, so
+**it can find a push nobody ever showed it.** This solution cannot. But the
+world model costs much more on every push. And it needs a model of the world
+good enough to plan with, which is harder to learn than a mapping. So this
+solution is cheap but limited by its teacher. That one is costly but limited
+only by its own model.
 
 Against [SmolVLA as it downloads](../08_a-foundation-model-as-it-downloads/01_what-it-is.md),
-the comparison is fitting here against borrowing wholesale. That solution runs
-SmolVLA exactly as it downloads, with about 450 million parameters and a
-pretraining set of 487 community datasets of real teleoperation behind it, and
-fits nothing in this cell. So it brings a vast amount of experience of robot
-manipulation in general and none of this cell in particular, while this
-solution brings the opposite: a small network that has seen nothing but this
-examiner, this jaw and these four kinds of glass. Which of those two is the better
-trade is precisely what this book is for.
+the question is training here against borrowing a large model. SmolVLA brings
+much experience of robots in general, but none of this cell. This solution
+brings the opposite: a small network that knows only this cell.
 
-Against [SmolVLA fine-tuned](../09_the-same-model-fine-tuned-here/01_what-it-is.md), the
-comparison is where the fitting happens. That solution takes SmolVLA's borrowed weights
-and continues their training on this cell's own data with low-rank adaptation. This is
-this solution's method — imitation from demonstrations collected here — applied to
-somebody else's starting point instead of to random numbers. Reading the two together
-separates what the demonstrations are worth from what the pretraining is worth. And
-those two are the sharpest pair of the six in their own right: same model, same weights,
-and the only difference between them is that one has had its training continued here.
+Against [SmolVLA fine-tuned](../09_the-same-model-fine-tuned-here/01_what-it-is.md),
+the question is where training starts. That solution uses this same method,
+copying examples made here. But it starts from SmolVLA's borrowed weights, not
+from random numbers. So the pair separates what the examples are worth from
+what the pretraining is worth.
 
-Read as a ladder, the six measure what each increment of fitting buys. This one is the
-way where all the fitting is done here, from nothing, on examples a program produced for
-free. The cheapest honest attempt at learning this task that this book contains, and the
-one whose limits are easiest to state in advance.
+On the ladder, this solution is the first rung where all the learning happens
+here, from nothing, on free examples. It is the cheapest real attempt at
+learning this task in the book. Its limits are also the easiest to state in
+advance.
 
 ← [What it needs](05_what-it-needs.md) · [A world model, then plan with it — what it is](../07_a-world-model-then-plan-with-it/01_what-it-is.md) →

@@ -14,300 +14,218 @@ This page explains what happens inside this solution, part by part. It follows
 
 ## 1. Open loop and closed loop
 
-The four decisions above are small, and the thing that makes them sufficient is
-not their content but the loop they sit inside. That loop has a name in control
-engineering, and the name is worth learning because the rest of this document
-uses it.
+The four decisions in [the main idea](01_what-it-is.md#4-the-main-idea) are
+small. What makes them enough is the loop around them. This section names that
+loop, because the rest of the page uses the name.
 
-A plan that is computed once and then carried out without reading anything back is
-**open loop**. It commits to the whole answer in advance, on the strength of whatever it
-believed when it started, and it has no way of noticing that the world disagreed. A plan
-that measures, acts, measures again and lets the second measurement change what it does
-next is **closed loop**. The three parts of a closed loop always have the same shape: a
-**measurement** of how things are, an **error** that says how far that is from how
-things should be. And a **correction** that is meant to reduce the error.
+An **open loop** plan is worked out once and then carried out without checking
+anything. A **closed loop** plan measures, acts, and measures again. The new
+measurement changes what it does next.
+[The loop: plan, feel, look again](../01_the-problem/05_pushing-without-toppling.md#5-the-loop-plan-feel-look-again)
+explains the difference for all six solutions.
 
-The programming comparison is exact, and it is the clearest way to see the
-difference. Open loop is unrolling a loop into a fixed sequence of statements
-because you are sure how many times it will run. Closed loop is a `while` loop
-whose condition re-reads a value that the body of the loop changes. Written as
-code, this solution is one such loop and nothing more: while the table is short
-of room, measure the shortfall, push, and measure the shortfall again. The
-condition is not a count that was worked out before the run. It is a fresh
-reading of the world.
+A closed loop has three parts. The **measurement** says how things are. The
+**error** says how far that is from how things should be. The **correction**
+tries to make the error smaller.
 
-Newton's method is the same idea in arithmetic: it finds the root of a
-function without anybody having a formula for the root, using only a way to
-measure how wrong the current guess is and a rule that makes the wrongness
-smaller. This solution is in that position. Nobody can write down where a
-glass will be after a push, but anybody can measure how much room it is short
-of, and the rule that makes that smaller is to push it away from whatever is
-crowding it.
+In this solution the measurement is `look()`, which the examiner provides. The
+error is the shortfall, which the next section defines. The correction is the
+nudge. The share that turns the error into the nudge is called the **gain**. A
+correction that is the error times a fixed gain is called a **proportional
+controller**. That is all the cleverness in this method.
 
-The three parts map onto the cell directly. The measurement is `look()`, which
-the examiner provides. The error is the shortfall. The correction is the nudge,
-and the fraction that turns the error into the correction is called the
-**gain**, which is the standard word for it. A correction that is the error
-multiplied by a fixed gain is a **proportional controller**, and that is the
-whole of this method's cleverness.
+Newton's method for finding roots works the same way. Nobody has a formula for
+the answer. But you can measure how wrong the current guess is, and you have a
+rule that makes it less wrong. Here, nobody can say where a glass will stop.
+But anybody can measure how much room it is missing. And the rule that makes
+that smaller is to push it away from the glass that crowds it.
 
-Every one of the six solutions runs inside a loop of this shape, because
-[pushing without toppling](../01_the-problem/05_pushing-without-toppling.md) shows that none of
-them can do otherwise. What makes this one the control is that in the other
-five the loop surrounds something substantial, and here **the loop is the
-method**. There is nothing inside it to compare.
+All six solutions run inside a loop like this. In the other five, the loop
+holds something large, such as a model. Here, **the loop is the method**. There
+is nothing else inside it.
+
+The loop needs an error to work on. The next section defines it.
 
 ## 2. The shortfall, and why it is measured to the neighbour's edge
 
-The loop needs an error, so the error has to be defined before anything else,
-and the definition contains the one trap in this problem that catches almost
-everybody.
-
-To close on a glass the open hand has to get round it: a finger on each side,
-with the hand opened wider than the glass before it closes. The room that needs
-is not half the opening, which is the easy mistake. It is how far the widest
-part of the open hand reaches from its own middle, and on this cell's gripper
-the fingers stand further out than the pads that do the gripping. Measured that
-way it comes to **76 mm of clear room in every direction**. Those are the gripper's own numbers, so the project is
-allowed to write them down, and the examiner holds the 76 mm as a constant and
-applies the test like this: **a glass has room when every other glass's edge is
-at least 76 mm from its middle.**
-
-Read that sentence twice, because the word *edge* is what makes the test
-asymmetric. The 76 mm is measured from one glass's middle out to another
-glass's **edge**, and a glass's edge is half its own widest width out from its
-own middle. So what a glass needs from a neighbour depends on **how wide the
-neighbour is, not on how wide it is itself**. A narrow glass standing beside a
-wide one can be badly short of room while the wide one, at the very same
-distance, has room to spare, because the wide one's rim reaches much further
-into the gap than the narrow one's does.
+The loop in the last section needs an error. This section defines it. The open
+gripper needs 76 mm of clear room from a glass's middle to every neighbour's
+edge. [The gap that matters](../01_the-problem/01_what-is-asked-for.md#6-the-gap-that-matters-is-not-the-gap-between-the-glasses)
+explains where 76 mm comes from. Because it is measured to the neighbour's
+**edge**, what a glass needs depends on how wide the neighbour is, not on its
+own width. So a narrow glass beside a wide one can be short of room, while the
+wide one has room at the same distance.
 
 ![The same pair of glasses from the top at four separations, showing that the wide one comes free before the narrow one does: each glass carries the 76 mm ring the open jaw needs, and a glass is blocked while its neighbour's edge is inside that ring, so the narrow glass, whose neighbour's edge reaches further in, is still blocked at a distance where the wide one already has its room.](../../images/pushing-the-glasses-apart/one-fixed-nudge/01-four-distances-one-pair.png)
 
-From that, the error falls out. The shortfall of one glass against one
-neighbour is
+The shortfall of one glass against one neighbour is
 
     76 mm  +  half the neighbour's widest width  −  the distance between
     their middles
 
-and it is zero or less when that neighbour is not in the way. The glass's own shortfall
-is the largest of those values over every other glass on the table. And the neighbour
-that produced the largest value is the one whose edge is nearest to the glass's middle.
-So **the blocking neighbour and the deepest intruder are the same glass**, and the
-method needs no separate rule to find it.
+It is zero or less when that neighbour is not in the way. A glass's own
+shortfall is the largest of these values over all the other glasses. The
+neighbour that gives the largest value is the one whose edge is nearest. So
+**the blocking neighbour and the deepest intruder are the same glass**. The
+method needs no extra rule to find it.
 
-Written as a subtraction the shortfall is three numbers. Drawn on the table it
-is one length, and it is the length the whole method is built around.
+The picture below draws the shortfall as one length on the table.
 
 ![The crowded glass with the 76 mm ring the open jaw needs round it, the neighbour's rim reaching inside that ring, and the overlap marked: the shortfall is how far the neighbour's edge comes inside the ring, which is the same thing as 76 mm plus half the neighbour's width minus the distance between the two middles.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-pages-the-error.png)
 
-Two consequences matter, and both are easy to miss.
+Two points follow.
 
-**The test is on an ordered pair rather than on a pair.** Asking whether A and
-B are far enough apart is not a question with one answer. A may be crowded by B
-while B is not crowded by A. So the method has to evaluate the shortfall in
-both directions for every pair, and a method that compares only the distances
-between middles will call a pair fine when one of the two cannot be gripped.
-This is the same point [the problem](../01_the-problem/01_what-is-asked-for.md) makes with its three
-distances, and [the target layout](../01_the-problem/04_the-target-layout.md) makes again when it
-insists that a layout has to use the edge version of the condition.
+**The test is on an ordered pair rather than on a pair.** Glass A may be
+crowded by glass B while B is not crowded by A. So the method checks the
+shortfall in both directions for every pair. A method that only compares the
+distance between middles can miss a glass that cannot be gripped.
 
 **The shortfall is already in the repository.** The function `shortfall()` in
 [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py)
-computes exactly the expression above and adds it up over the whole table, as a
-measure of how crowded the arrangement is. This solution uses the same quantity
-one glass at a time, as its error.
+computes the expression above. It adds it up over the whole table to measure
+how crowded the table is. This solution uses the same number for one glass at
+a time.
+
+Now the error is defined. The next section asks how big a correction to make
+from it.
 
 ## 3. Why the push is a fraction of the shortfall rather than all of it
 
-With the error defined, the only remaining question is how large a correction to make
-from it. And the answer is the one place where the missing friction decides the design
-rather than merely complicating it.
+The last section defined the error. This section decides how much of it to
+correct in one push. This is where the unknown friction shapes the design.
 
-Start by naming what nobody knows. Call the shortfall `s`, and call the fraction the
-method applies to it `k`, which is the gain. The jaw is therefore commanded to travel `k
-· s`. What the glass actually does is some other distance. The jaw may slip
-against a curved wall, the glass turns as well as travels, the friction under its foot
-is not the same everywhere on that foot, and the glass may carry on a little after the
-jaw stops or stop a little before it. Write that unknown as a factor `g`, so the glass
-moves `g · k · s`. **Nothing in the cell measures `g`. And nothing bounds it tightly**,
-because every term that would settle it runs through the friction coefficient, and glass
-on a dry wooden top plausibly spans a range of more than two to one.
+Call the shortfall `s`, and call the gain `k`. The jaw is told to push `k · s`.
+The glass really moves some other distance. The jaw may slip on a curved wall.
+The glass may turn. The friction may not be the same all over its foot. The
+glass may slide on after the jaw stops, or stop early. Write all of this as one
+unknown factor `g`, so the glass moves `g · k · s`. **Nothing in the cell
+measures `g`, and nothing keeps it in a narrow range.** It depends on the
+friction, and the friction could differ by more than two times.
 
-Now the arithmetic. The shortfall after the push is
+The shortfall after the push is
 
     s'  =  s − g · k · s  =  s · (1 − g · k)
 
-so the shortfall shrinks whenever the size of `1 − g · k` is less than one,
-which happens whenever `g · k` lies between zero and two. That single
-inequality is the whole argument for a small gain, and it has two readings.
+So the shortfall gets smaller whenever `g · k` is between zero and two. That
+one condition is the whole argument for a small gain.
 
-**A confident push is unstable against the unknown.** Set `k` to one, which is
-the obvious choice of aiming to close the whole gap at once, and the method
-converges only while `g` stays below two, and overshoots whenever `g` is above
-one. Since `g` is not known to within a factor of two, that is a coin toss
-rather than a design. An overshoot is not a harmless error either: it carries
-the glass past where it needed to be, and the glass has to land somewhere.
-Moving one glass out of a crowd can easily move it into a different crowd, so
-the push that was meant to end the problem creates a second one, and the extra
-travel is extra distance in which something can be knocked over.
+**A large gain is risky.** Set `k` to one, to close the whole gap at once. Then
+the glass overshoots whenever `g` is above one, and the error grows whenever
+`g` is above two. Since nobody knows `g`, that is a gamble. An overshoot can
+carry the glass into another crowd. The extra travel is also extra distance in
+which something can be knocked over.
 
-**A modest push converges against a wide range of the unknown.** Set `k` well
-below one and the product `g · k` stays inside the safe range even when `g`
-turns out to be several times what anybody would have guessed. The shortfall
-then falls as a geometric sequence: if `g · k` happens to be a half, each push
-halves the remaining shortfall, so three pushes take it to an eighth of what
-it was and the glass crosses the line. The method does not need to know which
-geometric sequence it is on. It only needs the sequence to be decreasing, and
-that is what the small gain guarantees.
+**A small gain is safe.** Set `k` well below one. Then `g · k` stays in the safe
+range even if `g` is several times larger than expected. The shortfall shrinks
+by the same share each pass. For example, if `g · k` is one half, each push
+halves what is left. After three pushes, an eighth is left. The method does not
+need to know the exact share. It only needs the shortfall to keep shrinking.
 
 ![What is left of the shortfall after each of four passes, for four values of the product g · k: at 0.3 it shrinks slowly and steadily, at 1 it lands exactly but only because the product happened to be 1, at 1.8 it crosses the line each time and still shrinks, and at 2.4 it grows.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-pages-the-gain.png)
 
-What the small gain costs is **the number of steps**, because the number of
-pushes needed to close a given shortfall grows as the logarithm of the
-reduction divided by the logarithm of `1 − g · k`. A smaller gain is therefore
-safer and slower in a way that can be written down exactly, and the price is
-paid in arm time rather than in risk.
+The cost of a small gain is more pushes. A smaller gain is safer and slower.
 
-One more point about the gain, and it is about honesty rather than about control. The
-gain could be chosen by trying many values over the training tables and keeping the
-best, and that would be **fitting a number to data**. This this solution is not allowed
-to do: [the overview of the six](../03_the-six-solutions/01_how-the-six-compare.md)
-records that this solution fits nothing. And a baseline that is quietly tuned until it
-is competitive has stopped being a baseline. So the gain is argued instead. It is chosen
-small enough that the convergence condition holds across the whole plausible friction
-range, and then frozen, and that argument is written down where anybody can disagree
-with it.
+There is one more point about the gain. You could pick it by trying many values
+on the training tables and keeping the best. That would be **fitting a number to
+data**, and this solution must not do that.
+[The overview of the six](../03_the-six-solutions/01_how-the-six-compare.md)
+records that it fits nothing. A baseline that is tuned until it does well is no
+longer a baseline. So the gain is chosen by argument instead. It is small enough
+to shrink the shortfall across the whole likely friction range. Then it is
+frozen.
+
+The small gain makes the loop shrink the error. The next section says why that
+is enough without any prediction.
 
 ## 4. Why repeating replaces predicting
 
-The small gain buys convergence, and the loop buys correctness. So the method can now be
-stated in its strongest form: it never says where the glass will land, and therefore
-**it cannot be wrong about physics it never claimed to know**.
+The last section showed that a small gain always shrinks the error. So the
+method never needs to say where a glass will stop. This means **it cannot be
+wrong about physics it never claimed to know**.
 
-It is worth being exact about what is and is not claimed. The method claims a
-direction, which does not need the friction. It claims that the shortfall is
-measurable, which `look()` makes true up to the measurement error [the camera
-work reports](../../08_seeing-the-glasses/11_the-results.md). It claims that a
-glass pushed away from its neighbour ends up further from that neighbour, which
-is true for any friction whatever. It does not claim how far the glass goes, it
-does not claim that the glass will not rotate, and it does not claim to know
-whether this table is slippery or sticky. Every solution that fails because its
-model of pushing was wrong fails on a claim this one does not make.
+Here is what the method does claim. It claims a direction, which needs no
+friction. It claims the shortfall can be measured, which `look()` makes true up
+to the error [the camera work reports](../../08_seeing-the-glasses/11_the-results.md).
+It claims that a glass pushed away from its neighbour ends further from it.
+That is true for any friction.
 
-The price is arm time, and it should be read as a real price rather than as a
-rhetorical one. One push is a whole sequence of arm movements, set out in [the
-pushes are what this contributes](02_the-code.md#2-the-pushes-are-what-this-contributes), and
-every one of them is followed by a fresh look. **Every push is seconds of arm
-time, and the scorecard counts pushes against a fixed budget**, so the
-currency this method pays in is finite. A method that converges in four pushes
-where another converges in one has not failed, but it has spent four times the
-time and four times the travel, and travel is where a glass gets knocked.
+Here is what it does not claim. It does not claim how far the glass goes. It
+does not claim the glass will not turn. It does not claim to know the friction.
+Any solution that fails because its model of pushing was wrong fails on a
+claim this one never makes.
 
-So the honest summary of this solution's position is that it moves its cost out
-of error and into time. Every other solution in the set is buying a way to
-shorten the loop. Solution 4 buys a model of what a push does and plans
-through it, so that one push can be aimed at the answer. Solutions 3 and 6 buy
-the same shortening implicitly, by fitting a policy that has seen many pushes
-and their outcomes. Solution 2 buys a ranking over many candidate pushes, which
-is a way of choosing a better single push without predicting its outcome in
-detail. **What the comparison between this solution and the other five
-measures is exactly what that shortening is worth.**
+The price is more pushes, and so more arm time.
+[What it needs](05_what-it-needs.md) counts that cost. The other five solutions
+each pay for a way to need fewer pushes. Solution 4 learns what a push does and
+plans with it. Solutions 3 and 6 learn a policy from many pushes. Solution 2
+ranks many possible pushes and picks the best one. **The comparison between
+this solution and the other five measures what needing fewer pushes is
+worth.**
 
-And repetition has a floor, which it would be dishonest to leave out. Pushes
-are not independent: giving one glass its room can take room from another,
-which then needs a push of its own, which can take it back. A loop that is
-reduced to repeating can oscillate, and the only thing that stops it is the
-budget. [A worked example](04_a-worked-example.md#2-a-worked-example) shows that happening.
+Repeating has a limit. Giving one glass room can take room from another. A loop
+that only repeats can then go back and forth until the budget runs out.
+[A worked example](04_a-worked-example.md#2-a-worked-example) shows this on a
+glass crowded from two sides.
+
+The next section says which of these parts are real code and which are only a
+design.
 
 ## 5. What is built and what is a design
 
-Before the output and the refusals, it is worth saying plainly which of all
-this exists as code, because this is one of the few solutions in the set where
-real code is involved and it would be easy to over-claim.
+The sections so far described the method. This section says which parts of it
+exist as code. It would be easy to claim too much here.
 
-**Built, in the repository, and run against the examiner:**
+These parts are **built, in the repository, and run against the examiner**:
 
-- the examiner itself, in [`src/09_pushing-the-glasses-apart/bench/`](../../../code/src/09_pushing-the-glasses-apart/bench), with the
-  crowded tables, the measurement error, `look()`, `push()`, `take()` and the
-  scorecard;
-- the room test, as `has_room()` in
-  [`src/09_pushing-the-glasses-apart/bench/bench.py`](../../../code/src/09_pushing-the-glasses-apart/bench/bench.py), which holds the
-  76 mm as the gripper's constant and applies it to the neighbour's edge;
-- the shortfall, as `shortfall()` in
-  [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py);
-- the tipping rule, as `slides()` in the same file, evaluated at the top edge
-  of the jaw and at both ends of the plausible friction range, together with
-  the small test push that settles the glasses the range cannot;
-- the loop, in [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py):
-  look, rack every glass that already has room, choose one push, make it, look
-  again. The budget is the examiner's rather than this solution's, so that the
-  six are allowed the same number of tries: four pushes at any one glass, and
-  sixteen on any one table;
-- the refusal reasons, and the scorecard that counts them with the outcome
-  rather than the action.
+- The examiner itself, in [`src/09_pushing-the-glasses-apart/bench/`](../../../code/src/09_pushing-the-glasses-apart/bench). It has the crowded tables, the measurement error, `look()`, `push()`, `take()` and the scorecard.
+- The room test, as `has_room()` in [`src/09_pushing-the-glasses-apart/bench/bench.py`](../../../code/src/09_pushing-the-glasses-apart/bench/bench.py).
+- The shortfall, as `shortfall()` in [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py).
+- The tipping rule, as `slides()` in the same file, with the short test push.
+- The loop, in [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py). It looks, racks every glass that has room, chooses one push, makes it, and looks again. The examiner sets the budget, so all six get the same number of tries. That is four pushes at one glass, and sixteen on one table.
+- The refusal reasons, and the scorecard that counts them.
 
-**A design, not code:**
+These parts are **a design, not code**:
 
-- the four decisions of [the main idea](01_what-it-is.md#4-the-main-idea). The planner that
-  exists chooses its heading and its distance by searching many headings and
-  every distance up to a limit, and keeping the shortest push that frees a
-  glass — or, when no push on the table frees one, the push that most cuts the
-  table's total shortfall of room, so that the next look starts from a looser
-  table. That search is the geometry [solution
-  2](../05_geometry-generates-a-model-ranks/01_what-it-is.md) generates its candidates with. This solution
-  replaces it with one heading and one multiplication, so the parts around the
-  rule have been run and the rule itself is the few lines that would sit where
-  the search sits;
-- the gain, which has no value in the repository;
-- the shared target layout, which this solution does not use in any case;
-- the rendered view of the table from the top, and the path for a chunk of
-  waypoints, neither of which this solution needs;
-- the repeats and the compute column that [the examiner](../01_the-problem/03_the-examiner.md)
-  describes for the scorecard.
+- The four decisions of [the main idea](01_what-it-is.md#4-the-main-idea). The planner in the repository does something else. It searches many directions and many distances, and keeps the shortest push that frees a glass. If no push frees a glass, it keeps the push that most reduces the table's total shortfall. That search is how [solution 2](../05_geometry-generates-a-model-ranks/01_what-it-is.md) makes its candidates. This solution would replace the search with one direction and one multiplication.
+- The gain, which has no value in the repository.
+- The shared target layout, which this solution does not use.
+- The top view of the table and the path for a chunk of waypoints. This solution needs neither.
+- The repeats and the compute column that [the examiner](../01_the-problem/03_the-examiner.md) describes for the scorecard.
 
-One measurement from the built code is worth quoting, with its attribution made clear.
-The programmed run reports in
+One measurement from the built code is useful. The run in
 [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/results.json`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/results.json)
-that its pushed glasses stopped a median of 1.0 mm, and at worst 3.9 mm, from where they
-were aimed. **That run uses the searching planner rather than this solution's rule**, so
-the figure is not this solution's score. What it does say is something about the
-examiner rather than about any rule: in this simulator, a glass that is pushed follows
-the jaw closely. So the unknown factor `g` of the previous section sits near one here.
-No solution is told that, nothing in the cell would reveal it, and on a real table with
-a real cloth or a real spill it would not hold. It is a reason to expect this method to
-converge in few pushes on the examiner's tables, and not a reason to trust it anywhere
-else.
+reports how far each pushed glass stopped from its aim. The median is 1.7 mm,
+and the worst is 57.6 mm. **That run uses the searching planner, not this
+solution's rule.** So it says something about the simulator, not about this
+rule. In this simulator, a pushed glass usually follows the jaw closely, so
+`g` is near one. No solution is told this. On a real table with a cloth or a
+spill, it would not hold. So this method should need few pushes on the
+examiner's tables, but you should not trust that anywhere else.
+
+The next section names the one thing this solution cannot do that its nearest
+neighbour can.
 
 ## 6. It produces nothing anybody can learn from
 
-There is one thing this solution cannot do that its nearest neighbour in the
-set can, and because it is the single clearest difference between the two it
-belongs here rather than buried at the end.
+The last section listed what this solution is made of. This section names the
+one thing it cannot give the others.
 
-Solutions 3 and 6 are fitted to demonstrations, which means recorded examples of the
-task being done: what the arm saw, and the push that was made from there. Both of those
-documents say the examples come from solution 2 for nothing: solution 2 has geometry
-generate many candidate pushes for each crowded glass and then ranks them. So every push
-it makes is a demonstration and is also the best of a set that was written down and
-scored first. It is what earns solution 2 its place in the set beyond being a second
-baseline.
+Solutions 3 and 6 learn from demonstrations. A demonstration is a recorded
+example of the task: what the arm saw, and the push it made. Their examples
+come from solution 2, which scores many possible pushes and keeps the best.
+[Solution 2's how it works](../05_geometry-generates-a-model-ranks/03_how-it-works.md)
+explains why that makes it a teacher.
 
-**This solution leaves behind nothing of the kind.** It generates exactly one
-push per pass and it scores nothing, because there is no alternative to
-compare the one push against. A record of its runs would say that a particular
-push was made and that the glass afterwards was in a particular place, with no
-indication of whether a better push existed. That is a log rather than a
-scored candidate set, so no ranker can be fitted to it, and a policy fitted to
-it could learn nothing but the one rule that produced it.
+**This solution leaves nothing like that.** It makes one push per pass and
+scores nothing, because there is nothing to compare that push with. A record of
+its runs says which push was made and where the glass ended. It does not say
+whether a better push existed. No ranker can be fitted to that, and a policy
+fitted to it could only learn the same one rule.
 
-So this solution is a control and only a control. It cannot also be the
-teacher. Saying so is not a complaint about it, because a control that also
-supplied training data would be doing two jobs and the second job would make
-the first one suspect. But it does mean that if the ranked geometry did not
-exist, the demonstrations for solutions 3 and 6 would have to be bought
-somewhere else, either by a person teleoperating the arm or by writing a second
-method for the purpose. Both of those are real costs that the comparison
-would then have to carry.
+So this solution is a control and nothing more. That is not a fault. A control
+that also supplied training data would be doing two jobs, and the second job
+would make the first one less trustworthy. But without solution 2, the
+demonstrations for solutions 3 and 6 would have to come from somewhere else,
+such as a person driving the arm. That would be a real extra cost.
 
 ← [The code](02_the-code.md) · [A worked example](04_a-worked-example.md) →

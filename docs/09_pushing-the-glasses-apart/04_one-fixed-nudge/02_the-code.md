@@ -1,10 +1,8 @@
 # The code
 
-This page shows the code at the heart of this solution, and says what the
-solution hands back to the rest of the cell. It follows [what it
-is](01_what-it-is.md), and [how it works](03_how-it-works.md) explains, part by
-part, what the code below is doing. The second explains the first,
-which is why they are on one page.
+This page shows the main code of this solution. It also says what the solution
+hands back to the rest of the cell. It follows [what it is](01_what-it-is.md).
+[How it works](03_how-it-works.md) then explains each part of this code.
 
 ## Contents
 
@@ -14,36 +12,32 @@ which is why they are on one page.
 
 ## 1. The code at the heart of it
 
-Two pieces of this solution are written and running in the repository, and they
-belong together, so they are worth reading before the prose explains them. The
-first decides whether a glass can be pushed at all: a few lines of arithmetic
-on the glass's own foot and height that answer "yes", "no" or "not without
-trying it". The second is the one small fixed push the method makes when the
-answer is the third of those. They are the heart of this solution because the
-arithmetic is the piece [solution 2](../05_geometry-generates-a-model-ranks/01_what-it-is.md) and three of the
-others borrow rather than write again, and because the small push is the only
-place in the whole method where the arm reads the world before committing to a
-decision rather than after it.
+It helps to read the code before the explanation. Two pieces of this solution
+are written and running in the repository. The first decides whether a glass
+can be pushed at all. It answers "yes", "no" or "try". The second is the short
+test push the method makes when the answer is "try". [Solution
+2](../05_geometry-generates-a-model-ranks/01_what-it-is.md) and three others
+reuse the first piece. The second piece is the only place where the arm checks
+the world before it decides, not after.
 
-The tipping test, from
+The tipping test comes from
 [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py).
-No library decides anything in it. The whole of it is three divisions, three
-comparisons and two arctangents from Python's own `math`, which is the
-plainest illustration of what this solution being the control means.
+No library decides anything in it. It is three divisions, three comparisons and
+two arctangents from Python's own `math`. The rule behind it is set out in
+[pushing without toppling](../01_the-problem/05_pushing-without-toppling.md#3-the-limit-slide-or-tip).
 
-The function runs in three steps, and each one is marked in the code below.
+The function runs in three steps, and each step is marked in the code.
 
-1. Take half the width of the foot the glass stands on, and divide it by each
-   end of the friction range. Dividing by the grippiest friction gives the
-   lowest push height that would tip this glass, and the answer is "yes" when
-   the jaw pushes below it. Dividing by the slipperiest friction gives the
-   highest such height, and the answer is "no" when the jaw still pushes at or
-   above that one.
-2. Between those two heights, measure how far this glass can lean before it
-   falls over, from its foot and the height of its centre of mass. This step is
-   reached only when the friction, which nobody has measured, decides the case.
-3. Compare the lean the short test push could cause against that angle, and
-   answer "try" only while the lean is well inside it.
+1. Take half the width of the glass's foot. Divide it by the highest friction
+   in the range. This gives the lowest push height that could tip the glass. If
+   the jaw is below it, the answer is "yes". Then divide by the lowest
+   friction. This gives the highest such height. If the jaw is at or above it,
+   the answer is "no".
+2. Between those two heights, the unknown friction decides. So measure how far
+   this glass can lean before it falls. This depends on its foot and the height
+   of its centre of mass.
+3. Compare the lean the short test push could cause with that angle. Answer
+   "try" only if the lean stays well inside it.
 
 ```python
 # Glass on a dry wooden top is somewhere in here. Nothing in the cell measures
@@ -77,28 +71,30 @@ def slides(glass: Seen) -> str:
     return "try" if math.atan2(PROBE, JAW_TOP) < PROBE_LEAN_SHARE * falls_past else "no"
 ```
 
-Step 1 is a question about the foot, and the picture below marks the two widths
-it compares against on one. Between those two widths the arithmetic has nothing
-left to say.
+Step 1 is a question about the foot. The picture below marks the two foot
+widths it compares against. Between those two widths, the arithmetic cannot
+decide.
 
 ![The foot a glass stands on, with the two widths the arithmetic compares against marked on it: below 43 mm a glass tips at every friction in the range and is refused, above 107 mm it slides at every friction and is pushed, and between the two the answer depends on a number nobody has. The ranges the four kinds of glass are drawn from show that neither the tapered kind nor the short stemmed one ever reaches the right-hand zone.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-pages-three-answers.png)
 
-Steps 2 and 3 are the one exception to that. A glass tall enough that even the
-short test push could lean it most of the way to falling is refused rather
-than tried, which is what the two arctangents compare.
+Steps 2 and 3 handle that middle zone. Some glasses are so tall that even the
+short test push could lean them most of the way over. Those glasses are refused
+instead of tried.
 
-A glass that comes back "try" gets the fixed nudge. This is the same file's `probe`: the
-chosen push cut down to one constant length, aimed along the same line, and looked at
-before and after. It runs in three steps, numbered again from its own first line.
+A glass that gets "try" gets the short test push. This is `probe` in the same
+file. It takes the chosen push, cuts it to one short length, and keeps the same
+line. The arm looks before and after. The
+[test push](../01_the-problem/05_pushing-without-toppling.md#5-the-loop-plan-feel-look-again)
+is part of the shared rules. `probe` runs in three steps.
 
-1. Turn the push's heading into a unit vector, which is what NumPy is here for.
-2. Step back from the aim by the whole travel, which lands on the glass's
-   middle, and aim five millimetres past that middle instead.
-3. Hand back the same push with that short travel and near aim, leaving where
-   the fingertips come down, the heading and the feeling forward alone.
+1. Turn the push's direction into a unit vector, which is what NumPy is for
+   here.
+2. Step back from the aim by the whole push length. This gives the glass's
+   middle. Aim five millimetres past that middle instead.
+3. Return the same push with the short length and the new aim. Keep the start
+   point, the direction and the feeling distance.
 
-The two-line `needs_probe` below it is the gate that asks for all this, and it
-has one step of its own.
+The two-line `needs_probe` below it decides when a test push is needed.
 
 ```python
 # A glass that slides only at the low end is tried with a push this long, and
@@ -124,98 +120,82 @@ def needs_probe(glass: Seen, proven: set[int]) -> bool:
     return slides(glass) == "try" and glass.id not in proven
 ```
 
-Read together, the two blocks show the whole bargain of this solution in a dozen lines:
-where the arithmetic can answer, it answers, and where it cannot. Because the friction
-is missing from it — the method spends one short push to find out instead of guessing.
-Note which fixed nudge this is. The proportional nudge of [the main
-idea](01_what-it-is.md#4-the-main-idea) has no constant in the repository, while `PROBE`
-does, so the fixed length above is the one this code really commits to.
+Together, the two blocks show the whole idea of this solution. Where the
+arithmetic can answer, it answers. Where it cannot, because the friction is
+unknown, the method makes one short push to find out. It does not guess.
+
+Note which fixed nudge this is. The share-of-the-gap nudge in
+[the main idea](01_what-it-is.md#4-the-main-idea) has no constant in the
+repository. `PROBE` does. So the fixed length above is the one this code really
+uses.
+
+The next section says what this code hands to the rest of the cell.
 
 ## 2. The pushes are what this contributes
 
-With the method, its loop and its honest extent all stated, what remains is the
-thing it actually hands over, and the examiner is strict about the shape of that.
-
-**The shared output is a jaw trajectory**, as [the examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#6-what-must-come-out)
-explains, and a solution that thinks in whole pushes does not have to produce
-one itself. This solution thinks in whole pushes. What it emits is a
-**parameterised push**: which glass is meant to move, where the fingertips come
-down, which way the jaw points and travels, how far forward to feel before
-giving up on finding the glass, how far to push once it is touching, and where
-the glass is expected to arrive. The examiner owns the macro that turns those
-numbers into the descent, the feel, the push, the retreat and the lift, and
-every parameterised push from every solution is expanded by that same macro. So
-the simplicity of this solution costs it nothing in the comparison and gains it
-nothing either.
+The last section showed how the method decides. This section shows what it
+hands over. The method thinks in whole pushes. So it hands over a
+**parameterised push**. That is a small set of numbers. They say which glass to
+move and where the fingertips come down. They say which way the jaw points, how
+far to feel forward and how far to push. And they say where the glass should
+end up. The examiner's own code turns
+those numbers into jaw movements, the same way for every solution.
+[What must come out](../01_the-problem/02_what-goes-in-and-what-comes-out.md#6-what-must-come-out)
+explains this.
 
 ![One push drawn on the table: where the fingertips come down, 10 mm outside the glass's widest part; the heading the jaw points and travels along; how far forward to feel, which is 30 mm past the glass's middle; how far to push; and where the glass is expected to arrive.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-pages-the-parameters.png)
 
-The field that names where the glass is expected to arrive deserves a word,
-because it looks like a prediction and this document has insisted there is
-none. The examiner asks for it so that it can measure how far each glass ended
-from where it was sent, which is a reading on every solution's own model of
-pushing. This solution fills it with the place its fingertips are carried to,
-on the assumption that the glass travels with the jaw and no further. That is a
-statement of intent rather than a prediction of physics, and the method does
-nothing with the answer: it does not compare the outcome with the aim, adjust
-anything, or remember. It simply looks again.
+One field says where the glass should end up. That looks like a prediction, but
+it is not. The examiner asks for it so it can measure how far each glass ended
+from its aim. This solution fills it with the place the fingertips stop. It
+assumes the glass moves with the jaw and no further. It never uses this number
+again. It just looks again.
 
-The approach to the glass is the one part of the push that is not arithmetic, and it
-matters more than it looks. The jaw does not drive to a computed contact point. It comes
-down behind the glass, a little outside the glass's widest part, and then feels forward
-slowly until the force it feels passes a small threshold. A motion commanded with a
-sensor condition that stops it early is called a **guarded move**. And it is used here
-because the glass's wall sits at its measured middle minus half its measured width, so
-the error in the position and the error in the width add together. A step that drove to
-that computed point would either stop short and push nothing or arrive past the wall at
-speed, which is a knock.
+The jaw does not drive to a computed point on the glass. It comes down behind
+the glass, a little outside its widest part. Then it moves forward slowly until
+it feels a small force. A movement that stops when a sensor fires is called a
+**guarded move**. It is needed because the glass's position and width each have
+some error. A jaw driven to a computed point could stop short, or hit the glass
+too fast.
 
-The push then reports what the jaw felt: whether it was blocked on the way down, how far
-it travelled before touching or that it never touched, whether it jammed, the most force
-it felt, and how far it moved after touching. **This solution reads almost none of that
-report.** It uses only whether the jaw touched anything at all. That is a deliberate
-omission rather than an oversight. And it is the deepest reason this solution is the
-floor of the set: [the
-examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#why-the-force-reading-matters)
-points out that the force reading is the only channel through which the friction is
-observable at all. And every solution that does better than a blind nudge does so by
-reading that channel, either by reasoning about it or by learning from it. This one
-throws it away and relies on the next look instead.
+After the push, the jaw reports what it felt, including the force. **This
+solution uses almost none of that report.** It only checks whether the jaw
+touched anything. This is the main reason it is the weakest of the six.
+[Where it is strong and where it breaks](06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks)
+explains why.
 
-Finally, the pushing is what this solution contributes and not the whole run. The runner
-racks every glass that already has clear room before it pushes anything, because a glass
-in the rack is a glass that is nobody's neighbour. That step is shared machinery rather
-than part of this method. What this document describes is what happens to the glasses
-that are left.
+Pushing is not the whole run. Before any push, the runner racks every glass
+that already has room. That step is shared by all six solutions. This page only
+describes what happens to the glasses that are left.
+
+The next section puts all these parts in the order the arm meets them.
 
 ## 3. How the concepts fit together
 
-The pieces can now be put in the order the arm meets them, which is also the
-order in which each one depends only on what came before. The room test turns
-a table into a list of glasses that cannot be gripped. The shortfall turns
-each of those glasses into a single number, which is the error a closed loop
-needs. The blocking neighbour is whichever glass produced that number, and the
-line from its middle through the crowded glass's middle is the direction. The
-gain turns the error into a distance. The tipping rule decides whether the
-glass may be touched at all. The guarded move finds it without striking it.
-And the loop closes the whole thing, because a fresh `look()` replaces every
-assumption the previous pass made.
+The last two sections showed the parts one at a time. This section puts them in
+the order the arm uses them. The room test finds the glasses that cannot be
+gripped. The shortfall gives each of them one number, which is the error. The
+neighbour that causes the shortfall gives the direction. The gain turns the
+error into a distance. The tipping rule decides if the glass may be touched.
+The guarded move finds the glass without hitting it. A fresh `look()` then
+replaces everything the last pass assumed.
 
-Written as the loop it is:
+As a loop, it is:
 
 1. Look at the table.
-2. Rack every glass that already has clear room, which is shared machinery.
+2. Rack every glass that already has room. This step is shared.
 3. For each glass that is left, compute its shortfall against every
    neighbour's edge, and keep the worst.
 4. Take the glass with the largest shortfall, and the neighbour that caused it.
 5. Check that glass against the tipping rule. If it fails, refuse it with the
-   reason and go back to step 3 without that glass.
-6. Push it away from that neighbour, a fixed fraction of the shortfall, at the
-   lowest height the gripper reaches, feeling forward for the contact rather
-   than driving to it.
+   reason, and go back to step 3 without that glass.
+6. Push it away from that neighbour, by a fixed share of the shortfall, at the
+   lowest height the gripper reaches. Feel forward for the glass instead of
+   driving to it.
 7. Go back to step 1.
 
-The loop ends when no glass is short of room, when the budget of pushes is
-spent, or when every glass that is left has been refused.
+The loop ends when no glass is short of room, when the push budget is used up,
+or when every glass left has been refused. [How it works](03_how-it-works.md)
+explains each of these steps in turn.
 
 ← [What it is](01_what-it-is.md) · [How it works](03_how-it-works.md) →

@@ -1,48 +1,28 @@
 # What it is
 
 > **What it uses** — PyTorch, and MuJoCo through [the test
-> examiner](../01_the-problem/03_the-examiner.md). The first way is a small network written for this cell
-> and trained here, five copies of it, with no downloaded weights of any kind.
-> The second way would be TD-MPC2, fetched from its own project, because the
-> library this project uses elsewhere ships the earlier TD-MPC instead.
-> **The second way is not built**, so no number anywhere in this document is
-> its. Neither of them borrows a model from anybody, so the only licences in play
-> are the libraries' own.
-> **What it does** — it learns what a push does, and then looks for a good push
-> by trying candidate pushes against that learned model instead of against the
-> table. The model takes the table as the camera measured it and one push, and
-> answers with the table afterwards: where every glass moves, whether anything
-> topples, and whether the jaw is blocked on the way down. Because the answer
-> is a table rather than a score, the same answer can be fed back in as the
-> next question, which is what would let this solution plan a *sequence* of
-> pushes. The built planner's horizon is one push, so the sequence is
-> an extension this document designs rather than code that runs.
-> **How the output is produced** — `look()` hands over one reading per glass.
-> The readings and a candidate push are encoded into one row of thirty-four
-> numbers in the push's own frame, and the five copies of the model each
-> answer. A candidate is thrown away if any copy thinks it might topple
-> something, if the predicted table breaks the map, or if the predicted
-> movement is far longer than the push. The survivors are scored by how much
-> room is still missing afterwards, a sampling search refines the good ones,
-> and the best push is handed to the examiner, whose own macro expands it into
-> a jaw trajectory. The shared topple limit that refuses a glass that tips
-> before it slides belongs in front of all of this, and the built planner does
-> not have it yet.
-> **What it costs** — pushes made in the simulator and recorded, which is the
-> only training data either way needs and which nobody has to label. The first way
-> trains on an ordinary processor in minutes and needs no rented hardware at
-> all. The second way is reinforcement learning and wants an accelerator: a weekend
-> of rented time, of order a hundred dollars, and a month of a small one, of
-> order five hundred, if several training seeds are to be run. At run time the
-> first way spends 0.41 seconds of thinking on every push it makes, because the
-> search asks the model about fifteen hundred candidate pushes first. That is
-> five to seven times what the two geometry solutions spend, and half or less
-> of what the two borrowed models spend.
+> examiner](../01_the-problem/03_the-examiner.md). The model is a small network
+> written for this cell and trained here. There are five copies of it, and no
+> weights are downloaded from anybody. A second way, TD-MPC2, is described but
+> **not built**, so no number on these pages belongs to it. [What it
+> needs](05_what-it-needs.md) lists the libraries and their licences.
+> **What it does** — it learns what a push does. Then it tries many candidate
+> pushes against that learned model, not against the table, and makes only the
+> best one. The model takes the table and one push, and it answers with the
+> table afterwards.
+> **How the output is produced** — `look()` gives one reading per glass. Each
+> candidate push and the table become one row of 34 numbers, and all five
+> copies of the model answer. Unsafe or doubtful candidates are dropped. The
+> rest are scored by the room still missing afterwards. The best push goes to
+> the examiner, which turns it into a path for the jaw.
+> **What it costs** — pushes recorded in the simulator, which nobody has to
+> label. Training takes about half an hour on a laptop processor. [What it
+> needs](05_what-it-needs.md) gives the full bill.
 
-> **The cell is described once, in [the cell](../../08_seeing-the-glasses/01_the-cell.md)** — the
-> layout, the two places the camera works from, from the top and from the side,
-> all four sensors, and the words this project uses them with. What follows is
-> only what is specific to this solution.
+> **The cell is described once, in [the cell](../../08_seeing-the-glasses/01_the-cell.md)**.
+> That page shows the layout, the two camera positions, all four sensors, and
+> the words this project uses for them. This chapter covers only what is
+> specific to this solution.
 
 ## Contents
 
@@ -53,140 +33,140 @@
 
 ## 1. Introduction
 
-This document explains how to [push the glasses
-apart](../01_the-problem/01_what-is-asked-for.md) by learning a model of what a
-push does, and then choosing pushes by trying them out against that model
-rather than against the table.
+This chapter explains one way to [push the glasses
+apart](../01_the-problem/01_what-is-asked-for.md). The solution first learns
+what a push does. Then it chooses each push by testing candidates against what
+it learned, not against the table.
 
-The idea worth holding on to while reading is a small one with large consequences. Every
-other solution here learns, or writes down, **what to do**. This one learns **what will
-happen**, and works out what to do from it. That single difference is what gives this
-solution the one capability none of the other five could have: it can be extended to
-plan a sequence. It can choose a push whose only value is that it makes room for the
-push after it. Move one glass aside so a second glass has somewhere to be pushed to —
-because a model that returns a table can be asked again about the table it just
-returned. A method that scores a push without saying where the glasses end up has
-nothing to ask the second question of.
+Every other solution here learns, or writes down, what to do. This one learns
+what will happen, and works out what to do from that. The model answers with a
+whole table. So the model can be asked again about the table it just returned.
+This is what would let the solution plan a sequence of pushes. [Planning a
+sequence](03_how-it-works.md#9-planning-a-sequence-which-only-this-solution-could-do)
+explains this. The built planner looks only one push ahead.
 
-By the end you will understand five things. What a forward model is, and why it
-is a different kind of object from a policy. How a push is chosen by sampling
-candidates and refining the good ones, which is a search called the
-cross-entropy method, and why that search suits a problem where the cost is not
-smooth. Why a model that is wrong in small ways is still useful, which turns on
-planning several pushes ahead but making only the first. Why a disagreement
-between several copies of the same model is a usable measurement of the model's
-own ignorance, which is the most transferable idea here. And what the two ways
-buy against each other: a small hand-built model that can be inspected, against
-a stronger off-the-shelf one that brings a maintained implementation.
+By the end of this chapter you will know five things:
 
-Read [the examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md) first, because what `look()` hands over
-and what `push()` accepts are assumed throughout, and read [pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md), because the refusal rule this
-solution adds learned evidence to is stated there.
+- what a forward model is, and how it differs from a policy;
+- how a push is chosen by trying many candidates and refining the good ones,
+  which is called the cross-entropy method;
+- why a model that is a little wrong is still useful, if the arm looks again
+  after every push;
+- why the disagreement between five copies of a model measures what the model
+  does not know;
+- how the small model built here compares with TD-MPC2, a larger model that
+  could be fetched instead.
+
+First read [what goes in and what comes
+out](../01_the-problem/02_what-goes-in-and-what-comes-out.md), because these
+pages assume you know `look()` and `push()`. Also read [pushing without
+toppling](../01_the-problem/05_pushing-without-toppling.md), because it states
+the shared rule for refusing a glass.
 
 ![Thousands of pushes are made in the simulator and nobody labels any of them, because the answer to every example is what the second look found; five copies of a small network are fitted to say what the table looks like after a push; and before every push the arm makes, candidates are drawn, put to all five, filtered and scored, and only the best one is carried out.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-flow-what-it-does.png)
 
 ![Five networks fitted on the same data from different random starts agree where the training data covered that kind of push and diverge where it did not, which is a measure of ignorance that costs almost nothing — and where the data was thin in a way none of them noticed, all five agree and are wrong together.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-flow-the-five-copies.png)
 
+The next section shows the method at work on one table.
+
 ## 2. A film of one table
 
-The introduction described a method that learns how the table changes and then searches
-for a push with that model. And the film here shows it on one table in the simulator,
-played at one and a half times real speed.
+The introduction described the method in words. This film shows it on one
+table in the simulator, at one and a half times real speed.
 
 [A learned world model planning on one table, 44 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4 "video")
 
-It holds six glasses where the average is five, and five of them have no room
-at the start.
+The table holds six glasses. Five of them have no room at the start.
 
-In the film all six glasses are racked in **three pushes**, and nothing is
-toppled. The other five solutions leave this table unfinished or wrong, so this
-is the one film of the six in which the job is actually done. The economy is
-the direct result of what the method learned: because it can predict where a
-glass will stop, it can choose a push that finishes the job instead of nudging
-and looking again.
+In the film, the arm racks all six glasses in **three pushes**, and nothing
+falls over. The other five solutions leave this table unfinished or wrong. This
+method needs few pushes because it can predict where a glass will stop. So it
+can choose a push that finishes the job, instead of nudging and looking again.
 
-It is worth knowing while watching that the same planner topples a glass on
-nineteen of the fifty tables. This film shows what it does when its guesses
-about toppling are right, and the scorecard shows how often they are not.
+This film shows one good table. Over all 50 test tables, the same planner
+topples a glass on 19 of them. [Where it sits among the other
+five](06_how-it-compares.md#3-where-it-sits-among-the-other-five) gives the
+full score.
 
-All six solutions are filmed on this same table, so the films can be watched
-against each other. [The six films](../10_the-results.md#3-the-six-films-all-of-the-same-table)
-collects them, says how that table was chosen, and explains the two things every
-one of the films has in common.
+All six solutions are filmed on this same table. [The six
+films](../10_the-results.md#3-the-six-films-all-of-the-same-table) puts them
+side by side and says how the table was chosen.
 
-Three pushes is what the film has to show, and the next section says which
-problem learning a model of the table is meant to solve.
+The next section says which problem a learned model of the table is meant to
+solve.
 
 ## 3. The problem this solves
 
-[The problem](../01_the-problem/01_what-is-asked-for.md) has already been
-stated in full, and this section narrows it to the single difficulty this
-solution is aimed at.
+This section narrows [the problem](../01_the-problem/01_what-is-asked-for.md)
+to the one difficulty this solution aims at.
 
-Four to six glasses stand on a table, some of them closer together than the
-gripper can work with. The arm has to push them apart without knocking any of
-them over. [The target layout](../01_the-problem/04_the-target-layout.md) has already settled
-where the glasses should end up, because that is plain geometry with no
-unknowns in it. What is left is the half that has unknowns in it: **what a
-given push will actually do**.
+The arm must push crowded glasses apart without knocking any over. [The target
+layout](../01_the-problem/04_the-target-layout.md) already says where the
+glasses should end up. What is left is the hard half: **what a given push will
+really do**.
 
-That half is hard for one reason above all others, and [pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md) states it plainly. The rule
-that decides whether a glass slides or tips compares the contact height against half the
-foot width divided by the friction coefficient, and **nothing in this cell measures
-friction**. The examiner holds the coefficients privately and never tells anybody. So
-any solution that writes the rule down is writing down a rule with a guessed number in
-it. And the guess can be wrong by a factor that decides whether a glass should have been
-touched at all.
+That half is hard because nothing in the cell measures friction. Whether a
+glass slides or tips depends on friction, as [pushing without
+toppling](../01_the-problem/05_pushing-without-toppling.md) explains. So a
+solution that writes the rule down has to guess a number in it.
 
-There are two honest ways out of that. One is to guess carefully, act, look at what
-happened, and correct — which is what [one fixed
-nudge](../04_one-fixed-nudge/01_what-it-is.md) and [geometry generates, a model
-ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md) do. The other is the one
-this document is about: **never write the rule down, and learn its consequences
-instead.** Push glasses thousands of times, record what happened each time, and fit a
-function to it. The friction coefficient is then not a number the solution holds. It is
-a regularity in the recorded pushes, absorbed along with everything else nobody wrote
-down. That the jaw has a body behind its fingers, that a tapered glass meets the jaw's
-top edge, that a glass turns as well as travels.
+There are two ways out. The first is to guess carefully, push, look, and
+correct. [One fixed nudge](../04_one-fixed-nudge/01_what-it-is.md) and
+[geometry generates, a model
+ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md) do this. The
+second way is this solution's. **It never writes the rule down.** It pushes
+glasses thousands of times in the simulator, records what happened, and fits a
+function to the records. Friction is then not a number the solution holds. It
+is a pattern in the recorded pushes. The model also learns other things nobody
+wrote down. For example, the jaw meets a tapered glass at its top edge, and a
+pushed glass turns as well as moves.
 
 ![Whether a push slides a glass or tips it over turns on a friction nothing in the cell measures and on the height the jaw really meets the glass at, which for a tapered glass is the jaw's top edge and not its middle; across the range the friction plausibly covers, the share of drawn glasses that can be pushed at all runs from most of them to none, and a model fitted to recorded pushes absorbs both without ever being told either.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/10-the-friction-it-absorbs.png)
 
-There is a second difficulty, and it is the one the sequence capability
-answers. A glass pushed out of one crowd can easily land in another, and a
-glass pushed into its own clear spot can block the route the next glass needed.
-**Choosing which glass to move, and in which order, needs the whole
-arrangement**, not the crowded pair. That is a question about tables rather
-than about pushes, and only a method that can say what a table will look like
-afterwards can ask it.
+There is a second difficulty. A glass pushed out of one crowd can end up in
+another. A glass pushed into a clear spot can block the path the next glass
+needed. So choosing which glass to move, and in what order, needs the whole
+table. Only a method that can say what the table will look like afterwards can
+ask that question.
+
+The next section gives the main idea that lets this solution ask what a push
+will do.
 
 ## 4. The main idea
 
-The main idea is a separation, and the whole of this solution follows from it.
+The problem above needs a way to predict pushes. The main idea is to keep two
+things apart.
 
-**Separate knowing what will happen from deciding what to do.** Fit one
-function that answers *given this table and this push, what is the table
-afterwards*. Keep it completely free of any opinion about what a good push is.
-Then write the opinion separately, as plain arithmetic over tables: a table
-where every glass has its 76 mm of clear room is good, a table where something
-has fallen over is unacceptable, and a shorter push is better than a longer
-one. Finally, put a search between the two: propose pushes, ask the model what
-each one leads to, score the answers with the arithmetic, and make the best
-one.
+**The first thing is knowing what will happen.** One function answers one
+question: given this table and this push, what is the table afterwards? This
+function holds no opinion about which push is good.
 
-The reason that separation is worth making is that the two halves have
-completely different sources of truth. What will happen is a fact about the
-world, and it can only be learned from the world — which here means pushing
-glasses in the simulator and recording the result. What counts as good is a
-fact about the task, and it is already written down in [the
-problem](../01_the-problem/01_what-is-asked-for.md): 76 mm of clear room, nothing knocked over, as few
-pushes as possible. Mixing them produces a thing that has to be retrained when
-the task changes. Keeping them apart means **the same model serves a different
-goal by changing only the arithmetic**. If the task later became spreading the
-glasses evenly rather than clearing them, the model would not be touched; a
-trained policy would have to be trained again.
+**The second thing is deciding what is good.** This is plain arithmetic over
+tables. A table where every glass has its 76 mm of clear room is good. A table
+where a glass has fallen over is not acceptable. A shorter push is better than
+a longer one.
+
+A search connects the two. It proposes pushes, asks the model what each one
+does, scores each answer with the arithmetic, and makes the best push.
+
+The two halves come from different places. What will happen is a fact about
+the world, so it has to be learned from pushes in the simulator. What is good
+is a fact about the task, and [the
+problem](../01_the-problem/01_what-is-asked-for.md) already writes it down.
+Keeping them apart has one large benefit. **The same model can serve a new goal
+by changing only the arithmetic.** For example, the task could change to
+spreading the glasses evenly. The model would stay the same, and no training
+would be needed. A trained policy would have to be trained again.
+
+One part is missing from the built planner. [Pushing without
+toppling](../01_the-problem/05_pushing-without-toppling.md) gives a shared rule.
+It refuses a glass that would tip before it slides. That rule should run before
+the search, but the built planner does not have it yet. The planner holds no
+friction value and no tipping formula. So its only guard against a topple is the
+model's own prediction. **This is a gap in the solution, not a second opinion.**
 
 ![The model's question has one shape: a table as the camera measured it and one push go in, and a table afterwards comes out — a displacement for every glass, plus whether anything toppled and whether the jaw was blocked coming down.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/10-what-a-forward-model-predicts.png)
+
+[The code](02_the-code.md) shows the model and the scoring as code.
 
 ← [Imitation from demonstrations — how it compares](../06_imitation-from-demonstrations/06_how-it-compares.md) · [How it works](03_how-it-works.md) →

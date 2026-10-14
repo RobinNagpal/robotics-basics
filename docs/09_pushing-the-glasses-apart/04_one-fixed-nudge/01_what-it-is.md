@@ -1,42 +1,31 @@
 # What it is
 
-> **What it uses** — NumPy for the arithmetic over a handful of positions and
-> widths, and nothing else. Carrying the jaw to the places the arithmetic names
-> belongs to the cell rather than to this solution: on the examiner's tables the
-> physics engine does it, and in the real cell MoveIt does. There is no model,
-> no weights file and no training set, because not one number in this solution
-> was fitted to anything.
-> **What it does** — When a glass has no clear room for the gripper to close
-> round it, the method finds the one neighbour whose edge reaches furthest
-> into that room, works out how much room the glass is short of, and pushes
-> the glass directly away from that neighbour by a fixed fraction of the
-> shortfall, at the lowest height the gripper can reach. Then it looks at the
-> table again and does the same arithmetic on what it now sees. There is no
-> search over directions, no map of the free table, and above all no model of
-> what a push does: the method never predicts where the glass will land, so it
-> repeats instead of predicting. The repeating ends when every glass has room,
-> when the push budget is spent, or when the only honest answer left is a
-> refusal.
-> **How the output is produced** — from the measurements, compute for each
-> glass how much clear room it is short of, measured to each neighbour's edge;
-> take the glass with the worst shortfall and the neighbour responsible for
-> it; check that glass against the tipping rule and refuse it if it fails;
-> point the jaw along the line that runs from the neighbour's middle through
-> the glass's middle; set the travel to a fixed fraction of the shortfall; put
-> the start point on that same line, a little outside the glass's widest part;
-> and hand the result over as one parameterised push, which the examiner's own
-> macro expands into a jaw trajectory. Then look again and start over.
-> **What it costs** — nothing that is bought. Nothing learns, so there is no
-> data and no training time. The whole computation is a few hundred arithmetic
-> operations on four to six glasses and it finishes long before the arm has
-> moved, so there is no accelerator to rent. Nothing is fitted, so there are no
-> weights to redistribute and no licence inherited with them. The entire cost
-> is arm time, paid in pushes and in looks.
+> **What it uses.** It uses NumPy for a little arithmetic on positions and
+> widths, and nothing else. The cell moves the jaw, not this solution. On the
+> examiner's tables the physics engine moves it, and in the real cell MoveIt
+> does. There is no model, no weights file and no training set. Not one number
+> here was fitted to data.
+> **What it does.** It finds a glass that has no room for the gripper. It finds
+> the neighbour that crowds it most. It pushes the glass straight away from that
+> neighbour. The push is a fixed share of the missing room, made as low as the
+> gripper can reach. Then it looks at the table again and repeats. It never predicts where
+> the glass will stop. It stops when every glass has room, when the push budget
+> is used up, or when the only safe answer is to refuse.
+> **How the output is produced.** For each glass, it works out how much room is
+> missing, measured to each neighbour's edge. It takes the glass with the most
+> missing room, and the neighbour that causes it. It checks that glass against
+> the tipping rule, and refuses it if the check fails. It points the jaw along
+> the line from the neighbour's middle through the glass's middle. It sets the
+> push length to a fixed share of the missing room. It hands this over as one
+> push, and the examiner turns it into jaw movements. Then it looks again.
+> **What it costs.** It costs nothing you have to buy: no data, no training and
+> no rented hardware. Its only cost is arm time, which
+> [what it needs](05_what-it-needs.md) explains.
 
-> **The cell is described once, in [the cell](../../08_seeing-the-glasses/01_the-cell.md)** — the
-> layout, the two places the camera works from, from the top and from the
-> side, all four sensors, and the words this project uses them with. What
-> follows is only what is specific to this solution.
+> **The cell is described once, in [the cell](../../08_seeing-the-glasses/01_the-cell.md).**
+> That page covers the layout, the two camera positions, the four sensors and
+> the words this project uses. This page covers only what is special to this
+> solution.
 
 ## Contents
 
@@ -47,167 +36,146 @@
 
 ## 1. Introduction
 
-This document describes the simplest thing that can move a crowded glass away
-from its neighbour, and then argues that the set of six would be worthless
-without it. The method is one subtraction, one multiplication and a loop. It
-measures how much clear room a glass is short of, pushes that glass a fixed
-fraction of the shortfall straight away from whatever is crowding it, and
-looks again. Nothing in it was fitted, nothing in it was searched for, and
-nothing in it predicts anything.
+This page describes the simplest way to move a crowded glass away from its
+neighbour. It is for a reader who wants to see the baseline before the five
+solutions that try to beat it. The method is one subtraction, one
+multiplication and a loop. It measures how much room a glass is missing. It
+pushes the glass a fixed share of that amount, straight away from the glass
+that crowds it. Then it looks again. Nothing in it is fitted, searched for or
+predicted.
 
-The reason to write it carefully rather than wave at it is that it is **the
-control**. Four of the other five solutions pay for their answers with
-labelled data, training runs and rented hardware, and the fifth carries a
-large model somebody else paid for. None of those prices can be judged in the
-abstract. They can only be judged against what the same table costs when
-nobody pays anything at all, and that is the number this document is here to
-define. Every other solution in the set has to beat a fixed nudge, and if it
-cannot, it has earned nothing.
+This solution is **the control**. A control is the plain method that every
+other method is measured against. Four of the other five solutions pay for data,
+training and hardware. The fifth uses a large model that someone else trained.
+You can only judge those costs against a method that costs nothing. So every
+other solution must beat a fixed nudge. If it cannot, it has earned nothing.
 
-By the end you will understand what the shortfall is, and why measuring it to
-the neighbour's edge rather than to its middle makes the test on a pair of
-glasses asymmetric. You will understand what closed-loop control is and why
-this solution is nothing else. You will understand why pushing a fraction of
-the gap converges where pushing the whole gap overshoots, and why that
-argument rests entirely on nobody knowing the friction. And you will
-understand the one thing this solution cannot do that its nearest neighbour in
-the set can: it produces no scored candidates, so it is the teacher for
-nobody.
+This solution also has one safe property. It always pushes a glass away from
+its neighbour, so the push can never carry the glass back into that neighbour.
+A push that is too long or too short can still only add space between the two.
 
-Two honest notes before the method starts, because both change how the rest
-should be read.
+By the end of this chapter you will know four things. You will know what the
+missing room is, and why it is measured to the neighbour's edge. You will know
+what a closed loop is. You will know why pushing part of the gap works better
+than pushing all of it. And you will know why this solution cannot teach any
+other solution.
 
-**Part of this solution is built and part of it is a design**, and the two are
-separated plainly in [what is built and what is a
-design](03_how-it-works.md#5-what-is-built-and-what-is-a-design). The examiner, the room test, the
-tipping rule and the loop all exist in this repository and have been run. The
-particular rule for choosing a direction and a distance that this document
-describes is a design that would sit inside them.
+Two notes come first, because they change how you read the rest.
 
-**No glass's size appears below.** The cell's rule is that no glass's
-dimensions are written down anywhere, so this document speaks in relations —
-wider than its neighbour, standing on the narrowest foot its kind allows — and
-quotes numbers only where they belong to the gripper, to the cell, or to a
-results file in the repository. The pictures may draw the *range* a kind of
-glass is drawn from, because that range is a rule about what the examiner may
-put on a table rather than a measurement of anything standing on one.
+**Part of this solution is built and part of it is a design.**
+[What is built and what is a design](03_how-it-works.md#5-what-is-built-and-what-is-a-design)
+separates the two. The examiner, the room test, the tipping rule and the loop
+exist in this repository and have been run. The rule for choosing a direction
+and a distance is a design that would fit inside them.
+
+**No glass's size is written below.** The cell's rule is that glass sizes are
+never written down. So this page compares glasses to each other, for example
+"wider than its neighbour". It gives numbers only for the gripper, the cell or
+a results file. The pictures may show the *range* a kind of glass is drawn
+from. That range is a rule, not a measurement of a real glass.
 
 ![The camera measures the table, the glass with the worst shortfall of clear room is chosen along with the neighbour responsible for it, the glass is checked against the tipping rule, and it is pushed a fixed fraction of the shortfall straight away from that neighbour before the arm looks again.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-flow-what-it-does.png)
 
-The two pictures below say why the loop has that shape. The first is the method
-this one refuses: aiming the push at where the glass will stop. The second is
-what this solution does instead.
+The next two pictures show why the loop has this shape. The first shows the
+method this solution rejects, which is aiming the push at where the glass will
+stop. The second shows what this solution does instead.
 
 ![Aiming a push at where the glass will come to rest needs the friction with the table and how the weight sits on the foot; nobody in this cell has measured either, so the push lands short of the room needed or into the next glass.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-flow-why-prediction-fails.png)
 
-So this solution makes no prediction at all. It measures, pushes a little way in
-a direction that is right whatever the friction turns out to be, and then looks
-at the table again.
+So this solution makes no prediction. It measures, pushes a little way in a
+direction that is right for any friction, and looks at the table again.
 
 ![The same job done without any prediction: measure the shortfall, push straight away from the crowding neighbour by a fixed fraction of it, look at the table again, and repeat until the glass is no longer short of room.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-flow-repeat-not-predict.png)
 
 ## 2. A film of one table
 
-The introduction described this method in words, and the film here shows the
-same method working. It is one table in the simulator, played at one and a half
-times real speed.
+The introduction described the method in words. This film shows it working on
+one table in the simulator, at one and a half times real speed.
 
 [One fixed nudge on one table, 13 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/01-one-fixed-nudge.mp4 "video")
 
-It holds six glasses where the average is five, and five of them have no room
-at the start.
+The table holds six glasses, where the average is five. Five of them have no
+room at the start.
 
-In the film the arm racks the one glass that already had room, makes two
-pushes, and then refuses the other five, each for its own reason: two tip
-before they slide, two tipped when the push was tried, and one has nowhere
-clear to be pushed to. Nothing is knocked over, and the table is left
-unfinished, which is this solution's commonest outcome. That is the shape of
-nearly every table with this gripper — one or two glasses taken, the rest
-turned down, none broken.
+The arm racks the one glass that already had room. It makes two pushes. Then it
+refuses the other five, each for its own reason. Two tip before they slide. Two
+tipped when the push was tried. One has nowhere clear to be pushed to. Nothing
+is knocked over, and the table is left unfinished. This is the most common
+result for this solution: one or two glasses taken, the rest refused, none
+broken.
 
-The thing to watch for is how short the film is. The method never predicts
-where a glass will stop, so it is built to push a little and look again. But
-here it hardly gets the chance: the hand is too wide to stand beside most of
-these glasses and too high to shove them without tipping them. So the loop runs
-out of legal pushes long before it runs out of budget.
+Notice how short the film is. The method is built to push a little and look
+again. But here it rarely gets the chance. The hand is too wide to stand beside
+most of these glasses. It is also too high to push them without tipping them.
+So the loop runs out of safe pushes long before it runs out of budget.
 
-All six solutions are filmed on this same table, so the films can be watched
-against each other. [The six films](../10_the-results.md#3-the-six-films-all-of-the-same-table)
-collects them, says how that table was chosen, and explains the two things every
-one of the films has in common.
+All six solutions are filmed on this same table.
+[The six films](../10_the-results.md#3-the-six-films-all-of-the-same-table)
+collects them and says how the table was chosen.
 
-So the film shows what the method does. The next section says what problem a
-method this plain is there to solve, and why the book needs it.
+The film shows what the method does. The next section says what problem such a
+plain method is there to solve.
 
 ## 3. The problem this solves
 
-[Pushing the glasses apart](../01_the-problem/01_what-is-asked-for.md) begins
-where [telling them apart in a
-picture](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md)
-ended. The arm knows where every glass stands, how tall it is, how wide it is
-at its widest and how wide it is at its foot, and every one of those readings
-carries a measurement error rather than being exact. Some of the glasses stand
-close enough together that the open jaw cannot get round one of them without
-fouling the one beside it, and the arm has to move them apart by dragging them
-across the table rather than by lifting them.
+The film showed the method at work, and this section says why the book needs
+it. The arm knows where each glass stands, how tall it is, and how wide it is
+at its widest and at its foot. Each reading has some measurement error. Some
+glasses stand so close together that the open jaw cannot get round one without
+hitting the next. So the arm has to slide them apart before it can lift them.
+[What is asked for](../01_the-problem/01_what-is-asked-for.md) sets out this
+task in full.
 
-What makes that a problem rather than an exercise is one missing number. A pushed glass
-slides while the jaw touches it below a height set by its own foot and by the friction
-between the glass and the table, and tips above that height. This is the whole subject
-of [pushing without toppling](../01_the-problem/05_pushing-without-toppling.md). **The
-friction is never told to any solution and nothing in the cell measures it.** So how far
-a glass travels for a given push is unknown before the push is made. And it stays
-unknown afterwards except through what the table looks like next.
+One number makes this hard. That number is the friction between the glass and
+the table. No solution is told it, and nothing in the cell measures it.
+[What a solution is never told](../01_the-problem/02_what-goes-in-and-what-comes-out.md#4-what-a-solution-is-never-told)
+explains this. Because of it, nobody knows in advance how far a push will move
+a glass.
 
-Everything the six solutions disagree about follows from that one gap. A
-solution can try to fill it, by estimating the friction, by learning a model of
-what a push does, or by learning the push itself from examples of pushes that
-worked. Or it can refuse to fill it, make no prediction at all, and recover by
-measuring. This solution takes the second branch, and it takes it as far as it
-can be taken: it predicts nothing, assumes nothing about friction, and keeps
-only the one claim about a push that does not need friction to be true.
+A solution can deal with this in two ways. It can try to fill the gap, for
+example by learning what a push does. Or it can make no prediction at all, and
+correct itself by measuring again. This solution takes the second way, as far
+as it goes. It predicts nothing and assumes nothing about friction.
+
+The next section states the one claim this solution does make, and why that
+claim needs no friction.
 
 ## 4. The main idea
 
-That one claim is the whole method, so it is worth stating before the
-arithmetic. **Pushing a glass away from a neighbour increases the distance
-between them, whatever the friction is.** The friction decides *how far* the
-glass goes. It does not decide which way. So a method that is confident about
-direction and modest about distance is making the only claim the cell can
-support, and it can then fix the distance by repeating rather than by knowing.
+The last section said this solution predicts nothing. This section gives the
+one claim it does make. **Pushing a glass away from a neighbour always
+increases the distance between them, whatever the friction is.** The friction
+decides how far the glass goes. It does not decide which way. So the method is
+sure about direction and careful about distance. It fixes the distance by
+repeating, not by knowing.
 
-From that, the method makes four decisions and no others, and each one is a
-single line of arithmetic on numbers the arm already has.
+From that claim, the method makes four decisions. Each one is a single line of
+arithmetic on numbers the arm already has.
 
-**Which glass to push.** It takes the glass that is short of the most room.
-[The shortfall](03_how-it-works.md#2-the-shortfall-and-why-it-is-measured-to-the-neighbours-edge)
-defines that quantity exactly.
+1. **Which glass to push.** It pushes the glass that is missing the most room.
+   [The shortfall](03_how-it-works.md#2-the-shortfall-and-why-it-is-measured-to-the-neighbours-edge)
+   defines this amount exactly.
+2. **Which way to push it.** It pushes straight away from the neighbour whose
+   edge comes furthest into that glass's room. The direction is the line from
+   the neighbour's middle through the glass's middle.
+3. **How far to push it.** It pushes a fixed share of the missing room. The
+   share is less than one, so each push closes part of the gap. The next pass
+   closes more.
+4. **How high to touch it.** It always touches as low as the gripper can reach.
+   A lower touch is always further from tipping. The only question is whether
+   even the lowest touch is low enough.
+   [When a glass cannot be pushed safely](04_a-worked-example.md#1-when-a-glass-cannot-be-pushed-safely)
+   answers that.
 
-**Which way to push it.** Straight away from the neighbour whose edge reaches
-furthest into that glass's room. The heading is the direction of the line that
-runs from the neighbour's middle through the glass's middle, continued
-outwards.
+Then the arm looks at the table again, and makes the four decisions again from
+the new measurements. It remembers nothing between passes except how many
+pushes it has used.
 
-**How far to push it.** A fixed fraction of the shortfall. The fraction is
-less than one, so the push closes part of the gap rather than all of it, and
-the rest is left to the next pass.
-
-**How high to touch it.** As low as the gripper can reach, always. There is
-never a reason to push higher, because the lower the contact the further the
-glass is from tipping. The only question the height raises is whether even the
-lowest contact is low enough, and that is answered in [when a glass cannot be
-pushed safely](04_a-worked-example.md#1-when-a-glass-cannot-be-pushed-safely).
-
-Then the arm looks at the table again, and the four decisions are made afresh
-from the new measurements. Nothing is remembered from one pass to the next
-except how many pushes have been spent.
-
-The word **fixed** in the name needs care, because it does not mean a fixed number of
-millimetres. A rule that pushed the same distance every time would be badly wrong, since
-the glasses on a crowded table are short of anything from almost nothing to several tens
-of millimetres. And one distance cannot serve both ends of that range. What is fixed is
-the **fraction**: one constant, the same for every glass on every table, chosen once by
-argument and never changed. That single constant is the only free number in the entire
-method.
+The word **fixed** in the name does not mean a fixed number of millimetres. On a
+crowded table, one glass may miss almost no room and another may miss several
+tens of millimetres. One distance cannot suit both. What is fixed is the
+**share**. It is one constant, the same for every glass on every table. It is
+chosen once by argument and never changed. It is the only free number in the
+whole method.
 
 ← [The same model, fine-tuned here](../03_the-six-solutions/07_the-same-model-fine-tuned-here.md) · [How it works](03_how-it-works.md) →

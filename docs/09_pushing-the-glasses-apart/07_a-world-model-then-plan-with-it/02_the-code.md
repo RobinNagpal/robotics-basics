@@ -1,10 +1,9 @@
 # The code
 
-This page shows the code at the heart of this solution, and says what the
+This page shows the code at the centre of this solution. It also says what the
 solution hands back to the rest of the cell. It follows [what it
-is](01_what-it-is.md), and [how it works](03_how-it-works.md) explains, part by
-part, what the code below is doing. The second explains the first,
-which is why they are on one page.
+is](01_what-it-is.md). [How it works](03_how-it-works.md) then explains each
+part of this code.
 
 ## Contents
 
@@ -14,44 +13,42 @@ which is why they are on one page.
 
 ## 1. The code at the heart of it
 
-Two pieces of the first way carry the whole idea, and they are short enough to read
-here. The first is the forward model itself: five copies of a small network
-that take a table and a candidate push and answer with what that push would do.
-The second is the arithmetic that turns those five answers into a single
-decision about one candidate — kept, or thrown away, and at what cost. They are
-the heart of this solution because nothing else in it knows anything about
-pushing: the model holds all of it, and this arithmetic is the only thing that
-reads the model's mind.
+Two short pieces of code hold the whole idea. The first is the forward model:
+five copies of a small network. Each copy takes a table and a candidate push,
+and it says what that push would do. The second piece turns the five answers
+into one decision about a candidate. The candidate is kept or dropped, and it
+gets a cost. Nothing else in the solution knows anything about pushing.
 
-The borrowed library does its work in the four `nn.Linear` lines, and
-everything around them is the ensemble, in
+The model is in
 [`code/src/09_pushing-the-glasses-apart/04-a-world-model/model.py`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/model.py).
+The library, PyTorch, does its work in the four `nn.Linear` lines. Everything
+around them is the set of five copies.
 
-The whole of it runs in six steps. The first two are the model, in `model.py`,
-and the other four are the planning that uses it, in `plan.py`.
+The whole of it runs in six steps. Steps 1 and 2 are the model, in `model.py`.
+Steps 3 to 6 are the planning that uses it, in `plan.py`.
 
-1. Stack the four layers that are the network, and store the average and the
-   spread of the training inputs alongside the weights, so that every input is
-   scaled by those two numbers before the layers see it.
-2. Answer with the bookkeeping that training needs and answering does not
-   switched off, asking all five copies the same question and keeping their five
-   answers separate. Keeping them separate is the only reason there are five.
-3. Write each candidate push, and the table it would be made on, as one row of
-   numbers, and hand every row to all five copies at once.
-4. Boil the five answers down to three numbers per candidate: the average
-   movement, the worst copy's chance of toppling something, and the average
-   chance the jaw is blocked on the way down. The topple question is then asked
-   again on four copies of the table shifted by about the camera's error, and
-   the highest answer of all of them is the one kept.
-5. Build the table each candidate is predicted to leave behind, and mark the
-   candidates that have to go: the glass predicted to travel far further than
-   the push, the jaw path that leaves the arm's comfortable reach, and the moved
-   glass that lands outside the zone.
-6. Measure the room still missing, on each predicted table and on the table as
-   it stands, turn that into one cost per candidate, gather the three refusals,
-   and price every refused candidate at infinity.
+1. Stack the four layers of the network. Store the average and the spread of
+   the training inputs beside the weights. Every input is scaled by those two
+   numbers before the layers see it.
+2. Ask all five copies the same question, and keep their five answers apart.
+   Training bookkeeping is switched off, because nothing is being trained.
+   Keeping the answers apart is the only reason there are five copies.
+3. Write each candidate push, with its table, as one row of numbers. Hand every
+   row to all five copies at once.
+4. Turn the five answers into three numbers per candidate: the average
+   movement, the worst copy's chance of a topple, and the average chance that
+   the jaw is blocked on the way down. Then ask the topple question again on
+   four copies of the table, each shifted by about the camera's error. Keep the
+   highest topple chance of all.
+5. Build the table each candidate should leave behind. Mark the candidates
+   that must go: a glass predicted to travel much further than the push, a jaw
+   path the arm cannot reach well, and a moved glass that ends up outside the
+   zone.
+6. Measure the room still missing on each predicted table and on the table as
+   it is now. Turn that into one cost per candidate. Give every refused
+   candidate a cost of infinity.
 
-Steps 1 and 2 are the model itself, and the code below is the whole of it.
+Steps 1 and 2 are the model itself, and the code below is all of it.
 
 ```python
 ENSEMBLE = 5
@@ -92,15 +89,14 @@ class Ensemble:
             return np.stack([net(x_t).numpy() for net in self.nets])
 ```
 
-What the five answers are then used for is in
-[`code/src/09_pushing-the-glasses-apart/04-a-world-model/plan.py`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/plan.py),
-where every candidate push is scored at once and the unacceptable ones are given
-a cost of infinity.
+The five answers are used in
+[`code/src/09_pushing-the-glasses-apart/04-a-world-model/plan.py`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/plan.py).
+There every candidate push is scored at once, and the unacceptable ones get a
+cost of infinity.
 
-That arithmetic is steps 3 to 6 of the list above, and they all go one way: ask
-first, then judge. Steps 3 and 4 are the asking, and nothing in them refuses
-anything. Steps 5 and 6 are the judging, and the model is not consulted again in
-either of them.
+This is steps 3 to 6 of the list above. Steps 3 and 4 ask the model, and they
+refuse nothing. Steps 5 and 6 judge the answers, and they do not ask the model
+again.
 
 ```python
 def score(model: Ensemble, seen: list, target, kind: str, heading, offset, travel, rng: np.random.Generator):
@@ -175,109 +171,96 @@ def score(model: Ensemble, seen: list, target, kind: str, heading, offset, trave
     return cost, landing, {k: int(v.sum()) for k, v in dropped.items()}
 ```
 
-Those two blocks are where this solution's result comes from, in both directions. The
-displacements are **averaged** over the copies and the topple chance is taken as the
-**worst** of them, and taken again on each shifted copy of the table. So a push only has
-to look risky once to be dropped. Which is why this solution racks more glasses than any
-other answer to this problem, in the fewest pushes, and why the glasses it gives up on
-are given up on with a reason. It is also where the one glass it topples comes from:
-`topple` is the model's opinion and nothing else's. So where all five copies are
-confident and all five are wrong, there is nothing left in the code above to disagree
-with them.
+Two choices in this code decide how the solution behaves. The movements are
+**averaged** over the five copies. The topple chance is the **worst** copy's,
+on any of the shifted tables. So a push has to look risky only once to be
+dropped. But `topple` is only the model's opinion. If all five copies are sure
+and all five are wrong, nothing in this code disagrees with them. [Where it is
+strong and where it
+breaks](06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks) shows
+how often that happened.
+
+The next section says what this code hands to the examiner once a push is
+chosen.
 
 ## 2. The pushes are what this contributes
 
-Having chosen a push, this solution hands it over in the form [the test
-examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#6-what-must-come-out) defines, and it is worth being exact about where its
-contribution stops.
+The code above chooses a push. This section says what form that push takes,
+and where the solution's work stops.
 
-**It emits a parameterised push.** Which glass to move, where the fingertips
-come down, which way the jaw points, how far it feels forward and how far it
-pushes. That is what `push()` accepts, and **the expansion of those numbers
-into a jaw trajectory is a macro the examiner owns**: the descend, the slow feel
-forward until contact, the push at a steady speed, the back-off and the lift.
-This solution does not write that expansion and gains nothing from it, and
-neither does any other solution that thinks in pushes.
+**It hands over a push described by a few numbers.** These say which glass to
+move, where the fingertips come down, which way the jaw points, how far it
+feels forward, and how far it pushes. This is what `push()` accepts. The
+examiner turns those numbers into a jaw path, as [what must come
+out](../01_the-problem/02_what-goes-in-and-what-comes-out.md#6-what-must-come-out)
+explains.
 
-Two of those numbers are arithmetic rather than model output, and saying so keeps the
-boundary clean. The fingertips come down 20 mm behind the glass's widest edge, which is
-the margin that clears it despite the camera's error. The jaw then feels forward until
-10 mm past the glass's middle, because a stemmed glass is met at its stem, well inside
-its widest edge. And a jaw that misses and lifts under the bowl tips it. Neither number
-is learned, because neither depends on anything nobody knows. The search chooses the
-other three.
+Two of those numbers are plain arithmetic, not model output. The fingertips
+come down 20 mm behind the glass's widest edge. This margin clears the glass
+even with the camera's error. The jaw then feels forward until 10 mm past the
+glass's middle. This is because a stemmed glass is met at its stem, well inside
+its widest edge. A jaw that misses the stem and lifts under the bowl tips the
+glass. Neither number is learned, because neither depends on anything unknown.
+The search chooses the other three numbers.
 
 ![A push on one glass drawn from above with its five numbers marked: the fingertips come down 20 mm behind the widest edge and the jaw feels forward to 10 mm past the middle, both of which are arithmetic on the measured width, while the heading, the offset across the glass and the travel are the three numbers the search is free to choose.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-pages-what-the-push-says.png)
 
 **The height is not a choice.** [Pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md) settles that for all six: the jaw
-rides as low as the gripper can go, always, so there is nothing to trade and
-nothing to tune. What this solution decides is only whether to push at all, and
-where to.
+toppling](../01_the-problem/05_pushing-without-toppling.md) sets it for all six
+solutions.
 
-**What it does not contribute is the destination.** Where the glasses should
-end up is [the target layout](../01_the-problem/04_the-target-layout.md), computed once from the
-same measurements and so that no solution aiming at a destination can score
-well by aiming at an easier arrangement.
+**The solution does not choose where the glasses should end up.** [The target
+layout](../01_the-problem/04_the-target-layout.md) sets that for all six.
 
-So the whole of this solution's contribution sits in one place: **which push,
-out of all the pushes the geometry allows, is the one worth making.** It is
-scored on the table afterwards, the same as everything else.
+So this solution adds one thing: **which push, out of all the pushes allowed,
+is worth making.** It is scored on the table afterwards, like every other
+solution.
+
+The next section puts all the pieces in the order they run.
 
 ## 3. How the concepts fit together
 
-The pieces have been introduced separately, so here they are in the order they
-run, once per push.
+The pieces above were shown one at a time. Here they are in the order they run,
+once per push.
 
-**Look.** `look()` returns one reading per glass: where it stands, how tall,
-how wide at its widest and at its foot, whether it is standing. Every reading
-carries the error measured in [telling the glasses
-apart](../../08_seeing-the-glasses/11_the-results.md).
+**Look.** `look()` returns one reading per glass. It gives where the glass
+stands, how tall it is, how wide it is at its widest and at its foot, and
+whether it is standing. Every reading carries the error measured in [telling
+the glasses apart](../../08_seeing-the-glasses/11_the-results.md).
 
-**Apply the shared topple limit.** The arithmetic in [pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md) is worked out from each glass's
-measured foot width before anything is asked of the model, and a glass that
-fails it is refused with that reason. This step is the same for all six and is
-the one part of the loop the built planner does not yet have.
+**Apply the shared topple limit.** This step belongs here for all six
+solutions, but the built planner does not have it yet. [The main
+idea](01_what-it-is.md#4-the-main-idea) explains this gap.
 
-**Take anything that can be taken.** Any glass with clear room is lifted off
-immediately, with 3 mm of extra margin for the camera's error, because a glass
-that is gone cannot be toppled and cannot be in the way. The model is not
-consulted. The margin was chosen on the tuning tables: at 4 or 5 mm, glasses
-that already had room were pushed instead of taken, and every extra push is
-another chance to topple one.
+**Take any glass that already has room.** Such a glass is lifted off at once,
+with 3 mm of extra margin for the camera's error. The model is not asked. A
+glass that is gone cannot be toppled and cannot be in the way. The margin was
+chosen on the tuning tables. At 4 or 5 mm, glasses that already had room were
+pushed instead of taken, and every extra push is another chance of a topple.
 
-**For each glass still crowded, search.** Draw candidate pushes, encode each
-one with the table into a row in the push's own frame, ask all five copies of
-the model, average their displacements, take the worst copy's topple chance,
-and repeat the topple question on four copies of the table shifted by about the
-camera's error.
+**For each glass still crowded, search.** Draw candidate pushes and ask all
+five copies about each one, as the code above does.
 
-**Throw away everything unacceptable.** Any candidate over the topple limit.
-Any candidate whose predicted table puts a moved glass outside the glass zone or
-outside the arm's reach. Any candidate whose predicted movement is more than two
-centimetres longer than the push, which is the model answering about something
-it has not seen.
+**Drop everything unacceptable.** The three filters are in [planning by
+sampling](03_how-it-works.md#6-planning-by-sampling-the-cross-entropy-method).
 
-**Score the survivors and refine.** The score is the room still missing on the
-predicted table, plus a tenth of a millimetre of that for every millimetre the
-jaw travels, with the chance of a blocked descent mixed in. Keep the best
-thirty, draw the next round around them, and repeat four times in all. A push
-has to be expected to clear at least 2 mm of missing room, or the whole table is
-refused rather than nudged for nothing.
+**Score the survivors and refine.** Keep the best thirty, draw the next round
+around them, and repeat four times in all. The best push must be expected to
+clear at least 2 mm of missing room. If it is not, the whole table is refused.
 
-**Make one push.** The best push over every crowded glass on the table is
-expanded by the examiner's macro and carried out. The jaw reports what it felt.
+**Make one push.** The examiner carries out the best push over every crowded
+glass. The jaw reports what it felt.
 
-**Then look again**, and begin at the top with the arrangement as it now is.
-The loop ends when every glass has been racked, when the table's push budget is
-spent, or when no push the model expects to help survives the filters — and
-each glass left behind is reported with the reason it was left.
+**Then look again.** Start from the top with the table as it now is. The loop
+ends in one of three ways. Every glass is racked, or the table's push budget is
+spent, or no push the model expects to help passes the filters. Each glass
+left behind is reported with its reason.
 
-Two guards sit around that loop and are worth naming because they are what stop it
-running for ever. A glass may be pushed only a few times before it is reported as
-refused, and the table has a budget of pushes for the whole run. Both are plain
-counters, both belong to the loop rather than to the model. And the budget must be the
-same number for all six or the push counts on the scorecard cannot be compared.
+Two counters stop the loop from running for ever. A glass may be pushed only a
+few times before it is refused. The table also has a budget of pushes for the
+whole run. Both counters belong to the loop, not to the model. The budget must
+be the same for all six solutions, or their push counts cannot be compared.
+
+[How it works](03_how-it-works.md) explains each of these ideas in turn.
 
 ← [What it is](01_what-it-is.md) · [How it works](03_how-it-works.md) →

@@ -1,73 +1,65 @@
 # What it needs
 
-This page is the bill for this solution: the libraries it rests on, the
-machine it wants, the data somebody has to supply and, where there is one,
-the licence that comes with the weights.
+This page lists what this solution needs. It covers the libraries, the
+machine, the data somebody has to supply, and the licence on the weights.
 
 ## 1. What it needs
 
-It needs **LeRobot**, which is Apache-2.0, and the SmolVLA weights, which the library
-fetches by itself. That file is large, it comes from outside the project, and it is not
-something to commit beside the code. The terms on the weights are the thing to read
-rather than the terms on the library, because a file produced by continuing their
-training inherits whatever they carried. And no amount of training here relicenses it.
-It needs **PyTorch** underneath, which is what both the training and the forward pass
-run on.
+It needs **LeRobot**, which has the Apache-2.0 licence. It needs the SmolVLA
+weights, which the library downloads by itself. That file is large and comes
+from outside the project, so it is not committed with the code. Read the terms
+on the weights, not only the terms on the library. A file made by training
+those weights further keeps their terms. Training here does not change the
+licence. It also needs **PyTorch**, which runs both the training and the
+model.
 
-It needs **the two parts of the examiner this solution waited on**, and both are
-there now. A rendered view looking straight down is the input this model takes,
-and `bench/top_view.py` is that view: a camera fixed 750 mm above the middle of
-the glass zone, looking straight down, returning a 384 by 384 picture that
-frames the whole zone. It is separate from the camera the films use, which
-looks steeply down from the arm's side. A path by which a chunk of waypoints is
-carried out as an action is the output this model produces, and `Bench.follow()`
-is that path. It takes the waypoints as they come, consumes them a fixed period
-apart, and reports the same record a parameterised push does. So the scorecard
-cannot tell which door an action came through. Neither was hard, and both were
-the real price of going off the shelf, because every LeRobot policy expects
-pictures and an action space at control rate.
+It needs **two parts of the examiner**, and both exist now. The first is a view
+looking straight down, in `bench/top_view.py`. A camera is fixed 750 mm above
+the middle of the glass zone. It returns a 384 by 384 picture of the whole
+zone. It is not the camera the films use, which looks down at a steep angle
+from the arm's side. The second part is `Bench.follow()`, which carries out a
+chunk of waypoints. It uses the waypoints at a fixed rate. It reports the same
+record as a parameterised push, so the scorecard cannot tell the two apart.
+Neither part was hard to build. They were needed because every LeRobot policy
+expects pictures in and waypoints out.
 
-It needs **solution 2 built**, because solution 2 is the teacher and its pushes
-are the training set. It needs **simulator time** to record those pushes over
-the training half of the tables, unattended, and a filter that discards the
-recordings in which something went wrong. It needs the **held-out half** of the
-tables, which the examiner already enforces, for checking that the policy
-learned pushing rather than the tables.
+It needs **solution 2**, because solution 2 is the teacher and its pushes are
+the training set. It needs **simulator time** to record those pushes over the
+training half of the tables. It needs a filter that drops the recordings where
+something went wrong. And it needs the **held-out half** of the tables, to
+check that the policy learned pushing and not the tables. The examiner already
+keeps that split.
 
-**It does not need a rented accelerator, and this is the place the document was
-wrong.** The training runs on this machine, an Apple Silicon Mac with no NVIDIA
-card, through Metal. Measured while it ran: **1.02 GiB held**, with the
-borrowed weights, the correction, the correction's gradients and the
-optimiser's running averages all in memory at once. Low-rank adaptation is why,
-for the reason [the section on
-it](03_how-it-works.md#2-low-rank-adaptation--a-small-correction-instead-of-a-large-change)
-gives. What the writing got wrong was how little "a little" is at 450 million
-parameters. Memory was never close to being the obstacle, and the trained model
-runs here perfectly well too, since SmolVLA uses a few gigabytes at inference.
+**It does not need a rented accelerator.** This page first said it would. The
+training runs on this machine, an Apple Silicon Mac with no NVIDIA card,
+through Metal. It held **1.02 GiB** of memory while it ran. That includes the
+borrowed weights, the correction, its gradients and the optimiser's running
+averages. [Low-rank
+adaptation](03_how-it-works.md#2-low-rank-adaptation--a-small-correction-instead-of-a-large-change)
+is the reason. Memory was never the problem. The trained model also runs here,
+because SmolVLA needs only a few gigabytes to answer.
 
-**What renting buys here is time, not memory, and time is what this solution is
-actually short of.** A training step on Metal takes a second or two where an
-NVIDIA card would take a fraction of one, and LeRobot's own SmolVLA fine-tune
-is twenty thousand steps at a batch of sixty-four. What ran here is a thousand
-steps at a batch of four, about one part in three hundred of that compute, and
-**every number this solution reports carries that caveat**. A step took about
-four seconds, on a laptop that was also running three other solutions' training
-at the time. Renting is still how real compute would be spent on it: hours of a
-small accelerator is of order tens of dollars, a weekend of order a hundred,
-and a month of order five hundred, which is the scale to keep in mind if the
-training has to be repeated over several seeds. None of it was spent.
+**Renting would buy time, not memory, and time is what this solution lacks.**
+One training step on Metal took about four seconds. The laptop was also
+training three other solutions at the time. An NVIDIA card would take a
+fraction of a second. LeRobot's own SmolVLA recipe is twenty thousand steps at
+a batch of sixty-four. This run was a thousand steps at a batch of four. That
+is **about one part in three hundred of the recipe's compute**, and every
+number this solution reports carries that limit. To spend real compute, you
+would rent. A few hours of a small accelerator costs tens of dollars. A weekend
+costs about a hundred dollars, and a month about five hundred. Several training
+seeds would multiply this. None of it was spent.
 
 The project's old rule was that everything must run on this machine. This book
-lifts that rule, so that each solution states what it needs and roughly what
-renting it costs, in the same way a licence is stated. **The lifting turned out
-not to be needed for this solution.** Where it is still needed is the second
-way: π0, which belongs to the same family, holds about 3.3 billion parameters
-and its full fine-tune floor is above 70 GB, and there the question really is
-whether the training fits.
+drops that rule. Each solution states what it needs and roughly what renting
+it costs. **This solution turned out not to need the change.** A much larger
+model would. [Solution 5 compares SmolVLA with
+π0](../08_a-foundation-model-as-it-downloads/03_how-it-works.md#9-the-price-of-the-model-and-why-this-model),
+where memory really decides whether training fits.
 
-And once trained, it needs **a correction kept in step with the cell**. Change the
-camera, the way the view from the top is rendered, the range of proportions a kind is
-drawn from, or the teacher. And the file is quietly out of date in a way no test of the
-code would notice.
+Once trained, it needs **a correction kept in step with the cell**. Change the
+camera, the way the top view is drawn, the range of glass shapes, or the
+teacher. Then the correction is out of date, and no test of the code will
+notice.
 
 ← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

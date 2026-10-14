@@ -1,8 +1,8 @@
 # How it compares
 
-This page is the judgement on this solution. It says where the solution is
-strong and where it breaks, names the general ideas behind it, and places it
-beside the other five.
+This page judges this solution. It says where the solution is strong and where
+it breaks. It names the general ideas behind it. Then it places it beside the
+other five solutions.
 
 ## Contents
 
@@ -12,266 +12,238 @@ beside the other five.
 
 ## 1. Where it is strong and where it breaks
 
-The strengths are real, and they are the reason to understand this arrangement
-even after deciding not to spend much on it here.
+The strengths come first. They are the reason to learn this design, even though
+it did not pay off here.
 
-**The learned part cannot cause the failure that cannot be undone.** Toppling,
-leaving the glass zone, leaving the arm's reach and striking the rack are all
-settled before the model is consulted. In a cell whose one unrecoverable failure
-is a toppled glass, that is the property worth designing around, and the zero
-topples in both columns of the ablation below are what it looks like when it
-holds. **It degrades to something that works**, because deleting the model
-leaves the printed rule running the table, so there is no state in which this
-solution is broken rather than merely unimproved. **It is checkable**: every
-candidate can be printed with its score, every refusal remains the geometry's
-and prints with a reason, and the model reports which of its inputs mattered, so
-a person can find out why it was wrong by reading a list. It is cheap in every
-currency, with no accelerator, no licence condition and no human labelling. And
-it is the teacher, which is the contribution that survives even if its own score
-is unremarkable.
+**The model cannot cause a topple.** It only orders pushes the geometry already
+found safe, as [what it is](01_what-it-is.md#1-introduction) explains. **It
+falls back to something that works.** Delete the model, and the printed rule
+runs the table. **It can be checked.** Every push can be printed with its score,
+every refusal has a reason, and the model reports which inputs mattered. So a
+person can find out why it chose wrong. **It is cheap.** It needs no
+accelerator, no licence condition and no human labelling. It is also [the
+teacher](03_how-it-works.md#7-it-is-the-teacher) for two other solutions.
 
-Against that, the weaknesses, beginning with the one that was measured.
+Now the weaknesses, starting with the one that was measured.
 
-**What the measurement said, and it is the finding of this solution.** The
-job-finishing candidates are tied by construction, as the section on the
-enumerator shows, so the ordering carries no information in exactly the part of
-the candidate set where the task is being finished. That prediction was checked
-rather than left as an argument. `spread.py` made 4,511 real pushes over 60
-training tables and wrote `spread.json`: within one glass's job-finishing
-candidates the room gained ranges **0.0 mm at the median** over 161 groups, which
-is an exact tie, while the pushes that only ease the crowding range 11.9 mm. For
-one glass the printed rule already matches the best candidate in **159 of 206
-groups**, and the best possible choice beats it by 0.0 mm at the median.
+**The pushes that finish the job are tied, and this was measured.** [What the
+geometry proposes](03_how-it-works.md#1-what-the-geometry-proposes) explains
+why they tie. `spread.py` checked it with 4,511 real pushes over 60 training
+tables, and wrote `spread.json`. Within one glass's job-finishing pushes, the
+room gained differs by **0.0 mm at the median**, over 161 groups. That is an
+exact tie. The pushes that only ease the crowding differ by 11.9 mm. For one
+glass, the printed rule already picks the best push in **159 of 206 groups**.
 
-**So the ranker was fitted, and it did not improve on the rule it was meant to
-improve.** Both ran the same loop over the same fifty held-out tables with the
-same budget and the same candidate set, the only difference being who picks:
-the ranker racked **107 of 251 glasses in 182 pushes** and finished 14 tables,
-where the printed rule racked **the same 107 in 173 pushes** and finished the
-same 14. Each toppled one glass. The two agree on every column the run is
-marked on, and differ only in what the arm spent getting there.
+**So the fitted model did not beat the rule it was meant to improve.** Both ran
+the same loop over the same fifty held-out tables. They had the same budget and
+the same pushes to choose from. Only the chooser was different. The ranker
+racked **107 of 251 glasses in 182 pushes** and finished 14 tables. The printed
+rule racked **the same 107 in 173 pushes** and finished the same 14 tables.
+Each toppled one glass. So the two agree on everything the run is scored on.
+They differ only in how many pushes they used.
 
 ![Four pairs of bars for the printed rule and the fitted ranker on the same fifty tables: the tables finished and the glasses racked are identical at 14 and 107, while the ranker spends 182 pushes against 173 and moves the glasses 4,325 mm against 2,844.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-pages-the-ablation.png)
 
-That the two agree exactly is not a coincidence, and the reason is the label rather than
-the trees. The model is fitted on **room gained** and the run is marked on **glasses
-that end up grippable**. And a push that spreads room over three glasses scores higher
-than one that finishes a glass outright. On the validation tables in `training.json` the
-ranker's top pick takes a job-finishing push in **47 of the 83 decisions that offer
-one**, where the rule takes it every time. By its own label the ranker is the better
-chooser, giving up 4.4 mm of room against the best candidate where the rule gives up
-18.7 mm, and it still clears fewer tables.
+The reason is the label, not the trees. The model is fitted on **room gained**.
+The run is scored on **glasses that can be gripped**. A push that spreads a
+little room over three glasses gains more room than a push that frees one glass
+fully. So the model prefers it. On the validation tables in `training.json`,
+the ranker picks a job-finishing push in **47 of the 83 decisions that offer
+one**. The rule picks one every time. By its own label, the ranker chooses
+better: it loses 4.4 mm of room against the best push, and the rule loses
+18.7 mm. But it still does not clear more tables.
 
 ![The ranker's top pick finishes a glass in 47 of the 83 decisions that offer one where the printed rule finishes one in all 83, and on the quantity the model was fitted to the ranker gives up 4.4 mm of room against the best candidate where the rule gives up 18.7 mm.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-pages-fitted-on-one-thing-marked-on-another.png)
 
-What the fit leaned on points the same way. The topple ratio and the foot width
-took 0.425 and 0.383 of it between them, and the push distance came last at
-0.006, so the model mostly learned which glass is risky to push rather than
-which push is good. **The verdict is to keep the simpler one.**
+The model's own report points the same way. The tipping ratio and the foot
+width make up 0.425 and 0.383 of its decisions. The push distance comes last,
+at 0.006. So the model mostly learned which glass is risky to push, not which
+push is good. **The verdict is to keep the simpler rule.**
 
 ![Of the eight inputs, the two that describe the glass being pushed rather than the push account for 0.81 of the fitted trees' predictions, and the push's own distance accounts for 0.006.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-pages-what-the-fit-leaned-on.png)
 
-**What the design cannot do.** It cannot invent a candidate, so its quality is
-the enumerator's quality rather than the model's. It cannot express a push that
-is not a straight drag along one heading. It does not transfer across a change
-in the number of glasses, because a model fitted on tables of five has never
-seen the crowding that eight produce, and nothing errors when it is asked
-anyway. And it says nothing at all about the commonest refusal in either record,
-which is a glass the geometry has run out of useful pushes for.
+**What the design cannot do.** It cannot invent a push, so it is only as good as
+the enumerator. It cannot make a push that is not a straight line. It does not
+carry over to a different number of glasses. A model trained on tables of five
+has never seen the crowding of eight, and nothing warns you. And it does
+nothing about the glasses the geometry has run out of pushes for.
 
-**What it cannot survive.** A log collected while the model is driving holds
-outcomes only for the candidates the model already prefers, so retraining on it
-without occasionally taking the second-ranked candidate locks in an early
-mistake. Change the sweep or change the way tables are drawn, and the fitted
-model is out of date silently. And every label in the training set was decided
-by the examiner's private friction, which was never measured against anything
-real.
+**What it cannot survive.** A log from a run holds results only for pushes the
+model already likes. Retraining on it locks in early mistakes, unless the arm
+sometimes tries the second-best push. If you change the headings, the zone or
+the way tables are drawn, **the model then describes a cell that no longer
+exists**. Nothing shows an error. And every label depends on the examiner's
+friction values, which were never measured on real glass.
 
-**How it fails, when it fails, is quietly.** A badly fitted ranker orders the
-candidates roughly at random. Nothing errors, nothing topples, and the run
-simply spends more pushes and leaves more glasses behind than it needed to. That
-is exactly how it failed here, and the only reason it was caught is that the
-test was run: count pushes and glasses racked against the printed rule on the
-held-out tables, with the model deleted and everything else held the same.
+**When it fails, it fails without any sign.** A badly fitted ranker orders the
+pushes almost at random. Nothing errors and nothing topples. The run just uses
+more pushes than it needs. That is how it failed here. The failure was only
+found because the test was run: the same tables, once with the model and once
+without it.
+
+The judgement is made. The next section names the general ideas behind this
+solution, so you can use them elsewhere.
 
 ## 2. The general ideas behind this
 
-Nothing in this solution was invented for glassware. Four ideas in it are worth
-knowing separately from this cell, each with an honest note on where it is
-normally right and where it is not.
+The previous section judged this solution in this cell. Nothing in it was
+invented for glasses. Four ideas in it are worth knowing on their own. For each
+one, this section says where it is usually right and where it is not.
 
 ### Generate, veto, then rank
 
-Arithmetic writes down the candidates and holds an absolute veto, and the
-fitted part is only allowed to reorder what survives. **Position in the sequence
-is what limits the damage a wrong prediction can do**, and it limits it by
-construction rather than by the model being accurate.
+Arithmetic lists the actions and removes the unsafe ones. A fitted model only
+puts the rest in order. [What it is](01_what-it-is.md#1-introduction) explains
+why this limits the harm a wrong model can do.
 
-It is the standard answer wherever a fitted component is wanted in a system that
-can cause physical harm, and it appears in motion planning, grasp selection and
-flight control in the same form. It is the wrong shape when the set of possible
-actions is too large or too awkward to write down, which is exactly when a
-policy earns its place. It is also the wrong shape when the enumerator can
-already tell which survivor is best, because then the model is being asked a
-question that has been answered. This cell is close to the second of those two
-cases, which is the measured verdict this document keeps returning to.
+This design is the standard choice wherever a fitted part goes into a system
+that can cause harm. It appears in motion planning, grasp choice and flight
+control. It is the wrong design in two cases. The first is when the actions are
+too many or too complex to list. Then a policy that outputs the action is
+better. The second is when the arithmetic can already tell which action is
+best. Then the model is asked a question that is already answered. This cell is
+close to the second case.
 
 ### Learning to rank
 
-Nothing downstream uses the number the model predicts. Only the order matters.
-That is called [learning to
-rank](https://en.wikipedia.org/wiki/Learning_to_rank), and it is an easier
-problem than predicting the number, because a model that is wrong by the same
-amount everywhere still ranks perfectly.
+Nothing after the model uses the number it predicts. Only the order matters.
+This is called [learning to
+rank](https://en.wikipedia.org/wiki/Learning_to_rank). It is easier than
+predicting the number. A model that is wrong by the same amount for every push
+still gets the order right.
 
-There are three ways to fit it, and they are worth distinguishing because this
-solution chooses the first. **Pointwise** fitting shows the model one candidate
-at a time and asks for that candidate's score on its own. **Pairwise** fitting
-shows it two candidates from the same group and asks which is better, so the
-thing being fitted is a comparison rather than a value. **Listwise** fitting
-shows it the whole group and scores the order it produces. Pairwise and listwise
-match the real objective more closely, because the real objective is an order
-and not a set of values, and they are the usual choice where the groups are
-large and the differences within them are subtle. Pointwise is chosen here
-because it is the simplest thing that can work, because the label it needs is
-exactly the label the examiner produces anyway, and because nothing in the
-measured shape of these candidate sets suggests the extra machinery would be
-repaid. If the within-group spread of the label turned out to be large, pairwise
-fitting would be the next thing to try.
+There are three ways to fit a ranking.
 
-Learning to rank is used for search, recommendation and advertisement placement,
-and in the same form for ordering candidate grasps, viewpoints and motions. It is
-rarely right where the size of the number is used rather than the order, such as
-deciding whether to act at all: **ranking tells you which candidate is best, and
-never whether the best one is any good.** And it needs one condition this cell
-largely fails. The candidates within a group have to differ in the thing being
-ranked, because when a group is a tie the training signal is empty and the fitted
-model's measured accuracy will look perfect while telling you nothing. **Check
-the within-group spread of the label before building the model.**
+- **Pointwise** fitting shows the model one push at a time and asks for its
+  score.
+- **Pairwise** fitting shows two pushes from the same group and asks which is
+  better.
+- **Listwise** fitting shows the whole group and scores the order the model
+  gives.
+
+Pairwise and listwise match the real goal more closely, because the goal is an
+order. They are the usual choice when groups are large and the differences are
+small. This solution uses pointwise for three reasons. It is the simplest. Its
+label is exactly what the examiner already measures. And the measured groups
+gave no sign that more would help. If the label differed a lot within groups,
+pairwise fitting would be the next thing to try.
+
+Learning to rank is used in search, recommendations and ad placement. It is
+also used to order grasps, camera positions and motions. It is a poor fit when
+you need the size of the number, for example to decide whether to act at all.
+**Ranking tells you which push is best, but never whether the best push is any
+good.** It also needs one condition that this cell mostly fails. The pushes in
+a group must differ in the label. If a group is a tie, there is nothing to
+learn. The model's accuracy then looks perfect and tells you nothing. **So
+check how much the label varies within a group before you build the model.**
 
 ### Gradient boosting on tabular inputs
 
-Fit a weak predictor, fit the next one to what the sum of the previous ones got wrong,
-add them up, and repeat. With shallow decision trees as the weak predictors this is
-**gradient boosting**. And it remains the first thing to try when the input is a short
-table of quantities of different kinds rather than a picture, a sound or a sentence. It
-needs no rescaling of the inputs, it expresses a threshold in one question, it trains in
-seconds on a processor, and it reports which inputs mattered.
+Fit a weak predictor. Fit the next one to what the sum of the earlier ones got
+wrong. Add them up, and repeat. With small decision trees as the weak
+predictors, this is **gradient boosting**. It is still the first thing to try
+when the input is a short table of mixed quantities. That means not a picture,
+a sound or a sentence. It needs no rescaling, it handles thresholds well, it
+trains in seconds on a normal processor, and it reports which inputs mattered.
 
-It is normally right on tabular data of up to a few hundred thousand rows, which covers
-the great majority of cases where somebody wants a number predicted from a handful of
-measurements. It is normally wrong when the input has structure a tree cannot see:
-neighbouring pixels of a picture, successive samples of a sound, words in order. A tree
-asks about one input at a time, so it cannot express "this region is crowded" over a
-grid without a great many questions. This is precisely why the alternative input
-discussed above — an occupancy grid of the zone — would mean changing the model as well.
+It is usually right for tables of data up to a few hundred thousand rows. It is
+usually wrong when the input has a structure that a tree cannot see. Examples
+are the pixels of a picture, the samples of a sound, or the words of a
+sentence. A tree asks about one input at a time. So it would need a great many
+questions to see that one area of a grid is crowded. This is why using an
+occupancy grid as input would mean changing the model too.
 
 ### Learning a utility rather than a perception
 
-The model here does not say what is on the table. It says how much a given action would
-help. That is **utility** or **value** estimation, and what makes it workable is that
-the answer is cheap to check: take the action in the simulator and see what happened.
-The move has a well known ancestor in grasping, where nobody could write down a rule
-saying whether a gripper pose would hold an object. So attempts were collected and a
-function was fitted from the pose to whether it worked. Pinto and Gupta's [*Supersizing
-Self-supervision*](https://arxiv.org/abs/1509.06825) (ICRA 2016) is the clearest
-example, with a robot making tens of thousands of attempts and labelling each by whether
-the object came up. Applied to pushing rather than grasping, the same move produced
-Agrawal and colleagues' [*Learning to Poke by Poking*](https://arxiv.org/abs/1606.07419)
-(2016). This fits a model relating a poke to the displacement it caused, and Zeng and
-colleagues' [*Learning Synergies Between Pushing and
-Grasping*](https://arxiv.org/abs/1803.09956) (2018). This learns where to push and where
-to grasp in a cluttered bin with pushes scored by whether they make a later grasp
-possible.
+This model does not say what is on the table. It says how much a push would
+help. That is called **utility** or **value** estimation. It works because the
+answer is cheap to check: make the push in the simulator and see what happens.
 
-This is not reinforcement learning, and the distinction is why the pattern is
-cheap. There is no episode and no reward, only an input, an attempt and a
-recorded outcome. The world produces the label.
+The idea comes from grasping. Nobody could write a rule for whether a gripper
+pose would hold an object. So researchers made many grasp attempts and fitted a
+function from the pose to the result. Pinto and Gupta's [*Supersizing
+Self-supervision*](https://arxiv.org/abs/1509.06825) (ICRA 2016) is the
+clearest example. In it, a robot made tens of thousands of attempts and
+labelled each one by whether the object came up. The same idea was then used
+for pushing. Agrawal and colleagues' [*Learning to Poke by
+Poking*](https://arxiv.org/abs/1606.07419) (2016) fits a model from a poke to
+how far the object moved. Zeng and colleagues' [*Learning Synergies Between
+Pushing and Grasping*](https://arxiv.org/abs/1803.09956) (2018) learns where to
+push and where to grasp in a cluttered bin. It scores each push by whether it
+makes a later grasp possible.
 
-Utility estimation is used for choosing among actions wherever the outcome can be
-simulated or replayed, such as view planning, grasp ranking and move ordering in
-games. It is rarely right where the outcome cannot be judged without doing it for
-real, because then there is no free set of labels and the problem becomes
-reinforcement learning with all of its cost in attempts. And it is pointless
-where the utility is a closed-form function of quantities the planner already
-holds, which is this cell's case. That is why the two papers on pushing above are
-worth reading against this document rather than as support for it. Both are set
-in cluttered bins where the geometry genuinely cannot write down the good
-actions: objects overlap, shapes are unknown, and one push rearranges several
-things at once. A table with a few upright glasses on it, each a circle of
-measured width, is not that case.
+This is not reinforcement learning, and that is why it is cheap. There is no
+episode and no reward. There is only an input, an attempt and a recorded
+result. The world gives the label.
 
-The mechanics underneath all of this is older and is not a rule of thumb. Matthew
-Mason's *Mechanics and Planning of Manipulator Pushing Operations* (International
-Journal of Robotics Research, 1986) is where planar pushing became a subject with
-results in it, including which way an object turns when it is pushed. Kevin Lynch
-and Mason's *Stable Pushing: Mechanics, Controllability, and Planning* (same journal,
-1996) works out when a push keeps an object under control rather than letting it slip
-away. The lesson those papers carry into this document is the one the arrangement above
-keeps confirming: where the mechanics has an answer, arithmetic gets it. And the
-uncertainty that is left sits in the numbers the mechanics needs and nobody measured —
-the friction, and the way the weight is distributed under the foot.
+Utility estimation is used wherever the result of an action can be simulated or
+replayed. Examples are choosing camera positions, ranking grasps and ordering
+moves in games. It is a poor fit when the result can only be judged by acting
+for real. Then the labels are not free, and the problem becomes reinforcement
+learning, with all its cost. It is also pointless when the utility is a simple
+formula of numbers the planner already has. That is the case in this cell. So
+read the two pushing papers above as a contrast to this solution, not as
+support. Both work in cluttered bins, where geometry really cannot list the
+good actions. There, objects overlap, shapes are unknown, and one push moves
+several things. A table with a few upright glasses, each a circle of measured
+width, is not that case.
+
+The mechanics under all of this is older. Matthew Mason's *Mechanics and
+Planning of Manipulator Pushing Operations* (International Journal of Robotics
+Research, 1986) made planar pushing a subject with real results. One result is
+which way an object turns when it is pushed. Kevin Lynch and Mason's *Stable
+Pushing: Mechanics, Controllability, and Planning* (same journal, 1996) works
+out when a push keeps an object under control. The lesson for this page is
+simple. Where mechanics has an answer, arithmetic finds it. What is left
+uncertain is the numbers mechanics needs and nobody measured: the friction, and
+how the weight sits under the foot.
+
+These ideas apply beyond this cell. The next section returns to this cell and
+compares this solution with the other five.
 
 ## 3. Where it sits among the other five
 
-[The six solutions](../03_the-six-solutions/01_how-the-six-compare.md) form a ladder ordered by how much of each one
-was fitted in this cell, and this one stands on the lowest way that has
-anything fitted at all.
+The previous sections judged this solution alone. This section places it among
+the others. [The six solutions](../03_the-six-solutions/01_how-the-six-compare.md)
+form a ladder, ordered by how much of each solution is fitted here. This one is
+on the lowest step that fits anything at all.
 
-Against [solution 1](../04_one-fixed-nudge/01_what-it-is.md), the comparison is
-whether choosing is worth anything. Solution 1 pushes a glass a fixed fraction of
-the room it is short of, straight away from the neighbour whose edge reaches
-furthest into that room, and looks again, with no enumeration and nothing fitted.
-This solution writes down every safe push and chooses among them. So the gap
-between the two measures the value of the whole geometric apparatus, and the gap
-between this solution's printed rule and this solution's model measures the value
-of the ordering alone. Those are two separate questions, and keeping them apart
-is what makes either answer mean anything.
+Against [solution 1](../04_one-fixed-nudge/01_what-it-is.md), the question is
+whether choosing is worth anything. Solution 1 pushes a glass straight away
+from its closest neighbour by a fixed share of the room it lacks. It lists
+nothing and fits nothing. This solution lists every safe push and chooses among
+them. So the gap between the two measures the value of the whole geometry. The
+gap between this solution's printed rule and its model measures the value of
+the order alone. These are two separate questions. Keeping them apart is what
+makes each answer mean something.
 
 Against [solution 3](../06_imitation-from-demonstrations/01_what-it-is.md), the
-comparison is imitation against enumeration, and the two are connected rather than
-merely opposed. Solution 3 fits a policy that emits the push directly, so it can express
-motions this solution's candidate set cannot. And it pays for that by having no
-structural guarantee of safety: a policy's output space is every push there is. It also
-needs demonstrations, and this solution is where they come from. So the pair measures
-something quite specific, which is whether a policy fitted on this teacher's behaviour
-exceeds the teacher. The section above on inheriting a ceiling says why that is a harder
-thing to achieve than it sounds.
+question is copying against listing. Solution 3 fits a policy that outputs the
+push directly. So it can make pushes this solution cannot list. But it has no
+built-in safety, because a policy can output any push at all. It also needs
+demonstrations, and this solution supplies them. So the pair tests whether a
+student can beat its teacher. [It is the
+teacher](03_how-it-works.md#7-it-is-the-teacher) explains why that is hard.
 
-Against [solution 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md), the
-comparison is which question deserved a model, and it is the sharpest comparison among
-the six. Both fit something, and the difference is what. This solution fits a model of
-**how much a push would help**, which is a quantity the geometry already computes
-exactly from the destination. Solution 4 fits a model of **what a push will actually
-do**. This is the quantity the geometry gets wrong, because predicting where a pushed
-glass ends up needs the friction and the weight distribution that nobody here has. Both
-have now been run on the same tables. Solution 4 racked 146 of the 251 glasses in 221
-pushes, repeating 102 of them, where the geometry racked 107 in 182 pushes and had to
-repeat 71. **The learning that paid in this cell attacked the quantity the geometry gets
-wrong, not the quantity it gets right.** That is the single most useful thing to take
-from placing these two side by side.
-
-It cost something, though, and the cost is the point of the comparison rather
-than a footnote to it. The geometry toppled nothing at all, while the learned
-approach toppled one glass and lost one table to it. That is what it means to
-replace a rule that refuses whenever the arithmetic is unsure with a model that
-predicts an outcome: the model is right more often and it is also occasionally
-confidently wrong, and a toppled glass is the one failure this cell cannot take
-back. So the two are not ordered on one number. The learned approach finishes
-more glasses in half the attempts, and the geometry is the one that never
-breaks anything.
+Against [solution 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md),
+the question is which quantity deserved a model. This is the sharpest
+comparison of the six. This solution fits **how much a push would help**. The
+geometry already computes that well. Solution 4 fits **what a push will really
+do**. The geometry gets that wrong, because it needs the friction and the
+weight, which nobody here has. Solution 4 racked more glasses, but it also
+toppled more. [What the comparison
+says](../10_the-results.md#5-what-the-comparison-says) gives the numbers and
+the full argument.
 
 Against [solution
 5](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) and [solution
-6](../09_the-same-model-fine-tuned-here/01_what-it-is.md), the comparison is scale
-and origin. Those two are the same large vision-language-action model, one used
-exactly as it downloads and one with its training continued here. Both read a
-picture rather than a list of measurements and both emit waypoints rather than
-push parameters. This solution is the other end of the ladder in every one of
-those respects: two hundred shallow trees over eight numbers, fitted on a laptop
-processor in a couple of seconds, with the safety held by arithmetic that was
-written rather than fitted. If a scorecard ever shows this solution close to
-those two, the interesting reading is not that the trees are clever. It is that
-the geometry was doing most of the work all along.
+6](../09_the-same-model-fine-tuned-here/01_what-it-is.md), the question is size
+and origin. Those two are the same large vision-language-action model. One is
+used as it downloads, and one is trained further here. Both read a picture, not
+a list of numbers. Both output waypoints, not push numbers. This solution is the
+other end of the ladder in every way. It is two hundred small trees over eight
+numbers, fitted on a laptop in about a second, with safety held by written
+arithmetic. If this solution ever scores close to those two, the lesson is not
+that the trees are clever. It is that the geometry was doing most of the work.
 
 ← [What it needs](05_what-it-needs.md) · [Imitation from demonstrations — what it is](../06_imitation-from-demonstrations/01_what-it-is.md) →

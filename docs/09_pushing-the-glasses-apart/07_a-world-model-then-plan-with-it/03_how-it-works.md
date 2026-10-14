@@ -1,7 +1,8 @@
 # How it works
 
-This page explains what happens inside this solution, part by part. It follows
-[the code](02_the-code.md), and explains what each part of that code is doing.
+This page explains what happens inside this solution, one part at a time. It
+follows [the code](02_the-code.md), and it explains what each part of that code
+is doing.
 
 ## Contents
 
@@ -18,464 +19,435 @@ This page explains what happens inside this solution, part by part. It follows
 
 ## 1. What exists in code, and what is a design
 
-Before any of the concepts, it is worth saying which parts of this solution are
-running code in this repository and which parts are described here and not
-written, because this solution is unusual among the six in how much of it
-exists.
+Some parts of this solution are running code, and some are only described.
+This section says which is which, before any of the ideas.
 
-**The first way is built.** It lives in
-`code/src/09_pushing-the-glasses-apart/04-a-world-model/`, it trains on data it
-collects itself, and it has been run by the examiner's held-out tables with its
-results recorded in that folder's own `results.json`, and set beside the other
-five in `code/src/09_pushing-the-glasses-apart/results/README.md`. The model is
-`model.py`, what it is shown is `features.py`, and the search and the loop
-around it are `plan.py`. Everything this document says about those three files
-is a description of code.
+**The first way is built.** It is in
+`code/src/09_pushing-the-glasses-apart/04-a-world-model/`. It collects its own
+training data and trains on it. It was run on the examiner's 50 test tables,
+and its results are in that folder's `results.json`. The model is `model.py`,
+what it is shown is `features.py`, and the search and the loop are `plan.py`.
+Everything this page says about those three files describes real code.
 
-**The sequence capability is a design.** The planner that exists chooses one
-push at a time: it scores each candidate by the table one push later, makes the
-best push, and then looks again. It never asks the model about a push that
-follows another push. The *model* is what makes planning a sequence possible,
-because its answer is a table and a table is a legal question. But the horizon
-in the built planner is one push, and the reason it is one push is given below
-under compounding error.
+**Planning a sequence is a design.** The built planner chooses one push at a
+time. It scores each candidate by the table one push later, makes the best
+push, and looks again. It never asks the model about a second push. The model
+could support a sequence, because its answer is a table. But the built planner
+looks only one push ahead. [Compounding error over a
+rollout](#8-compounding-error-over-a-rollout) says why.
 
-**The second way is a design, and it claims nothing.** It is not wired to this examiner
-and it has not been trained or run here, so every number in this document
-belongs to the first way. One thing about it is worth settling before anybody
-starts: the library this project uses elsewhere ships **TD-MPC**, the earlier
-method, and not TD-MPC2. So the second way means fetching TD-MPC2 from its own
-project, and the convenience of everything living in one library, which
-[imitation from demonstrations](../06_imitation-from-demonstrations/01_what-it-is.md) and the
-two SmolVLA solutions enjoy, does not apply here. The two examiner pieces an
-off-the-shelf policy needs are no longer the obstacle: the straight-down
-rendered view and the path that accepts waypoints were built for [imitation
-from demonstrations](../06_imitation-from-demonstrations/01_what-it-is.md), as
-`bench/top_view.py` and `Bench.follow`. What is still missing is the wiring and
-the training.
+**The second way is a design, and it claims nothing.** It is TD-MPC2. It has not
+been connected to the examiner, trained or run here. So every number on these
+pages belongs to the first way. [What it needs](05_what-it-needs.md) says where
+TD-MPC2 would come from.
+
+The next section starts with the object everything else rests on.
 
 ## 2. What a forward model is
 
-Start with the object everything else here rests on.
+The first way is built around one object, the forward model. This section says
+what it is.
 
 A **forward model** is a function from a situation and an action to the
-situation afterwards. Written as a signature it is `(state, action) -> state`.
-Nothing more. It does not know what the action was for, it has no preference
-between the states it returns, and it cannot be asked what to do. It can only
-be asked what happens.
+situation afterwards. As a signature it is `(state, action) -> state`. It does
+not know what the action was for. It does not prefer one result over another.
+It cannot be asked what to do. It can only be asked what happens.
 
-The programming comparison is exact and it is worth taking seriously, because
-it explains both the power and the danger. A forward model is a **pure
-function**: given the same arguments it returns the same value, it has no side
-effects, and — this is the important part — **you may call it as often as you
-like without consequences**. That is what makes it a thing you can search
-against. Calling the real world is not free: every push risks a glass. Calling
-the model is arithmetic. So the model is a cheap, repeatable, consequence-free
-copy of an expensive, irreversible world, and a search that would be reckless
-against the table is ordinary against the model.
+In programming terms, a forward model is a **pure function**. Given the same
+inputs, it returns the same output, and it has no side effects. So **you can
+call it as often as you like, and nothing breaks.** This is what makes it
+possible to search against it. A real push can topple a glass. A call to the
+model is only arithmetic. So a search that would be reckless on the real table
+is safe on the model.
 
-The second half of the comparison is that a pure function returns a value of
-the same type it took. `(state, action) -> state` can be composed with itself.
-Feed the returned state back in with a second action and you have the state two
-actions later. **That composability is the whole of the sequence capability**,
-and it is a property of the type rather than of the quality of the fit.
+A pure function of this type also returns the same kind of thing it takes in.
+So `(state, action) -> state` can be fed its own output. Give it the returned
+state and a second action, and you get the state two actions later. **This is
+what makes a sequence possible.** It comes from the shape of the function, not
+from how well it was fitted.
 
-It is worth naming what a forward model is *not*, because the contrast is the
-cleanest way to see the six apart. A **policy** is a function from a situation
-to an action, `state -> action`. It answers *what should I do*, which is the
-question you actually want answered, and it answers it in one pass with no
-search. [Imitation from demonstrations](../06_imitation-from-demonstrations/01_what-it-is.md) and
-the two SmolVLA solutions are policies. The trade between the two kinds is
-discussed at the end of this document, but the short form is that a policy is
-fast and narrow, and a forward model is slow and general.
+A **policy** is different. It is a function from a situation to an action,
+`state -> action`. It answers "what should I do?" in one step, with no search.
+[Imitation from demonstrations](../06_imitation-from-demonstrations/01_what-it-is.md)
+and the two SmolVLA solutions are policies. In short, a policy is fast and
+narrow, and a forward model is slow and general.
+
+The next section says what this forward model takes in and what it gives back.
 
 ## 3. What this model is shown, and what it answers
 
-Given that shape, the only real design question for the first way is what to put in the
-two states and the action. And the answer is: exactly what the arm has, and nothing
-else.
+A forward model needs a state and an action. This section lists exactly what
+the first way uses for them. The answer is what the arm has, and nothing else.
 
-**In go thirty-four numbers.** The table's one known kind, as four yes-or-no
-columns, one per kind. The pushed glass's height, its width at its widest and
-its width at its foot — the three measurements `look()` reports, carrying the
-measured error of [telling the glasses
-apart](../../08_seeing-the-glasses/11_the-results.md).
-The push itself as two numbers: how far across the glass the jaw meets it, and
-how far it pushes. And then five slots for other glasses, nearest first, five
-numbers each: where it stands relative to the pushed glass, which is two
-numbers, how wide it is, how tall it is, and whether there is a glass in that
-slot at all. Six glasses on a table is the most the examiner ever draws, so five
-others is everyone, and a table with fewer leaves the spare slots empty.
+**34 numbers go in.**
 
-**Out come fourteen numbers.** A displacement for the pushed glass. A
-displacement for each of the five other glasses, because a push moves
-neighbours as well as its target and a model that only predicted its target
-would be blind to the way one glass shoves another. And two yes-or-no answers:
-did anything topple, and was the jaw blocked on the way down before it ever
-pushed.
+- The table's kind of glass, as four yes-or-no columns, one per kind.
+- The pushed glass's height, widest width and foot width. These are the three
+  measurements `look()` gives, with the error measured in [telling the glasses
+  apart](../../08_seeing-the-glasses/11_the-results.md).
+- The push, as two numbers: how far across the glass the jaw meets it, and how
+  far it pushes.
+- Five slots for the other glasses, nearest first, with five numbers each. Two
+  numbers say where the glass stands from the pushed glass. The others give its
+  width, its height, and whether there is a glass in that slot at all. A table
+  has at most six glasses, so five slots hold everyone. Spare slots stay empty.
 
-Three things about that list are worth dwelling on.
+**14 numbers come out.**
 
-**It is only what the arm has.** No friction, no mass, no tipping rule, no
-record from the simulator. Whether a push slides a glass or tips it over is not
-given to the model in any form; it is a regularity in the data that the model
-either finds or does not.
+- The movement of the pushed glass.
+- The movement of each of the five other glasses. A push moves neighbours too,
+  and a model that predicted only its target would miss that.
+- Two yes-or-no answers: did anything topple, and was the jaw blocked on the
+  way down?
 
-**The two yes-or-no answers carry most of the value.** A displacement that is a
-few millimetres out costs a repeated push. A topple that was not predicted costs
-a glass, and nothing in this project can stand a glass back up. So the model is
-not really a predictor of displacements with two extras attached; it is a safety
-check with a displacement predictor attached, and the training reflects that.
-Toppling is rare, and a model trained on rare events will quietly learn to
-answer "no" to all of them and be right almost always. The fit therefore weighs
-the toppling examples up until the two sides count the same, so that answering
-"no" to everything is no longer a cheap way to score well.
+Three points about these lists matter.
 
-**The labels come from two looks, not from the truth.** An example is made by
-looking at the table, pushing, and looking again, and the answer recorded is the
-difference between the two looks. So the model learns to predict what the
-*camera will report*, error and all, rather than what the world will do. This
-is the right choice, because what the camera will report is what the planner
-will see next, and a model that predicted a truth the arm can never observe
-would be predicting the wrong thing.
+**The model gets only what the arm has.** It gets no friction, no mass and no
+tipping rule. If the model learns when a glass tips, it learns it from the data.
+
+**The two yes-or-no answers matter most.** A movement that is a few millimetres
+wrong costs one more push. A topple that was not predicted costs a glass, and
+nothing here can stand a glass up again. So the model is mainly a safety check.
+Topples are rare in the data. A model trained on rare events can learn to
+answer "no" every time and still be right almost always. So training gives the
+topple examples more weight, until both sides count the same.
+
+**The answers come from the camera, not from the simulator.** Each answer is
+the difference between two looks, one before and one after the push. [What it
+needs](05_what-it-needs.md#1-what-it-needs) explains why this is the right
+choice.
+
+The next section looks at one choice inside those 34 numbers: the directions
+they are measured in.
 
 ## 4. The push's own frame, and why direction carries no information
 
-One decision inside those thirty-four numbers deserves a section of its own,
-because it is the clearest example in this project of making a problem smaller
-by choosing coordinates well.
+The list above gives positions and movements. This section says which
+directions they are measured in, because a good choice here makes the problem
+smaller.
 
-Every position in the inputs, and every displacement in the outputs, is measured
-**in the push's own frame**: one number along the way the jaw moves, and one
-number across to its left. Nothing is measured in the table's north and east.
+Every position in the inputs, and every movement in the outputs, is measured
+**in the push's own frame**. One number is along the way the jaw moves. The
+other is across, to its left. Nothing is measured as north and east on the
+table.
 
-The consequence is that **a push to the north and the same push to the east are one
-example rather than two**. A neighbour 30 mm ahead of the pushed glass and 92 mm to its
-left is the same input row whichever way round the table the jaw happens to be pointing.
-So the model sees the two situations as what they are. This is one situation.
+This means **a push to the north and the same push to the east are one example,
+not two**. Say a neighbour is 30 mm ahead of the pushed glass and 92 mm to its
+left. That is the same input row, whichever way the jaw points. So the model
+sees one situation, which is what it really is.
 
 ![The same glass and the same neighbour, pushed on two different headings: in the table's north and east the neighbour sits at two different pairs of numbers, and in the push's own frame it sits at one pair, so the two pushes reach the model as a single row.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-pages-the-pushs-own-frame.png)
 
-The justification is a fact about the cell rather than a trick: **the table's
-friction is the same everywhere and the same in every direction**. There is no
-grain, no slope and no patch that is stickier than the rest. So the direction a
-push points in carries no information about what the push will do, and encoding
-it would mean asking the model to learn, separately for every heading, a
-relationship that does not vary with heading. That is a waste of data in the
-most expensive currency this solution has, which is recorded pushes.
+This works because of a fact about the cell. **The table's friction is the same
+everywhere and in every direction.** There is no slope and no sticky patch. So
+the direction of a push says nothing about what the push will do. If the
+direction were an input, the model would have to learn the same thing again for
+every heading. That would waste recorded pushes, which are this solution's most
+costly resource.
 
-The physics comparison is a conserved symmetry. When a system behaves the same
-way under a rotation, its description should not change under that rotation
-either. Writing the inputs in the table's frame would be writing a description
-that changes when the thing being described does not.
+There is a second benefit. A push and its mirror image, with left and right
+swapped, are both real pushes. So every recorded push can be used twice: once
+as it happened, and once mirrored. This doubles the training set with real
+examples.
 
-There is a second, smaller gift in the same idea. Since the physics has no
-preferred direction, it also has no preferred handedness in any way that
-matters here: a push and its mirror image, left and right swapped, are both
-true pushes. So every recorded push can be used twice, once as it happened and
-once reflected, which doubles a small training set with examples that are not
-invented but real.
+The frame has a limit. **It removes only the information that does not
+matter.** The arm's reach and the edges of the glass zone are not the same in
+every direction, and the model knows nothing about either. So the map of where a
+glass may stand and where the arm can reach stays as written arithmetic. It is
+checked against the model's predicted table, and it is not learned.
 
-The honest limit is worth stating with it. **The frame only removes the information it
-was right to remove.** The reach of the arm and the edges of the glass zone are
-emphatically not the same in every direction. And the model knows nothing about either.
-That is why the map — where a glass may stand and where the arm can reach. Stays as
-written-down arithmetic outside the model, and is checked against the model's predicted
-table rather than learned.
+The next section turns to the hardest question for any trained model: how does
+it show that it does not know?
 
 ## 5. Ensembles as a measure of ignorance
 
-The hardest thing to get from a trained model is not an answer. It is an honest
-statement that it does not know, and this section is the most transferable idea
-in the document.
+The model now gives answers. This section explains how the solution also learns
+when an answer cannot be trusted. It is the most useful idea in this chapter.
 
-A plain network always answers. Shown a push unlike anything in its training data it
-does not hesitate, decline or warn. It returns numbers in exactly the same format and
-with exactly the same confidence as for a push it has seen a thousand times. That is a
-serious problem for a planner, because **a search is an adversary against its own
-model**. It tries hundreds of candidates and keeps the one the model likes best, so it
-systematically finds the places where the model is wrong in a favourable direction. A
-model that is right on average and badly wrong in a few places will have those few
-places chosen for it.
+A plain network always answers. Show it a push unlike anything in its training
+data, and it answers with the same confidence as for a push it has seen many
+times. This is a real problem for a planner, because **a search works against
+its own model**. The search tries hundreds of candidates and keeps the one the
+model likes best. So it finds exactly the places where the model is wrong in a
+helpful-looking way. A model that is right on average but badly wrong in a few
+places will have those places chosen for it.
 
-The fix used here is simple to describe and hard to improve on. **Train the
-same network several times from different starting weights on the same data,
-and keep all the copies.** The first way keeps five. Where the five agree, the
-training data pinned the answer down, which means the model has seen pushes like
-this one. Where they disagree, the data did not pin it down, and each copy
-filled the gap with whatever its own starting weights happened to lead to. So
-**the spread between the copies is a measurement of what the data did not
-say**, and it costs nothing but the training of four more small networks.
+The fix is simple. **Train the same network several times, from different
+random starting weights, on the same data, and keep all the copies.** The first
+way keeps five. Where the five agree, the training data fixed the answer. This
+means the model has seen pushes like this one. Where they disagree, the data did
+not fix the answer. Each copy then filled the gap in its own way. So **the
+spread between the copies measures what the data did not say.** It costs only
+the training of four more small networks.
 
-The planner then uses that spread in a specific and deliberately asymmetric
-way. For the displacements it takes the copies' average, because there the
-spread is only accuracy and the loop will correct it. For toppling it takes
-**the worst copy's chance, not the average**. If any one of the five thinks a
-push might tip something over, the push carries that copy's number. A push the
-model is unsure about therefore counts as a risky push, and a push gets through
-only when all five agree it is safe. The limit is one in a hundred: any copy
-giving a push more than a 1% chance of toppling something takes it out of
-consideration.
+The planner uses that spread in two different ways. For the movements, it takes
+the average of the copies. Here the spread only affects accuracy, and the next
+look corrects it. For toppling, it takes **the worst copy's chance, not the
+average.** If any one of the five thinks a push might tip a glass, the push
+carries that copy's number. So a push gets through only when all five agree it
+is safe. The limit is one in a hundred. If any copy gives a push more than a 1%
+chance of a topple, the push is dropped.
 
-That asymmetry is the right one because the two errors it trades are not
-comparable. Refusing a push that would have been fine costs a refusal, which
-[the problem](../01_the-problem/01_what-is-asked-for.md) counts as a result rather than a failure. Making a
-push that tips a glass costs the glass, permanently, and the arm carries on
-working beside it.
+The two rules differ because the two mistakes cost different amounts. Refusing
+a push that would have been fine costs a refusal, and the examiner counts a
+refusal as a result. Making a push that tips a glass costs the glass for good.
 
-The search's adversarial pressure is answered a second time, in a way worth knowing
-because it generalises as well as the ensemble does. A search over thousands of
-candidates will find a push that looks safe because of a millimetre of luck in the
-measurements. So every candidate is also checked against four copies of the table with
-every reading moved by about the camera's error. A millimetre on each position and three
-on each width — and the worst topple chance over all five readings is the one that
-counts. **A hole in the model narrow enough to be found by luck does not survive being
-shifted by a millimetre.** A genuinely safe push does.
+The search's pressure is answered a second time. A search over thousands of
+candidates can find a push that looks safe only because of a lucky millimetre
+in the readings. So every candidate is also checked on four copies of the
+table. In each copy, every position is moved by about a millimetre and every
+width by about three. The worst topple chance over all five readings is the one
+that counts. **A weak spot in the model narrow enough to be found by luck does
+not survive a one-millimetre shift.** A really safe push does.
 
 ![The worst copy's topple chance for one candidate push as the reading of the table is shifted: a genuinely safe push stays under the one-in-a-hundred limit however the reading moves, while a hole in the model is a narrow dip that the measured reading happens to land in and that none of the four shifted readings does, so the push is dropped.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-pages-the-jitter-check.png)
 
+Five copies trained on the same data can still all be wrong in the same way.
+[Where it is strong and where it
+breaks](06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks) shows
+this.
+
+The model can now answer and can show doubt. The next section explains how the
+solution uses it to find a good push.
+
 ## 6. Planning by sampling: the cross-entropy method
 
-With a model that answers and an honest signal for where it does not know, the remaining
-question is how to find a good push. And the answer is the plainest one available: try a
-lot of them.
+The model and its doubt are in place. This section explains how the solution
+finds a good push with them. The answer is simple: try a lot of pushes.
 
-A candidate push here is three numbers: which way the jaw points, where across
-the glass it meets it, and how far it travels. **Sampling** means drawing many
-candidates at random from the allowed range, asking the model what each one
-leads to, scoring every predicted table, and keeping the best. That alone is
-called random shooting and it is already a working planner, but it spends most
-of its draws in parts of the range that were ruled out by the first round.
+A candidate push here is three numbers. They are the direction the jaw points,
+where across the glass it meets the glass, and how far it travels.
+**Sampling** means drawing many candidates at random from the allowed range.
+Each one goes to the model, each predicted table is scored, and the best is
+kept. This alone is called random shooting, and it already works. But it spends
+most of its draws in parts of the range that the first round already ruled out.
 
-The **cross-entropy method** is random shooting with one addition: use the good
-draws to decide where to draw next. It runs in rounds. Draw a batch spread over
-the whole allowed range. Score them all. Keep the best few — call them the
-elite. Work out the average and the spread of the elite, and draw the next
-batch from around that average with that spread. Repeat. Each round the cloud
-of candidates contracts onto whatever region keeps scoring well, so the method
-spends its later draws where the answer is rather than where it started.
+The **cross-entropy method** adds one step: use the good draws to decide where
+to draw next. It runs in rounds.
 
-The first way runs this with six hundred draws in the first round and three hundred in
-each of three more, keeping the best thirty each time. This is fifteen hundred candidate
-pushes examined per crowded glass. That sounds extravagant and costs little, because a
-candidate push is one row of thirty-four numbers and each network takes the whole
-round's rows in a single call. The measured price for the whole of it is 0.41 seconds of
-thinking per push the arm makes.
+1. Draw a batch spread over the whole allowed range.
+2. Score every draw.
+3. Keep the best few. These are called the elite.
+4. Work out the average and the spread of the elite.
+5. Draw the next batch around that average, with that spread.
+6. Repeat.
+
+Each round, the cloud of candidates shrinks toward the region that keeps
+scoring well. So the later draws are spent near the answer.
+
+The first way draws 600 candidates in the first round and 300 in each of three
+more rounds. It keeps the best 30 each time. **This is 1,500 candidate pushes
+for each crowded glass.** That sounds like a lot, but it is cheap. Each
+candidate is one row of 34 numbers, and each network takes a whole round's rows
+in one call. [What it needs](05_what-it-needs.md#1-what-it-needs) gives the
+measured time per push.
 
 ![An early round spreads its candidates over the whole range and most are struck out by the filters, on the table the model predicts for them; by round four the draws have collapsed onto one small region, and the score is the room still missing on the table plus a small penalty per millimetre pushed.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/10-planning-against-the-model.png)
 
-Two properties make this search the right one here, and both are worth
-remembering for other problems.
+Two properties make this the right search here.
 
-**It needs no gradients.** It never asks how the score changes when a push
-changes by a hair. It only ever asks which of these candidates scored better,
-so it does not care whether the score can be differentiated, whether the model
-is differentiable, or whether the arithmetic wrapped around the model is. The
-map test, the reach test and the ensemble veto are all plain conditions, and a
-gradient method would have to be contorted to accept them.
+**It needs no gradients.** A gradient says how the score changes when a push
+changes by a tiny amount. This method never asks that. It only asks which
+candidate scored better. So the score does not need to be smooth or
+differentiable. The map test, the reach test and the topple veto are all plain
+yes-or-no conditions, and that is fine.
 
-**It copes with a cost that is not smooth.** This matters more. The cost here
-has a cliff in it: a push that topples a glass is not slightly worse than one
-that does not, it is unacceptable, and a push that lands a glass a hair outside
-the zone is not slightly worse than one a hair inside. A method that follows a
-slope downhill needs the landscape to have slopes. This one needs only a
-comparison, so a cost of infinity for an unacceptable candidate is an ordinary
-value it handles without any special arrangement. Given how many of the rules
-in this problem are hard limits rather than preferences, that is not a
-convenience but the deciding property.
+**It handles a cost with sudden jumps.** A push that topples a glass is not a
+little worse than one that does not. It is not acceptable at all. A method that
+walks downhill needs a smooth slope. This method needs only a comparison. So a
+cost of infinity for a bad candidate is an ordinary value for it. Many rules in
+this problem are hard limits, so this property decides the choice.
 
-The score itself is deliberately plain arithmetic over the predicted table, and it is
-short enough to state in full. Add up, over every glass, how much clear room is still
-missing at the end — how far each neighbour's edge reaches inside the 76 mm that glass
-needs. Charge a tenth of a millimetre of that missing room for every millimetre the jaw
-travels, so that the shortest push which does the job wins. One more term keeps the
-arithmetic honest: the model also returns how likely the jaw is to be blocked on the way
-down, and a push that is blocked moves nothing. So the two outcomes are mixed in that
-proportion — the table as it already stands, weighted by the chance of a block, against
-the predicted table, weighted by the rest.
+The score is plain arithmetic over the predicted table:
 
-Three conditions throw a candidate away before it is scored at all. Any copy of
-the model giving it more than the topple limit. A predicted table that puts a
-moved glass outside the glass zone or outside the arm's reach. And a predicted
-movement more than two centimetres longer than the push that caused it, which
-is the model answering about something well outside anything it has seen. What
-survives is scored, and the best push over all the crowded glasses on the table
-is the one that gets made.
+- Add up, over every glass, how much clear room is still missing. This is how
+  far each neighbour's edge reaches inside the 76 mm that the glass needs.
+- Add a tenth of a millimetre for every millimetre the jaw travels. So the
+  shortest push that does the job wins.
+- The model also gives the chance that the jaw is blocked on the way down. A
+  blocked push moves nothing. So the score mixes two tables by that chance: the
+  table as it is now, and the predicted table.
+
+Three filters drop a candidate before it is scored:
+
+- any copy of the model gives it more than the topple limit;
+- the predicted table puts a moved glass outside the glass zone, or the jaw
+  outside the arm's reach;
+- the predicted movement is more than two centimetres longer than the push.
+  This means the model is answering about something it has not seen.
+
+The best surviving push over all the crowded glasses is the one made.
+
+The search returns one push. The next section asks why the arm should not plan
+several pushes and make them all.
 
 ## 7. Receding horizon: plan several, make one
 
-The search above returns a push, and the natural next thought is to let it
-return several and carry them out in order. That thought is wrong in a specific
-way, and the correction is a named idea worth having.
+The search above returns one push. It is tempting to plan several pushes and
+make them all in order. This section explains why that is a mistake.
 
-**Receding horizon** means: plan several steps ahead, execute only the first,
-then throw the rest of the plan away and plan again from a fresh measurement.
-The plan reaches further than the arm ever acts, and its far end keeps moving
-away as the arm advances — which is where the name comes from.
+**Receding horizon** means this: plan several steps ahead, make only the first,
+then throw the rest away and plan again from a new look. The end of the plan
+keeps moving forward as the arm moves, which is where the name comes from.
 
-The reason it is the right answer to a model that is wrong in small ways is a
-matter of where the errors land. A plan several steps deep is built on the
-model's prediction of a table the arm has never seen. If the arm carried out all
-of those steps, each one would be acting on a table a little further from the
-truth than the one before, and nothing would ever notice. If instead the arm
-makes only the first step and then **looks**, the model's prediction is replaced
-by a measurement, and whatever the model got wrong is deleted rather than
-inherited. The plan was still useful: it is what made the first push a push
-worth making rather than merely a good push in isolation. But only the part of
-it that was acted on could possibly have been wrong, and that part is one push
-long.
+This suits a model that is a little wrong. A plan several steps deep is built
+on the model's guesses about tables the arm has not seen. If the arm made every
+step, each step would act on a table a little further from the truth. Nothing
+would notice. If the arm makes only the first step and then **looks**, a
+measurement replaces the guess. Whatever the model got wrong is thrown away. So
+only one push of the plan could ever have been wrong.
 
-The programming comparison is given in [pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md) and applies exactly here. A plan
-carried out in full is a loop unrolled into a fixed sequence because you believe
-you know how many times it will run. A receding horizon is a loop that re-reads
-its state every pass. The state here is the arrangement of the table, the
-re-reading is `look()`, and the loop continues while the state says there is
-still work to do.
+[Pushing without toppling](../01_the-problem/05_pushing-without-toppling.md)
+describes this as a loop that reads its state again on every pass. Here the
+state is the table, and `look()` reads it.
 
-This is also why the solution is forgiving of a mediocre model. The thing a
-model has to be good at is **ranking the pushes available right now**, not
-describing the future. It can be several millimetres out about where a glass
-lands and still reliably pick the better of two pushes, and being several
-millimetres out is corrected for free by the next look. That is a much easier
-standard than accuracy, and it is the standard this arrangement actually
-imposes.
+This is also why a model that is only fairly good is enough. The model must
+**rank the pushes available now**. It does not have to describe the future
+exactly. It can be several millimetres out about where a glass lands and still
+pick the better of two pushes. The next look corrects those millimetres.
+
+The receding horizon limits the damage of a wrong plan. The next section
+explains why plans that reach further are more often wrong.
 
 ## 8. Compounding error over a rollout
 
-Receding horizon limits the damage a wrong plan can do. It does not make the
-plan right, and this section is about why a plan gets less right the further it
-reaches.
+The receding horizon limits the damage of a wrong plan. It does not make the
+plan right. This section explains why a plan gets worse the further it reaches.
 
-A **rollout** is what you get by composing the model with itself: feed its predicted
-table back in with a second push to get the table two pushes later, and again for a
-third. Each call adds its own error, and — this is the part that surprises people —
-**each call also starts from a situation its predecessor got slightly wrong**. So the
-errors do not merely add. They compound, because a model asked about a table slightly
-unlike anything in its training data answers slightly worse, which produces a table a
-little further from anything in its training data. This it answers worse again.
+A **rollout** means feeding the model's own output back into it. Feed in its
+predicted table with a second push, and you get the table two pushes later.
+Each call adds its own error. Also, **each call starts from a table that the
+call before got slightly wrong.** So the errors do not just add up. They grow.
+A model asked about a table unlike its training data answers worse. That gives a
+table even further from its training data, which it answers worse again.
 
-The size of this is easy to feel with the numbers recorded for the first way. Its README
-reports a median error of about four and a half millimetres for where a pushed glass
-lands, on tables it never trained on. That is a perfectly useful one-step model. If that
-error simply accumulated, a plan rolled three pushes deep would judge the table it ends
-on to be where it is not by some thirteen millimetres. The clearances this whole problem
-turns on are tens of millimetres. Compounding makes it worse than that straight sum, not
-better. **So a model that is good at one step can be useless at five**, and the quality
-of the one-step fit says almost nothing about it.
+The numbers show the size of this. The first way's README gives a median error
+of about 4.5 mm for where a pushed glass lands, on tables it never trained on.
+That is a useful one-step model. If the error only added up, a plan three
+pushes deep would be about 13.5 mm out. The gaps this problem depends on are
+tens of millimetres. And the real error grows faster than that simple sum.
+**So a model that is good at one step can be useless at five.**
 
-The picture below draws those three sizes as rings round the place a push was
-aimed at. The inner ring is the model's own one-step error, and the two outside
-it are what a straight sum would give after two pushes and after three. The
-small green disc inside them all is what the geometry, which predicts a slide
-instead of learning one, achieves without any model at all.
+The picture below draws three sizes as rings around the point a push aimed at.
+The inner ring is the model's one-step error. The two outer rings are the simple
+sum after two pushes and after three. The small green disc in the middle is the
+error of the geometry, which predicts a slide by arithmetic instead of learning
+it.
 
 ![Three dashed rings at 4.5, 9.0 and 13.5 millimetres round the point a push was aimed at, with a small green disc of 1.07 millimetres at the middle of them.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/10-how-far-out-each-prediction-is.png)
 
-Those millimetres matter because the clearances are small. In the arrangement
-the picture above came from, the push aimed to leave glass B 120.9 mm from
-glass C, where the jaw needs 119.4 mm. With the learned model's median error
-falling in the worst direction, the glass lands at 116.4 mm, which is 2.9 mm
-short of what the jaw needs, and the next survey has to catch that. With the
-geometry's error instead it lands at 119.9 mm, which still has room to spare.
+These millimetres matter because the gaps are small. In the table behind the
+picture, the push aimed to leave glass B 120.9 mm from glass C. The jaw needs
+119.4 mm. Suppose the learned model's median error falls in the worst
+direction. Then the glass lands at 116.4 mm, which is 2.9 mm short, and the next
+look has to catch it. With the geometry's error instead, it lands at 119.9 mm,
+which still leaves room.
 
-This is why the built planner's horizon is one push. It is the honest horizon for a
-model trained the way the first way's is: every training example is a single push. So
-the model was never asked to be right about a table that one of its own predictions
-produced.
+This is why the built planner looks only one push ahead. Every training example
+is a single push. So the model was never asked to be right about a table that
+its own prediction made.
 
-**What is done about it is to train against multi-step rollouts rather than
-only single steps.** Instead of scoring the model on how well it predicts the
-next table from a measured table, roll it forward several pushes from a measured
-table and score it on how well the whole sequence matches what really happened
-over those pushes. The error then has somewhere to go: the fit is penalised for
-predictions that are plausible one step out and drift two steps out, so it
-learns to produce tables that it can itself handle as input. This is the
-standard remedy in the learned-world-model literature and it is exactly what
-the second way does by construction, which is one of the clearest reasons to want
-the second way at all.
+**The fix is to train on rollouts of several steps, not only single steps.**
+Start from a measured table and roll the model forward several pushes. Then
+score it on how well the whole sequence matches what really happened. The fit
+is then punished for predictions that drift after two steps. So it learns to
+make tables that it can itself handle as input. This is the standard fix, and
+the second way does it by design. That is one of the clearest reasons to want
+the second way.
 
-Two cheaper habits help as well, and the first way uses both. **Keep the horizon as
-short as the task allows**, because the compounding is a function of depth.
-And **collect training data from the planner itself**, not only from random
-pushes, so that the tables the model sees during training are tables a planner
-would really reach. The first way's second round of data collection does precisely
-that: the first model plans, the planner finds the pushes where that model is
-wrong in its own favour, those pushes are really made, and what really happened
-goes into the training set. That fills exactly the holes the search is going to
-exploit. A quarter of that round is still drawn at random, so the model keeps
-seeing pushes the planner would never choose and does not forget what they do.
+The first way uses two cheaper habits. First, **keep the plan as short as the
+task allows**, because the error grows with depth. Second, **collect training
+data from the planner itself**, not only from random pushes. The first way's
+second round of data does this. The first model plans, and the planner finds
+the pushes where that model is wrong in its own favour. Those pushes are really
+made, and what happened goes into the training set. This fills exactly the gaps
+the search would use. A quarter of that round is still random. So the model
+keeps seeing pushes the planner would never choose.
+
+The error sets a limit on depth. The next section shows what a short sequence
+can still do.
 
 ## 9. Planning a sequence, which only this solution could do
 
-Everything so far has been machinery. This section is the reason the machinery
-is worth having, and it is the one capability that is this solution's alone.
+The sections above are machinery. This section shows what the machinery could
+do that no other solution here can.
 
-Consider a table where glass A is crowded and there is nowhere to push it. Every
-direction either runs into glass B, leaves the glass zone, or puts A outside the arm's
-reach. Every solution that chooses one push at a time, judged by the table one push
-later, will correctly report that no push helps and refuse. And every one of them is
-wrong, because the answer is to push B first. Not because B needed moving, and not
-because moving B makes any glass grippable, but because moving B opens the route A
+Take a table where glass A is crowded and has nowhere to go. Every direction
+runs into glass B, leaves the glass zone, or takes A out of the arm's reach. A
+solution that judges each push by the table one push later will refuse. It
+will say that no push helps. But it is wrong, because the answer is to push B
+first. Moving B does not make any glass grippable. It opens the path that A
 needed.
 
-**A push whose only value is what it allows the next push to do** is invisible
-to a method that scores pushes one at a time. It scores badly on its own terms:
-it clears no room and it spends a push. Only a method that can ask *and then
-what* can see its value, and asking *and then what* requires a function that
-returns a table.
+**A push whose only value is what it lets the next push do** cannot be seen by
+a method that scores pushes one at a time. On its own, such a push clears no
+room and costs a push. Only a method that can ask "and then what?" can see its
+value. To ask "and then what?", you need a function that returns a table. **This
+solution's model returns a table, so its answer can be fed back in as the next
+question.** No other solution here has that.
 
 ![Pushing one glass at a time, where each push has to leave the glass it moved with full room by itself, takes four pushes on a real four-glass layout; choosing the best pair together takes two, and choosing the second of that pair needs to know where the first one lands.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/10-when-a-sequence-beats-one-at-a-time.png)
 
-The extension to the built planner is small, and it is worth describing
-precisely so that it is clear how little the model has to change. The search
-currently draws three numbers per candidate. A two-push search draws six — a
-first push and a second — rolls both through the model in turn, and scores the
-table at the end of the pair. The ensemble veto applies at every step rather
-than only the last, so a sequence that topples something halfway through is
-thrown away whatever it achieves afterwards. Only the first push of the winning
-pair is made, and then the arm looks again, which is the receding horizon doing
-exactly its job. Nothing about the model changes at all. What changes is how
-many times it is called, and the cost of the search grows quickly with depth,
-which is the real reason to want the shortest horizon that can see the answer.
+The change to the built planner is small, and the model does not change at all.
 
-Two honest qualifications belong here, and they matter.
+- The search now draws three numbers per candidate. A two-push search would
+  draw six: a first push and a second.
+- It would run both pushes through the model in turn and score the table at
+  the end.
+- The topple veto would apply at every step. So a sequence that topples a glass
+  halfway is dropped, whatever comes after.
+- Only the first push of the best pair would be made. Then the arm looks again,
+  as the receding horizon says.
 
-**The depth that is useful is small.** Compounding error sets an upper limit on
-how far a rollout can be trusted, and for the first way's model that limit is low.
-Two pushes is defensible, three is optimistic, and anything deeper is planning
-against a story rather than a prediction.
+What changes is how many times the model is called. The cost of the search
+grows fast with depth. So the planner should use the shortest plan that finds
+the answer.
 
-**On this examiner a sequence saves pushes rather than rescuing runs.** The cases
-where a sequence wins outright — where a one-at-a-time planner has to refuse and
-a two-deep planner succeeds — are real but uncommon on four to six glasses, and
-the more usual gain is finishing the same table in fewer pushes. That is worth
-something here for a precise reason rather than a general one: **touching a
-glass is the only step in this problem that can topple one**, so a run that
-spends four pushes instead of six has taken two fewer chances of the single
-failure that cannot be undone. It is not worth something because the arm is
-short of time.
+Two limits apply.
+
+**Only a small depth is useful.** Compounding error limits how far a rollout
+can be trusted, and for the first way's model that limit is low. Two pushes is
+reasonable. Three is hopeful. Anything deeper is guessing.
+
+**On this examiner, a sequence mostly saves pushes.** A table where a
+one-at-a-time planner must refuse and a two-push planner succeeds is rare with
+four to six glasses. The usual gain is finishing the same table in fewer
+pushes. That matters here for one reason. **Touching a glass is the only step
+that can topple one.** So four pushes instead of six means two fewer chances of
+the one failure that cannot be undone.
+
+The model in this chapter is written by hand. The next section describes a
+model that could be fetched instead.
 
 ## 10. A second way — TD-MPC2 off the shelf
 
-There is a second way to build this solution: take a model somebody else
-maintains instead of writing one. **TD-MPC2** has the same shape — learn what
-happens, search over actions against what was learned, act on only the first —
-and differs in what the model predicts.
+The first way's model is written here. This section describes a second way:
+use a model that somebody else maintains.
 
-The model written here predicts the next table directly, in the quantities the arm
-measures, so every number in it has a name and a unit a person can check. TD-MPC2
-encodes the situation into a vector of its own choosing, whose entries mean nothing to
-anybody, learns how that vector changes under an action, and plans there without ever
-converting back into positions and widths. The hand-built one is inspectable and trains
-in minutes on an ordinary processor. The off-the-shelf one is stronger, is trained
-against multi-step rollouts by construction, and is maintained by people who do this for
-a living, but it cannot be read and it wants an accelerator.
+**TD-MPC2** has the same shape. It learns what happens, searches over actions
+against what it learned, and makes only the first action. It differs in what
+its model predicts.
 
-**It is not built, so it has no scorecard.** Comparing the two would measure
-whether building the model by hand was worth it, which is the only reason to
-carry both: if a maintained implementation clears tables no better than five
-small networks trained in half an hour on a laptop, the cell is narrow enough
-that the hand-built model was the right call.
+The model written here predicts the next table directly. It uses the quantities
+the arm measures, so every number has a name and a unit a person can check.
+TD-MPC2 turns the situation into a list of numbers of its own choosing. Those
+numbers mean nothing to a person. It learns how that list changes under an
+action, and it plans there. It never turns the list back into positions and
+widths.
+
+So the two ways trade against each other:
+
+- The hand-built model can be read, and it trains in minutes on an ordinary
+  processor.
+- TD-MPC2 is stronger, and it is trained on rollouts of several steps by
+  design. It is also kept up to date by people who do this as their job. But it
+  cannot be read, and it needs an accelerator.
+
+**It is not built, so it has no score.** Comparing the two would show whether
+building the model by hand was worth it. Suppose a maintained model clears
+tables no better than five small networks trained in half an hour on a laptop.
+Then the cell is narrow enough that the hand-built model was the right choice.
+
+The next page follows the first way through real tables.
 
 ← [The code](02_the-code.md) · [A worked example](04_a-worked-example.md) →

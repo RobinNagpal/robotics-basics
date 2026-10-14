@@ -1,7 +1,10 @@
 # How it works
 
 This page explains what happens inside this solution, part by part. It follows
-[the code](02_the-code.md), and explains what each part of that code is doing.
+[the code](02_the-code.md) and explains what each part of that code does. The
+model itself, SmolVLA, is described in [solution 5's how it
+works](../08_a-foundation-model-as-it-downloads/03_how-it-works.md). This page
+covers only what the training adds.
 
 ## Contents
 
@@ -15,448 +18,344 @@ This page explains what happens inside this solution, part by part. It follows
 
 ## 1. Fine-tuning — continuing somebody else's training
 
-Fine-tuning is the single thing that separates this solution from its partner,
-so it is worth setting out in plain words.
+Fine-tuning is the one thing that separates this solution from solution 5. So
+it comes first.
 
-Training a network means showing it an example, comparing what it produced
-against the answer that was wanted, and nudging every weight a little in the
-direction that would have helped. Repeat that over many examples and the
-weights settle at values that produce good answers. Training from a random
-start means the weights begin as noise, so the nudges have to build every part
-of the model out of nothing. **Fine-tuning means the weights begin at values
-somebody else's training already settled**, so the nudges have much less to do.
+Training a network works like this. Show it an example. Compare its answer with
+the wanted answer. Then move every weight a little in the direction that would
+have helped. After many examples, the weights give good answers. Training from
+a random start means the weights begin as noise. **Fine-tuning means the
+weights begin at values that somebody else's training already set.** So the
+training has much less to do.
 
-Why that is so much cheaper is clearest in terms of what the data has to pay
-for. Every weight is a number the training data has to determine, and a weight
-the data cannot pin down ends up fitted to accidents of the particular examples
-it was shown. So the amount of data needed grows with the number of weights
-that have to be settled from nothing, and fine-tuning changes that sum almost
-entirely: the great majority of the weights already sit at values that work,
-and the data only has to adjust them. It is the difference between solving for
-every coefficient of a long polynomial and being handed one that already fits a
-similar curve.
+This needs much less data. Each weight is a number the data has to decide. A
+weight the data cannot pin down ends up fitted to chance details of the
+examples. With fine-tuning, most weights already have values that work. The
+data only has to adjust them.
 
-There is a second saving, about time rather than data. A model fitted on pictures holds,
-in its early layers, detectors for things common to all vision: an edge, a corner, a
-shading that runs across a curved surface. A model fitted on robot motion holds
-something similar about motion: that a trajectory is smooth, that a jaw approaches a
-thing before it touches it, that a motion has a beginning and an end. Both transfer
-almost completely, because an edge is an edge and those are properties of moving a tool
-rather than of any one robot. And a random start spends much of its training discovering
-them again.
+It also saves time. A model trained on robot motion already knows general
+things. For example, it knows that a motion is smooth and that a jaw
+approaches a thing before it touches it. These facts carry over to any robot.
+A random start would spend much of its training learning them again.
 
-What carries over worst is the judgement at the top. This was fitted to decide what to
-do next in rooms that look nothing like this one, with grippers shaped nothing like this
-one, on tasks that were mostly not pushing. So fine-tuning here has more work to do than
-the usual advice about borrowed models implies, and still far less work than a random
-start. That last claim is the one [solution
-3](../06_imitation-from-demonstrations/01_what-it-is.md) exists to check from the other
-side, because it fits a policy here from random numbers on the very same demonstrations.
+What carries over worst is the top-level judgement of what to do next. The
+borrowed model learned this in other rooms, with other grippers, on tasks that
+were mostly not pushing. So the training here has more work to do than usual,
+but still far less than a random start. [Solution
+3](../06_imitation-from-demonstrations/01_what-it-is.md) tests this from the
+other side. It trains a policy here from random numbers, on the same
+demonstrations.
+
+The next section explains the cheap way of doing this training that this
+solution uses.
 
 ## 2. Low-rank adaptation — a small correction instead of a large change
 
-Fine-tuning as described above moves every weight, and on a model of this size
-that is the expensive way to do it. Low-rank adaptation is the cheap way, and
-it is what this solution uses.
+Plain fine-tuning moves every weight. On a large model that is expensive.
+Low-rank adaptation is the cheap way, and this solution uses it.
 
-A layer of a network takes a list of numbers in, multiplies it by a table of
-numbers, and hands a list of numbers out. That table is the layer's weights,
-and ordinary fine-tuning changes every number in it. **Low-rank adaptation
-leaves every borrowed number where it is and learns a correction that is added
-to it.** The correction is as wide as the table it corrects, so the layer still
-does the same work, but it is not allowed to be an arbitrary table: it is
-forced to be the product of two thin tables, one that squeezes the incoming
-list down to a handful of numbers and one that expands that handful back out to
-full width. Because the squeeze is narrow, the two thin tables together hold
-far fewer numbers than the table they correct.
+A layer of a network takes a list of numbers in. It multiplies the list by a
+table of numbers, and hands a new list out. That table is the layer's weights.
+**Low-rank adaptation leaves every borrowed number as it is, and learns a
+correction that is added to it.** The correction is the same size as the
+table. But it must be the product of two thin tables. The first squeezes the
+list down to a few numbers. The second expands those few numbers back to full
+width. Because the squeeze is narrow, the two thin tables hold far fewer
+numbers than the table they correct. Here the correction holds about four
+million numbers, against about 450 million in the model.
 
-A table of numbers can be written as a sum of simple patterns, and the number of
-patterns needed is the table's **rank**. Forcing the correction through a narrow squeeze
-is forcing it to be a sum of only a handful of them. This is the same move as
-approximating a curve by a few terms of a series.
+A table can be written as a sum of simple patterns. The number of patterns it
+needs is called its **rank**. A narrow squeeze forces the correction to use only
+a few patterns. That is why it is called low-rank.
 
-What that buys is memory. Training does not only have to hold the weights: for every
-weight being changed it also holds that weight's gradient. This says which way to nudge
-it, and the optimiser's running averages of that gradient. This are what make the nudges
-stable. Those add up to several times the size of the model. With low-rank adaptation
-only the correction carries gradients and optimiser state, and the borrowed weights sit
-there as a fixed cost, so what has to fit is the model's own size plus a little. On π0,
-which holds about 3.3 billion parameters, that is the difference between more than 22 GB
-of accelerator memory and more than 70 GB. SmolVLA is much smaller — about 450 million
-parameters — and at that size **the saving is larger than it needs to be**: the measured
-figure for the training below is 1.02 GiB. This fits on this machine with nothing
-rented. The arithmetic is still what makes that true; the conclusion it was written to
-support, that an accelerator has to be rented, is only the conclusion for the larger
-model.
+The gain is memory. For every weight that changes, training must also hold its
+gradient and the optimiser's running averages. The gradient says which way to
+move the weight. The running averages keep the moves steady. Together these
+take several times the size of the model. With low-rank adaptation, only the
+correction needs them. So the memory needed is the model's size plus a little.
+For this training that was **1.02 GiB**, measured while it ran. It fits on
+this laptop with nothing rented. For a much larger model, such as π0, the same
+saving decides whether training fits at all. [Solution 5 gives those
+figures](../08_a-foundation-model-as-it-downloads/03_how-it-works.md#9-the-price-of-the-model-and-why-this-model).
 
-**The trade is that it adapts less deeply, and this decides how the pair's
-result should be read.** The correction is confined to a handful of directions
-in each table, so a change that genuinely needs the whole table cannot be
-expressed. Where the new task is near the old one that costs nothing. Where it
-is far, a full fine-tune would go further, and this cell is far: rendered
-pictures of a simulated table, one gripper, one motion, and a kind of outcome
-none of the borrowed datasets contained. So **the gap this pair measures is a
-lower bound on what fine-tuning could buy**, and a result saying low-rank
-fine-tuning bought little does not say that fine-tuning bought little.
+**The cost is that the model can change less.** The correction can only move
+in a few directions in each table. A change that needs the whole table cannot
+happen. This does not matter when the new task is close to the old one. This
+cell is far from the old tasks. Its pictures are rendered, it has one gripper
+and one motion, and its outcomes were never in the borrowed data. So **the gap
+this pair measures is a lower bound on what fine-tuning could buy.** A full
+fine-tune might do better.
 
-One more property of the correction decides the compute column on the
-scorecard. Once training has finished the two thin tables can be multiplied out
-and added into the borrowed table, leaving a single table of the original size.
-The fine-tuned model is then exactly as large and exactly as fast as the
-downloaded one, so **this solution and its partner cost the same to run**, and
-whatever separates their scores cannot be put down to one of them being given
-more computation.
+One more property matters for the cost of running it. After training, the two
+thin tables can be multiplied out and added into the borrowed table. This
+leaves one table of the original size. So the trained model is exactly as
+large and as fast as the downloaded one. **This solution and solution 5 cost
+the same to run.** No gap in their scores comes from extra computation.
+
+The correction needs examples to learn from. The next section says where they
+come from.
 
 ## 3. Where the demonstrations come from, and what they cost
 
-Fine-tuning needs examples, which here means recorded pushes with what was seen
-beside what was done, and this is where the arrangement of the six helps.
+The correction is trained on examples. Here an example is a recorded push,
+with what was seen next to what was done.
 
-[Solution 2](../05_geometry-generates-a-model-ranks/01_what-it-is.md) generates
-pushes by geometry and ranks them with a fitted ranker. Run it on the examiner
-over the training half of the tables and almost every push it makes is a
-demonstration. The observation is what this model takes as its input: the
-rendered view of the table from the top taken at the moment the push was
-chosen, the one instruction, and the arm's own pose. The action is the path the
-jaw really followed, which the examiner writes down on every action. So a
-demonstration is a recording of the shared contract being satisfied, and
-nothing in it had to be drawn, labelled or judged by a person.
+[Solution 2](../05_geometry-generates-a-model-ranks/01_what-it-is.md) is the
+teacher. It is run over the training half of the tables, and almost every push
+it makes becomes a demonstration. The observation is this model's input: the
+view from the top when the push was chosen, the one instruction, and the arm's
+pose. The action is the path the jaw really followed. The examiner writes this
+down on every action. So no person had to draw, label or judge anything.
 
-What that came to, measured: **800 training tables, 22 minutes of simulator
-time on this laptop, 2,012 demonstrations.** Most of the teacher's pushes are
-not demonstrations. Of the 3,554 pushes it made, 1,533 were the 5 mm test
-pushes that settle whether a glass slides, and those belong to the shared
-tipping check rather than to the chooser. Of the remaining 2,021 real pushes,
-only **9 had to be thrown away** — 8 toppled a glass and 1 pushed one out of
-the zone.
+Here is what that came to, measured. **800 training tables took 22 minutes of
+simulator time on this laptop and gave 2,012 demonstrations.** The teacher
+made 3,554 pushes. Of these, 1,533 were the 5 mm test pushes that check
+whether a glass slides. They belong to the shared tipping check, not to the
+chooser, so they are not demonstrations. Of the other 2,021 pushes, **only 9
+were thrown away**. Eight toppled a glass, and one pushed a glass out of the
+zone.
 
-Two things about the recording decide what the policy can and cannot learn. The teacher
-works from the numeric readings `look()` hands over, and the student works from the
-picture of the same table at the same moment. So any push that turned on a difference of
-a millimetre between two readings is a push the student is being asked to justify from
-pixels. And the jaw's report of what it felt during the push arrives after the chunk has
-been chosen. So it is in the recording but not in the observation the model is asked to
-act on.
+Two facts limit what the model can learn from these recordings. First, the
+teacher works from the numbers `look()` hands over, but the student works from
+a picture. So a push that depended on a 1 mm difference in the readings must be
+learned from pixels. Second, the jaw's force report arrives after the chunk is
+chosen. So it is in the recording, but it is not an input the model can use.
 
-**The data is free in the sense that matters, and that is a privilege of
-working in a simulator.** On a real arm this is the expensive part of the whole
-exercise and usually the part that decides whether a method is affordable at
-all: somebody sits with a controller and teleoperates the task hundreds of
-times, the recordings disagree with each other, and the robot wears out. Here a
-program does it unattended. Any judgement in this book about whether
-fine-tuning is worth its price should carry that qualification.
+The data is free only because this is a simulator and the teacher is a
+program. [Solution 3 explains this
+point](../06_imitation-from-demonstrations/03_how-it-works.md#2-where-the-demonstrations-come-from).
+On a real arm, collecting demonstrations is usually the most expensive part.
 
-Free data is not neutral data, and this solution inherits two things from its
-teacher.
+The free data has two costs, and solution 3 explains both in full.
+[Its ceiling is the teacher](../06_imitation-from-demonstrations/03_how-it-works.md#1-behaviour-cloning--learning-a-policy-by-copying),
+because the model only copies solution 2 and nothing scores its own pushes.
+And [dropping the failed pushes thins out the hard
+cases](../06_imitation-from-demonstrations/03_how-it-works.md#3-choosing-which-demonstrations-to-keep-and-the-bias-it-buys).
+Here that thinning is tiny: 9 pushes in 2,021, or 0.4 per cent. So the real
+problem is that the teacher almost never meets a hard table. The student has
+never been shown one.
 
-**Its ceiling is solution 2.** Behaviour cloning fits the teacher's choices.
-There is no reward in it, nothing scores the policy's own attempts, and nothing
-ever shows it a push better than one the teacher made. So on the pushes it
-imitates, this solution cannot be better at pushing than solution 2 is at its
-best. If it scores above solution 2, that needs explaining rather than
-celebrating.
+The model cannot make better pushes than the best one in its training set.
+What it can add is steadiness where the teacher was fragile. For example, the
+teacher may choose almost at random between two close candidates. Averaging
+over many tables gives a less random choice. The borrowed weights also add a
+general sense of how a push moves, which the teacher's macro does not have.
 
-**It is fitted on a biased sample of its teacher.** A demonstration that
-toppled a glass, pushed one out of the zone, jammed or never touched anything
-is not something to imitate, so it is discarded — and what is discarded is
-exactly the set of situations the teacher handled badly. What is left is a
-picture of solution 2 in the cases where solution 2 was right. On this examiner
-that missing half is tiny, though: 9 pushes in 2,021, four tenths of one per
-cent. Knowing the size changes what the worry is. The hard cases are nearly
-absent not because they were filtered out but because **the teacher almost
-never meets one**, so a student fitted on that set has never been shown a
-difficult table.
+The standard repair for states the teacher never visits is **DAgger** (dataset
+aggregation). It is cheap here because the teacher is a program. [Solution 3
+explains it](../06_imitation-from-demonstrations/03_how-it-works.md#6-compounding-error).
+It is a plan here, not code.
 
-**So what can fine-tuning add beyond its teacher?** Not better pushes: the best
-push in the training set is the best push the policy has ever seen. What it can
-add is robustness where the teacher was brittle. Where the teacher's ranking
-was close to arbitrary between two candidates, averaging over many tables gives
-something less arbitrary than either. Where the teacher's geometry turned on a
-measurement two millimetres out, a policy fitted on what actually happened
-across many such cases can behave sensibly rather than following the arithmetic
-into a mistake. And the borrowed weights contribute a general sense of how a
-pushing motion goes, which the teacher does not have at all, because the
-teacher's motion comes from a macro.
+Solution 3 learns from the same demonstrations, drawn from the same tables. So
+between those two the data is held still, and only the borrowing differs. This
+solution is in two pairs at once, and each pair asks a different question.
 
-The standard repair for the states the teacher never visits has a name and is
-cheap here. **DAgger**, dataset aggregation, runs the half-trained policy, lets
-it reach those states, and asks the teacher what it would have done at each of
-them. The dataset then covers where the learner goes rather than where the
-teacher goes. It normally costs a person to label every such state; here it
-costs a call into solution 2, which is a program. It is a prescription in this
-document rather than code that exists, and it belongs to this solution and to
-solution 3 equally.
-
-One last point holds the comparison with solution 3 still. Both solutions learn
-from the same demonstration set, drawn from the same training half of the
-tables, so between those two the data is held still and the borrowing is what
-differs. This solution is therefore in two pairs at once, and they ask
-different questions.
+The data is held still against solution 3. The next section checks that
+everything except the training is held still against solution 5.
 
 ## 4. Whether anything but the training differs
 
-A matched pair invites one particular mistake: saying that nothing varies
-except the training when something else does. Going through the contract item
-by item, most of it is genuinely held still. The tables are the same tables and
-the first look at a given table is identical for every solution. The readings
-carry the same error. The rendered view from the top is the same view. The
-output is a chunk of waypoints in both. The marking is the same scorecard. The
-shared topple check runs on both, unchanged. And the instruction in words is
-the same instruction, which is a thing to keep deliberately rather than assume,
-since giving the fine-tuned model better-worded instructions would quietly add
-a second variable.
+A matched pair is only clean if nothing but the training varies. This section
+checks that.
 
-**At the output there is something that looks like a second change.** A model
-like this produces numbers in an action space: so many values per waypoint,
-each with a range and a meaning fixed by the robots the model was fitted on.
-This cell's action space is not one of those. It is a jaw, held level,
-travelling a short distance across a table at one height, on an arm the
-borrowed recordings were not made on. So the numbers the model returns have to
-be read as waypoints for this jaw, and [solution
-5](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) settles what that
-reading involves: **the convention is chosen once and used by both**, so that
-what a waypoint number means, which frame it is in and where a height of zero
-sits are the same in both halves of the pair.
+Most of the setup is the same for both. They see the same tables, the same
+readings with the same error, and the same view from the top. Both output a
+chunk of waypoints. Both are marked by the same scorecard and the same topple
+check. The instruction is also the same sentence. That was kept on purpose,
+because better-worded instructions for one model would add a second variable.
 
-What the training changes is not that convention but whether the model has ever been
-asked to speak in it. Solution 5 depends on the borrowed model happening to emit numbers
-that, read through the agreed convention, make sense for this table; nothing fitted
-them, so nothing guarantees their scale. This solution's training targets are recordings
-of real pushes on this examiner, already expressed in that same convention, so the
-ranges it is trained to produce are this cell's ranges. **That is a property of the
-trained weights rather than a second thing changed beside them.** The configuration is
-held still for both. And the scale of what comes out is whatever the weights emit, so
-saying the weights were trained and saying the scale moved are one statement said twice.
-The pair is a clean measurement. [The matched pair in the book on telling the glasses
-apart](../../08_seeing-the-glasses/08_the-same-model-fine-tuned/01_what-it-is.md) needed
-a longer argument at this point because its second change was a real one: a list of
-category names is part of how a model is configured and could in principle have been
-altered with no training at all. Here there is no such separate part.
+**At the output there is something that looks like a second change.** The
+model outputs numbers in an action space. Their meaning was fixed by the robots
+it was first trained on. This cell's jaw is not one of those robots. So the
+numbers must be read as waypoints for this jaw. [Solution
+5](../08_a-foundation-model-as-it-downloads/03_how-it-works.md#4-the-actions-arrive-with-no-units-in-them)
+sets how they are read. **Both solutions use that same reading.**
 
-**One thing the convention settles reaches into the physics, and it was not
-obvious until the code was written.** A chunk holds the number of waypoints the
-borrowed model emits in one pass, which is fifty, and the examiner consumes
-waypoints a fixed period apart, so a chunk is two and a half seconds of motion
-whatever it contains. The teacher's push, once the examiner has sampled it, is
-a hundred waypoints or more, because the teacher feels forward at 10 mm/s and
-pushes at 20. Fitting that push into a chunk means resampling it, and that
-makes the student's jaw travel about 31 mm/s where its teacher travelled at 10
-and 20. So **the student does not merely imitate its teacher's pushes; it makes
-them faster**, and the glasses are pushed by a jaw with more momentum behind
-it. It is not free to go as fast as it likes — the examiner holds a commanded
-path to the jaw's top speed of 200 mm/s, past which a leg simply takes longer —
-but a chunk the model invents can reach that cap, and then the cap decides how
-fast the push really is. The alternatives are to change the chunk length, which
-is the borrowed model's own, or to ask the model several times during one push,
-which would spend several of the shared budget's pushes on one. It does not
-disturb the pair, because solution 5's chunks are two and a half seconds of
-motion too.
+The training does not change the reading. It changes whether the model has
+ever been asked to use it. Solution 5 has to hope its numbers come out at a
+sensible scale. This solution was trained on real pushes already written in
+that reading, so it learns this cell's ranges. **That is a property of the
+trained weights, not a second change.** So the pair is a clean measurement.
+The matched pair in [the book on telling the glasses
+apart](../../08_seeing-the-glasses/08_the-same-model-fine-tuned/01_what-it-is.md)
+needed a longer argument here. Its list of category names was a real second
+change. Here there is no such separate part.
 
-**There is one place where the pair could be made unfair, and it should be
-named rather than hidden.** A careless convention hurts solution 5 much more
-than it hurts this solution, because this solution's training can absorb a poor
-convention while its partner's cannot. If the convention puts the borrowed
-model's natural range badly out of scale for this table, solution 5 fails at
-something other than the question being asked, and the gap this pair reports is
-then the sum of what training bought and what a careless convention cost, with
-no way to separate the two afterwards. So the convention has to be chosen as
-well as it can be, recorded with solution 5, and left alone once both have run.
+**One thing the reading decides reaches into the physics.** A chunk holds
+fifty waypoints, which is the borrowed model's own number. The examiner uses
+waypoints at a fixed rate, so a chunk is always two and a half seconds of
+motion. The teacher's push has a hundred waypoints or more, because the
+teacher feels forward at 10 mm/s and pushes at 20 mm/s. Fitting that push into
+fifty waypoints makes the student's jaw move at about 31 mm/s. So **the
+student makes its teacher's pushes faster**, and the jaw hits the glasses
+harder. The examiner caps a path at the jaw's top speed of 200 mm/s, and a
+chunk the model invents can reach that cap. There are two other choices. One
+is to change the chunk length, but that is the model's own. The other is to
+ask several times in one push, but that spends several pushes from the shared
+budget. The speed-up does not upset the pair, because solution 5's chunks are
+also two and a half seconds long.
+
+**There is one place where the pair could be unfair.** A bad reading hurts
+solution 5 much more than this solution. This solution's training can adjust
+to a poor reading, but solution 5 cannot. Then the gap would mix what training
+bought with what the bad reading cost. So the reading must be chosen as well as
+possible, recorded with solution 5, and left alone once both have run.
+
+The pair is clean. The next section can now say what the training fixed and
+what it left as it was.
 
 ## 5. What fine-tuning closes, and what it cannot touch
 
-This is the section the matched pair exists for. Solution 5's weaknesses are
-known, and the honest exercise is to go through them one at a time and say
-which the training repairs and which it inherits untouched.
+The pair is a fair test. So this section goes through solution 5's weaknesses
+one at a time. For each one, it says whether the training repairs it.
 
-**The domain gap closes, and this is the large one.** A model used across such
-a gap fails in a characteristic way: not by producing nonsense, but by
-producing confident, plausible, wrong answers, which is worse because nothing
-further along looks suspicious. A chunk of waypoints that is smooth and well
-formed and aimed at nothing in particular is exactly that kind of failure.
+**The domain gap closes, and this is the large one.** A model used across a
+domain gap usually does not output nonsense. It outputs smooth, sure, wrong
+actions. These are worse, because nothing later looks suspicious. [Solution
+5](../08_a-foundation-model-as-it-downloads/03_how-it-works.md#7-the-domain-gap-which-is-the-heart-of-this-document)
+describes the gap itself.
 
-That gap has now been measured, and it is wider than the prose suggested. Before the
-training has taken a single step the correction is still zero. So the model is exactly
-solution 5, and asking it for a chunk on tuning tables puts its waypoints a median of
-**331 mm** from the teacher's, and 574 mm away at worst. The glass zone is 320 mm by 360
-mm. So the borrowed model's answer is not a push aimed at the wrong glass; it is a
-smooth motion somewhere else on the table entirely. Five hundred steps of training cut
-that to 107 mm.
+The gap has been measured, and it is wide. Before the first training step the
+correction is zero, so the model is exactly solution 5. Its waypoints are then
+a median of **331 mm** from the teacher's on the tuning tables, and 574 mm at
+worst. The glass zone is only 320 mm by 360 mm. So the untrained answer is not
+aimed at the wrong glass. It is a motion somewhere else on the table. After
+five hundred training steps the median was 107 mm.
 
 ![The glass zone drawn to scale with a teacher's push on it, and two rings round that push: one of 331 mm, the median distance from the teacher's waypoints to the untrained model's, which is wider than the zone itself, and one of 107 mm, the same measurement after five hundred steps of training.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/finetuned-how-far-the-answer-was.png)
 
-The next five hundred steps cut it again, to 85 mm, and that second figure is
-worth more than the first. **The error was still falling when the training
-budget ran out**, so a thousand steps is where this run stopped rather than
-where the method stops improving. Every number this solution reports should be
-read as what a thousand steps buys, not as what fine-tuning can do.
+The next five hundred steps cut it again, to 85 mm. **The error was still
+falling when the training budget ran out.** So a thousand steps is where this
+run stopped, not where the method stops improving. Read every number here as
+what a thousand steps buys.
 
-Fine-tuning removes the gap by construction, because the inputs the model is
-fitted on are the inputs it will be asked about. The pale blue of a glass
-against the tan of the table, the outline leaning outwards from the point below
-the camera, the bare table, one kind of glass to a table: all of those are
-simply what a table looks like, as far as the fine-tuned model is concerned.
+Fine-tuning closes the gap because the model is trained on the same kind of
+input it will be shown. The pale blue glasses, the tan table and the view from
+the top are now simply what a table looks like to this model.
 
-**The scale of the actions stops being left to chance** — and that turns out to
-be two claims, of which only one held.
+**The scale of the actions is no longer left to chance.** This is really two
+claims, and only one held.
 
-The *height* was learned, convincingly. Solution 5 measures its own chunks and reports
-that they come no lower than 217 mm above the table, so the borrowed model essentially
-never brings the jaw down to the glasses at all. The fine-tuned model's chunks come down
-to 75 mm, which is the height the gripper pushes at. That is the model having learned
-from this examiner's own pushes that a push happens on the table rather than above it.
-And it is the clearest single sign in these measurements that the domain gap closed.
+The *height* was learned. Solution 5's chunks come no lower than [217 mm above
+the
+table](../08_a-foundation-model-as-it-downloads/03_how-it-works.md#8-what-was-expected-and-what-happened),
+so its jaw never reaches the glasses. This model's chunks come down to 75 mm,
+the height the gripper pushes at. The model learned that a push happens on the
+table, not above it. This is the clearest sign that the domain gap closed.
 
-The *length* was not. The fine-tuned chunks still cover about 320 mm of table
-where the teacher's covered 75, and the jaw moves through them at a median of
-about 92 mm/s where the demonstrations run at 31. That is better than solution
-5's 868 mm, and still more than four times too far. So the model learned where
-a push happens long before it learned how far one goes, and a push several
-times too long on a crowded table is a push into a neighbour.
+The *length* was not learned. The trained chunks still cover about 320 mm of
+table, where the teacher's covered 75 mm. The jaw moves at a median of about
+92 mm/s, where the demonstrations move at 31 mm/s. This is better than solution
+5's 868 mm, but still more than four times too far. A push that is too long, on
+a crowded table, runs into a neighbour.
 
 ![The same table seen from the side with three chunks drawn on it: the borrowed model's, which stays 217 mm up and runs 868 mm across, the fine-tuned model's, which comes down to the 75 mm the jaw pushes at but still runs 320 mm across, and the teacher's, which is at the same height and 75 mm long.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/finetuned-the-height-not-the-length.png)
 
-**Something like friction is absorbed, and this needs care rather than
-celebration.** Nothing in the cell measures friction and the examiner never
-reveals it, so neither solution can know it. But the examiner holds the same
-coefficients on every table, and every demonstration was produced under them,
-so a fine-tuned policy can absorb this examiner's own friction into its weights
-without any term in it standing for friction: it learns how far a glass of this
-kind tends to go for a push of this length. That is a real gain on this
-examiner and a liability anywhere else. What the model holds is a constant, not
-a way of measuring one. Change the table and the policy is confidently wrong in
-exactly the direction that topples a glass, because the height at which a glass
-slides rather than tips is set by that same coefficient. Solution 5 has no such
-memory — and no such ability either.
+**Something like friction is stored in the weights, and this needs care.**
+Nobody tells either solution the friction. But the examiner uses the same
+friction on every table, and every demonstration was made under it. So the
+trained model can learn how far a glass of this kind goes for a push of this
+length. No part of it stands for friction. This helps on this examiner and
+hurts anywhere else. The model holds one fixed value, not a way to measure it.
+On a table with different friction, the model is wrong with confidence. It is
+wrong in the direction that topples a glass, because friction also sets the
+height at which a glass tips.
 
-Now the weaknesses that survive.
+The weaknesses below survive the training.
 
-**The force reading still has nowhere to go.** [The
-examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#why-the-force-reading-matters) calls the jaw's report of what it felt the only
-channel through which friction is observable at all, and this model's inputs
-are a picture, a sentence and the joint readings. Training cannot add a fourth
-input, so that channel stays closed in both halves of the pair. The absorbed
-constant above is not a way of reading it.
+**The force reading still has no input.** [The force
+reading](../01_the-problem/02_what-goes-in-and-what-comes-out.md#why-the-force-reading-matters)
+is the only way to observe friction. This model takes a picture, a sentence and
+the joint readings. Training cannot add a fourth input, as [solution 5
+explains](../08_a-foundation-model-as-it-downloads/03_how-it-works.md#6-the-force-reading-has-nowhere-to-go).
 
-**The instruction is still nearly dead weight.** SmolVLA is a
-vision-language-action model, and the language is the part that lets one model
-be told to do different things in different words. This problem has one task,
-so the same words go in on every table. Worse, the training makes it harder to
-pretend otherwise: when every example carries the identical instruction,
-nothing penalises a model for ignoring the language channel, so the sensible
-expectation is that the fine-tuned model learns to ignore it. That is a fact
-about a cell with one task and not about the language half itself, so nothing
-here is evidence for or against vision-language-action models in general. But
-the model is paying for a capability neither solution uses, and that cost
-appears in its size, its memory and the price of its forward pass. It is a real
-argument for [solution
-3](../06_imitation-from-demonstrations/01_what-it-is.md), whose ACT policy
-carries no language machinery at all.
+**The instruction still carries nothing.** It is the same sentence on every
+table, as [solution 5
+explains](../08_a-foundation-model-as-it-downloads/03_how-it-works.md#5-two-of-the-three-inputs-say-the-same-thing-every-time).
+Training makes this worse. When every example has the same instruction, the
+model is likely to learn to ignore it. Yet the model still pays for its
+language part in size and memory. [Solution
+3](../06_imitation-from-demonstrations/01_what-it-is.md) uses a policy with no
+language part at all.
 
-**The refusal still is not the policy's, and it cannot become the policy's.** A
-policy is a function from an observation to an action; there is no field in it
-for a rule, so there is no way to tell it never to topple a glass. The topple
-limit therefore stays where [pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md) puts it, outside all
-six solutions. In one respect fine-tuning makes this worse rather than better:
-the teacher refused the glasses it should refuse, so the training set contains
-no example of a glass that must not be pushed, and the policy has never been
-shown the case. It proposes a push on such a glass as readily as on any other,
-and the shared check stops it. The safety work is being done by the geometry,
-in both solutions.
+**The refusal still cannot be the policy's.** A policy has no place for a
+rule, so the topple check stays outside it, in [pushing without
+toppling](../01_the-problem/05_pushing-without-toppling.md). Training makes
+one thing worse. The teacher refused the glasses it should refuse, so the
+training set has no example of a glass that must not be pushed. The policy
+proposes a push on such a glass as readily as on any other, and the shared
+check stops it.
 
-**It still cannot explain a refusal.** Solution 2 can say that a glass tips
-before it slides because its foot is narrow enough that the limit falls below
-the jaw's top edge, and the number can be printed. A policy that was stopped
-has nothing to say, and this project treats a refusal as a result that has to
-carry a reason.
+**It still cannot explain a refusal.** Solution 2 can print why a glass tips.
+A policy that was stopped has nothing to say.
 
-**A surprise in the middle of a chunk is still carried out.** Committing to a
-short run of waypoints is what keeps the policy steady over a motion rather
-than wobbling from one step to the next, and it is the reason [the
-examiner](../01_the-problem/03_the-examiner.md) accepts waypoints at all instead of forcing
-every solution down to three numbers. The cost of committing is that something
-unexpected during the chunk — a glass that sticks, a neighbour met earlier than
-the readings implied — is met by a policy still executing what it decided
-before. Fine-tuning changes how often a surprise arrives. It does not change
-what happens when one does, and nothing else does either: the early abort that
-would read the jaw's force as the push develops is a design in [pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md) and nothing in the
-examiner does it. What the examiner does is stop at a jam, which is a much
-higher force than a glass beginning to tip, and `follow()` is explicit that
-below that level the chunk is carried out as it was given. That falls on both
-halves of the pair equally, so it does not disturb the pair; it does mean the
-pair's topple counts are what the limit computed before the jaw moves achieves
-on its own.
+**A surprise in the middle of a chunk is still carried out.** The model
+commits to a whole chunk, as [solution 3
+explains](../06_imitation-from-demonstrations/03_how-it-works.md#4-action-chunking-and-why-it-matters).
+Training changes how often a surprise comes. It does not change what happens
+when one does. The [early
+abort](../01_the-problem/05_pushing-without-toppling.md#an-early-abort-acting-during-the-push)
+that would read the force during a push is a design, not code. The examiner
+only stops at a jam. This is the same for both solutions, so it does not upset
+the pair.
 
-**The run-time cost is unchanged**, because the correction folds into the
-weights. **And the input's own error is unchanged.** Both solutions are handed
-readings carrying the error measured for [telling the glasses apart in a
-picture](../../08_seeing-the-glasses/11_the-results.md), and no amount of
-training makes a measurement truer than it was. What training can do is make
-the policy behave sensibly when a reading is a little wrong, because it was
-fitted on recordings in which readings were a little wrong. That is a smaller
-claim than making the reading right.
+**The run-time cost is the same,** because the correction folds into the
+weights. **The input's error is also the same.** No training makes a reading
+more accurate. Training can only help the policy cope when a reading is a
+little wrong.
+
+The training fixes some things. The next section names two ways the training
+itself can go wrong.
 
 ## 6. Two ways training on one cell's pushes goes wrong
 
-Fine-tuning is cheap and it is not free of risk, and the two risks have names
-worth knowing.
+Training helps, but it also has risks. Two of them have names.
 
-**Catastrophic forgetting.** Continuing a model's training on a narrow set of
-examples moves its weights away from the general answer they held, so the model
-becomes better at this cell and worse everywhere else. Low-rank adaptation
-softens this, because the borrowed numbers are never overwritten and the
-correction can in principle be removed to get the original model back. Softened
-is not absent, though: the corrected model is the one that runs, and it would
-be a poor policy for any other robot or any other task. Within this project
-that is not a loss, because the only tables this model will be shown are this
-examiner's. It does mean the correction is a narrow asset that has to be kept
-in step with the cell.
+**Catastrophic forgetting.** Training on a narrow set of examples moves the
+weights away from what they knew before. The model gets better at this cell
+and worse everywhere else. Low-rank adaptation softens this, because the
+borrowed numbers are never overwritten. The correction can be removed to get
+the original model back. But the corrected model is the one that runs, and it
+would be poor on any other robot. Here that is not a loss, because the model
+only ever sees this examiner's tables. But the correction must be kept in step
+with the cell.
 
-**Overfitting.** A model fitted on a small set of examples can learn the
-examples instead of the thing the examples are of. Here that would mean
-learning the tables rather than the pushing, and in the worst case which push
-follows which table. The examiner guards against it twice. The tables are
-numbered and the numbers are split, so no solution is ever marked on a table it
-learned from, and overfitting appears as a gap between the two halves rather
-than hiding inside one number. And the demonstrations cost only simulator time,
-so the training set can be made large and varied for nothing.
+**Overfitting.** A model trained on few examples can learn the examples
+instead of the skill. Here that would mean learning the tables instead of the
+pushing. [The examiner](../01_the-problem/03_the-examiner.md) guards against
+this. It never marks a solution on a table it trained on. And demonstrations
+cost only simulator time, so the training set can be large.
 
-The two risks pull in opposite directions in one respect. Training longer and
-harder on this examiner's pushes closes the domain gap further while making
-both forgetting and overfitting more likely. So there is a sensible amount of
-training rather than a maximum, and the held-out half of the tables is what
-decides where it is. That is how the training below stopped at a thousand
-steps: between step 500 and step 1,000 the fitting loss halved while the error
-on tuning tables did not improve.
+The two risks pull against the gain. More training closes the domain gap
+further, but it also makes both risks more likely. So there is a right amount
+of training, not a maximum, and the held-out tables decide it. Here, between
+step 500 and step 1,000, the training loss halved. The error on the tuning
+tables fell by only about a fifth, from 107 mm to 85 mm.
 
-A third thing is not a risk of training but a consequence of it, and it decides how this
-solution is measured at all. A policy of this kind is stochastic: asked the same
-question twice it may act differently, because the action is drawn rather than computed.
-Training itself varies with its own random seed, so the same recipe run twice gives two
-policies of different quality. [The examiner](../01_the-problem/03_the-examiner.md)
-requires several training seeds and several evaluation runs for exactly this reason, and
-the scorecard carries the spread. **This matters most to this document of any in this
-book**, because the thing being measured is the gap between two solutions. And a gap
-smaller than either solution's own spread has not been shown to exist.
+There is one more thing to know. The policy is random: asked the same question
+twice, it may act differently. Training also depends on its random seed. So
+[the examiner](../01_the-problem/03_the-examiner.md#6-two-things-this-scorecard-needs-that-the-camera-works-did-not)
+asks for several training seeds and several runs. **This matters most here,**
+because the thing measured is a gap between two solutions. A gap smaller than
+either solution's own spread has not been shown to exist.
+
+These risks are about one model. The next section asks whether a larger model
+would do better.
 
 ## 7. A second way — the same fine-tune on a larger model
 
-One model cannot answer the obvious next question: would a markedly larger
-foundation model do better? **The second way is the same fine-tune on π0.5** —
-the same demonstrations, the same low-rank adaptation, the same examiner and
-the same marking, with a much larger borrowed model in the middle. Everything
-except the model is held still, so the gap would measure what size is worth.
-The library this problem installs already carries π0.5 beside SmolVLA, so it is
-the same training loop pointed at different weights rather than new machinery.
+The sections above use one model, SmolVLA. One model cannot say whether a much
+larger one would do better. **The second way is the same fine-tune on π0.5.**
+It uses the same demonstrations, the same low-rank adaptation and the same
+examiner, with a much larger model. Only the model changes, so the gap would
+measure what size is worth. The library already includes π0.5, so the same
+training code can point at different weights.
 
-**It is not built, and the reason is about where mistakes are found rather than
-about the model.** Almost everything that goes wrong here is in the pipeline —
-rendering the view from the top, recording the demonstrations in a form the
-training loop accepts, carrying the action space across, getting the evaluation
-to run at all — and each is found by a run that fails. SmolVLA runs on a
-laptop, so those mistakes are found for nothing. Starting on the large model
-means debugging at a weekend of rented accelerator, of order a hundred dollars,
-which is how a budget disappears without a single comparison being produced.
+**It is not built, because most mistakes are in the pipeline, not the
+model.** Rendering the view, recording demonstrations, reading the actions and
+running the evaluation all break in ways found only by a failed run. SmolVLA
+runs on a laptop, so those failures cost nothing. On the large model, each
+failed run would use rented time. A weekend of rented time costs about a
+hundred dollars, and could produce no comparison at all.
 
 ← [The code](02_the-code.md) · [A worked example](04_a-worked-example.md) →

@@ -1,55 +1,43 @@
 # What it needs
 
-This page is the bill for this solution: the libraries it rests on, the machine
-it wants, the data somebody has to supply and, where there is one, the licence
-that comes with the weights.
+This page lists what this solution needs: the libraries, the machine, the data
+and the licences.
 
 ## 1. What it needs
 
-Less than anything else in this book, which is the whole point.
+This solution needs less than any other in this book, and that is its point.
 
-**Software.** [LeRobot](https://github.com/huggingface/lerobot), licensed
-Apache-2.0, which holds the policy as a reference implementation, and PyTorch
-underneath it, licensed BSD-3-Clause. Both are permissive, so neither obliges
-this project to publish its own source, which is what a copyleft licence such
-as the AGPL would do. The weights themselves carry their own terms, which a
-reader taking this forward should check before anything is shipped, because a
-licence on weights is not the same thing as a licence on the library that loads
-them. Nothing here says what those terms are, since nothing in this project
-records them. What can be said structurally is that a file produced by
-continuing their training, as [solution
-6](../09_the-same-model-fine-tuned-here/01_what-it-is.md) produces one,
-inherits whatever the borrowed weights carried, so this solution is the half of
-the pair that leaves no new file to carry anything.
+**Software.** It uses [LeRobot](https://github.com/huggingface/lerobot), which
+is licensed Apache-2.0, and PyTorch, which is licensed BSD-3-Clause. Both
+licences are permissive. This means this project does not have to publish its
+own source, as a copyleft licence such as the AGPL would require. The weights
+have their own terms, which are separate from the library's licence. This
+project does not record those terms, so check them before shipping anything.
+[Solution 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md) makes a
+new file by training these weights further, and that file keeps the weights'
+terms. This solution makes no new file.
 
-**The weights.** Downloaded, used unchanged, and about 450 million parameters.
-The first run fetches 2.9 GB: 907 MB of SmolVLA's own weights and 2.0 GB of the
-`HuggingFaceTB/SmolVLM2-500M-Video-Instruct` backbone, which LeRobot fetches
-separately because the checkpoint asks it to. After that it is read from the
-cache.
+**The weights.** They are downloaded and used unchanged. The first run fetches
+2.9 GB: 907 MB of SmolVLA's own weights and 2.0 GB of the
+`HuggingFaceTB/SmolVLM2-500M-Video-Instruct` backbone. LeRobot fetches the
+backbone separately because the model asks for it. After that, both are read
+from the local cache.
 
-**Hardware.** A laptop, and nothing else. There is nothing to train, so there
-is no accelerator to rent for this solution at all. [How it
-works](03_how-it-works.md#9-the-price-of-the-model-and-why-this-model) argues
-that solution 6 would be the half of the pair that paid for one, and that
-turned out to be wrong too: solution 6's low-rank fine-tune of this same model
-held **1.02 GiB** while it ran, on this machine's own Metal. The 22 GB and 70
-GB floors quoted there belong to π0, which is several times larger. The one
-case where renting would still be sensible is evaluation throughput rather than
-capability — the scorecard asks for three runs of 50 tables, each answer takes
-about a second, and that comes to roughly an hour of forward passes on a
-laptop. For scale, renting an accelerator for a weekend costs of order a
-hundred dollars, so even running the evaluation on rented hardware is at the
-cheap end of this book.
+**Hardware.** A laptop is enough. There is nothing to train, so there is no
+accelerator to rent. [How it
+works](03_how-it-works.md#9-the-price-of-the-model-and-why-this-model) gives
+the model's size and the time per answer. Solution 6 also trains on this
+laptop. [Its own page](../09_the-same-model-fine-tuned-here/05_what-it-needs.md)
+gives the memory that training used.
 
-**Data.** None. No demonstrations, no labels, no held-out training set, and
-nothing to keep in step with the cell when the cell changes.
+**Data.** None. There are no demonstrations, no labels and no training set.
+Nothing has to be kept up to date when the cell changes.
 
-**What the examiner had to grow.** Two things, and both were gates rather than
-conveniences: the rendered view of the table from the top, and the path that
-accepts a run of waypoints without the push macro. [The test
-examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md) provides both, and both are shared with
-solutions 3 and 6, so the cost was paid once for three solutions rather than
-for this one.
+**What the examiner had to add.** It had to add two things before this
+solution could run. One is the top-down picture of the table. The other is a
+path that accepts a run of waypoints without the push macro. [The test
+examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md) provides
+both. Solutions 3 and 6 use them too, so the work was done once for three
+solutions.
 
 ← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

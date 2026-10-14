@@ -2,22 +2,23 @@
 
 ## 1. Introduction
 
-The camera work has ended. [Telling the glasses apart in a
-picture](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md) has
-left the arm knowing which pixels are which glass and where each one stands.
-Some of them are standing too close together for the gripper to get round one
-without fouling its neighbour.
+The camera work is finished. [Telling the glasses apart in a
+picture](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md)
+tells the arm where each glass stands. But some glasses stand too close together.
+The gripper cannot get round one of them without hitting its neighbour.
 
-The arm has to **move them apart by dragging them across the table**. Not by
-lifting them. Dragging is the whole point of the problem.
+So the arm has to **move them apart by dragging them across the table**. It does
+not lift them. Dragging is the whole point of this problem.
 
-This document states the question that every answer in this book is given, so
-that six quite different methods can be compared on it. By the end of it you
-will understand why the arm drags rather than lifts, what each answer is handed
-and what it has to hand back, the three distances that are easy to confuse and
-which of them decides whether the gripper fits, why the height a glass may be
-pushed at is a property of that glass rather than a setting chosen once, and
-what counts as done, as correct but incomplete, and as wrong.
+This page states the question that all six answers in this book get. The same
+question lets us compare six very different methods. The page is for anyone
+who wants to read those answers. It covers these things:
+
+- why the arm drags instead of lifting;
+- what each answer gets and what it gives back;
+- how much room the gripper needs, and how to measure it;
+- why the hand is turned on its side, and what that costs;
+- what counts as done, as correct but incomplete, and as wrong.
 
 ## Contents
 
@@ -35,158 +36,129 @@ what counts as done, as correct but incomplete, and as wrong.
 
 ## 2. A film of the job
 
-The sections below describe the job in words and in numbers, and a sight of it
-first makes those words easier to follow. So the film here shows one of the six
-solutions in this book clearing one crowded table in the simulator, played at
-one and a half times real speed.
+Words are easier to follow after you have seen the job once. This film shows
+one of the six solutions clearing one crowded table in the simulator. It plays
+at one and a half times real speed.
 
 [The job done once: a learned world model clears one table, 44 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4 "video")
 
-Three things in the film are worth watching for, because the rest of this document is
-about them. First, every glass is **dragged across the table and never lifted**, which
-is the restriction the next section explains. Second, the arm **pushes, looks again and
-pushes again** rather than working out the whole job in advance, because a push does not
-land where it was aimed. Third, a glass is carried away only once it has room around it,
-and the table counts as finished only when every glass has been taken. This is what
-[this page means by done](#10-what-done-means) further down.
+Watch for three things, because the rest of this page is about them.
 
-Two things in the film are not what a first viewing suggests, and both of them are about
-the hand. The first is that **the hand never opens while it is pushing.** The gripper is
-held shut for the whole of this problem and the closed hand is used as the pusher. So
-nothing is gripped and nothing is lifted during a push. The second is that **the pick-up
-at the end of a take is drawn rather than simulated.** The examiner takes a glass away
-by moving it off the table in one instant, so instead of showing a glass disappear the
-film draws a stand-in for a pick-up: the wrist rolls back level, the fingers open to the
-width the glass was measured to be, the hand reaches in so that the pads pass either
-side of the glass, the fingers close, and the glass is carried off. A line on the screen
-says so while it happens, in the words "problem 1 does the real pick". Problem 1 is what
-the project that wrote this code calls the job of picking one glass up. This is a job
-this library has not yet made a book of, and its rule for where to hold a glass lives in
-the code the camera work shares. The drawing is not evidence that this cell can lift a
-glass, which is [why the arm drags instead of lifting](#3-why-dragging-and-not-lifting)
-in the first place.
+- Every glass is **dragged across the table**. No glass is lifted.
+- The arm **pushes, looks again, and pushes again**. It looks again because a
+  push does not end exactly where it was aimed.
+- A glass is carried away only once it has room around it. The table is
+  finished when every glass has been taken. This is [what this page means by
+  done](#10-what-done-means).
 
-The side the hand comes in from is chosen before it is drawn, and the reason is
-worth knowing. A drawn hand cannot collide with anything, so nothing stops it
-passing through a glass it is not holding. The film therefore checks every side
-first. It comes in from a side that is clear. When no side is clear, it draws
-the hand stopping where it would have touched, and says so on the picture.
-Across the six films that happens once. [What the examiner
-measures](03_the-examiner.md#5-what-the-examiner-measures) says how often it
-would happen on a table nobody has pushed yet.
+Two things in the film are easy to misread. Both are about the hand.
 
-That stand-in is worth one more sentence, because it stands in for something
-this cell often could not do. The examiner takes a glass away as soon as it has
-room, without asking whether the cell's grip rule could have found anywhere to
-hold it, and asked about all 251 glasses that rule finds a hold for only 97.
-[What the examiner measures](03_the-examiner.md#5-what-the-examiner-measures)
-gives the breakdown and says why no score in this book turns on it.
+First, **the hand never opens while it pushes.** The gripper stays shut for the
+whole problem. The closed hand is the pusher. Nothing is gripped during a push.
 
-The hand is also drawn twice over, and both drawings are worth looking at. The solid
-pieces are the hand's real mouldings, which are two fingertips, two fingers behind them
-and the gripper's body behind those. Around those pieces, as a faint shell, is the
-larger shape the simulator actually collides with. That shell fills in the 82 mm gap
-between the two fingers, because a glass standing in that gap would be swept along by
-the hand just the same. So the shell is the shape every solution has to plan its pushes
-around even though no metal is there. That same shape is measured in [how low the push
-has to be](#7-how-low-the-push-has-to-be-and-why-it-is-a-property-of-the-glass) below,
-where its width and its height turn out to decide whether a glass can be pushed at all.
+Second, **the pick-up at the end is drawn, not simulated.** The examiner removes
+a glass from the table in one instant. So the film draws a pick-up instead. The
+wrist rolls back level, the fingers open, the hand reaches in, the fingers
+close, and the glass is carried off. A line on the screen says "problem 1 does
+the real pick". Problem 1 is the job of picking up one glass. This library has
+no book about that job yet. The drawing does not show that this cell can lift a
+glass.
 
-One thing about the choice of film is worth saying straight away, because it is
-also the book's main finding. Every one of the six solutions is filmed on this
-same table, and this is the only one of the six films in which the table is
-actually finished. The other five leave glasses standing, and one of them
-leaves a glass lying on its side. So this film is what success looks like
-rather than what the average attempt looks like, and it was chosen for that
-reason. [The six solutions side by side](../10_the-results.md) collects all six
-films in one place, and reading them together is the fastest way to see how
-hard this job turns out to be.
+A drawn hand cannot hit anything. So the film first checks which side is clear,
+and it comes in from that side. [What the examiner
+measures](03_the-examiner.md#5-what-the-examiner-measures) explains this check.
+It also explains that the cell's grip rule finds a hold on only 97 of the 251
+glasses.
 
-So the arm drags rather than lifts, and the next section says why lifting is
-not available to it at all.
+The hand is drawn twice. The solid pieces are its real parts: two fingertips,
+two fingers and the gripper's body. A faint shell around them is the shape the
+simulator uses for collisions. The shell fills the 82 mm gap between the two
+fingers, because a glass in that gap would be pushed along too. So every
+solution has to plan its pushes around the shell.
+
+This film is the only one of the six in which the table is finished. So it
+shows success, not an average attempt. [The six solutions side by
+side](../10_the-results.md) shows all six films.
+
+The film shows the arm dragging. The next section says why it cannot lift.
 
 ## 3. Why dragging and not lifting
 
-Because lifting is the thing that is not available yet, and the reason is
-circular:
+Lifting is not possible yet, and the reason goes round in a circle.
 
-- To lift a glass, the fingers have to close on it in a chosen place.
-- To choose that place, the arm needs the glass's profile.
-- To measure the profile, it needs a side-on photograph from 300 mm away.
-- To take that photograph, it needs a viewpoint that is not blocked — which is
-  exactly what the crowding has taken away.
+- To lift a glass, the fingers must close on it in a chosen place.
+- To choose that place, the arm needs the glass's side shape, its profile.
+- To measure the profile, the arm needs a photograph from the side, taken from
+  300 mm away.
+- To take that photograph, the arm needs a clear view. The crowding has taken
+  that view away.
 
 ![Four needs in a ring, each one waiting on the next: lifting needs a chosen grip place, which needs the glass's profile, which needs a side-on photograph, which needs a viewpoint the crowding has taken away.](../../images/pushing-the-glasses-apart/what-is-asked-for/asked-the-circle-lifting-cannot-break.png)
 
-Dragging breaks the circle because it needs almost nothing. A push needs a
-contact and a direction. It does not need to know the glass's height, its shape,
-its weight, or where its stem is. All it needs is where the glass stands and
-how wide its base is, and both of those are already in [what the camera work
-hands over](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#4-what-must-come-out).
+Dragging breaks the circle because it needs very little. A push needs a contact
+point and a direction. It does not need the glass's height, shape or weight. It
+needs only where the glass stands and how wide its foot is. The camera work
+already [hands over both of
+these](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#4-what-must-come-out).
+
+Dragging needs to know what is on the table, so the next section says that.
 
 ## 4. What is on the table
 
-The same glasses as [the camera work
-had](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#2-what-is-on-the-table)
-— four to six, one known kind, upright and opaque — except that some of them are
-close together. Close enough that the numbers in the next section bite.
+The glasses are the same as in [the camera
+work](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#2-what-is-on-the-table).
+There are four to six of them. They are all one known kind, upright and opaque.
+The difference is that some of them stand close together.
+
+The next section says what an answer gets about these glasses.
 
 ## 5. What goes in and what comes out
 
-The table above is what an answer works on, and this section says in brief what
-an answer is handed and what it hands back. [What goes in and what comes
+This section gives a short summary. [What goes in and what comes
 out](02_what-goes-in-and-what-comes-out.md) gives the full detail.
 
-**What goes in** is a reading for each standing glass, saying where it stands,
-how tall it is and how wide it is at its widest and at its foot, each with the
-camera work's measured error. Answers that read pictures also get a view of the
-table from above. And after each push, the answer gets what the jaw felt,
-measured by the force sensor at the arm's wrist. Nothing else goes in: no
-answer may read the simulator's record of what it placed, or the friction it is
-using.
+**What goes in** is one reading for each standing glass. It says where the
+glass stands, how tall it is, and how wide it is. Answers that read pictures
+also get a picture of the table from above. After each push, the answer also
+gets the force that the hand felt. Nothing else goes in.
 
-**What comes out** is a jaw trajectory, and then another, until the table is
-done or the budget is spent. An answer may describe a push by a few numbers,
-which the examiner expands into a trajectory, or give the waypoints directly.
-And a glass that cannot be moved safely is refused, with the reason.
+**What comes out** is a path for the hand, then another path, until the table
+is done or the pushes run out. An answer may also refuse a glass that it cannot
+move safely. It must give the reason.
 
-This matters more here than in the simpler jobs this cell was built for, because six
-quite different methods are compared on this question. And a comparison only means
-something when the question was identical. [The examiner](03_the-examiner.md) hands
-exactly this to every one of them.
+The same input and output go to every answer. This is what makes the six
+answers comparable. [The examiner](03_the-examiner.md) makes sure of it.
 
-What goes in includes each glass's width, and the next section explains why the
-gap that decides gripping is not the plain gap between two glasses.
+The input includes each glass's width. The next section explains why that width
+matters for the gripper.
 
 ## 6. The gap that matters is not the gap between the glasses
 
 ![The open jaw needs about 76 mm from a glass's middle outwards before it fits round it, so the gap that decides whether a glass can be gripped is the one between a middle and a neighbour's edge rather than the one between two glasses.](../../images/pushing-the-glasses-apart/what-is-asked-for/the-room-a-gripper-needs.png)
 
-Two glasses with a centimetre of daylight between them are not touching. A
-person would call them separate. The gripper cannot pick up either of them, and
-the reason is that the gripper is not a point.
+Two glasses with a centimetre of space between them are not touching. A person
+would call them separate. But the gripper cannot pick up either one. This is
+because the gripper is not a point.
 
-Before the numbers, one fact about the hand, because every number in this
-document follows from it. The gripper on this arm is a **Robotiq 2F-85**, which
-is a real product rather than a shape invented to suit this task, and the cell
-loads the description its maker publishes. That matters for reading what
-follows: where one of these numbers is awkward, it is awkward in the way the
-real cell would be, and not because anybody here chose it.
+The gripper on this arm is a **Robotiq 2F-85**. It is a real product. The cell
+uses the shape its maker publishes. So where a number below is awkward, the
+real cell would have the same problem.
 
-To close on a glass, the open hand has to be **around** it: a finger either
-side, with the hand opened wider than the glass before it closes. How much room
-that needs is **not half the opening**, which is the easy mistake to make. It is
-how far the widest part of the open hand reaches from its own middle, and on a
-2F-85 the fingers stand further out than the pads that do the gripping.
-Measured that way it comes to **76 mm of clear room in every direction**.
+To close on a glass, the open hand must go **around** it, with one finger on
+each side. How much room does that need? It is **not half the opening**. That
+is an easy mistake. It is how far the widest part of the open hand reaches from
+its middle. On a 2F-85 the fingers stand further out than the pads. Measured
+this way, the hand needs **76 mm of clear room in every direction**.
 
-That room is measured to the **neighbour's edge**, not to its middle, and the
-consequence is easy to miss: the test is **not symmetric**. A narrow glass
-standing beside a wide one is crowded before the wide one is, because the wide
-one's rim reaches further into the gap. So a method that compares distances
-between middles will call a pair fine when one of them cannot be gripped.
+That room is measured to the **neighbour's edge**, not to its middle. This
+means the test is **not symmetric**. Here is an example. A narrow glass stands
+beside a wide glass. The wide glass's rim reaches further into the gap. So the
+narrow glass runs out of room first. A method that only compares distances
+between middles will get this wrong.
 
-So there are three different distances in play and they are easy to confuse:
+So there are three different distances, and they are easy to mix up. Each row
+of the table below is one of them. The middle column says what it means, and
+the last column gives its rough size.
 
 | | What it is | Roughly |
 | --- | --- | --- |
@@ -194,163 +166,142 @@ So there are three different distances in play and they are easy to confuse:
 | glasses grippable | the hand fits round one of them | 76 mm clear of the neighbour's **edge** |
 | glasses measurable | a clear line of sight from 300 mm back | depends on the angle |
 
-This book's job is to get every glass over the second line. The third line
-belongs to [looking again at what was
-hidden](../../08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md),
-and moving a glass changes it too.
+This book's job is to make every glass grippable. The third distance belongs to
+[looking again at what was
+hidden](../../08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md).
+Moving a glass changes it too.
+
+The hand needs room around a glass. The next section shows that the hand's
+shape also limits how low it can push.
 
 ## 7. How low the push has to be, and why it is a property of the glass
 
 ![A push above a certain height on the glass tips it instead of sliding it, and how low that height is follows from the width of the foot the glass stands on and from a friction nothing in the cell can measure.](../../images/pushing-the-glasses-apart/what-is-asked-for/push-low-or-it-topples.png)
 
-A pushed object either slides or tips over, and which one happens is decided by
-where it is pushed. Push near the base and it slides. Push near the rim and it
-tips.
+A pushed glass either slides or tips over. Where you push it decides which. A
+push near the foot slides it. A push near the rim tips it.
 
-The dividing line is not a matter of taste. Pushing at height `h` on an object
-whose base is `2a` across, standing on a table it rubs against with friction
-`μ`, the object slides while
+The height where sliding turns into tipping depends on two things. One is how
+wide the glass's foot is. The other is the friction between the glass and the
+table. A wide foot gives more room. High friction gives less.
+[Pushing without toppling](05_pushing-without-toppling.md#3-the-limit-slide-or-tip)
+works out this limit in full. It also explains which height on the hand to use.
+That height is the top edge of the jaw, at 107 mm, not the 75 mm the arm aims at.
 
-    h  <  a / μ
+The hand's shape decides how low it can push. Held the normal way, with its
+fingers side by side, the 2F-85 is 139 mm across. The closest glasses stand
+150 mm apart, so the hand has almost no space. So the cell turns the hand a
+quarter turn onto its side. On its side it is only 27 mm across, and it fits
+between the glasses.
 
-and tips above it. Both ends of that fraction matter. A wide foot at the slippery end of
-the plausible friction range leaves room to push well above anything the gripper could
-reach, so such a glass is easy. A narrow foot at the grippy end leaves less room than
-the gripper can reach without fouling the table. A glass like that cannot be pushed
-safely at all, so the only correct answer for it is to refuse.
+**Turning the hand costs height.** On its side the hand reaches 69 mm below its
+own middle. So its middle cannot go lower than 75 mm, or the fingers hit the
+table. A higher push is closer to the tipping limit.
 
-**The height to compare against is the top edge of the jaw, not the bottom.**
-The middle of the jaw rides at 75 mm, and the jaw is 63 mm tall, so its top edge
-is at 107 mm. A glass that is wider higher up meets that top edge before
-anything else touches it, and the tapered kind is wider higher up by
-definition. So `h` in the rule above is 107 mm for these glasses, not 75.
+Turning the hand has a second cost, which you can see in [the
+film](#2-a-film-of-the-job). To grip a glass, the fingers must open across it,
+one on each side. They cannot do that while the hand lies on its side. So the
+wrist must roll back level before each pick-up. Pushing and gripping are two
+different poses of the same hand. This is why each drawn pick-up starts by
+rolling the wrist.
 
-The difference is large, and it is large for **every** kind of glass rather than only
-the flaring one. Read the table below a row at a time: each row is one kind of glass.
-And the two columns are the share of that kind that could be pushed at all if the push
-landed at the jaw's middle. And the share that can really be pushed because it lands at
-the top edge. Both are measured at the friction this cell's examiner actually uses.
+Three things follow from this.
 
-| kind | checking at the jaw's middle | checking at its top edge |
-|---|---|---|
-| straight | 57% | 7% |
-| tapered | 10% | none |
-| stemmed | 86% | 22% |
-| short stemmed | 55% | none |
+- **The push height must be worked out for each glass**, from its measured foot
+  width. It is not one setting chosen for all glasses.
+- **Some glasses cannot be pushed.** A tall glass on a narrow foot tips before
+  it slides. The answer must refuse that glass and not try.
+- **The friction is not known.** Nothing in the cell measures it. [What a
+  solution is never
+  told](02_what-goes-in-and-what-comes-out.md#4-what-a-solution-is-never-told)
+  explains why this makes the problem hard.
 
-Every one of those mistakes is in the direction that topples a glass, so
-checking at the middle is not a harmless simplification. It would declare most
-of these glasses safe to shove when they are not.
-
-It is worth knowing **why** the gap between the two columns is so wide, because the
-answer is the gripper rather than the rule. A 2F-85 held the way the cell grips, with
-its fingers side by side, is 139 mm across. And the glasses on these tables stand 150 mm
-apart at the closest, so held that way it has almost nowhere to go. The cell therefore
-turns it a quarter turn onto its side, which makes it 27 mm across and the task possible
-again. **Turning it costs height**, and that is the trade. On its side the hand reaches
-69 mm below its own middle. So it cannot ride lower than 75 mm without its fingers
-striking the table, and its leading stretch is 63 mm tall, so the top edge stands 32 mm
-above the middle. Both of those raise `h`, and `h` is the quantity this rule is most
-sensitive to.
-
-Rolling the hand has a second cost as well, and [the film of the
-job](#2-a-film-of-the-job) is where it can be seen. A glass can only be gripped with one
-finger on each side of it, so the fingers have to open sideways across the glass. This
-they cannot do while the hand is lying on its side. The roll therefore has to be undone
-before the hand can take anything at all. Pushing and gripping are two different poses
-of the same hand, and the wrist has to travel between them once for every glass that is
-taken. This is why the drawn pick-up at the end of each film begins by rolling the wrist
-back level.
-
-Three things follow, and they are the shape of the problem:
-
-**The push height has to be worked out per glass**, from its measured base
-width, not chosen once. This is the same pattern as everywhere else in the
-project: compute what the measurement allows rather than assuming a tolerance.
-
-**Some glasses cannot be pushed.** A tall glass on a narrow foot tips before it
-slides. That has to be a refusal, not an attempt.
-
-**μ is not known.** It is a property of the glass, the table and whatever is on
-both, and nothing in the cell measures it. So the arithmetic above gives a
-limit that is only as good as a guessed number. That is an argument for always
-pushing as low as the gripper can reach, and for watching what actually happens
-rather than trusting the prediction.
+The tipping limit is one hard part. The next section lists the others.
 
 ## 8. What else makes this hard
 
-**Where to push it *to*.** The destination has to be clear of every other
-glass, clear of the rack, inside the arm's reach, and inside the part of the
-table the glasses are allowed to be on. Moving one glass out of a crowd can
-easily push it into a different crowd.
+These are the other reasons the job is hard.
 
-**A push does not go where you aimed it.** Friction under a glass is not
-uniform, the contact is not a point, and the glass rotates as well as slides.
-Planar pushing is a well-studied problem and the honest summary is that
-predicting the outcome precisely needs numbers nobody here has. So the arm has
-to look again after each push rather than assume.
+**Choosing where to push a glass to.** The new place must be clear of other
+glasses and clear of the rack. It must be inside the arm's reach and inside the
+part of the table the glasses may use. A glass pushed out of one crowd can end
+up in another crowd.
+
+**A push does not go exactly where you aim it.** The friction under a glass is
+not the same everywhere. The contact is not a single point. The glass turns as
+well as slides. Predicting the result exactly needs numbers that nobody here
+has. So the arm must look again after each push.
 
 ![A finger that meets a round glass anywhere but on the line through its middle turns the glass as well as moving it, so only a push aimed through the middle slides it roughly straight.](../../images/pushing-the-glasses-apart/what-is-asked-for/an-off-centre-push-spins.png)
 
-**Which glass to move.** Moving the wrong one of a pair can make the situation
-worse — into a third glass, or out of reach. The choice needs the whole
-arrangement, not just the crowded pair.
+**Choosing which glass to move.** Moving the wrong glass of a pair can make
+things worse. It can push that glass into a third glass, or out of reach. So
+the choice needs the whole table, not just the crowded pair.
 
-**Pushing is contact, and contact is where things break.** The arm is touching
-a glass with no idea how heavy it is. Too fast is a knock, and a knock on a
-tall glass is the thing this problem exists to avoid.
+**Pushing means touching, and touching can break things.** The arm does not
+know how heavy a glass is. A push that is too fast becomes a knock. A knock on a
+tall glass can tip it over.
+
+Those are the hard parts that are in the problem. The next section lists what
+is left out on purpose.
 
 ## 9. What is deliberately not in this problem
 
-**Lifting anything.** No grasp, no weighing, no rack.
+Some things are left out on purpose, to keep the problem small.
 
-**Measuring a profile.** This book works from a footprint and a position.
+- **Lifting.** There is no grasp, no weighing and no rack in this problem.
+- **Measuring a profile.** This book works only from a foot width and a position.
+- **Deciding the kind of glass.** All glasses on a table are one known kind.
+- **Tidying.** The glasses do not have to end up in any set place. They only
+  have to end up far enough apart.
 
-**Deciding the kind.** Still one known kind.
-
-**Tidying.** The glasses do not have to end up anywhere in particular. They have
-to end up far enough apart.
+With the scope clear, the next section says how a run ends.
 
 ## 10. What "done" means
 
-A run is **done** when every glass on the table has at least 76 mm of clear room around
-it, at least one usable viewpoint for a side-on photograph. And nothing has been knocked
-over.
+A run can end in three ways.
 
-A run is **correct but incomplete** when a glass could not be moved safely and
-is reported with the reason — most often that it tips before it slides, or that
-there is nowhere clear to push it to.
+A run is **done** when three things are true. Every glass has at least 76 mm of
+clear room around it. Every glass has at least one clear view for a side
+photograph. And no glass has been knocked over.
 
-A run is **wrong** if a glass is toppled, pushed out of reach, pushed off the
-table, or pushed into the rack. Toppling is the failure to watch, because a
-toppled glass cannot be recovered by anything else in this project.
+A run is **correct but incomplete** when a glass could not be moved safely, and
+the answer reports it with the reason. The usual reasons are that the glass
+tips before it slides, or that there is no clear place to push it to. This
+still counts as a correct answer.
+
+A run is **wrong** if a glass is tipped over, pushed out of reach, pushed off
+the table, or pushed into the rack. Tipping over is the failure to watch most.
+Nothing else in this project can recover a glass that has fallen over.
 
 ![The three endings side by side: done, correct but incomplete where a glass was refused with its reason, and wrong where a glass was toppled or pushed somewhere it cannot be recovered from.](../../images/pushing-the-glasses-apart/what-is-asked-for/asked-three-ways-a-run-ends.png)
 
-Scored against the simulator's record, the numbers worth watching are: how many
-glasses ended up grippable, how many pushes it took, how far each glass ended
-up from where the push aimed it, and how many were refused.
+Four numbers are worth watching. They are how many glasses ended up grippable
+and how many pushes it took. They are also how far each glass ended from its
+aim, and how many glasses were refused.
+
+That is the whole question. The next section says where to read on.
 
 ## 11. Where to go next
 
-Five documents describe what every answer shares, and they are worth reading
-before any of the six.
+Five pages describe what every answer shares. Read them before any of the six
+answers.
 
 - [What goes in and what comes out](02_what-goes-in-and-what-comes-out.md) —
-  the three calls, what a push reports and how its force is measured, and what
-  an answer hands back.
+  the three calls, what a push reports, how its force is measured, and what an
+  answer gives back.
 - [The examiner](03_the-examiner.md) — the crowded tables, the physics, and how
   a run is marked.
-- [The target layout](04_the-target-layout.md) — where the glasses should end up,
-  which is computed rather than learned, and the least movement the task needs.
+- [The target layout](04_the-target-layout.md) — where the glasses should end
+  up, and the least movement the task needs.
 - [Pushing without toppling](05_pushing-without-toppling.md) — the height limit
   that decides whether a glass slides or tips, and the loop of plan, feel and
   look again.
 - [Questions and answers](06_questions-and-answers.md) — the exact shape of a
-  look and of a push, how many of each a solution may spend, and how many times
-  the whole set is run.
+  look and a push, how many of each a solution may use, and how many times the
+  set is run.
 
-Then the six answers themselves:
+Then read the six answers themselves:
 
 → [The six solutions](../03_the-six-solutions/01_how-the-six-compare.md)
 

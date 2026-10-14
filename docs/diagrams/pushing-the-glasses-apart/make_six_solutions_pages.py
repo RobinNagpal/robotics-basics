@@ -174,7 +174,7 @@ def where_the_learned_part_sits() -> None:
     wrong answer costs, and in five of the six the refusal that matters most
     is settled by arithmetic before the model is asked anything at all.
     """
-    width, height = 12.4, 6.8
+    width, height = 12.4, 7.5
     figure, axis = sheet(width, height)
     rung_x, rung_w = 4.75, 6.0
     cost_x, cost_w = 10.1, 3.6
@@ -222,6 +222,19 @@ def where_the_learned_part_sits() -> None:
     band_left = 0.55
     band(axis, band_left, y + 0.24, rung_w + 1.4, levels[0] - (y + 0.24) + 0.44,
          MUTED, "the model decides                    the model only prefers")
+
+    # The colours carry meaning, so the picture says what it is.
+    key_y = y - 0.04
+    for key_x, colour, words in [
+        (2.4, MUTED, "white: nothing is fitted"),
+        (5.95, GOOD, "green: the fitted model only ranks"),
+        (9.95, WARN, "red: the fitted model's answer is carried out"),
+    ]:
+        bottom = box(figure, axis, key_x, key_y, 3.2 if colour is MUTED else 3.6 if colour is GOOD else 4.2,
+                     words, edge=colour,
+                     face=PAPER if colour is MUTED else _tint(colour, 0.90),
+                     size=NOTE_SIZE - 0.4)
+    y = bottom - 0.22
 
     bottom = note(
         axis, band_left, y - 0.04,

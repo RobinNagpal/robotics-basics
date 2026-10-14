@@ -44,6 +44,19 @@ class Scorecard:
         self.count = Counter()
         self.refusals = Counter()
         self.aim_mm: list[float] = []
+        # One row per table, in the order they were scored. The counters above
+        # answer how a solution did over a run; this answers how it did on a
+        # particular table, which is what picking a representative table for a
+        # film needs. It is written beside the scorecard rather than inside it,
+        # so results.json keeps the shape every solution already committed.
+        self.tables: list[dict] = []
+        # How far the glasses were actually moved, summed over every push and
+        # every table. the-target-layout.md computes the least total movement
+        # any legal layout needs, so this is the number that floor is read
+        # against: a solution spending twice the floor moved twice as far as it
+        # had to. It is a distance and not a count, so it is kept apart from
+        # the counters.
+        self.travel_mm = 0.0
         self.thinking = 0.0
         self.timed = False
 
@@ -66,6 +79,10 @@ class Scorecard:
             others = [(*start[j], bench.glasses[j].outline.max_diameter) for j in range(glasses) if j != i]
             c["crowded at start"] += not has_room(*start[i], others)
 
+        # Where each glass stands as the pushes are replayed, so that one
+        # push's travel is measured from where the last one left the glass.
+        travel_before = self.travel_mm
+        standing = {i: start[i] for i in range(glasses)}
         pushed: Counter = Counter()
         for record in bench.records:
             c["pushes"] += 1
@@ -77,6 +94,9 @@ class Scorecard:
             c["jammed"] += felt.jammed
             if felt.touched is not None:
                 self.aim_mm.append(1000 * float(np.hypot(*np.subtract(record.landed, record.push.aim))))
+                was = standing[record.push.glass]
+                self.travel_mm += 1000 * float(np.hypot(*np.subtract(record.landed, was)))
+                standing[record.push.glass] = record.landed
 
         wrong = False
         for i in range(glasses):
@@ -102,6 +122,23 @@ class Scorecard:
 
         outcome = "wrong" if wrong else "done" if all_racked(bench) else "incomplete"
         c[outcome] += 1
+        self.tables.append(
+            {
+                "seed": bench.seed,
+                "kind": bench.glasses[0].kind,
+                "glasses": glasses,
+                "outcome": outcome,
+                "racked": sum(1 for i in bench.taken if bench.taken[i]),
+                "refused": len(refused),
+                "toppled": sum(
+                    1
+                    for i in range(glasses)
+                    if i not in bench.taken and bench.tilt(i) >= STANDING_TILT_DEG
+                ),
+                "pushes": sum(1 for r in bench.records),
+                "travel_mm": round(self.travel_mm - travel_before, 1),
+            }
+        )
         return outcome
 
     def summary(self) -> dict:
@@ -133,6 +170,7 @@ class Scorecard:
                 "aim_mm_median": round(float(np.median(aim)), 1),
                 "aim_mm_worst": round(float(aim.max()), 1),
             },
+            "travel_mm": round(self.travel_mm, 1),
         }
         if self.timed and c["pushes"]:
             result["seconds_per_push"] = round(self.thinking / c["pushes"], 4)
@@ -165,6 +203,21 @@ class Scorecard:
             print(f"compute  {1000 * result['seconds_per_push']:.1f} ms of thinking per push")
         save.write_text(json.dumps(result, indent=2) + "\n")
         print(f"\nsaved to {save}")
+        save_tables(save, [self.tables])
+
+
+def save_tables(save: Path, runs: list[list[dict]]) -> None:
+    """Write the per-table rows beside a scorecard, one list per evaluation run.
+
+    Kept in its own file rather than inside the scorecard so that results.json
+    keeps the shape every solution has already committed. What it is for is
+    choosing one table that stands for the whole run, which a film needs: a
+    single table either finishes or it does not, so a film of an unusual table
+    misrepresents the solution however honestly it was made.
+    """
+    beside = save.with_name(save.stem + "-tables.json")
+    beside.write_text(json.dumps({"runs": runs}, indent=2) + "\n")
+    print(f"per-table rows in {beside}")
 
 
 class Repeats:
@@ -213,6 +266,7 @@ class Repeats:
             print(f"{line}  " + ", ".join(shown))
         save.write_text(json.dumps(result, indent=2) + "\n")
         print(f"\nsaved to {save}")
+        save_tables(save, [card.tables for card in self.cards])
 
 
 def spread(each: list[dict]) -> dict:

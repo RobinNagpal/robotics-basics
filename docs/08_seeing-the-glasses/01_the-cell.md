@@ -7,6 +7,19 @@ Rather than restate those numbers in each document, they are here once. Read
 this page first if you are starting either book, and come back to it whenever a
 later page quotes a dimension and you want to know where it came from.
 
+**The hand is not the same in the two books, and this page describes this
+book's.** This book was measured with an invented tool: a gripper that opens
+95 mm, a pad 14 by 40 mm, and a camera 85 mm out from the flange. The cell was
+later rebuilt around three real products, which are a Robotiq FT 300-S force
+sensor, a Robotiq 2F-85 gripper and an Intel RealSense D405, and [pushing the
+glasses apart](../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md#6-the-gap-that-matters-is-not-the-gap-between-the-glasses)
+uses that one throughout. The real gripper opens 85 mm and holds 80.4 mm, which
+is narrower than the figure below. So where the two books give different numbers
+for the hand, book 9's are the real product's and this book's are the ones its
+own results were measured with. Everything else on this page, which is the
+table, the rack, the glasses and the camera's two viewpoints, is the same in
+both.
+
 **Every dimension on this page is read from the cell's own constants** by
 [`make_cell_images.py`](../diagrams/seeing-the-glasses/make_cell_images.py), which imports
 `arm/dimensions.py`, `table/layout.py`, `rack/layout.py` and
@@ -341,9 +354,9 @@ rather than a second copy.
 | side-on standoff, floor | 300 mm | `arm/dimensions.py` `MEASURE_STANDOFF` |
 | side-on view height | 120 mm above the table | `arm/dimensions.py` `MEASURE_VIEW_HEIGHT` |
 | camera offset from the flange | 85 mm out, 15 mm up | `arm/dimensions.py` `CAMERA_OFFSET` |
-| gripper opening | up to 95 mm | `arm/dimensions.py` `GRIPPER_MAX_OPENING` |
+| gripper opening | up to 95 mm (the real 2F-85 opens 85) | `arm/dimensions.py` `GRIPPER_MAX_OPENING` |
 | lowest the fingers reach | 50 mm above the table | `arm/dimensions.py` `LOWEST_GRIP` |
-| pad | 14 × 40 mm | `arm/dimensions.py` `PAD_HEIGHT`, `PAD_LENGTH` |
+| pad | 14 × 40 mm (the real 2F-85's is 22 × 38) | `arm/dimensions.py` `PAD_HEIGHT`, `PAD_LENGTH` |
 | camera | 320 × 240, 1.047 rad, 15 Hz | `arm/camera/wrist_camera.urdf.xacro` |
 | the kinds and their ranges | see above | `glasses/shapes.py` `KIND_RANGES` |
 | smallest gap between two glasses | 150 mm centre to centre | `glasses/spawn.py` `MIN_SEPARATION` |

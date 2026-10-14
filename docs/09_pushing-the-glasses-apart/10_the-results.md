@@ -56,7 +56,18 @@ back.
 
 A table is **done** when every glass on it was picked up, and **wrong** when
 the run ended in a state the cell should never reach, which in practice means a
-glass lying on its side. Solutions 3, 5 and 6 are run three times each, because
+glass lying on its side.
+
+One word in that sentence promises more than it should, and it is worth knowing
+before reading the racked column. The examiner takes a glass away as soon as the
+glass has room around it. It never asks whether the cell could really have
+picked that glass up. Asked about the same 251 glasses, the cell's own grip rule
+finds somewhere to hold only 97 of them, and the hand has a clear way in to only
+14 of every 19 the examiner says have room. So *racked* means the job this book
+sets was done, not that the glass reached the rack. [What the examiner
+measures](01_the-problem/03_the-examiner.md#5-what-the-examiner-measures) gives
+both figures and says where they come from. No comparison in the table above
+moves because of it, because all six solutions are marked the same way. Solutions 3, 5 and 6 are run three times each, because
 they sample while they answer and a single run of one of them is a single draw.
 For those three the figure shown is the middle run and the brackets beside it
 are the least and the most, so a reader can see which differences between rows

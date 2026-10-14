@@ -166,10 +166,17 @@ PAD_TRAVEL = max(
     pad_reach(angle) - pad_reach(OPEN_ANGLE) for angle in np.linspace(OPEN_ANGLE, SHUT_ANGLE, 2001)
 )
 
-# The gripper's position command is one byte over Modbus spread across the
-# stroke, so it cannot resolve a finer step than this. Asking for a width
-# inside this of another width asks for the same width.
-POSITION_STEP = MAX_OPENING / 255.0
+# The smallest difference in width the gripper can actually be set to. Asking
+# for a width inside this of another width asks for the same width.
+#
+# Two numbers answer that question and they disagree, so the coarser one wins.
+# The position command is one byte over Modbus spread across the stroke, which
+# is a step of 0.333 mm. Robotiq publish 0.4 mm as the position resolution,
+# which is what the mechanism really settles to rather than what the command can
+# express. Taking the finer of the two would promise an accuracy the gripper
+# does not have.
+PUBLISHED_RESOLUTION = 0.0004
+POSITION_STEP = max(MAX_OPENING / 255.0, PUBLISHED_RESOLUTION)
 
 
 class OutsideStroke(ValueError):

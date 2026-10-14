@@ -22,7 +22,7 @@ import math
 
 import numpy as np
 from candidates import nudge
-from work_cell.arm.dimensions import GRIPPER_MAX_OPENING
+from work_cell.arm import robotiq_2f85
 from work_cell.rack.layout import RACK_AREA, SLOT_COUNT, SLOT_SPACING
 
 from bench import GLASS_ZONE, GRIP_ROOM, JAW_TOP, Push, Seen
@@ -42,7 +42,12 @@ INPUTS = len(NAMES)
 # How far out a neighbour's middle can be and still deny this glass the room
 # the jaw needs. Nothing wider than the gripper's opening is ever drawn, so a
 # neighbour beyond this cannot reach into that room however wide it is.
-CROWD_RADIUS = GRIP_ROOM + GRIPPER_MAX_OPENING / 2
+#
+# The opening comes from the gripper itself rather than from the cell's
+# arm/dimensions.py, which belongs to the book next door and still carries the
+# invented tool this problem replaced. The 2F-85's stroke is worked out from its
+# linkage, so this cannot drift away from the hand the simulator loads.
+CROWD_RADIUS = GRIP_ROOM + robotiq_2f85.MAX_OPENING / 2
 
 # The table the rack can stand on. Its row of slots runs across the arm from
 # the marker in the middle of RACK_AREA, so the area it may occupy is that

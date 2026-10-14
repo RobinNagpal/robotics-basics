@@ -130,6 +130,11 @@ TOOL_LENGTH = max(part["back"] + part["depth"] for part in JAW_PARTS) + WRIST_LE
 # Rolled, it stays 27 mm wide for the first 73 mm and then widens to the 75 mm
 # body and the 89 mm force sensor behind it, and a solution that used one figure
 # for all of it would be either needlessly cautious or quietly dangerous.
+# One more thing these boxes do not promise. A box drawn around a finger that has
+# swung outwards is a little larger than the moulding inside it, so the open hand
+# comes out 152.4 mm across where Robotiq publish a maximum width of 148.6 mm.
+# The error is always in the direction of a bigger hand, so a plan made against
+# these numbers stays safe; it only ever refuses a push that would have fitted.
 JAW_SEGMENTS = tuple(
     (part["back"], part["back"] + part["depth"], part["across"] / 2.0)
     for part in JAW_PARTS
@@ -158,6 +163,14 @@ PUSH_HEIGHT = math.ceil((JAW_HALF_HEIGHT + 0.005) * 200.0) / 200.0
 
 # The top edge of the jaw. A glass that is wider higher up meets the jaw here
 # first, so this, not PUSH_HEIGHT, is how high it is pushed.
+#
+# This is the top of the *fingertips*, 107 mm up. The fingers behind them are
+# taller: rolled, they reach 144.5 mm, and 243 of the 251 held-out glasses stand
+# higher than 107 mm. So on a glass whose rim overhangs the fingertips by more
+# than the 35 mm the fingers sit back, the first contact is higher than this
+# rule assumes. The simulator collides every part of the hand, so any table
+# where that happens is already inside the measured scores; it is this rule that
+# is simpler than the hand, not the physics.
 JAW_TOP = PUSH_HEIGHT + FINGER_HEIGHT / 2
 # Where the jaw travels between pushes: the body's bottom edge clears the
 # tallest glass drawn.

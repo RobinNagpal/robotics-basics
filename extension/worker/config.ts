@@ -15,7 +15,8 @@ export const config = {
   repoDir: env.REPO_DIR ?? join(homedir(), 'feedback-worker', 'robotics-basics'),
   repoUrl: env.REPO_URL ?? 'git@github.com:RobinNagpal/robotics-basics.git',
   claudeBin: env.CLAUDE_BIN ?? 'claude',
-  model: env.CLAUDE_MODEL || undefined,
+  // The model every Claude turn runs on. 'sonnet' is the latest Sonnet.
+  model: env.CLAUDE_MODEL || 'sonnet',
   // One Claude turn that takes longer than this is stopped, and every comment in
   // that batch is marked failed. A larger batch needs a longer limit.
   timeoutMinutes: Number(env.TIMEOUT_MINUTES ?? 60),

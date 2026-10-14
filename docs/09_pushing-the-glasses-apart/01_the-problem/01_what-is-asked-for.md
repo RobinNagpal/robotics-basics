@@ -68,6 +68,15 @@ to hold a glass lives in the code the camera work shares. The drawing is not
 evidence that this cell can lift a glass, which is [why the arm drags instead of
 lifting](#3-why-dragging-and-not-lifting) in the first place.
 
+The side the hand comes in from is chosen before it is drawn, and the reason is
+worth knowing. A drawn hand cannot collide with anything, so nothing stops it
+passing through a glass it is not holding. The film therefore checks every side
+first. It comes in from a side that is clear. When no side is clear, it draws
+the hand stopping where it would have touched, and says so on the picture.
+Across the six films that happens once. [What the examiner
+measures](03_the-examiner.md#5-what-the-examiner-measures) says how often it
+would happen on a table nobody has pushed yet.
+
 That stand-in is worth one more sentence, because it stands in for something
 this cell often could not do. The examiner takes a glass away as soon as it has
 room, without asking whether the cell's grip rule could have found anywhere to

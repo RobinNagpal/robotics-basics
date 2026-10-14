@@ -186,6 +186,29 @@ nothing worth holding between that floor and its own halfway point is refused,
 and a short stemmed glass is all stem below the line, which is why not one of
 the 60 can be held.
 
+**Having room around a glass is also not the same as having a way in to it.**
+This second gap belongs to the examiner itself rather than to the picking step.
+The room test asks whether anything stands within a fixed radius of the glass.
+That is the right question for an open hand coming straight down on it. This
+hand does not come straight down. It comes in level, and it is 266 mm long from
+its fingertips to the back of its force sensor, so it fills a corridor right
+across the table instead of a circle around one glass. Whether that corridor is
+clear depends on which side the hand comes from, and on a crowded table most
+sides are blocked by something well outside the radius the room test looks at.
+I checked every side for the glasses the examiner says have room, over the first
+twenty of the fifty tables: **a clear way in exists for 14 of them, and for the
+other 5 the hand would have to stop short**.
+
+The films check the same thing before they draw a pick-up. The hand comes in
+from a side that is clear. When no side is clear, the hand is drawn stopping
+where it would have touched, and a line on the picture says so. This matters
+because a drawn hand cannot collide with anything, so without the check a film
+would show the hand passing straight through a glass, and a viewer would read
+that as room which is not there. Across the six films, eleven pick-ups are drawn
+and one of them stops short. That is rarer than the 5 in 19 above, and the
+reason is worth noticing: by the time a glass is racked, the solution has
+already pushed its neighbours away from it.
+
 This is a limit of the picking step rather than of anything in this book, and
 no solution's score depends on it, because all six are marked by the same
 examiner in the same way. The films are honest about it too: the pick-up each

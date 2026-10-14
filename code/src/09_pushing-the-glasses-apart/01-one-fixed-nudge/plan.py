@@ -27,6 +27,7 @@ from bench import (
     Seen,
     has_room,
     in_zone,
+    segment_distance,
 )
 
 # Glass on a dry wooden top is somewhere in here. Nothing in the cell measures
@@ -82,22 +83,12 @@ def slides(glass: Seen) -> str:
     friction. The top edge, because a glass wider higher up meets the jaw
     there first. "try" means it depends on the friction, and a probe is safe.
     """
-    # Step 1: take half the width of the foot the glass stands on -- how far the foot's edge
-    # is from the middle, which is what keeps the glass from going over
     half_foot = glass.foot / 2
-    # Step 1: divide it by the grippiest friction in the range, which gives the lowest push
-    # height that tips this glass; a jaw under that slides it at every friction in the range
     if half_foot / MU_HIGHEST > JAW_TOP:
         return "yes"
-    # Step 1: divide it by the slipperiest friction, which gives the highest such height; a
-    # jaw at or above that one tips the glass at every friction in the range, so refuse it
     if half_foot / MU_LOWEST <= JAW_TOP:
         return "no"
-    # Step 2: between the two widths the friction decides it, so measure how far this glass
-    # can lean before it falls: half its foot against the height of its centre of mass
     falls_past = math.atan2(half_foot, CENTRE_OF_MASS_SHARE * glass.height)
-    # Step 3: allow the short test push only while the lean it could cause stays well inside
-    # that angle, so a glass tall enough to be leaned most of the way over is refused instead
     return "try" if math.atan2(PROBE, JAW_TOP) < PROBE_LEAN_SHARE * falls_past else "no"
 
 
@@ -107,13 +98,6 @@ def room(glass: Seen, seen: list[Seen], margin: float = 0.0) -> bool:
 
 def reachable(point: np.ndarray) -> bool:
     return COMFORTABLE_REACH[0] <= float(np.linalg.norm(point - ROBOT_BASE[:2])) <= COMFORTABLE_REACH[1]
-
-
-def segment_distance(point: np.ndarray, a: np.ndarray, b: np.ndarray) -> float:
-    """How close a line from a to b comes to a point."""
-    along = b - a
-    t = float(np.clip((point - a) @ along / max(along @ along, 1e-12), 0.0, 1.0))
-    return float(np.linalg.norm(point - (a + t * along)))
 
 
 def shortfall(layout: list[tuple[float, float, float]]) -> float:
@@ -165,10 +149,9 @@ def along(glass: Seen, others: list[Seen], heading: float) -> list[Push]:
             # it is fine as long as it gets no closer.
             passing = min(radius + other_radius + CLEARANCE, float(np.linalg.norm(centre - middle)) - 0.001)
             # Every stretch of the hand against its own width. The hand is
-            # not one shape: rolled, it is 27 mm wide for the first 73 mm and
-            # then widens to the 75 mm body and the 89 mm sensor behind it, so
-            # one figure for all of it would be either needlessly cautious or
-            # quietly dangerous.
+            # not one shape: rolled, it is about 27 mm wide for the first
+            # 132 mm and then widens to the body, so one figure for all of it
+            # would be either needlessly cautious or quietly dangerous.
             #
             # A stretch sits between ``near`` and ``far`` behind the
             # fingertips, so while the tips travel from ``start`` to ``end``
@@ -238,18 +221,11 @@ def choose(seen: list[Seen], skip: set[int]) -> tuple[Push | None, dict[int, str
 
 def probe(push: Push) -> Push:
     """The same push, cut down to PROBE."""
-    # Step 1: turn the heading into a unit vector, so distances can be stepped along the push
     u = np.array([math.cos(push.heading), math.sin(push.heading)])
-    # Step 2: step back from the aim by the whole travel, which lands on the glass's middle
     middle = np.array(push.aim) - push.travel * u
-    # Step 2: aim PROBE past that middle instead, so the jaw carries the glass 5 mm and stops
     aim = middle + PROBE * u
-    # Step 3: hand back the same push with the short travel and the near aim; where the
-    # fingertips come down, the heading and the feeling forward are all unchanged
     return Push(push.glass, push.start, push.heading, push.reach, PROBE, (float(aim[0]), float(aim[1])))
 
 
 def needs_probe(glass: Seen, proven: set[int]) -> bool:
-    # Step 1: ask for the test push only while the arithmetic says "try" and this glass has
-    # not already slid under one -- a glass that slid once is pushed for real after that
     return slides(glass) == "try" and glass.id not in proven

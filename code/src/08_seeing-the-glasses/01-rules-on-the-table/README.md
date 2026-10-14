@@ -5,9 +5,9 @@ are grouped by how far apart they stand **on the table** rather than in the
 picture, and the pixels that fed one group are that glass's mask. There is no
 model, no weights file and no training data, so **not one number in this folder
 was fitted to anything**. Its document is
-[`docs/02-segment-glasses/solutions/01-rules-on-the-table.md`](../../docs/02-segment-glasses/solutions/01-rules-on-the-table.md),
+[`docs/02-segment-glasses/solutions/01-rules-on-the-table.md`](../../../../docs/08_seeing-the-glasses/04_the-six-solutions/02_rules-on-the-table.md),
 and the bench it is scored on is
-[`docs/02-segment-glasses/the-bench.md`](../../docs/02-segment-glasses/the-bench.md).
+[`docs/02-segment-glasses/the-bench.md`](../../../../docs/08_seeing-the-glasses/03_the-examiner/01_the-examiner.md).
 
 ## The files
 
@@ -21,7 +21,7 @@ and the bench it is scored on is
 - `views.py`, `measure.py` — **not part of this problem.** The bench stops at a
   mask, a place and a width; choosing a viewpoint and measuring the glass from
   the side are the steps after that. They are kept here because
-  [problem 4's documents](../../docs/problem-4/solutions/solution-overview.md)
+  problem 4's documents
   name `views.py` as the view check their pipeline uses. Nothing in `run.py`
   calls them.
 
@@ -137,6 +137,6 @@ group whose dots mostly belonged to its neighbour.
   merged and split columns above.
 - **No completion of hidden parts.** A glass no picture held leaves no trace
   here. The cure is outside this solution, in
-  [looking again at what was hidden](../../docs/02-segment-glasses/hidden-glasses.md).
+  [looking again at what was hidden](../../../../docs/08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md).
 - **Not Gazebo.** The pictures come from `../bench/render.py`, which uses the
   wrist camera's lens but not the simulator.

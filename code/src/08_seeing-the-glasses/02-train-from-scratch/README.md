@@ -6,9 +6,9 @@ arrow pointing at the middle of that pixel's own glass; adding the arrow to the
 pixel's place is a vote, the votes pile up, and one pile is one glass. **Nothing
 is borrowed**: no downloaded weights, no pre-trained backbone, no licence
 condition. Its document is
-[`docs/02-segment-glasses/solutions/02-train-from-scratch.md`](../../docs/02-segment-glasses/solutions/02-train-from-scratch.md),
+[`docs/02-segment-glasses/solutions/02-train-from-scratch.md`](../../../../docs/08_seeing-the-glasses/04_the-six-solutions/03_a-network-trained-from-scratch.md),
 and the bench it is scored on is
-[`docs/02-segment-glasses/the-bench.md`](../../docs/02-segment-glasses/the-bench.md).
+[`docs/02-segment-glasses/the-bench.md`](../../../../docs/08_seeing-the-glasses/03_the-examiner/01_the-examiner.md).
 
 ## The files
 
@@ -32,7 +32,7 @@ and the bench it is scored on is
   a place and a width; choosing a viewpoint and reading a glass's profile from
   the side are the steps after that, and nothing in `run.py` touches them. They
   are kept because
-  [problem 4's documents](../../docs/problem-4/solutions/learned/08-the-learned-pipelines-retrained.md)
+  problem 4's documents
   name this folder's Ranker and SideNet as parts their pipeline reuses.
 
 ## How the finding works
@@ -110,7 +110,7 @@ is 6.3 mm median on spawned layouts and 0.4 mm on crowded ones. 0.5 mm and
 | short stemmed glass | 96.8% | 1.5% |
 
 That is the comparison
-[the bench document](../../docs/02-segment-glasses/the-bench.md) predicts, and
+[the bench document](../../../../docs/08_seeing-the-glasses/03_the-examiner/01_the-examiner.md) predicts, and
 it comes out as predicted: a fitted model covers all four kinds almost equally
 well, the stemmed glass included, where `01-rules-on-the-table` covers the two
 stemmed kinds 11–13 points worse than the two without a stem. And it pays for
@@ -220,4 +220,4 @@ print(d['target'][:, 31, 38])     # the 3 true answers for the pixel at row 31, 
 
 `show_ranker.py` and `show_side_net.py` do the same for the two models that are
 not part of this problem; their panels are described in
-[problem 4's document](../../docs/problem-4/solutions/learned/08-the-learned-pipelines-retrained.md).
+problem 4's document.

@@ -5,7 +5,7 @@ borrowed already fitted to ordinary labelled pictures and then trained on this
 cell's own pictures with the class list cut down to one entry, "glass".
 
 The document is
-[`06-rf-detr-fine-tuned.md`](../../docs/02-segment-glasses/solutions/06-rf-detr-fine-tuned.md)
+[`06-rf-detr-fine-tuned.md`](../../../../docs/08_seeing-the-glasses/04_the-six-solutions/07_a-transformer-segmenter-fine-tuned.md)
 and it carries the explanation. This file says what is here and how to run it.
 
 ## What is here
@@ -80,7 +80,7 @@ never poisons a place.
 **What the split cannot see** is a glass hidden by something the model never
 reported. There is nothing in the picture to work that out from either, and it
 is the same boundary [looking again at what was
-hidden](../../docs/02-segment-glasses/hidden-glasses.md) exists for.
+hidden](../../../../docs/08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md) exists for.
 
 ## The two checks, each of which can only refuse
 
@@ -181,7 +181,7 @@ By kind, `modal` covered 96.8% of a straight glass, 97.3% of a tapered one,
 96.4% of a stemmed one and 96.1% of a short stemmed one, and claimed 0.0–0.1%
 of pixels that were not the glass. All four kinds come out within two points of
 each other, stem included, which is what [the test
-bench](../../docs/02-segment-glasses/the-bench.md) says to expect of a solution
+bench](../../../../docs/08_seeing-the-glasses/03_the-examiner/01_the-examiner.md) says to expect of a solution
 fitted on this cell's own pictures and not of one built from written rules.
 
 The four missed glasses are not masks the model got wrong. They are glasses

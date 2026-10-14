@@ -19,7 +19,7 @@ cannot be compared with itself if the view moves.
     picture = camera.view()
 
 Nothing here is a measurement the arm could not take: it is a camera above the
-table, which [the cell](../../docs/the-cell.md) already has.
+table, which [the cell](../../../../docs/08_seeing-the-glasses/01_the-cell.md) already has.
 """
 
 from __future__ import annotations

@@ -5,9 +5,9 @@ arm pushes them apart across the table, then picks them up. Everything here is
 geometry and simple physics: no training, no model.
 
 It holds the candidate geometry that [one fixed
-nudge](../../docs/03-push-glasses-apart/solutions/01-one-fixed-nudge.md) and
+nudge](../../../../docs/09_pushing-the-glasses-apart/03_the-six-solutions/02_one-fixed-nudge.md) and
 [geometry generates, a model
-ranks](../../docs/03-push-glasses-apart/solutions/02-geometry-ranked.md) both use,
+ranks](../../../../docs/09_pushing-the-glasses-apart/03_the-six-solutions/03_geometry-generates-a-model-ranks.md) both use,
 with two changes explained at the end.
 
 ## Words used below

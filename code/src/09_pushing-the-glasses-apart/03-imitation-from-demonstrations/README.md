@@ -12,9 +12,9 @@ The model is **ACT**, an action chunking transformer, from
 library: both are fitted here from random numbers, including the vision
 backbone.
 
-Read [the document](../../docs/03-push-glasses-apart/solutions/03-imitation-from-demonstrations.md)
+Read [the document](../../../../docs/09_pushing-the-glasses-apart/03_the-six-solutions/04_imitation-from-demonstrations.md)
 for why any of this. Read [the test
-bench](../../docs/03-push-glasses-apart/the-bench.md) first if you have not.
+bench](../../../../docs/09_pushing-the-glasses-apart/01_the-problem/03_the-examiner.md) first if you have not.
 
 ## Where the demonstrations come from
 
@@ -210,7 +210,7 @@ program is the bottleneck, and here the arm is.
 
 ## What this measures
 
-[The document](../../docs/03-push-glasses-apart/solutions/03-imitation-from-demonstrations.md)
+[The document](../../../../docs/09_pushing-the-glasses-apart/03_the-six-solutions/04_imitation-from-demonstrations.md)
 says the pairing of this solution with its teacher is a reading of whether the
 mapping from a picture of a crowded table to a good push is learnable, and that
 "a student that falls well short says the opposite". This student falls well

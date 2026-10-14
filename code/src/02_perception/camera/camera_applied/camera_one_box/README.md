@@ -6,9 +6,9 @@ real robot arm's perception code is, and it uses the same libraries.
 
 This file is about running the code and finding your way around it. The ideas
 behind it, and the maths, are explained in
-[docs/camera/one-box-intro.md](../../../../../docs/camera/one-box-intro.md), which builds
-on [docs/camera/basics.md](../../../../../docs/camera/basics.md), and
-[docs/camera/one-box-code.md](../../../../../docs/camera/one-box-code.md) explains the
+[docs/camera/one-box-intro.md](../../../../../../docs/02_perception/01_camera/03_one-box-intro.md), which builds
+on [docs/camera/basics.md](../../../../../../docs/02_perception/01_camera/01_basics.md), and
+[docs/camera/one-box-code.md](../../../../../../docs/02_perception/01_camera/04_one-box-code.md) explains the
 code and the basics of every library it uses.
 
 ## Contents

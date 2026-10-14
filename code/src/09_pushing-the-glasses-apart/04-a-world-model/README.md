@@ -4,8 +4,8 @@ Glasses stand too close together to be picked up. Push them apart, then pick
 each one up. Here a model learns what a push will do from pushes made in a
 physics engine, and a search picks the next push using that model. This is the
 first rung of [a world
-model](../../docs/03-push-glasses-apart/solutions/04-a-world-model.md), solution 4
-in [the overview](../../docs/03-push-glasses-apart/solutions/overview.md), and it
+model](../../../../docs/09_pushing-the-glasses-apart/03_the-six-solutions/05_a-world-model-then-plan-with-it.md), solution 4
+in [the overview](../../../../docs/09_pushing-the-glasses-apart/03_the-six-solutions/01_how-the-six-compare.md), and it
 is the approach this project uses for problem 3.
 
 ## Why this approach
@@ -13,9 +13,9 @@ is the approach this project uses for problem 3.
 It was built beside the programmed approach (`../03-push-glasses-apart/01-one-fixed-nudge`, which
 holds the candidate geometry solutions 1 and 2 use), and the two were run on
 the same 50 held-out tables. [The six
-solutions](../../docs/03-push-glasses-apart/solutions/overview.md) sets out what
+solutions](../../../../docs/09_pushing-the-glasses-apart/03_the-six-solutions/01_how-the-six-compare.md) sets out what
 each one changes and [what is
-built](../../docs/03-push-glasses-apart/solutions/overview.md#what-is-built).
+built](../../../../docs/09_pushing-the-glasses-apart/03_the-six-solutions/01_how-the-six-compare.md#3-what-each-one-is-built-from).
 
 | | Learned (this folder) | Programmed |
 |---|---|---|
@@ -69,7 +69,7 @@ again.
 - **The comparison is not fully controlled.** The two approaches differ in
   their search and in how they check the jaw's path, not only in the model. So
   not all of the gain can be charged to the model.
-  [Solution 4's document](../../docs/03-push-glasses-apart/solutions/04-a-world-model.md)
+  [Solution 4's document](../../../../docs/09_pushing-the-glasses-apart/03_the-six-solutions/05_a-world-model-then-plan-with-it.md)
   has the full comparison.
 
 ## How it works

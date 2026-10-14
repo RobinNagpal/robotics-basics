@@ -13,7 +13,7 @@ checks, same marking. One thing differs, which is the training, and the gap
 between the two scores is what that training bought.
 
 Full explanation: [the
-document](../../docs/03-push-glasses-apart/solutions/06-smolvla-fine-tuned.md).
+document](../../../../docs/09_pushing-the-glasses-apart/03_the-six-solutions/07_the-same-model-fine-tuned-here.md).
 
 ## What is here
 
@@ -48,7 +48,7 @@ make test
 Any run shorter than the full held-out set writes `partial.json`, never
 `results.json`. `make train SEED=1 INTO=correction-1` fits a second training
 seed, and `run.py --correction correction --correction correction-1` scores
-both, which is what [the bench](../../docs/03-push-glasses-apart/the-bench.md)
+both, which is what [the bench](../../../../docs/09_pushing-the-glasses-apart/01_the-problem/03_the-examiner.md)
 asks for.
 
 ## What it costs

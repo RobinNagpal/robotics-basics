@@ -312,12 +312,18 @@ def slug(h):
     # letter. Stripping it here made the checker reject links that work.
     return re.sub(r'[^\w\s-]','',h.lower().strip(),flags=re.UNICODE).replace(' ','-')
 docs=sorted(pathlib.Path('docs').rglob('*.md'))+[pathlib.Path('README.md')]
-anchors={p:{slug(m) for m in re.findall(r'^#{1,6}\s+(.*)$',p.read_text(),re.M)} for p in docs}
+# The code's own READMEs are checked too. A book links into the code, the code
+# links back into the book, and a reader following either one meets the same
+# broken link. They are kept out of `anchors` only because nothing links to a
+# heading inside them.
+code=[p for p in sorted(pathlib.Path('code/src').rglob('*.md')) if '.pixi' not in p.parts]
+pages=docs+code
+anchors={p:{slug(m) for m in re.findall(r'^#{1,6}\s+(.*)$',p.read_text(),re.M)} for p in pages}
 # Code is not prose: a Python line such as d["k"](x) looks exactly like a
 # markdown link, so fenced blocks are removed before anything is checked.
-body={p:re.sub(r'^```.*?^```','',p.read_text(),flags=re.S|re.M) for p in docs}
+body={p:re.sub(r'^```.*?^```','',p.read_text(),flags=re.S|re.M) for p in pages}
 bad=[]
-for p in docs:
+for p in pages:
     for _l,tg in re.findall(r'\[([^\]]*)\]\(([^)\s]+)\)',body[p]):
         if tg.startswith(('http','mailto:')): continue
         pp,_,fr=tg.partition('#'); fr=urllib.parse.unquote(fr)

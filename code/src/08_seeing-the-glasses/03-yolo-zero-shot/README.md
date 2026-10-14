@@ -5,9 +5,9 @@ downloads. The outlines it names as drinking vessels are kept, the names are
 thrown away, and the masks go to the bench's shared arithmetic. **Nothing is
 fitted here**, so there is not one number in this folder that came from this
 cell's data. Its document is
-[`docs/02-segment-glasses/solutions/03-yolo-zero-shot.md`](../../docs/02-segment-glasses/solutions/03-yolo-zero-shot.md),
+[`docs/02-segment-glasses/solutions/03-yolo-zero-shot.md`](../../../../docs/08_seeing-the-glasses/04_the-six-solutions/04_a-borrowed-model-as-it-downloads.md),
 and the bench it is scored on is
-[`docs/02-segment-glasses/the-bench.md`](../../docs/02-segment-glasses/the-bench.md).
+[`docs/02-segment-glasses/the-bench.md`](../../../../docs/08_seeing-the-glasses/03_the-examiner/01_the-examiner.md).
 
 ## The files
 
@@ -95,7 +95,7 @@ ball" and "frisbee" to the accepted list would lift the score immediately and
 would be fitting the filter on this cell's own data, which is the single thing
 this solution exists not to do. The baseline's whole value is that it fits
 nothing. The right repair is the one the folder already plans:
-[solution 4](../../docs/02-segment-glasses/solutions/04-yolo-fine-tuned.md) is
+[solution 4](../../../../docs/08_seeing-the-glasses/04_the-six-solutions/05_the-same-model-fine-tuned.md) is
 this same model with its training continued here and its vocabulary cut to one
 class, and the gap between the two is a measurement of what that training buys.
 This result sets one end of it.
@@ -111,6 +111,6 @@ This result sets one end of it.
   the object, so a glass half behind another reads as a smaller glass in the
   wrong place, and a glass completely hidden is absent. The cure is outside this
   solution, in
-  [looking again at what was hidden](../../docs/02-segment-glasses/hidden-glasses.md).
+  [looking again at what was hidden](../../../../docs/08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md).
 - **Not Gazebo.** The pictures come from `../bench/render.py`, which uses the
   wrist camera's lens but not the simulator.

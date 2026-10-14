@@ -6,7 +6,7 @@ and a small model fitted in this cell — the **keeper** — is handed each outl
 on its own and says whether it is one glass.
 
 The solution is described in
-[`docs/02-segment-glasses/solutions/05-sam2-with-a-keeper.md`](../../docs/02-segment-glasses/solutions/05-sam2-with-a-keeper.md).
+[`docs/02-segment-glasses/solutions/05-sam2-with-a-keeper.md`](../../../../docs/08_seeing-the-glasses/04_the-six-solutions/06_a-foundation-model-with-a-keeper.md).
 That document is the specification; this file only says how to run it.
 
 ## The two rungs

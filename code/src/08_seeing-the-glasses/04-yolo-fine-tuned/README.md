@@ -6,9 +6,9 @@ this cell's own pictures and the borrowed list of everyday categories replaced
 by the single class "glass". The outlines it then returns are the masks, and
 the bench's shared arithmetic turns each mask into a place and a width. Its
 document is
-[`docs/02-segment-glasses/solutions/04-yolo-fine-tuned.md`](../../docs/02-segment-glasses/solutions/04-yolo-fine-tuned.md),
+[`docs/02-segment-glasses/solutions/04-yolo-fine-tuned.md`](../../../../docs/08_seeing-the-glasses/04_the-six-solutions/05_the-same-model-fine-tuned.md),
 and the bench it is scored on is
-[`docs/02-segment-glasses/the-bench.md`](../../docs/02-segment-glasses/the-bench.md).
+[`docs/02-segment-glasses/the-bench.md`](../../../../docs/08_seeing-the-glasses/03_the-examiner/01_the-examiner.md).
 
 ## It is one half of a matched pair
 
@@ -219,13 +219,13 @@ The cost of this solution sits almost entirely in building it.
   object, so a glass standing partly behind another is reported as a smaller
   glass in the wrong place. The labels have the same limit the output does, so
   training on them cannot repair it; training towards the whole silhouette
-  instead is [solution 6](../../docs/02-segment-glasses/solutions/06-rf-detr-fine-tuned.md)'s
+  instead is [solution 6](../../../../docs/08_seeing-the-glasses/04_the-six-solutions/07_a-transformer-segmenter-fine-tuned.md)'s
   choice, and `fit` refuses `amodal=True` rather than pretend otherwise.
 - **A completely hidden glass is still invisible.** The arrangement with the
   hidden glass and the arrangement without it render to the same picture, pixel
   for pixel, and no model can return two answers for one input. The cure is
   outside every solution here, in
-  [looking again at what was hidden](../../docs/02-segment-glasses/hidden-glasses.md).
+  [looking again at what was hidden](../../../../docs/08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md).
 - **The weights are a narrow asset.** They describe a world of shaded depth
   pictures of opaque glasses in this cell. Change the camera, the shading or
   the range a kind is drawn from and the file is quietly out of date in a way

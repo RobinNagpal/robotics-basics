@@ -2,7 +2,7 @@
 
 Six ways of turning the same pictures into the same masks, all scored on the
 bench described in
-[`docs/02-segment-glasses/the-bench.md`](../../docs/02-segment-glasses/the-bench.md):
+[`docs/02-segment-glasses/the-bench.md`](../../../../docs/08_seeing-the-glasses/03_the-examiner/01_the-examiner.md):
 the same 20 held-out arrangements from each family, the same three survey
 stations per arrangement, the same shared arithmetic turning a mask into a place
 and a width, and the same scorecard. None of them was trained or tuned on these
@@ -119,7 +119,7 @@ the places at all.
   number in this folder would show it.
 - **Nothing about hidden glasses.** Every solution here reports only what some
   picture held. Recovering a glass no picture held is
-  [a shared step of its own](../../docs/02-segment-glasses/hidden-glasses.md).
+  [a shared step of its own](../../../../docs/08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md).
 
 ## Reproducing
 

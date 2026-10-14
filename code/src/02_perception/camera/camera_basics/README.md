@@ -5,7 +5,7 @@ run: by its **colour**, by adding **depth** to turn the pixel into metres, and
 with a **trained model**. The fourth program trains a model of your own.
 
 The doc for this folder is
-[docs/camera/finding-objects.md](../../../../docs/camera/finding-objects.md).
+[docs/camera/finding-objects.md](../../../../../docs/02_perception/01_camera/02_finding-objects.md).
 
 ## Running it
 

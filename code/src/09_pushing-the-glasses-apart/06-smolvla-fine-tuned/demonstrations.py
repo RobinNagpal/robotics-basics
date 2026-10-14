@@ -22,7 +22,7 @@ guessed at.
 
 The 5 mm test pushes are dropped too, and for a different reason. A probe
 belongs to the shared tipping check in [pushing without
-toppling](../../docs/03-push-glasses-apart/pushing-without-toppling.md), not
+toppling](../../../../docs/09_pushing-the-glasses-apart/01_the-problem/05_pushing-without-toppling.md), not
 to the chooser, and both halves of the pair make it the same way through
 ``push()``. It is not a push at the task and it is not this model's to learn.
 

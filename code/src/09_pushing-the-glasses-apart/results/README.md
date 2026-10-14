@@ -4,7 +4,7 @@ Six ways of pushing crowded glasses apart so that each one can then be picked
 up, all tested on the same 50 tables holding 251 glasses, 193 of which have no
 room at the start. Every solution is given the same tables, spends the same
 push budget, and is judged by the same scorecard, which is described in
-[`docs/03-push-glasses-apart/the-bench.md`](../../docs/03-push-glasses-apart/the-bench.md).
+[`docs/03-push-glasses-apart/the-bench.md`](../../../../docs/09_pushing-the-glasses-apart/01_the-problem/03_the-examiner.md).
 None of them saw these tables while it was being built or fitted. Every number
 on this page is read from a solution's own `results.json`.
 
@@ -79,7 +79,7 @@ on the right of the table matter more than the one on the left.
   the ones that reason about toppling use a believed range instead. The bench
   knows the true value and never shares it.
 - **No early abort.** [Pushing without
-  toppling](../../docs/03-push-glasses-apart/pushing-without-toppling.md) argues
+  toppling](../../../../docs/09_pushing-the-glasses-apart/01_the-problem/05_pushing-without-toppling.md) argues
   for stopping a push while the glass is still moving. Nothing here implements
   it, and solution 6 is what its absence costs.
 - **One kind of glass per table**, as the cell's own layout produces.

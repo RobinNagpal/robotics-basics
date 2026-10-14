@@ -54,9 +54,10 @@ than 50 mm, where the force sensor behind the fingers would meet the table, and
 no higher than halfway up the glass — and inside them it simply holds the glass
 where it can be seen. Problem 1's real rule, asked about these glasses, refuses
 most of them for the first of those reasons;
-[the-examiner.md](../../docs/03-push-glasses-apart/the-examiner.md) counts how
-many, and [known-gaps.md](../../docs/known-gaps.md) explains why that is a gap
-in problem 1 rather than in problem 3.
+[what the examiner measures](../../../../docs/09_pushing-the-glasses-apart/01_the-problem/03_the-examiner.md#5-what-the-examiner-measures)
+counts how many. The project this folder was copied from keeps a known-gaps list
+that explains why this is a gap in picking a glass up rather than in pushing
+them apart.
 
 One more thing is visible and is deliberate. The hand is drawn twice: its real
 pieces solid, and around them, as a faint shell, the larger shape the bench

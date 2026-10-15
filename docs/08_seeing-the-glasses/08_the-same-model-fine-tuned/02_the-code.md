@@ -1,9 +1,9 @@
 # The code
 
-This page shows the code at the heart of this solution, and says what the
-solution hands back to the rest of the cell. It follows [what it
-is](01_what-it-is.md), and [how the model is trained](03_how-the-model-is-trained.md)
-then takes the training step below apart line by line.
+This page shows the main code of this solution. It also says what the solution
+hands back to the rest of the cell. It follows [what it is](01_what-it-is.md).
+The next page, [how the model is trained](03_how-the-model-is-trained.md),
+explains the training step line by line.
 
 ## Contents
 
@@ -12,24 +12,25 @@ then takes the training step below apart line by line.
 
 ## 1. The code that does the work
 
-One thing separates this solution from [solution
-3](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md), and it is the
-training. So the piece worth reading first is the fitting step.
+Training is the only thing that separates this solution from [solution
+3](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md). So the first code
+to read is the training step.
 
-The fitting step is in
-[`04-yolo-fine-tuned/yolo_fine_tuned.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/04-yolo-fine-tuned/yolo_fine_tuned.py),
-and it runs in three steps.
+The training step is in
+[`04-yolo-fine-tuned/yolo_fine_tuned.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/04-yolo-fine-tuned/yolo_fine_tuned.py).
+It runs in three steps.
 
-1. Take the scenes it was handed, hold every fourth one back so the training run
-   has pictures to check its own progress on, and write both parts out as a
-   directory of pictures and label files, which is the only shape Ultralytics
-   reads a training set from. The writing is done by
-   [`dataset.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/04-yolo-fine-tuned/dataset.py).
-2. Pick up the downloaded weights, the same file solution 3 runs untouched, and
-   continue that model's training on these pictures. The continuing is a single
-   line, because the borrowed library owns the training loop.
-3. Copy the best weights the run produced into a file of this project's own,
-   which is what [`run.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/04-yolo-fine-tuned/run.py) loads afterwards.
+1. Take the scenes and hold every fourth one back. The training run checks its
+   own progress on those. Then write both parts to disk as pictures and label
+   files, because Ultralytics only reads a training set in that shape.
+   [`dataset.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/04-yolo-fine-tuned/dataset.py)
+   does the writing.
+2. Load the downloaded weights. This is the same file that solution 3 uses
+   unchanged. Then continue the model's training on these pictures. This takes
+   one line, because the library runs the training loop.
+3. Copy the best weights from the run into this project's own file.
+   [`run.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/04-yolo-fine-tuned/run.py)
+   loads that file later.
 
 ```python
 def fit(examples: Iterable[data.Example], *, amodal: bool, save: Path, epochs: int = EPOCHS) -> Mapping:
@@ -62,25 +63,24 @@ def fit(examples: Iterable[data.Example], *, amodal: bool, save: Path, epochs: i
     shutil.copy(model.trainer.best, save)
 ```
 
-What the fitted model's answers then go through is in the same file, in
-`Finder.find`, and it is short for the reason the training makes it short. There
-is no filter on category names here, because there is one class, so the only
-judgement left is the width check against the kind and the exemption for a
-candidate the frame cut short.
+The trained model's answers then go through `Finder.find`, in the same file.
+This code is short. There is only one class, so there is no filter on category
+names. The only check left is the width check against the kind of glass. A
+candidate that the edge of the picture cuts short is excused from that check.
 
-Two more steps run, and their numbers carry on from the fitting step, because
-the fitting happens once and these run on every picture afterwards.
+Two more steps follow. Training happens once. These two steps run on every
+picture afterwards.
 
-4. Look up the narrowest and the widest footprint a glass of the known kind
-   could have, then walk the model's candidates surest first, turning each
-   candidate's mask into a place on the table and a width by arithmetic every
-   solution in the chapter shares, in
+4. Look up the narrowest and the widest footprint a glass of this kind can have.
+   Then go through the model's candidates, surest first. Turn each candidate's
+   mask into a place on the table and a width. Every solution shares this
+   arithmetic, in
    [`bench/masks_to_glasses.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/bench/masks_to_glasses.py).
-5. Keep a candidate whose width suits the kind, and keep one whose mask the
-   frame cut short whatever its width. Every candidate left is reported as a
-   doubt, as is one with too few depth readings to place at all, and what
-   survives is reduced to one report per place on the table, so two masks
-   landing on one glass become one answer.
+5. Keep a candidate if its width suits the kind. Also keep it if the edge of the
+   picture cut its mask short. Report every other candidate as a doubt. Also
+   report a doubt when a mask has too few depth readings to place. Last, keep
+   one report per place on the table, so two masks on one glass become one
+   answer.
 
 ```python
     def find(self, picture, kind: str) -> tuple[list[Found], list[str]]:
@@ -106,37 +106,33 @@ the fitting happens once and these run on every picture afterwards.
         return masks_to_glasses.one_per_place(kept, narrowest), doubts
 ```
 
-Read beside solution 3's own code section, those two blocks are where the pair
-differs and the rest of both folders is where it does not. Solution 3 reaches
-the library once, to ask it about a picture, and then spends its lines filtering
-borrowed category names. This one reaches the same library twice, once to
-continue its training and once to ask it about a picture, and holds no list of
-category names anywhere. The width check in the second block is the one
-difference the training did not bring, and the section on what this solution
-contributes says what it is for.
+These two blocks are where this solution differs from solution 3. The rest of
+the two folders is the same. Solution 3 calls the library once, to ask about a
+picture. Then most of its code filters the borrowed category names. This
+solution calls the library twice: once to train and once to ask about a picture.
+It has no list of category names. The width check is the one difference that
+training did not bring. The next section says what it is for.
 
 ## 2. The masks are what this contributes
 
-The code above ends by handing masks on, and this section says what happens to
-them afterwards and which part of that is this solution's own.
+The code above ends by handing on masks. This section says what happens to them
+next, and which part is this solution's own.
 
 [The examiner](../03_the-examiner/01_the-examiner.md#6-what-must-come-back) turns
-every solution's masks into places and widths by the same arithmetic, so a
-difference in the score belongs to the mask. This solution contributes only the
-masks, and so does solution 3, which is why the gap between the two can be read
-as the effect of training.
+every solution's masks into places and widths in the same way. So a difference
+in score comes from the masks. Solution 3 also hands over only masks. This is
+why the gap between the two shows the effect of training.
 
-The one thing this solution adds after the model is the width check in step 4
-and step 5, and solution 3 deliberately has none. A candidate whose footprint
-no glass of the known kind could have is reported as a doubt. That check can
-only turn a reported glass into a doubt and never the other way round, so it
-cannot flatter this side of the comparison. It stands down for a mask that
-reaches the edge of the picture, because a width read off part of a footprint
-is not the glass's width. [The results](../11_the-results.md) gives the
-measurement that showed the check had been refusing those cut-off masks.
+The width check in steps 4 and 5 is the one thing this solution adds after the
+model. Solution 3 has none, on purpose. The check can only turn a reported glass
+into a doubt, never the other way round. So it cannot make this solution look
+better than it is. The check is skipped for a mask that reaches the edge of the
+picture. A width read from part of a footprint is not the glass's width. [The
+results](../11_the-results.md) gives the measurement that showed why this
+exemption is needed.
 
-The next page, [how the model is trained](03_how-the-model-is-trained.md), opens
-up the one line in step 2 that does the training, because that line is the
-whole difference between this solution and solution 3.
+The next page, [how the model is trained](03_how-the-model-is-trained.md),
+explains the one training line in step 2. That line is the whole difference
+between this solution and solution 3.
 
 ← [What it is](01_what-it-is.md) · [How the model is trained](03_how-the-model-is-trained.md) →

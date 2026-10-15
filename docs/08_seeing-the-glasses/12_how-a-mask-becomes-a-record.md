@@ -1,16 +1,18 @@
 # How a mask becomes a record
 
-Every solution in this book returns masks, and every scorecard reports places
-and widths. This document is the step in between: the arithmetic the examiner
-runs on a mask to turn it into the record the problem asks for. It is here, at
-the end, rather than in the examiner's own document, because **nothing in the
-comparison depends on it**. The step is the same for all six solutions, so no
-solution can win by measuring more cleverly or lose by measuring worse, and a
-reader following the comparison can take it on trust.
+Every solution in this book returns masks. A mask is the set of pixels that
+belong to one glass. But every scorecard reports places and widths. This page
+explains the step in between. It is the arithmetic the examiner uses to turn a
+mask into the record the problem asks for.
 
-Read it if you want to know why a place can be right while an outline is poor,
-why a mask that claims pixels the camera never saw has to say which ones, or
-why the place error stops telling the six apart long before the masks do.
+This page comes at the end, because **nothing in the comparison depends on it**.
+The step is the same for all six solutions. So no solution can win or lose by
+how it measures. A reader who follows the comparison can take this step on
+trust.
+
+Read it if you want to know three things. Why can a place be right while an
+outline is poor? Why must a mask that claims unseen pixels say which ones? Why
+does the place error stop telling the six apart before the masks do?
 
 ## Contents
 
@@ -22,109 +24,113 @@ why the place error stops telling the six apart long before the masks do.
 
 ## 1. A pixel and a depth reading are a point in the room
 
-A pixel on its own says only a direction: the camera was looking that way when
-it recorded that pixel. The depth reading beside it says how far along that
-direction the surface was, and the camera's own pose says where the direction
-starts. Those three together are a point in the room. Turning a pixel back into
-a point this way is called **back-projection**, because it runs a camera's own
-projection backwards.
+The first step is to turn each pixel of the mask into a point in the room.
 
-So a mask, which is a set of pixels, becomes a cloud of points standing in the
-room. Everything below is a question about that cloud. A mask with fewer than a
-hundred usable pixels is not enough to fit anything to, and the examiner says so
-rather than returning a number nobody should trust.
+A pixel on its own gives only a direction. It says which way the camera was
+looking. The depth reading at that pixel says how far along that direction the
+surface was. The camera's pose says where the direction starts. Together, these
+three give a point in the room. This is called **back-projection**, because it
+runs the camera's projection backwards.
+
+So a mask becomes a cloud of points in the room. Everything below works on that
+cloud. A mask with fewer than 100 usable pixels is too small to measure. The
+examiner then says so, rather than return a number nobody should trust.
+
+The next section uses this cloud to find where the glass stands.
 
 ## 2. Why the axis comes from the top of the glass
 
-The obvious thing to do with the cloud is to take its middle. That is wrong
-here, and the reason is the same splay that makes this book's problem hard.
+With the cloud of points ready, the examiner needs the glass's axis. This is the
+vertical line through the middle of the glass.
 
-A camera looking straight down sees a glass's rim nearer than its base, so the
-rim is drawn thrown outwards, away from the point directly below the lens. The
-cloud a mask back-projects to is therefore not a column standing over the
-glass's footprint. It leans. Its middle sits off to one side of where the glass
-really stands, and it leans further for a taller glass and for a glass further
-out in the frame, so the error is different for every glass in the picture.
+The obvious choice is the middle of the whole cloud. That is wrong here. The
+reason is the splay described in [the cell](01_the-cell.md). The camera draws
+each rim pushed outwards. Below the rim, it sees the wall of the glass on one
+side only, because the glass hides the other side. So the cloud has more points
+on one side. Its middle is pulled away from where the glass really stands. The
+pull is different for every glass.
 
-The rim does not lean, because the rim is the part the camera sees most nearly
-face on and the part whose own points really do ring the glass's axis. So the
-examiner takes the points within 8 mm of the highest point in the mask, and
-their middle is the axis. That band is narrow enough to be rim and wide enough
-to hold a useful number of points, and it works from whichever side the camera
-stood.
+The rim does not have this problem. The camera sees the rim all the way round.
+So the rim's points really do ring the glass's axis. The examiner takes the
+points within 8 mm of the highest point in the mask. Their middle is the axis.
+This band is narrow enough to hold only rim. It is wide enough to hold enough
+points. It works from any camera position.
 
 ![A glass seen side on with the points a mask back-projects to: the rim rings the glass's axis because the camera sees all the way round it, while the wall below appears on one side only, so the middle of the whole cloud is pulled away from the glass and the middle of the rim band is not.](../images/seeing-the-glasses/how-a-mask-becomes-a-record/mask-why-the-axis-is-the-rim.png)
 
-Nothing in that picture is distorted. Back-projection puts every point exactly
-where it really is. What is one-sided is **which points exist at all**: the
-camera sees the rim all the way round, and below the rim it sees the wall on one
-side only, because the glass hides the other. That crescent is what drags the
+Nothing in that picture is distorted. Back-projection puts every point where it
+really is. The problem is **which points exist at all**. The camera sees the rim
+all the way round, but the wall on one side only. That one-sided wall pulls the
 middle of the whole cloud off the glass.
+
+With the axis found, the next section measures how wide the glass is.
 
 ## 3. Why the width is a percentile and not the widest point
 
-With the axis fixed, the width is how far the cloud reaches from it. Taking the
-largest distance would make the answer depend on one point, and one point is
-exactly what a stray depth reading gives you. So the examiner takes the 95th
-percentile of those distances instead: the reach that 95 of every 100 points
+The width is how far the cloud reaches from the axis. The examiner does not take
+the largest distance. That would depend on a single point, and one bad depth
+reading can give a single point far away. So the examiner takes the 95th
+percentile of the distances. This is the distance that 95 of every 100 points
 fall inside.
 
-This is a deliberate choice to be insensitive. A ragged mask edge moves the
-largest distance a long way and the 95th percentile hardly at all, which is what
-makes a width comparable between a solution that outlines tightly and one that
-outlines coarsely.
+This choice makes the width hard to disturb on purpose. A ragged mask edge moves
+the largest distance a lot. It moves the 95th percentile very little. So a width
+from a tight outline and a width from a rough outline can be compared fairly.
 
 ![One cloud of points with a single stray reading far outside it, and the two circles that result: the widest point is dragged out to the stray one, while the 95th percentile barely moves.](../images/seeing-the-glasses/how-a-mask-becomes-a-record/mask-why-the-width-is-a-percentile.png)
 
+The steps so far assume every pixel in the mask was seen by the camera. The next
+section deals with a mask that breaks this.
+
 ## 4. Why a mask that asserts pixels must say which ones
 
-One solution in this book can be asked for a glass's whole silhouette,
-including the part standing behind another glass that nobody saw. That is useful
-and it breaks the arithmetic above unless it is handled, because **the depth
-reading at an asserted pixel does not belong to that glass**. It belongs to
-whatever stood in front. Back-project it and you get a point on the wrong
-object, and the axis is dragged towards it.
+The arithmetic above trusts the depth at every pixel. This section shows when
+that trust is wrong.
 
-So a mask that asserts pixels has to name them, and the examiner leaves their
-depth readings out rather than guessing a value. What that is worth was
-measured. Over the 681 partly hidden glasses of five blocks of crowded arrangements,
-naming the asserted pixels puts the place **12.2 mm** out at the middle glass,
-and feeding them in puts it **42.7 mm** out.
+One solution in this book can return a glass's whole outline. This includes the
+part behind another glass, which the camera never saw. Such a pixel is
+**asserted**: the method claims it, but the camera did not see the glass there.
+This is useful, but it breaks the arithmetic above. **The depth reading at an
+asserted pixel does not belong to that glass.** It belongs to whatever stood in
+front. Back-project it, and you get a point on the wrong object. That point
+pulls the axis towards it.
 
-The same mistake made at scale is worse than that figure suggests, and the
-examiner's own floor shows it. The run below hands the renderer's perfect masks
-to the arithmetic twice. The two runs use **exactly the same pixels**; the only
-difference is whether the asserted ones were named.
+So a mask that asserts pixels must name them. The examiner then leaves out their
+depth readings. It does not guess a value. This was measured over the 681 partly
+hidden glasses in five blocks of crowded arrangements. When the asserted pixels
+are named, the middle place error is **12.2 mm**. When they are fed in, it is
+**42.7 mm**.
+
+Across a whole run, the damage is even larger. The run below gives the
+renderer's perfect masks to the arithmetic twice. Both runs use **exactly the
+same pixels**. The only difference is whether the asserted pixels were named.
+Each row is one run, and each column is a number per 100 glasses.
 
 | exact masks, crowded arrangements, per 100 glasses | found | missed | merged | mask covered | mask not the glass |
 |---|---|---|---|---|---|
 | asserted pixels named and left out | 86.4 | 13.6 | 0.6 | 100.0% | 0.0% |
 | asserted pixels fed in | **72.4** | **27.6** | **10.7** | 100.0% | 0.0% |
 
-Both score perfectly on both mask measurements, because the masks are identical
-and both are perfect. Fourteen glasses in every hundred are lost anyway. That is why the examiner
-measures what the arithmetic made of a mask as well as the mask itself: a
-comparison of pixels alone cannot see this at all.
+Both rows score perfectly on the two mask numbers, because the masks are the
+same and both are perfect. Yet 14 glasses in every 100 are lost. So the examiner
+measures what the arithmetic made of a mask, not only the mask itself. A
+comparison of pixels alone cannot see this.
+
+This arithmetic is forgiving on purpose. The last section says what that costs.
 
 ## 5. What it costs: the place stops telling methods apart
 
-Everything above is chosen to be forgiving, and forgiving has a price. Because
-the axis comes from a band of rim and the width from a percentile, two quite
-different masks can produce almost the same place.
+The axis comes from a band of rim, and the width from a percentile. So two quite
+different masks can give almost the same place.
 
-The examiner measures how much room is left by running the renderer's own masks
-through the same arithmetic, which is the **floor of error**. On the ordinary
-arrangements that floor is 6.8 mm at the median and 46.6 mm at worst, averaged
-over five blocks, with perfect masks and nothing left to improve. A solution within a hair of that is
-not a good solution so much as one whose remaining error is not its fault.
-
-So the place is not the measurement that ranks the six. [What the examiner
-measures](03_the-examiner/04_comparing-the-outputs.md#6-how-good-was-the-mask) says which
-measurement does: how many glasses were found, missed, merged, split or falsely
-reported, and the two numbers comparing a mask against what the camera really
-saw of its glass. Those are pixel against pixel, and they separate methods that
-the places cannot.
-
-← [The six solutions side by side](11_the-results.md)
+The examiner measures this with perfect masks, which gives the **floor of
+error**. On spaced arrangements, the floor is 6.8 mm at the median and 45.4 mm at
+worst, each averaged over five blocks. A solution close to that floor cannot do
+better through its masks. So the place error does not rank the six. [Comparing
+the
+outputs](03_the-examiner/04_comparing-the-outputs.md#7-the-best-possible-answer-and-the-trap-below-it)
+explains the floor, and [how good was the
+mask](03_the-examiner/04_comparing-the-outputs.md#6-how-good-was-the-mask)
+gives the numbers that do rank them.
 
 ← [The six solutions side by side](11_the-results.md)

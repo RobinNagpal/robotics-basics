@@ -1,9 +1,8 @@
 # A worked example
 
 This page follows this solution through one real picture, with the numbers the
-code prints, and then through the case this book keeps returning to, a glass
-that is completely hidden, because a worked example that shows only the easy
-case teaches the wrong lesson.
+code prints. First it looks at a glass that is completely hidden. An example
+that shows only the easy case would teach the wrong lesson.
 
 ## Contents
 
@@ -12,53 +11,49 @@ case teaches the wrong lesson.
 
 ## 1. When the glasses are completely hidden
 
-A glass can be covered completely, and then it contributes no pixel to any
-picture. [What is asked for](../02_the-problem/01_what-is-asked-for.md) gives
-the geometry and says how close two glasses have to stand for it, and [looking
-again at what was
-hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md) is the shared
-answer: work out from arithmetic where a glass could have been standing unseen,
-and go and look there. **No method that reads pictures can do better**, because
-the arrangement with the hidden glass and the same arrangement with it removed
-produce the same picture, pixel for pixel. What follows is only what is this
-solution's own.
+This section starts with the case no picture method can solve, so you know the
+limit before the success. A fully hidden glass adds no pixel to any picture.
+[Looking again at what was
+hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md) explains why,
+and how the cell goes back to look. Here we only follow this solution.
 
-**The keeper is never consulted**, which is worth following because it closes
-the escape route this solution seems to offer. The borrowed model grows a mask
-from the picture's own content at the place the prompt points at, so a prompt
-anywhere over the hidden glass lands on the covering glass and returns the
-covering glass — and that answer is correct. Prompting harder does not help,
-because **a prompt selects and does not add information**: there is no point,
-no box and no rough mask that makes a model return a glass which cast no
-pixels. With no proposal for the hidden glass, the keeper's three answers are
-never asked for, and every check here is a check on a proposal.
+**The keeper is never asked.** Any prompt over the hidden glass lands on the
+glass that covers it. SAM 2 returns the covering glass, and that answer is
+correct. More prompts do not help, because [a prompt selects and does not add
+information](03_how-it-works.md#1-what-a-foundation-model-is). With no region
+for the hidden glass, the keeper has nothing to judge.
 
-The first picture is the arrangement itself, seen from above. The short glass
-stands entirely inside the tall one's outline, so not one of the 464 prompt
-points can land on it.
+The first picture shows the arrangement from above. The short glass stands
+fully inside the tall glass's outline. So none of the 464 prompt points can land
+on it.
 
 ![A top view of two glasses, where the tall one's splayed outline covers the short one completely and every prompt point that falls on the pair lands on the tall glass.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/08-where-it-stops.png)
 
-The second picture follows that geometry through the solution, one step at a
-time, to show that there is no stage at which anything could have noticed.
+The second picture follows this step by step. It shows that no step could have
+noticed the hidden glass.
 
 ![Five steps from the geometry to the keeper: no pixel, so no prompt, so no proposal, so the keeper is never shown the glass at all.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/08-why-nothing-catches-it.png)
 
-One temptation is worth naming, because this solution invites it. A foundation
-model's strength is that it generalises to objects it never saw, and it is easy
-to hope that covers this. It does not. The difficulty is not an unfamiliar
-object but **an absent one**, and generalisation handles evidence of a new
-kind, while here there is no evidence of any kind.
+You might hope that a foundation model can handle this. It is good with objects
+it never saw before. But here the object is not new. It is **absent**. There is
+no evidence of any kind to work with.
+
+The next section looks at a picture where the evidence is there, and at what
+the keeper does with it.
 
 ## 2. What the keeper was shown, and what it answered
 
-`show_keeper.py` prints, for every proposal in one real picture, the eight
-measurements the keeper was given, the three calibrated chances it answered
-with, what the arithmetic after it then did, and what the simulator says the
-proposal really was. What follows is its output on held-out arrangement 10000,
-the first of the survey's three stations. Five straight glasses stand on the
-table, the grid lays 972 prompt points over the picture, and six proposals
-survive the cleanup. Here are the first two.
+The last section showed where the keeper is never asked. This section shows the
+keeper at work. `show_keeper.py` prints, for each region in one picture:
+
+- the eight numbers the keeper read;
+- the three calibrated chances it gave;
+- what the width check did next;
+- what the simulator says the region really was.
+
+Below is its output on held-out arrangement 10000, from the first of the three
+stations. Five straight glasses stand on the table. The grid has 972 points, and
+six regions are left after cleanup. Here are the first two.
 
 ```
 proposal 1: 63070 pixels at (0.434, -0.347) m, 585 mm wide
@@ -88,49 +83,42 @@ proposal 2: 4270 pixels at (0.574, -0.396) m, 67 mm wide
        the truth  one glass
 ```
 
-**The first proposal is the table**, and every one of the eight numbers says so.
-A straight glass of this kind is between 45 and 90 mm across, and the first
-number is where the measured width falls in that range: nought would be the
-narrowest glass and one the widest, so 12.002 means a circle of 585 mm, about
-twelve glasses wide. It lies at the table's own height, to the nearest
-millimetre. It is barely round, because a patch of table with glasses standing
-out of it is full of bites. It covers 165,557 square millimetres of table, which
-is four fifths of everything the picture holds. And 813 of the grid's 972 points
-returned it, which is what a plain grid over a mostly empty table does. The
-keeper gave it 0.73 for *not a glass*, which is under the lower threshold, so it
-was dropped.
+**The first region is the table**, and all eight numbers agree.
 
-**The second proposal is one glass**, and the contrast is the point. Its width
-is just under half way up the kind's range, 67 mm. It is 0.886 round, which is
-close to a filled disc. Its surface stands 164 mm above the table. Every pixel
-of its outline is a step in depth rather than a smooth run, which is what the
-edge of a thing standing on a table looks like. It covers 3,708 square
-millimetres. The keeper gave it 0.85 for *one glass*, above the upper threshold,
-so it went to the width check, passed it, and was reported.
+- A straight glass is 45 to 90 mm across. The first number places the width in
+  that range: 0 is the narrowest glass and 1 is the widest. So 12.002 means
+  585 mm, about twelve glasses wide.
+- It lies at the table's height, to the nearest millimetre.
+- It is not very round, because the glasses cut bites out of it.
+- It covers 165,557 square millimetres, which is four fifths of the picture.
+- 813 of the 972 points returned it, because most points land on bare table.
 
-The last line of each block is what the simulator says the proposal really was,
-and on both of these the keeper agreed with it. That line is there so that a
-disagreement would be printed rather than hidden, which is the point of the
-tool: the explanation is the whole of the deciding, eight named numbers and
-three chances and an answer, and a person who disagrees can point at the number
-that was wrong. No other solution in this book offers that.
+The keeper gave it 0.73 for *not a glass*. Its chance of *one glass* was 0.16,
+below the lower threshold of 0.3, so it was dropped.
 
-The rest of the chain does not appear in a printout of one station, so it is
-worth stating in words. A proposal the keeper answers "more than one glass" is
-not put to the width check at all; it is prompted again with a grid laid only
-inside itself, and the regions that come back are each put to the same checks
-every report passes. A proposal that lands between the two thresholds is handed
-over as a reason to take another picture, and that is the common outcome: over
-the five blocks of held-out spaced arrangements, 634 proposals landed in that
-band, against 85 glasses missed altogether. Where two reports land at one place
-on the table, only the surer of them survives, which is what stops a mouth being
-counted as a second glass above its own.
+**The second region is one glass**, and the numbers show the contrast.
 
-**What it costs.** Running the borrowed model is the whole of the cost to within
-a rounding error: the picture encoder runs once per picture, every prompt after
-it is cheap, and what the keeper adds is too small to see beside them. On this
-machine's integrated graphics one picture took about eight seconds, which is a
-survey of three stations in half a minute, and still far less than one movement
-of the arm.
+- Its width is 67 mm, just under half way up the range.
+- It is 0.886 round, which is close to a filled disc.
+- Its surface stands 164 mm above the table.
+- Its whole outline is a step in depth, as for a thing standing on a table.
+- It covers 3,708 square millimetres.
+
+The keeper gave it 0.85 for *one glass*, above the upper threshold. It then
+passed the width check and was reported.
+
+The last line of each block shows the truth from the simulator. Here the keeper
+agreed with it both times. The line is there so that a disagreement would be
+printed, not hidden. The whole decision is eight named numbers, three chances
+and an answer. A person who disagrees can point at the wrong number.
+
+One station's printout does not show the rest of the chain. A region answered
+"more than one glass" is prompted again inside itself. A region between the two
+thresholds becomes a reason to take another picture, and that is common. When
+two reports fall at one place, only the surer one stays. [The
+keeper](03_how-it-works.md#5-the-keeper) explains all three.
+
+One picture took about eight seconds on this machine. [What it
+needs](05_what-it-needs.md) gives the full cost, and it is the next page.
 
 ← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

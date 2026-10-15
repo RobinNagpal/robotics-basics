@@ -2,25 +2,24 @@
 
 ## 1. Introduction
 
-A camera looking straight down at a table of glasses sometimes photographs only
-some of them. A tall glass's outline is thrown outwards away from the point
-below the camera, far enough that it can sweep over a shorter neighbour and
-cover it completely, and the shorter glass then appears in no picture at all.
-This document explains what is done about that, and it is deliberately separate
-from the six solutions because **every one of them needs it and none of them
-differs in it**. By the end you will understand why no amount of work on the
-pixels can recover a glass that left none, how the arm works out *where* a glass
-could have been hiding without having seen it, how choosing where to look next
-becomes a covering problem with a known name, and why the one learned part in
-here is placed where a wrong answer costs a few seconds rather than a glass.
+Seen from above, a tall glass can hide a short neighbour completely. [What is
+asked for](01_what-is-asked-for.md#a-glass-can-be-missing-from-the-picture-altogether)
+shows how. The short glass is then in no picture at all. This page explains what
+can be done about that. It is separate from the six solutions, because **every
+solution needs it and none of them differs in it**.
 
-**What follows is a design, and none of it is built.** The six solutions are
-built and scored; this is not, and no number anywhere in this book belongs to
-it. There is no code that computes the wedges, chooses where to look next, or
-sends the arm back for a second picture. The other documents separate what
-exists in code from what is prescribed, and this one is prescribed from
-beginning to end, so read it as the answer this book proposes to its own
-hardest difficulty rather than as the answer it delivered.
+The page answers four questions:
+
+- Why can no work on the pixels find a glass that left no pixels?
+- How can the arm work out *where* a glass could be hiding?
+- How does it choose where to look next?
+- Why is the one learned part placed where a mistake costs only a few seconds?
+
+**This page is a design, and none of it is built.** The six solutions are built
+and scored. This part is not. No number in this book belongs to it. No code
+works out the hidden areas, chooses where to look, or sends the arm back for a
+second picture. Read this page as the book's proposed answer to its hardest
+difficulty, not as a result.
 
 ## Contents
 
@@ -34,181 +33,193 @@ hardest difficulty rather than as the answer it delivered.
 
 ## 2. Why no solution can answer this on its own
 
-The six solutions differ in how they turn pictures into masks. That difference
-is invisible here, because the problem is not a hard mask to draw — it is that
-there is nothing to draw.
+We first show why the six solutions cannot fix this, so the reason for a
+separate step is clear.
 
-A method that finds objects in a picture can only find objects the picture
-contains. Where a tall glass covered a short one, those pixels show the tall
-glass and nothing else, so the covered glass is not mis-measured, it is absent.
-No threshold, no larger model and no better training changes that, because the
-evidence is not weak, it is missing. The same holds in the other direction for
-the view from the side: two arrangements, one with a far glass standing behind a
-near one and one with the far glass taken away, produce the same picture pixel
-for pixel, so any method that reads only the picture must answer both the same
-way.
+The six solutions differ in how they turn pictures into masks. That difference
+does not matter here. The problem is not a hard mask to draw. The problem is
+that there is nothing to draw.
+
+A method that finds objects in a picture can only find what the picture holds.
+Where a tall glass covers a short one, those pixels show only the tall glass.
+So the short glass is not measured badly. It is absent. A different threshold,
+a larger model or better training cannot change this. The evidence is not weak.
+It is missing.
+
+The same is true for the view from the side. Take two arrangements. In one, a
+far glass stands behind a near one. In the other, the far glass is removed. Both
+give the same picture, pixel for pixel. So any method that reads only the
+picture must give the same answer for both.
 
 ![Seen from the side, a far glass standing behind a near one leaves exactly the mask the near glass leaves on its own, so the picture carries no trace of what it failed to show.](../../images/seeing-the-glasses/looking-again-at-what-was-hidden/04-hidden-from-the-side.png)
 
-So the answer has to come from somewhere that does not depend on the picture at
-all, and that somewhere is **geometry**. The arm knows where its camera was,
-what its lens does, and where the glasses it *did* find are standing. From those
-three it can work out which parts of the table no ray from the lens could have
-reached — and that is a statement about the world rather than about the picture,
-which is exactly why it survives a glass being invisible.
+So the answer must come from something other than the picture. That something
+is **geometry**. The arm knows three things: where its camera was, how its lens
+works, and where the glasses it *did* find are standing. From these it can work
+out which parts of the table the camera could not see. This is a fact about the
+room, not about the picture. So it still holds when a glass is invisible.
+
+The next section uses this geometry to find the places a glass could hide.
 
 ## 3. Step one: where could a glass have been hiding?
 
-The arm starts from what it found, and asks what each found glass could have
-been concealing.
+Geometry is the only tool left, so the arm uses it first to mark the table it
+could not see. It starts from the glasses it found.
 
-**Each found glass hides a wedge of table behind itself.** Think of the straight
-line from the lens, grazing the glass's widest part, and carrying on until it
-meets the table. Everything in the shadow of that line is table the camera could
-not see, and the shape of that shadow is a wedge spreading away from the point
-below the camera. The taller and wider the glass, the larger its wedge. This is
-the same arithmetic that explains why a glass's outline lands further out than
-the glass itself, run the other way round.
+**Each found glass hides a wedge of table behind it.** Picture a straight line
+from the lens that just touches the glass's widest part. Follow it until it
+meets the table. The table in the shadow of that line was hidden from the
+camera. This shadow is a wedge that spreads away from the point below the
+camera. A taller or wider glass hides a bigger wedge. This is the same
+arithmetic as [splay](../01_the-cell.md#6-the-words), used the other way round.
 
-**The edge of the picture hides the rest.** A camera sees a rectangle, so
-anything outside that rectangle is unseen for a much simpler reason. The
-stations overlap on purpose, so that a strip missed by one station falls well
-inside another's picture, which is why the frame edge is a smaller worry than
-the wedges.
+**The edge of the picture hides more table.** A camera sees a rectangle, so
+anything outside it is unseen. But the survey stations overlap on purpose. A
+strip missed by one station is inside another station's picture. So the frame
+edge matters less than the wedges.
 
-**What is left over is reported.** Put all the wedges and all the frame edges
-from all the stations together, and subtract them from the glass zone. Whatever
-remains is table that nobody saw. Each remaining piece large enough to hold the
-smallest footprint a glass of this kind can have is reported as an **unsearched
-patch**.
+**What is left is reported.** Take all the wedges and all the frame edges from
+all the stations. Remove them from the glass zone. What remains is table that
+nobody saw. A remaining piece is reported as an **unsearched patch** if it is
+big enough to hold the smallest footprint of this kind of glass.
 
 ![From the top, a tall glass's outline is thrown outwards far enough to swallow a shorter neighbour whole, and the same arithmetic marks out the table that went unsearched.](../../images/seeing-the-glasses/looking-again-at-what-was-hidden/04-hidden-from-above.png)
 
-That word "unsearched" is doing careful work, so it is worth being plain about
-it. **An unsearched patch is not a glass, and it is not a guess that a glass is
-there.** It is a statement that the question was never asked at that place. Most
-unsearched patches are empty, because most hidden table really is empty. The
-value of reporting them is that it converts an invisible failure into a visible
-piece of work.
+**An unsearched patch is not a glass, and it is not a guess that a glass is
+there.** It says only that nobody looked at that place. Most unsearched patches
+are empty, because most hidden table is empty. Reporting them still helps. A
+failure that nobody could see becomes a task that anyone can see.
+
+The arm now has a list of places it never saw. The next section asks where the
+camera must stand to see them.
 
 ## 4. Step two: where should the camera stand?
 
-Now the arm has a list of places that were never seen, and it has to choose
-camera positions that would see them. This is a different question from the one
-the earlier job of measuring a single glass asks, and the difference matters.
+The arm now has a list of unsearched patches. It must choose camera positions
+that would see them.
 
-When a glass needs measuring, it has a position, so "somewhere around it, at
-the right distance, looking at it" is a sensible family of poses to try. An
-unsearched patch has no glass in it. There is nothing to look *at* and nothing
-to stand *around*. Worse, a patch has extent rather than being a point, so a
-camera position sees all of it, or part of it, or none of it.
+Measuring one glass is different. A glass has a position, so the arm can stand
+somewhere around it, at the right distance, and look at it. An unsearched patch
+has no glass in it. There is nothing to look *at*. Also, a patch is an area,
+not a point. So one camera position may see all of it, part of it, or none of
+it.
 
-So the test is not "is the line of sight clear?" but **"does this patch fall
-inside what this camera position can see?"** — which is the wedge arithmetic
-from step one run forwards instead of backwards. For a candidate position, work
-out the wedges the known glasses would hide and the part of the zone that would
-fall outside the frame; what is left is that position's visible region, and
-testing a patch against it is a containment test.
+So the test is: **"does this patch fall inside what this camera position can
+see?"** This uses the wedge arithmetic from step one again. For a candidate
+position, work out the wedges the known glasses would hide. Also work out which
+parts of the zone would fall outside the frame. What is left is the area that
+position can see. Then check whether the patch is inside that area.
 
 ### Three tests, and why their order matters
 
-Not every position is usable, and the candidates are filtered before anything is
-ranked. Three tests do it, and they are applied cheapest first.
+Not every position can be used. Three tests remove the bad ones before any
+ranking. They run cheapest first.
 
-**Can the arm reach it?** Pure arithmetic on the arm's own dimensions, and it
+**Can the arm reach it?** This is simple arithmetic on the arm's sizes. It
 costs almost nothing.
 
-**Would something else share the frame?** A position is refused if a known glass
-would stand squarely in the line of sight, or if the camera itself would have to
-occupy the space a glass is standing in. Also arithmetic, and also cheap.
+**Would something else get in the way?** A position is refused if a known glass
+would stand in the line of sight. It is also refused if the camera would have to
+be where a glass is standing. This is also cheap arithmetic.
 
-**Can the arm actually fly there?** This asks the motion planner, which is by
-far the most expensive of the three, so it is asked last and only about
-candidates that already passed the other two.
+**Can the arm actually move there?** This asks the motion planner. The motion
+planner is the program that finds a safe path for the arm. It is by far the
+slowest test. So it runs last, and only on positions that passed the other two.
 
-Putting the cheap arithmetic first is not a detail. A planner query that was
-never going to be used is seconds spent for nothing, and this loop runs inside a
-budget.
+The order matters. Each planner call takes seconds. A call on a position that
+fails a cheap test is wasted time, and the run has a time budget.
 
 ![Candidate camera positions are cut first by reach and then by whether something else would share the frame, and only the survivors are put to the motion planner.](../../images/seeing-the-glasses/looking-again-at-what-was-hidden/03-three-tests.png)
 
 ### Which makes it a covering problem
 
-Each surviving camera position sees some subset of the unsearched patches. The
-run wants every patch seen, and every position costs seconds, so the question
-becomes: **what is the smallest set of positions whose visible regions between
-them cover every patch?**
+Each position that passes sees some of the unsearched patches. The run wants
+every patch seen. Each position costs seconds. So the question is: **what is the
+smallest set of positions that, together, see every patch?**
 
-That is a classical problem with a name worth knowing, which is **set cover**:
-given a collection of sets and a target to cover, choose as few sets as
-possible. Solving it exactly is known to be hard. The useful part is that a very
-simple approximate method is provably close to the best possible — take the
-candidate that covers the most patches not yet covered, and repeat until
-everything is covered. That is the **greedy method**, and for set cover it is
-about as good as any simple approach can be.
+This is a well-known problem called **set cover**. You have a collection of sets
+and a target. You must choose as few sets as possible that together cover the
+target. Solving it exactly is known to be hard. But a simple method gets close
+to the best answer, and this is proved. Pick the position that covers the most
+patches not yet covered. Repeat until every patch is covered. This is the
+**greedy method**. For set cover, no simple method does much better.
+
+The covering step says which positions are needed. The next section decides
+which one to visit first.
 
 ## 5. Step three: which look to take first
 
-Covering says *which* positions are needed. It does not say which to take first,
-and that matters because the run has a budget and may not get through the whole
-set.
+Set cover gives a list of positions but no order. The order matters, because
+the run has a time budget and may not visit them all.
 
-This is where the single learned part of the shared machinery sits: a small
-model that takes the survivors and puts them in order. It is given a short list
-of plain numbers about each candidate — how many unsearched patches it would
-cover, how large those patches are, how many glasses are still unaccounted for
-against the number the problem says to expect — and it returns a score used only
-for sorting.
+Here is the one learned part of this shared step. It is a small model that puts
+the positions in order. For each position it gets a few plain numbers:
 
-**Where that model sits is the whole reason it is safe to have.** The geometry
-generates every candidate and refuses the unsafe ones; the model only orders
-what is left. So a bad ordering costs one wasted look and nothing worse. It
-cannot cause a glass to be missed, because every patch stays on the list until
-something has actually looked at it, and it cannot cause a collision, because
-the vetoes do not consult it. A better model makes wasted looks rarer; only the
-arrangement puts a ceiling on how bad things can get.
+- how many unsearched patches it would see;
+- how big those patches are;
+- how many glasses are still missing, compared with the number expected.
+
+It returns a score. The score is used only for sorting.
+
+**The model is safe because of where it sits.** The geometry makes every
+candidate and removes the unsafe ones. The model only orders what is left. So a
+bad order costs one wasted look and nothing worse. It cannot make the run miss a
+glass. Every patch stays on the list until something has looked at it. It cannot
+cause a collision either, because the safety tests do not ask the model. A
+better model wastes fewer looks. Only the arrangement of glasses limits how bad
+things can get.
 
 ![Reach, line of sight and whether the arm can get there remove candidates outright, and the learned score is only allowed to reorder what they leave behind.](../../images/seeing-the-glasses/looking-again-at-what-was-hidden/04-veto-then-ordering.png)
 
-**And it degrades to nothing.** With no model at all, the patches are covered in
-whatever order the geometry suggests, and the run is slower rather than wrong.
+**The run still works without the model.** With no model, the arm visits the
+patches in the order the geometry gives. The run is slower, but not wrong.
 
 ### One number the model needs that is not in any picture
 
-One of its inputs deserves naming, because it comes from [the problem
-statement](01_what-is-asked-for.md) rather than from a sensor: **how many
-glasses are on the table**. The problem says four to six, and the run knows how
-many it has already placed.
+One input does not come from a sensor. It comes from [the
+task](01_what-is-asked-for.md#2-what-is-on-the-table): **how many glasses are on
+the table**. The task says four to six. The run knows how many it has found.
 
-That single number changes how seriously the whole list of patches should be
-taken. If six glasses were expected and six were found, the patches are almost
-certainly empty and the looks can be skipped. If six were expected and four
-were found, two glasses are somewhere, and the patches are the only places left
-for them to be. An empty result then teaches something too: the count still
-stands at four, there are fewer places left, and the remaining patches become
-*more* suspicious rather than less.
+This one number changes how much the patches matter. Say six glasses were
+expected and six were found. Then the patches are almost surely empty, and the
+looks can be skipped. Say six were expected and four were found. Then two
+glasses are somewhere, and the patches are the only places left. An empty look
+then teaches something too. The count is still four, and fewer places are left.
+So the remaining patches become *more* likely to hold a glass, not less.
+
+This design works well from above. The next section says where it stops
+working.
 
 ## 6. The honest limit
 
-This machinery recovers a glass hidden from the top, because the wedges can be
-computed and a new position can be found that sees into them. It does much less
-for a glass hidden from the side.
+Every design has limits, and this section states this one plainly.
 
-Looking level, the strip of table behind a near glass cannot be seen from
-anywhere along the line the two glasses lie on, at any distance. The request is
-therefore specifically for a position off that line, which the overlapping
-stations of the survey already provide — so in practice the survey closes this
-case before the side views begin. What nothing closes is the general statement:
-two arrangements that produce identical pictures cannot be told apart by
-anything that reads those pictures.
+This design can recover a glass hidden in the view from above. The wedges can be
+worked out, and a new position can see into them. It does much less for a glass
+hidden in the view from the side.
+
+In the level view, a near glass hides the table behind it along one line.
+Looking along that line, from any distance, never shows the far glass. Only a
+position off that line can see it. The overlapping survey stations already give
+such positions. So in practice the survey settles this case before the side
+views begin. One general rule still has no answer. Two arrangements that give
+the same pictures cannot be told apart by anything that reads only those
+pictures.
 
 ![Looking from the side along the line the two glasses stand on, the far one is gone from the picture; a position off that line brings it back, while standing further away does not.](../../images/seeing-the-glasses/looking-again-at-what-was-hidden/03-hidden-from-the-side.png)
 
+This ends the shared part of the problem. The next page shows how every
+solution is tested.
+
 ## 7. Where to go next
 
-- [The problem](01_what-is-asked-for.md) — what is asked for, and the three difficulties.
-- [The examiner](../03_the-examiner/01_the-examiner.md) — the shared input, output and marking.
-- [The six solutions](../04_the-six-solutions/01_how-the-six-compare.md) — what each one puts between the
-  pictures and the masks.
+These pages follow on from this one.
+
+- [The problem](01_what-is-asked-for.md) says what is asked for, and the two
+  difficulties.
+- [The examiner](../03_the-examiner/01_the-examiner.md) gives the shared input,
+  output and marking.
+- [The six solutions](../04_the-six-solutions/01_how-the-six-compare.md) say
+  what each one does between the pictures and the masks.
 
 ← [What is asked for — segment the glasses](01_what-is-asked-for.md) · [The examiner — the same question for every answer](../03_the-examiner/01_the-examiner.md) →

@@ -1,8 +1,8 @@
 # The code
 
-This page shows the code at the heart of this solution, and says what the
-solution hands back to the rest of the cell. It follows [what it
-is](01_what-it-is.md), which explains the idea that the code below carries out.
+This page shows the main code of this solution. It also says what the solution
+hands back to the rest of the cell. [What it is](01_what-it-is.md) explains the
+idea that this code carries out.
 
 ## Contents
 
@@ -13,38 +13,33 @@ is](01_what-it-is.md), which explains the idea that the code below carries out.
 
 ## 1. The code that does the work
 
-This solution is almost entirely somebody else's code, so the part worth reading
-is small: one call into the borrowed library, and the handful of lines that
-decide what to keep out of the answer. Those lines are the whole of what this
-project wrote.
+Most of this solution is somebody else's code. So the part worth reading is small.
+It is one call into the borrowed library, and a few lines that choose what to
+keep. Those lines are all that this project wrote.
 
-The code lives in the `robot-arm-projects` repository, in the folder
-`v5-pick-glasses/02-segment-glasses/03-yolo-zero-shot/`. The call and the
-handling of its answer are in
+The code is in the `robot-arm-projects` repository, in the folder
+`v5-pick-glasses/02-segment-glasses/03-yolo-zero-shot/`. The main file is
 [`03-yolo-zero-shot/yolo_zero_shot.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/03-yolo-zero-shot/yolo_zero_shot.py).
-The library is Ultralytics: `YOLO` is the model, `attempt_download_asset` is
-what fetches the weights, and `model.predict` is the one line where the borrowed
-model does its work.
+The library is Ultralytics. `YOLO` is the model. `attempt_download_asset` fetches
+the weights. `model.predict` is the one line where the borrowed model does its work.
 
-One picture becomes a list of masks in four steps, and the comments in the code
-carry those numbers.
+One picture becomes a list of masks in four steps. The comments in the code use
+the same step numbers.
 
-1. Load the borrowed model, whose weights download themselves on the first
-   picture and are found on disk after that, so only the first picture pays.
-2. Shade the depth picture into the three-channel picture the model expects, run
-   the model on it, and bring the answer back into ordinary memory.
-3. Read what the model reported, which is its own name for each outline and how
-   sure it was, then keep the outlines named a drinking vessel that also clear
-   the hand-set bar of 0.25, surest first.
-4. Fill each kept outline into a mask, and drop a mask that covers mostly the
-   same pixels as a better-scoring one.
+1. Load the borrowed model. The weights download on the first picture and are
+   read from disk after that.
+2. Shade the depth picture into the three-channel picture the model expects. Run
+   the model on it. Bring the answer back into ordinary memory.
+3. Read the name and the confidence of each outline. Keep the outlines named as a
+   drinking vessel with a confidence of at least 0.25. Sort them, surest first.
+4. Fill each kept outline into a mask. Drop a mask that covers mostly the same
+   pixels as a surer one.
 
-One function runs those steps in order. It is `Finder.find`, and the examiner
-calls it once for every picture it hands this solution. It calls `look`, which
-does steps 1 and 2, and passes the answer to `masks_from`, which does steps 3
-and 4. Then it hands each mask to the examiner's shared arithmetic, which turns
-the mask into a place on the table. Only its most important lines are shown
-here.
+`Finder.find` runs these steps. The examiner calls it once for each picture. It
+calls `look`, which does steps 1 and 2. Then it calls `masks_from`, which does
+steps 3 and 4. Then it hands each mask to the examiner's shared arithmetic, which
+turns the mask into a place on the table. Only the most important lines are
+shown here.
 
 ```python
 class Finder:
@@ -62,8 +57,8 @@ class Finder:
 ```
 
 The two functions it calls are below, with the function that loads the model.
-The file writes the filtering above the call that produces its input, so the
-step numbers below do not read top to bottom.
+In the file, the filtering comes before the call that makes its input. So the
+step numbers below do not read from top to bottom.
 
 ```python
 # Step 1: load the borrowed model once and keep it -- every later picture reuses it for free.
@@ -106,13 +101,12 @@ def look(picture) -> object:
     return answers[0].cpu()
 ```
 
-The list of names step 3 tests against is in
-[`03-yolo-zero-shot/drinking_vessels.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/03-yolo-zero-shot/drinking_vessels.py),
-and it is worth showing rather than describing, because the solution's one
-promise is that nothing in it was tuned to this cell and that promise covers
-this list. Every name in it is one of the borrowed model's own categories, read
-off its fixed list, and not one was added after anybody saw what the model
-called a glass here.
+Step 3 tests names against a list in
+[`03-yolo-zero-shot/drinking_vessels.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/03-yolo-zero-shot/drinking_vessels.py).
+It is shown here because this solution promises that nothing was tuned to this
+cell, and that promise covers this list too. Every name in it comes from the
+model's own fixed list. No name was added after anybody saw what the model called
+a glass here.
 
 ```python
 VESSELS = ("wine glass", "cup")
@@ -130,69 +124,60 @@ def is_drinking_vessel(name: str) -> bool:
     return name in ACCEPTED
 ```
 
-Two things show from that. The borrowed library is reached in exactly one place,
-and what this project contributes is a bar on the confidence number, a filter on
-names, and the collapsing of a glass that arrived twice — after which the name
-is gone and what leaves is a list of masks carrying no claim about what was
-outlined. Nothing above reads a fitted file, because there is none: the folder
-has no training command at all, and its `fit` function exists only to refuse.
-The bar, the share of pixels that makes two outlines one, and those five names
-are everything this solution chose, and none of it came from this cell's data.
+The borrowed library is called in one place only. This project adds three
+things: a cut-off on confidence, a filter on names, and the joining of a glass
+that was reported twice. After that the names are gone, and only masks leave.
+Nothing above reads a fitted file, because there is none. The folder has no
+training command. Its `fit` function exists only to refuse. The cut-off, the
+share of shared pixels that makes two outlines one, and the five names are
+everything this solution chose. None of them came from this cell's data.
+
+The next section shows one more file. It does not find glasses. It measures why
+this solution fails.
 
 ## 2. The code that measured the failure
 
-One more file is worth reading, because the result turns on it.
+The code above explains what the solution does. This file explains why its score
+is so low.
 [`what_it_named.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/02-segment-glasses/03-yolo-zero-shot/what_it_named.py)
-runs the model over held-out arrangements and prints every name it offered, with
-the filter removed. A scorecard says only that glasses were missed. This says
-which names the model reached for instead, which is the difference between
-knowing that the method failed and knowing why.
+runs the model on held-out arrangements with the name filter removed. It prints
+every name the model gave. A scorecard only says that glasses were missed. This
+file says which names the model used instead.
+[Why it failed](03_results-and-comparison.md#2-why-it-failed-the-names-it-reached-for)
+shows what it found, and why those names must not be added to the list.
 
-Its own docstring carries the rule that makes it safe to run: reading these
-names and then adding them to the accepted list would be fitting the filter on
-this cell's own data, which is the one thing this solution promises not to do.
-The measurement is allowed. Acting on it is not.
+The next section says what this solution hands back to the rest of the cell.
 
 ## 3. The masks are what this contributes
 
-The input is fixed by the examiner: for each survey picture, the grey picture
-shaded from depth, the depth reading at every pixel, and the camera's own pose,
-and nothing else. No solution may read the simulator's record of what it
-spawned. The output is fixed too: one record per glass, holding its mask pixels,
-its place on the table and a rough width.
+The section above showed how the failure was measured. This section shows where
+the solution's job ends. The examiner fixes what goes in and what comes out, as
+[what a solution is given](../03_the-examiner/01_the-examiner.md#4-what-a-solution-is-given)
+explains. **This solution gives only the masks.** The examiner turns each mask
+into a place, so any difference in score comes from the mask.
 
-The step between the mask and the place belongs to [the
-examiner](../03_the-examiner/01_the-examiner.md) rather than to the solution. So
-**this solution contributes only the masks**, and any difference in its score
-belongs to the mask. It cannot win by measuring more cleverly and it cannot lose
-by measuring worse. One consequence is worth repeating because it removes a
-question that would otherwise be asked here: **no model in this book produces a
-pose.** Models produce masks, the place comes from depth and the camera's own
-pose by arithmetic, and a glass standing upright on a flat table has no
-orientation left to find.
+`merge_doubles` handles one case. A model can name one glass twice, under two
+similar names. The examiner would count those two reports as a split. So
+`merge_doubles` joins outlines that cover mostly the same pixels. In the marked
+runs it never had to, because the scorecard records no split in any block.
 
-Two further points follow from that boundary. A single glass can be named twice,
-under two neighbouring drinking-vessel categories, and arrive as two outlines
-covering nearly the same pixels; the examiner counts a real glass that collected
-two reports as a split, so `merge_doubles` collapses outlines that cover
-substantially the same pixels before anything is handed over. In the marked runs
-it never had to: the scorecard records no split and no merge in any block, which
-is what a method that names almost nothing looks like. And a mask that asserts
-pixels the camera never saw the glass at must say which ones, because the depth
-reading at such a pixel belongs to whatever stood in front; that case does not
-arise here, since the outlines this model returns mark only pixels where the
-object was actually visible.
+A mask that claims pixels the camera never saw must name them, as
+[how a mask becomes a record](../12_how-a-mask-becomes-a-record.md#4-why-a-mask-that-asserts-pixels-must-say-which-ones)
+explains. That case does not happen here. This model outlines only pixels where
+the glass was visible.
+
+The last section puts these parts together.
 
 ## 4. How the concepts fit together
 
-Every part of this solution is a consequence of one decision: **fit nothing
-here**. The names are somebody else's, so they can only filter. The outline is
-somebody else's, so its edge is only as fine as the machinery that drew it. The
-confidence number is somebody else's, so it means nothing as a probability on
-these pictures. And the pictures are nothing like the ones the weights were
-fitted on, which is what destroyed the whole arrangement.
+The sections above showed each part. This section shows the one decision behind
+them all: **fit nothing here**. The names belong to somebody else, so they can
+only filter. The outline belongs to somebody else, so its edge is only as fine as
+that model makes it. The confidence belongs to somebody else, so it is not a
+probability on these pictures. And the pictures are not like the ones the model
+was trained on. That last point is what made the solution fail.
 
-That decision is what makes the solution free to try, and it is also what
-removes every lever that would normally be pulled to fix any of those four.
+This decision makes the solution free to try. It also removes every way to fix
+these four problems. The next page gives the results.
 
 ← [What it is](01_what-it-is.md) · [Results and comparison](03_results-and-comparison.md) →

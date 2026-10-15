@@ -1,8 +1,8 @@
 # How it compares
 
-This page is the judgement on this solution. It says where the solution is
-strong and where it breaks, names the general ideas behind it, and places it
-beside the other five.
+This page judges this solution. It says where the solution is strong and where
+it breaks. It names the general ideas behind it. Then it places it beside the
+other five.
 
 ## Contents
 
@@ -12,283 +12,232 @@ beside the other five.
 
 ## 1. Where it is strong and where it breaks
 
-Marked by [the examiner](../03_the-examiner/01_the-examiner.md) over five blocks
-of 20 held-out arrangements, it reports 64.1 glasses per 100 on the layouts the
-cell's own rule spaces, and 74.6 per 100 when the glasses are crowded closer
-than that rule allows. Those two numbers are the wrong way round from every
-other solution in the book, which all do worse when the glasses crowd, and the
-end of this section is the reason. The places it does report are the most
-accurate of the six on the spaced layouts, 0.6 mm from the truth at the median
-against the next best at 5.6 mm, and 0.9 mm on the crowded ones, where three
-other solutions are within half a millimetre of it.
+The earlier pages showed how the solution works. This section shows how well.
 
-**It has no domain gap.** Everything it knows came from this cell's own
-pictures, so nothing it learned has to be transferred from a world it will
-never see. This is the reason it is the control for the comparison, and it is
-the one strength no borrowed model can claim.
+[The examiner](../03_the-examiner/01_the-examiner.md) scored it on five blocks
+of 20 held-out arrangements. The table below gives its score row. Read each
+row as one kind of arrangement. "Found" is glasses found out of every 100.
+"Place error" is the median distance from the true place.
+
+| Arrangements | Found per 100 | Place error (median) |
+|---|---|---|
+| Spaced by the cell's layout rule | 64.1 | 0.6 mm |
+| Crowded closer than the rule allows | 74.6 | 0.9 mm |
+
+It does better on the crowded set. Every other solution does worse there. The
+end of this section explains why.
+
+**It has no domain gap.** All it knows came from this cell's own pictures.
+[What it is](01_what-it-is.md#1-introduction) explains why that makes it the
+control.
 
 **It separates glasses that are joined in the picture.** Nothing has to find a
-boundary, so nothing can get a boundary wrong, and the separation survives
-cases where there is no gap anywhere to find.
+boundary, so no boundary can be wrong.
 
-**It is unusually good at a partly hidden glass.** A crescent of surviving
-pixels still votes towards the right middle, and the votes do not have to be
-joined to each other or to make a recognisable shape.
+**It is good at a partly hidden glass.** A thin crescent of a glass still votes
+for the right middle. [The worked example](04_a-worked-example.md#1-when-the-glasses-are-completely-hidden)
+shows this.
 
-**Its doubt costs nothing.** How many votes a pile holds is a confidence per
-glass, and how far its votes sit from its own peak would be a second one. Both
-are measurements of the votes rather than the network's opinion of itself,
-which is a better kind of warning than most learned methods give; the count is
-the one the code measures.
+**Its doubt is a measurement.** The number of votes in a pile says how sure to
+be. It is measured from the votes, not guessed by the network.
 
-**It is blind to a glass hidden completely.** No pixels means no votes, which
-means no pile, no spread and no short count. This is a fact about the input
-rather than about the model.
+**It cannot see a fully hidden glass.** No pixels means no votes. This is true
+of every method that reads pictures.
 
-**And it is blind to a glass whose own middle is outside the picture**, which is
-the larger of the two blindnesses by a long way. The votes are counted in a
-tally the size of the picture, so a vote landing outside it is dropped; and a
-tall glass out towards the side of the glass zone has its rim's middle thrown
-beyond the frame edge by splay, so every one of its votes is dropped and no pile
+**It cannot see a glass whose own middle is outside the picture.** This is its
+biggest loss by far. Votes are counted in a tally the size of the picture. A
+vote that lands outside it is dropped. Splay pushes a tall glass's middle
+outwards. If the glass stands near the side of the glass zone, its middle can
+land past the edge of the picture. Then all its votes are dropped, and no pile
 forms.
 
 ![One station's picture, the glass zone inside it, and the boxes a glass has to stand inside for its own rim middle to be drawn within the picture: a wide one for the shortest glass of the kind and a much smaller one for the tallest. A tall glass standing outside the smaller box has its middle drawn beyond the frame edge, where the vote is dropped.](../../images/seeing-the-glasses/a-network-trained-from-scratch/06-the-vote-has-to-land-in-the-picture.png)
 
-How much that costs can be worked out without running the network at all. Over
-the five blocks of spaced arrangements, 499 glasses were visible to some
-station, and only 312 of them — 62.5 per 100 — had their own middle inside the
-picture at any station. The solution reported 64.1 per 100. **It is already
-reporting about as many glasses as that limit leaves it**, so the shortfall is
-in the voting design rather than in the training set. On the crowded
-arrangements the same count comes to 87.0 per 100, because the crowded family
-builds its lines out from under the middle station rather than scattering
-glasses across the zone, and there the solution reported 74.6. That is the whole
-of why this is the one solution in the book that does better on the harder set.
-The two sets differ in where the glasses stand relative to the camera, and this
-failure is about nothing else.
+This loss can be counted without running the network. In the spaced
+arrangements, 499 glasses were seen by some station. Only 312 of them, 62.5
+per 100, had their middle inside the picture at any station. The solution
+found 64.1 per 100. **So it already finds about as many glasses as this limit
+allows.** The problem is the voting design, not the training. In the crowded
+arrangements, the same count is 87.0 per 100. This is because the crowded
+arrangements put their glasses in lines under the middle station. There the
+solution found 74.6. This is why it does better on the crowded set.
 
-The repair is therefore not more training. It is to count the votes in a tally
-larger than the picture, so that a middle thrown past the frame edge still has a
-square to land in.
+So the fix is not more training. The fix is a tally bigger than the picture.
+Then a middle past the edge still has a place to land.
 
-**It needs a training set and a training run before it answers anything.** The
-borrowed model that changes nothing can be pointed at a picture on the day it
-is downloaded. This one cannot, and that gap in setup cost is real.
+**It needs a training set and a training run first.** A downloaded model can
+answer on the first day. This one cannot.
 
-**Its answer cannot explain itself.** When a fitted circle is wrong you can
-print one number and see why. When a network is wrong you can look at the
-picture and guess. The arithmetic wrapped around it is what makes that
-tolerable.
+**It cannot explain its answer.** When a written rule is wrong, you can print a
+number and see why. When a network is wrong, you can only guess. The width
+check after the network helps here.
 
-**Its weights are a second copy of the cell**, and keeping them in step with
-the first copy is a maintenance job rules on the table simply does not
-have.
+**Its weights must match the cell.** [What it needs](05_what-it-needs.md#1-what-it-needs)
+explains this cost.
+
+These strengths and weaknesses come from a few general ideas. The next section
+names them.
 
 ## 2. The general ideas behind this
 
-Every part of this is standard, and most of the parts are not new. Two things
-here are unusual: fitting from a random start on rendered pictures rather than
-fine-tuning something large, and asking one network a question about classes
-and a question about instances from the same shared body.
+The last section judged this solution. This section names the standard ideas
+it is built from, so you can find them elsewhere. Most of them are not new.
+Two things are unusual here. The network is trained from random numbers, not
+fine-tuned. And one network answers both "is this glass?" and "which glass?".
 
 ### Semantic segmentation — a class label at every pixel
 
-Rather than a box round an object, produce a label for every pixel. The idea
-became practical with **fully convolutional networks** (Long, Shelhamer and
-Darrell, [arXiv:1411.4038](https://arxiv.org/abs/1411.4038)), which replaced a
-classifier's final layers with convolutions so that a picture of any size maps
-to a label map of the same size.
+Semantic segmentation gives a label to every pixel, not a box round an object.
+**Fully convolutional networks** made it practical (Long, Shelhamer and
+Darrell, [arXiv:1411.4038](https://arxiv.org/abs/1411.4038)).
 
-It is used wherever the extent of a thing matters more than a box round it,
-such as medical imaging, aerial pictures and industrial inspection. It is
-rarely right for counting or separating individuals, because a class label has
-nowhere to record which object a pixel belongs to, and that is the limitation
-the second head here exists to remove. For more, see [image
+It is used where the shape of a thing matters, such as medical images, aerial
+pictures and factory inspection. It is not right for counting or separating
+objects. A class label cannot say which object a pixel belongs to. The second
+head here exists to fix that. For more, see [image
 segmentation](https://en.wikipedia.org/wiki/Image_segmentation).
 
 ### The encoder–decoder with skip connections
 
-Halve the resolution repeatedly while widening the channels, then enlarge it
-back, copying each level on the way down across to the matching level on the
-way up so that detail lost going down is available coming back. That is the
-**U-Net** (Ronneberger, Fischer and Brox,
-[arXiv:1505.04597](https://arxiv.org/abs/1505.04597)), designed for biomedical
-images with very few training examples, which is exactly why it suits a small
-rendered training set.
+This is the **U-Net** described in [the shape of the
+network](03_how-it-works.md#4-the-shape-of-the-network) (Ronneberger, Fischer
+and Brox, [arXiv:1505.04597](https://arxiv.org/abs/1505.04597)). It was made
+for medical images with very few training examples. So it suits a small
+training set.
 
-It remains the default for a small segmentation problem. It is rarely right for
-problems needing broad understanding of a scene or many classes, where a large
-pre-trained network earns its size, because a small network knows only what its
-receptive field and its training set contained.
+It is still the usual choice for a small segmentation problem. It is not right
+when a problem needs broad knowledge of scenes or many classes. A small
+network knows only what it saw in training.
 
 ### Overlap losses — scoring the shape rather than the pixel count
 
-Cross entropy averages over pixels, so on a picture that is mostly background a
-model can score well by predicting background everywhere. **Dice** and
-**intersection over union** losses score the overlap between the predicted and
-the true regions instead, and they are usually added to cross entropy rather
-than used in place of it (Milletari and colleagues,
+**Dice** and **intersection over union** losses score the overlap between the
+answer and the truth. [The first head](03_how-it-works.md#5-the-first-head-which-pixels-are-glass)
+explains why they help (Milletari and colleagues,
 [arXiv:1606.04797](https://arxiv.org/abs/1606.04797)).
 
-They are used wherever one class is far rarer than the other, which covers most
-medical and industrial segmentation. They are rarely enough on their own,
-because an overlap score says nothing about how confident the individual pixels
-were, which is information a feedback loop can use.
+They are used wherever one class is much rarer than the other. This covers
+most medical and factory segmentation. They are rarely enough alone. They do
+not say how sure each pixel was, and a feedback loop can use that.
 
 ### The Hough transform — local evidence for a global claim
 
-A single edge pixel cannot say where a shape is, but it can vote for every
-shape that would explain it; add up the votes and the peaks are the shapes
-really present. Hough's 1962 patent did this for straight lines, and the
-**generalised Hough transform** (Ballard, 1981) extended it to any shape by
-replacing the equation with a table of offsets.
+One edge pixel cannot say where a shape is. But it can vote for every shape
+that would explain it. Add up the votes, and the peaks are the real shapes.
+Hough's 1962 patent did this for straight lines. The **generalised Hough
+transform** (Ballard, 1981) did it for any shape, using a table of offsets.
 
-It is used for finding shapes in noisy, cluttered pictures where much of the
-outline is missing. Voting is naturally robust to things being hidden, because
-the visible part still votes correctly. It is rarely right for shapes with many
-parameters, because the table of votes grows explosively with them. For more,
-see the [Hough transform](https://en.wikipedia.org/wiki/Hough_transform).
+It is used to find shapes in cluttered pictures where much of the outline is
+missing. The visible part still votes correctly. It is not right for shapes
+with many settings, because the table of votes grows too large. For more, see
+the [Hough transform](https://en.wikipedia.org/wiki/Hough_transform).
 
 ### Learned voting — replacing the table of offsets with a model
 
-**Hough forests** (Gall and Lempitsky, 2009) first replaced the hand-built
-table of offsets with a learned one. The neural descendants apply the same
-structure to pixels and points: **VoteNet**
-([arXiv:1904.09664](https://arxiv.org/abs/1904.09664)) has points from a depth
-sensor vote for object middles, and **PVNet**
+**Hough forests** (Gall and Lempitsky, 2009) first learned the table of
+offsets instead of building it by hand. Later networks do the same.
+**VoteNet** ([arXiv:1904.09664](https://arxiv.org/abs/1904.09664)) has depth
+points vote for object middles. **PVNet**
 ([arXiv:1812.11788](https://arxiv.org/abs/1812.11788)) has pixels vote for
-landmark points, specifically because voting survives things being hidden.
+key points, because voting still works when part of an object is hidden.
 
-These are used for finding objects in cluttered scenes and bin picking, where a
-method needing the whole object visible fails and a method needing only a
-fraction does not. They are rarely right for objects with no well-defined
-middle, or where the offsets are large compared with the picture, because then
-the number the network has to predict grows and the votes scatter.
+These are used for cluttered scenes and bin picking. They are not right for
+objects with no clear middle. They also struggle when the arrows are long
+compared with the picture, because the votes then scatter.
 
 ### Mean shift — finding peaks without being told how many
 
-Slide a window to the average of the points inside it and repeat until it stops
-moving; every starting point that ends in the same place belongs to one peak
-(Comaniciu and Meer, 2002). Unlike methods that divide data into a fixed number
-of groups, it does not need the count in advance, which is the whole point
-here, because the number of groups is the answer.
+[From votes to glasses](03_how-it-works.md#7-from-votes-to-glasses) describes
+mean shift (Comaniciu and Meer, 2002). It does not need the number of groups
+in advance. That is the point here, because the number of groups is the
+answer.
 
-It is used for finding peaks when the count is unknown, such as tracking and
-colour segmentation. It is rarely right for data with many dimensions, where it
-is slow and the window size becomes impossible to choose, and it is poor for
-groups of very different densities, where one window size cannot serve both.
-For more, see [mean shift](https://en.wikipedia.org/wiki/Mean_shift).
+It is used for tracking and colour segmentation. It is not right for data with
+many dimensions, where it is slow and the window size is hard to choose. It is
+also poor when groups have very different densities. For more, see [mean
+shift](https://en.wikipedia.org/wiki/Mean_shift).
 
 ### Self-supervised learning — labels from the structure of the data
 
-Rather than annotate anything, construct a task whose answer is already implied
-by the data, so that the supervision is free and unlimited. The second way is this
-idea with the arm's own encoders as the generator of labels.
+Self-supervised learning makes up a task whose answer is already in the data.
+So labels are free. The second way does this with the arm's encoders.
 
-It is used where unlabelled data is abundant and labels are expensive, and in
-robotics, where a robot's sense of its own position is a label generator that
-never tires. It is rarely right where the invented task can be solved by a
-shortcut that does not need the understanding you wanted, and designing a task
-with no shortcut is the hard part of the field. For more, see [self-supervised
+It is used where data is plentiful and labels are costly. It suits robotics,
+because a robot always knows its own position. It fails when the task has a
+shortcut that skips the skill you wanted. Designing a task with no shortcut is
+the hard part. For more, see [self-supervised
 learning](https://en.wikipedia.org/wiki/Self-supervised_learning).
 
 ### Geometry as supervision, and depth without depth labels
 
-If a camera's movement between two pictures is known, then a point's position
-in the first picture determines where it must appear in the second, given its
-depth. That is the **epipolar constraint**, and it turns a depth guess into a
-checkable prediction. **SfMLearner** (Zhou and colleagues,
-[arXiv:1704.07813](https://arxiv.org/abs/1704.07813)) built a training recipe
-on it with no depth labels at all, and **Monodepth2** (Godard and colleagues,
+Suppose you know how the camera moved between two pictures. Then a point's
+place in the first picture and its depth say where it must be in the second.
+This is the **epipolar constraint**.
+It turns a depth guess into a prediction you can check. **SfMLearner** (Zhou
+and colleagues, [arXiv:1704.07813](https://arxiv.org/abs/1704.07813)) trained
+depth this way with no depth labels. **Monodepth2** (Godard and colleagues,
 [arXiv:1806.01260](https://arxiv.org/abs/1806.01260)) fixed most of its
-practical failures.
+problems.
 
-Those methods have to **estimate** the camera's movement, and that estimate is
-where a large part of their error lives. In this cell the movement is not
-estimated but commanded, so the hardest half of that literature's problem does
-not exist here. The approach is rarely right for surfaces without texture or
-for scenes where the objects move between the two pictures, which breaks the
-still-scene assumption entirely. For more, see [structure from
+Those methods must estimate the camera's movement, and much of their error
+comes from that. In this cell, the movement is known exactly. The approach is
+not right for surfaces with no texture. It also fails when objects move
+between the two pictures. For more, see [structure from
 motion](https://en.wikipedia.org/wiki/Structure_from_motion).
 
 ### Grouping by shared motion — common fate
 
-Points on one rigid surface move together in the picture and points on a
-different surface at a different distance do not. The Gestalt psychologists
-called that **common fate**: a flock of birds is one flock because the birds
-turn together. It is one of the very few grouping cues that needs no model of
-appearance at all, which is why it works on two identical glasses.
+Points on one surface move together in the picture. Points on a surface at a
+different distance do not. Gestalt psychologists called this **common fate**.
+It needs no knowledge of how things look. So it works on two identical
+glasses.
 
-It is used for video segmentation and tracking, and anywhere objects are hard
-to tell apart by how they look. It is rarely right where nothing moves relative
-to anything else, which is exactly why the second way is weak from the top: two rims
-at nearly the same distance have almost no relative movement to group by.
+It is used for video segmentation and tracking. It is not right when nothing
+moves relative to anything else. This is why the second way is weak from
+above. Two rims at the same height barely move relative to each other.
 
 ### Contrastive training — turning "these belong together" into a loss
 
-Pull together the outputs for things that belong together and push apart the
-outputs for things that do not. **SimCLR** (Chen and colleagues,
-[arXiv:2002.05709](https://arxiv.org/abs/2002.05709)) and **MoCo** (He and
-colleagues, [arXiv:1911.05722](https://arxiv.org/abs/1911.05722)) are the
-standard references, and the related idea of giving each pixel an identity code
-and grouping the codes is **associative embedding** (Newell and colleagues,
+[What contrastive training does](03_how-it-works.md#what-contrastive-training-does)
+describes the method. The standard references are **SimCLR** (Chen and
+colleagues, [arXiv:2002.05709](https://arxiv.org/abs/2002.05709)) and **MoCo**
+(He and colleagues, [arXiv:1911.05722](https://arxiv.org/abs/1911.05722)). A
+related idea gives each pixel an identity code and groups the codes. It is
+called **associative embedding** (Newell and colleagues,
 [arXiv:1611.05424](https://arxiv.org/abs/1611.05424)).
 
-It is used wherever pairs that belong together are easy to construct but
-categories are not, which is most of self-supervised vision. It is rarely
-enough on its own when the count of groups matters, because an embedding says
-which things belong together and never how many groups there are, and that is
-exactly the gap the checks after the network fill here.
+It is used where pairs that belong together are easy to make, but categories
+are not. It is rarely enough alone when the count matters. An embedding never
+says how many groups there are. The checks after the network fill that gap
+here.
 
 ### Training from scratch against fine-tuning a large model
 
-The last idea is the choice this whole chapter turns on. Fine-tuning wins
-whenever labels are scarce, which is almost always. Training from scratch wins
-in the narrow case where labels are free, the problem is small, and the borrowed
-weights would bring knowledge of a world you do not have. This cell is that
-narrow case, and it is worth noticing how rare that is rather than generalising
-from it.
+This is the choice the whole chapter rests on. Fine-tuning wins when labels
+are scarce, which is almost always. Training from scratch wins only when
+labels are free, the problem is small, and borrowed weights know a different
+world. This cell is that rare case. Do not take it as a general rule.
+
+The next section places this solution beside the other five.
 
 ## 3. Where it sits among the other five
 
-This solution is the one with nothing borrowed in it, so its place in the
-comparison is fixed by that and not by its score.
+The general ideas show what this solution is made of. This section says what
+its place in the comparison tells you.
 
-Against [rules on the table](../05_rules-on-the-table/01_what-it-is.md), the comparison is
-whether a fitted grouping rule beats a written one. The written rule is a page
-of arithmetic that explains its own failures and needs no training set, and on
-any day the depth readings work it is the easier tool: it finds every glass the
-layout spaces, where this one finds 64.1 per 100. But read the crowded rows
-beside each other. There the written rule finds 73.0 per 100 and merges nearly
-11 reports per 100 to do it, while this one finds 74.6 and merges 0.6. **Where
-the glasses are far enough apart for a rule to be written, the rule wins; where
-they are not, the rule only keeps up by cutting patches of dots in places it
-cannot defend.** That is the trade this solution exists to show.
+This solution borrows nothing, so it is the control. The four learned
+solutions that borrow weights all have a domain gap. This one has none. So the
+difference between this solution and those four measures what borrowing was
+worth. The [rules on the table](../05_rules-on-the-table/01_what-it-is.md)
+solution is the written-rule baseline. Comparing with it asks whether a
+trained grouping beats a written one.
 
-Against the four that borrow weights, the comparison is the one this solution
-exists for. [YOLO as it downloads](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md) borrows everything and
-fits nothing. [YOLO fine-tuned](../08_the-same-model-fine-tuned/01_what-it-is.md) and [RF-DETR
-fine-tuned](../10_a-transformer-segmenter-fine-tuned/01_what-it-is.md) borrow a starting point and then fit on
-this cell's pictures as this solution does. [SAM 2 with a
-keeper](../09_a-foundation-model-with-a-keeper/01_what-it-is.md) borrows a large model and fits only a small
-decider on top of it. Every one of those four carries a domain gap of unknown
-size, and this solution carries none, so **the distance between this line and
-those four is the measurement of what borrowing was worth**. If the borrowed
-models do no better than a network fitted here from random numbers, then their
-size and their licences bought nothing in this cell.
+[The six solutions side by side](../11_the-results.md#4-what-the-comparison-says)
+makes these comparisons with all the scores. It also explains how far the
+crowded scores of the solutions overlap.
 
-One pairing is sharper than the rest and is worth knowing while reading this
-one. [YOLO as it downloads](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md) and [YOLO
-fine-tuned](../08_the-same-model-fine-tuned/01_what-it-is.md) are the same model from the same library
-with the same starting weights, and the only difference between them is whether
-it was trained on this cell's pictures. The gap between those two measures what
-training bought. The gap between this solution and the pair of them measures
-what the starting weights bought.
-
-And what this solution cannot do, on any day, is notice a glass that is absent
-from the picture. That failure is answered by geometry rather than by
-appearance, in [looking again at what was hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md), which
-all six share. This solution contributes the masks that argument starts from,
-and none of the argument.
+None of the six can find a glass that is not in the picture at all. [Looking
+again at what was hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md)
+answers that with geometry. This solution gives that answer its masks.
 
 ← [What it needs](05_what-it-needs.md) · [A borrowed model, as it downloads — what it is](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md) →

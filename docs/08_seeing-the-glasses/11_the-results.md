@@ -3,40 +3,33 @@
 ## 1. Introduction
 
 This page is the scoreboard for the six solutions in this book. It answers one
-question: given the same pictures and the same marking, how many glasses did
-each method find, and how good were the masks it drew? It is written for a
-reader who has already met the six, and it is the page to come back to whenever
-another document claims that one method did better than another.
+question. With the same pictures and the same marking, how many glasses did
+each method find, and how good were its masks? It is for a reader who has
+already met the six. Come back to it whenever a page claims one method did
+better than another.
 
-The six ways of turning the same pictures into the same masks are all scored on
-one examiner, described in [the examiner](03_the-examiner/01_the-examiner.md).
-**Every solution is run twice**, once on the ordinary arrangements the cell's
-own layout rule produces and once on crowded arrangements that stand the glasses
-closer than that rule allows, which is why there are two tables below rather
-than one. Each run uses the same arrangements, the same three survey stations
-per arrangement, the same shared arithmetic turning a mask into a place and a
-width, and the same scorecard. None of the six was trained or tuned on these
+All six are scored by one examiner, described in [the
+examiner](03_the-examiner/01_the-examiner.md). Each solution is run on two kinds
+of arrangement. Spawned arrangements use the cell's own layout rule. Crowded
+arrangements stand the glasses closer than that rule allows. So there are two
+tables below. [Every solution is tested
+twice](03_the-examiner/01_the-examiner.md#every-solution-is-tested-twice-once-on-each-family)
+explains the two kinds. None of the six was trained or tuned on these
 arrangements.
 
-**Each of those two runs is repeated over five separate blocks of 20
-arrangements**, and the numbers below are the average of the five. Twenty
-arrangements is a small sample, and a score read off one of them moves when the
-arrangements change. Averaging five blocks of 20 gives 100 arrangements and
-about 500 glasses per table, and the brackets beside each number say how far the
-blocks spread, so a reader can see which differences are real and which are the
-luck of the draw.
+Each kind of run is repeated over five blocks of 20 arrangements. The numbers
+below are the average of the five blocks. That gives 100 arrangements and about
+500 glasses per table. The brackets beside a number give the lowest and highest
+block. They show which differences are real and which are luck.
 
-**The blocks measure which arrangements were drawn, not which training run was
-got.** All five are scored with the same fitted weights, so nothing here says
-how much a solution's score would move if it were trained again. Measuring that
-would mean refitting, which is a different and much more expensive question.
+All five blocks use the same trained weights. So the blocks measure which
+arrangements were drawn. They do not measure how much a score would move if a
+model were trained again.
 
-**Both runs use all four kinds of glass**, not one. An arrangement holds four to
-six glasses of a single kind, and the kind changes from one arrangement to the
-next, so the glasses come out at roughly a quarter of each kind. Every number in
-the tables below is therefore an average over the four as well as over the five
-blocks, which matters because the kinds are not equally hard to outline. Section
-3 gives the breakdown.
+Both runs use all four kinds of glass. Each arrangement holds one kind, so about
+a quarter of the glasses are of each kind. Every number below is an average over
+the four kinds. The kinds are not equally hard, and [what the numbers
+mean](#3-what-the-numbers-mean) shows where that matters.
 
 ## Contents
 
@@ -49,15 +42,16 @@ blocks, which matters because the kinds are not equally hard to outline. Section
 
 ## 2. The results
 
-Each solution's own README explains its numbers; this page only sets them side
-by side. [The six solutions](04_the-six-solutions/01_how-the-six-compare.md) says what each
-of the six methods is.
+The introduction set out how the runs were made. This section gives what they
+scored. Each solution's own README explains its numbers. [The six
+solutions](04_the-six-solutions/01_how-the-six-compare.md) says what each method
+is.
 
 ### Spawned layouts — the spacing the cell's own layout rule gives
 
-Every count is per 100 glasses, averaged over the five blocks, with the lowest
-and the highest block in brackets. The place and the mask columns are the mean
-of the five blocks' medians.
+In both tables, every count is per 100 glasses, averaged over the five blocks.
+The lowest and highest block are in brackets. The place and the two mask columns
+are the mean of the five blocks' medians.
 
 | | found per 100 | missed | merged | split | place | mask covered | mask not the glass |
 |---|---|---|---|---|---|---|---|
@@ -81,59 +75,58 @@ of the five blocks' medians.
 | [5 SAM 2 with a keeper](../../code/src/08_seeing-the-glasses/05-sam2-with-a-keeper) | 73.6 (71.9–76.6) | 26.4 | 0.0 | 0.0 | 0.8 mm | 98.3% | **0.0%** |
 | [6 RF-DETR fine-tuned](../../code/src/08_seeing-the-glasses/06-rf-detr-fine-tuned) | **81.9** (77.2–86.5) | 18.1 | 1.4 | 0.4 | 0.5 mm | 97.2% | **0.0%** |
 
-**Read the brackets before reading the ranking.** On the crowded layouts
-solutions 1, 2, 4 and 5 average 73.0, 74.6, 72.0 and 73.6, and their brackets
-all overlap, so those four are not separated by this test at all. Only two
-statements survive it: solution 6 is ahead, and solution 3 is far behind. On the
-spawned layouts the brackets are tight enough to separate everything except
-solutions 1 and 4, which sit a fraction of a glass apart.
+**Read the brackets before you read the ranking.** On crowded layouts, solutions
+1, 2, 4 and 5 average 73.0, 74.6, 72.0 and 73.6. Their brackets all overlap.
+So this test does not separate those four at all. Solution 2 has the widest
+spread, 71.3 to 79.8. On one block it beats every other method. Only two
+statements hold. Solution 6 is ahead, and solution 3 is far behind. On spawned
+layouts the brackets are narrow. They separate every pair except solutions 1
+and 4, which are less than one glass apart.
 
-Solutions 5 and 6 can each be built two ways; the rows above are the `sam2` and
-`modal` runs, which are the ways that were built. The floor is `bench/floor.py`
-with the renderer's own masks, which no segmenter can improve on. Even it misses
-13.6 crowded glasses per 100, because a glass standing wholly behind another is
-in no picture at all, so read the crowded column against 86.4 rather than
-against 100.
+The floor row is the examiner's own exact masks, from `bench/floor.py`. No
+segmenter can do better. Even the floor misses 13.6 crowded glasses per 100,
+because a glass wholly behind another is in no picture. So read the crowded
+table against **86.4**, not against 100. Solutions 5 and 6 can each be built two
+ways. The rows above are the `sam2` and `modal` runs, which are the ways that
+were built.
 
-**Four of the six rows moved when one refusal was repaired.** Solutions 4, 5 and
-6 each refused a report whose width no glass of the kind could have, and each
-made that refusal on a report measured from a mask the frame had cut in half.
-Handed the examiner's own exact masks, one station at a time, the kind's range
-refuses 66 of 297 glass sightings and **every one of those 66 reaches the frame
-edge** — the examiner refusing its own perfect masks. `masks_to_glasses` now says
-whether a mask reached the picture's edge and the three solutions read it before
-refusing: 92 → 99, 76 → 81 and 90 → 96 found on spawned layouts, 66 → 73,
-71 → 73 and 74 → 78 on crowded ones. Solution 1 gained the width check its own
-document prescribes and never had, which is where its two rows come from: 28 of
-101 crowded glasses with 21 merged reports before it, 71 with 10 after.
+**Four of the six rows changed when one refusal was fixed.** Solutions 4, 5 and
+6 refused any report whose width no glass of the kind could have. Each of them
+refused some reports measured from a mask the picture's edge had cut in half.
+The examiner tested this with its own exact masks, one station at a time. The
+width range refused 66 of 297 glass sightings, and **all 66 touched the edge of
+the picture**. Now `masks_to_glasses` says when a mask reaches the edge, and the
+three solutions check that before they refuse. On spawned layouts, found glasses
+rose from 92 to 99, 76 to 81 and 90 to 96. On crowded layouts they rose from 66
+to 73, 71 to 73 and 74 to 78. Solution 1 also gained the width check its own
+pages describe but it never had. Before that, it found 28 of 101 crowded glasses
+in one block, with 21 merged reports. After it, it found 71, with 10 merged.
+
+The next section explains what each column measures.
 
 ## 3. What the numbers mean
 
-**Found, missed, merged, split, false.** *Found* is how many distinct real
-glasses got a report, judged by the pixels of the mask rather than by where the
-report said the glass was. *Missed* is a real glass that got no report at all,
-and it is the count to watch hardest: a split glass announces itself and a
-merged pair looks like one large glass, but a missed glass leaves no trace
-anywhere in the run.
+The tables above use seven columns. This section says what they measure.
+[Comparing the outputs](03_the-examiner/04_comparing-the-outputs.md) defines
+each one in full.
 
-**Position error.** How far a reported place sits from where the glass really
-stands. **This number saturates**, which is why the floor row is in both tables: the
-shared arithmetic is deliberately insensitive to a ragged mask edge, so two
-quite different masks can give almost the same place. [How a mask becomes a
-record](12_how-a-mask-becomes-a-record.md) says why. A solution at the floor is
-not a good solution so much as one whose remaining error is not its fault.
+**Found, missed, merged, split.** *Found* counts real glasses that got a report,
+judged by the mask's pixels. *Missed* counts real glasses with no report. Watch
+it most closely, because a missed glass leaves no sign anywhere in the run.
 
-**Mask covered, mask not the glass.** How much of the real glass the mask
-covered, and how much of the mask was not that glass. These are the
-measurements that separate methods when the places cannot. The first falls when
-an outline loses a thin stem; the second rises when an outline leaks onto the
-table or swallows a neighbour. Both are medians over glasses, measured in the
-picture the mask was drawn in.
+**Place.** This is how far a reported place is from where the glass stands. It
+stops improving at the floor. So it cannot rank the six. [The best possible
+answer](03_the-examiner/04_comparing-the-outputs.md#7-the-best-possible-answer-and-the-trap-below-it)
+and [what it costs](12_how-a-mask-becomes-a-record.md#5-what-it-costs-the-place-stops-telling-methods-apart)
+explain why.
 
-**Those two numbers are the place where averaging over four kinds hides
-something**, so it is worth opening up once. The table below gives how much of
-the glass the mask covered at the middle glass, kind by kind, on the spawned
-layouts, for the written rule and for the fine-tuned model.
+**Mask covered, mask not the glass.** The first is how much of the glass the
+mask covered. The second is how much of the mask was not that glass. These two
+numbers separate methods when the places cannot.
+
+Averaging over four kinds hides something in the mask covered column. The table
+below shows it. Each row is one kind of glass on spawned layouts. Each cell is
+how much of the glass the mask covered, for the median glass.
 
 | kind | rules on the table | the same model, fine-tuned |
 |---|---|---|
@@ -142,75 +135,91 @@ layouts, for the written rule and for the fine-tuned model.
 | short stemmed | 89.1% | 99.7% |
 | stemmed | 82.1% | 99.6% |
 
-The written rule covers the two kinds with no stem almost completely and loses
-a sixth of the two kinds with one, because what a bowl-only outline really
-misses is the foot and the sliver of stem beside it. The fitted model has no
-such gap. Neither of those facts is visible in the single figure of 98.9 per
-cent against 99.7, which is why each solution's README breaks the measurement
-down by kind.
+The written rule covers the two kinds with no stem almost fully. It loses about
+a sixth of the two kinds with a stem. Its outline of the bowl misses the foot
+and the thin stem beside it. The fine-tuned model has no such gap. The single
+figures, 99.1% against 99.7%, do not show this. That is why each solution's
+README breaks the measure down by kind.
+
+With the columns explained, the next section says what the comparison shows.
 
 ## 4. What the comparison says
 
-**The written rule and the fitted network fail in opposite directions.**
-Solution 1 finds every glass the layout spaces, in every one of the five blocks,
-which no other solution manages. On the crowded layouts the only thing standing
-between its one grouping distance and a merged report is the check on the width,
-and that check does not always hold: it recovers 73.0 glasses per 100 against
-the 86.4 any method could find, at the price of 10.7 reports per 100 still
-covering two glasses and a place 8.7 mm from the truth against the floor's 0.4
-mm, because a cut drawn where the dots divide is not where the glasses divide.
-Solution 2 merges almost nothing and misses a third of the glasses on the easy
-layouts, because a glass whose middle falls outside the picture casts votes that
-land nowhere — a limit of the voting design rather than of its training.
+The columns above can now be read across the six. This section gives the
+comparisons the book relies on.
 
-**Borrowed weights carry the names, not the shapes.** Solution 3 finds 6.4
-glasses per 100 with nothing merged, split or false: it locates a few objects
-and calls them sports balls and frisbees. Continuing its training on this cell
-and cutting the vocabulary to one class is solution 4, and the gap between the
-two — 6.4 against 99.4 — is the measurement of what that training bought. That
-gap is far larger than either solution's spread across blocks, which is what
-makes it the one comparison in the book that this test could not have got wrong.
+**The written rule and the network trained from scratch fail in opposite ways.**
+Solution 1 finds every spawned glass in all five blocks. No other solution does.
+On crowded layouts it finds 73.0 of the 86.4 possible. But 10.7 reports per 100
+still cover two glasses. Its place is 8.7 mm out, against the floor's 0.4 mm.
+This is because its cut falls where the depth points divide, not where the
+glasses divide. Solution 2 merges almost nothing. But it misses a third of the
+spawned glasses. A glass whose middle is outside the picture gets no votes.
+[Solution 2's own comparison](06_a-network-trained-from-scratch/06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks)
+explains this.
 
-**Four of the six are not separated on crowded tables, and saying so is the
-point of running five blocks.** Solutions 1, 2, 4 and 5 average 73.0, 74.6, 72.0
-and 73.6 glasses per 100, and every one of those four has a block somewhere
-between 70 and 80, so the order they come out in is the order the arrangements
-happened to fall. Solution 2 has the widest spread of any solution anywhere,
-71.3 to 79.8, and on one block it beats every other method on the table. Only
-solution 6, at 81.9, sits clear of the group.
+**Borrowed weights bring names, not shapes.** Solution 3 finds 6.4 glasses per
+100. It finds a few objects and calls them sports balls and frisbees. Solution 4
+is the same model, trained further on this cell with one class. It finds 99.4.
+The two differ only in that training. So the gap, 6.4 against 99.4, measures
+what the training gave. That gap is far larger than either spread across blocks.
+So this is the one comparison in the book this test could not get wrong.
 
-**The two mask numbers disagree about who is best, and that is the useful
-result.** Solution 1's masks never claim a pixel that is not glass at the middle
-glass, because a pixel reaches a mask only by standing above the table; the
-fitted and borrowed models all claim a thin margin around the glass, from 1.4 to
-4.6 per cent, because a learned outline follows a shape coarsely. Neither habit
-is visible in the places at all, which is why the mask is measured separately.
+**Finding shapes can be borrowed, but naming them cannot.** Solutions 3 and 5
+both use a borrowed model without changing it. They are not the same model.
+Solution 3 trusts its model's own names to decide which outlines are glasses.
+Solution 5 ignores names. A small keeper trained here decides which outlines are
+glasses. Solution 3 finds 6.4 and solution 5 finds 83.0 on spawned layouts. On
+crowded layouts they find 2.1 and 73.6. [SAM 2 with a
+keeper](09_a-foundation-model-with-a-keeper/01_what-it-is.md) explains the
+keeper.
+
+**The model design matters once training is equal.** Solutions 4 and 6 are
+trained the same way, on the same pictures, with one class and the same free
+labels. Only the model design differs. Solution 4 wins on spawned layouts, 99.4
+against 96.4. Solution 6 wins on crowded layouts, 81.9 against 72.0. The
+brackets do not overlap in either table, so both gaps are real.
+
+**The two mask numbers disagree about which is best.** Solution 1's masks
+never claim a pixel that is not glass, at the median glass. A pixel joins its
+mask only if it stands above the table. Solutions 5 and 6 also score 0.0%. The
+other trained and borrowed models claim a thin margin round the glass, from 1.4
+to 4.9 per cent. The place column does not show this habit at all. That is why
+the mask is measured on its own.
+
+The next section lists what these numbers do not test.
 
 ## 5. What these results do not cover
 
-- **Not Gazebo.** The pictures come from the examiner's own renderer,
-  [`bench/render.py`](../../code/src/08_seeing-the-glasses/bench/render.py),
-  which uses the wrist camera's lens and the cell's own survey stations, but not
-  the simulator. The arm never moves, and no inverse kinematics or motion
-  planning is checked.
-- **Opaque glasses and clean depth.** No noise, no reflections, no
-  transparency, which flatters the methods built on the depth reading.
-- **One table, one light.** Nothing about the rendering is varied, so a model
-  fitted here is free to use the renderer's own constants as a clue, and no
-  number on this page would show it.
-- **Nothing about hidden glasses.** Every solution here reports only what some
-  picture held. Recovering a glass no picture held is
-  [a shared step of its own](02_the-problem/02_looking-again-at-what-was-hidden.md).
-- **Not how much a retrained model would move.** The five blocks change which
-  arrangements a solution is shown, not which weights it was given. Four of the
-  six were fitted once, and whether a second training run would land in the same
-  place is a question these numbers cannot answer.
+The comparisons above hold only inside this test. This section lists what the
+test leaves out.
+
+- **It is not Gazebo.** The pictures come from the examiner's own renderer,
+  [`bench/render.py`](../../code/src/08_seeing-the-glasses/bench/render.py). It
+  uses the wrist camera's lens and the cell's survey stations, but not the
+  simulator. The arm never moves. Arm motion is not tested.
+- **The glasses are opaque and the depth is clean.** There is no noise, no
+  reflection and no transparency. This helps the methods that rely on depth.
+  [What is asked for](02_the-problem/01_what-is-asked-for.md) explains this
+  assumption.
+- **There is one table and one light.** Nothing about the rendering changes. A
+  trained model could rely on the renderer's fixed settings, and no number here
+  would show it.
+- **Hidden glasses are not covered.** Every solution reports only what some
+  picture held. Finding a glass no picture held is [a shared step of its
+  own](02_the-problem/02_looking-again-at-what-was-hidden.md).
+- **Retraining is not covered.** The five blocks change the arrangements, not
+  the weights. Four of the six were trained once. These numbers cannot say
+  whether a second training run would score the same.
+
+The last section says how to make these numbers again.
 
 ## 6. Reproducing
 
-Run these from `code/src/08_seeing-the-glasses/`, the folder that holds this
-book's Makefile and its pixi environment. One block of 20 arrangements is one
-run, and `--from-seed` says which block.
+The tables above can be made again with a few commands. Run them from
+`code/src/08_seeing-the-glasses/`, the folder that holds this book's Makefile
+and pixi environment. One block of 20 arrangements is one run. `--from-seed`
+picks the block.
 
 ```
 pixi run python bench/floor.py --scenes 20 --from-seed 10000
@@ -218,10 +227,10 @@ pixi run python 01-rules-on-the-table/run.py --scenes 20 --from-seed 10000
 pixi run python 01-rules-on-the-table/run.py --scenes 20 --from-seed 10000 --crowded
 ```
 
-The five blocks on this page are `--from-seed 10000`, `10020`, `10040`, `10060`
-and `10080`, and the same two lines run each of the other five solutions. Every
-seed at or above 10000 is held out, so a block may be chosen anywhere in that
-range without any training having seen it.
+The five blocks on this page use `--from-seed 10000`, `10020`, `10040`, `10060`
+and `10080`. The same two lines run each of the other five solutions. No
+training ever sees a seed of 10000 or more. So you may choose a block anywhere in
+that range.
 
 Then average the blocks:
 
@@ -230,7 +239,7 @@ pixi run python bench/average_blocks.py
 pixi run python bench/average_blocks.py --crowded
 ```
 
-The fitted solutions need their training step before any of this, and each
-solution's own README says which.
+The trained solutions need their training step first. Each solution's own
+README says which step.
 
 ← [RF-DETR-Seg, fine-tuned here — how it compares](10_a-transformer-segmenter-fine-tuned/06_how-it-compares.md) · [How a mask becomes a record](12_how-a-mask-becomes-a-record.md) →

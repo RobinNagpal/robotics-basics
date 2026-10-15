@@ -1,10 +1,8 @@
 # The code
 
-This page shows the code at the heart of this solution, and says what the
-solution hands back to the rest of the cell. It follows [what it
-is](01_what-it-is.md), and [how it works](03_how-it-works.md) explains, part by
-part, what the code below is doing. The second explains the first,
-which is why they are on one page.
+This page shows the main code of this solution. It also says what the solution
+hands back to the rest of the cell. [How it works](03_how-it-works.md) then
+explains what the code is doing.
 
 ## Contents
 
@@ -14,29 +12,24 @@ which is why they are on one page.
 
 ## 1. The code at the heart of it
 
-Two pieces of code carry this solution, and both are worth seeing before the
-document explains them. The first is the **fine-tune**, which is what turns a
-model fitted on everyday photographs into a finder of glasses in this room. The
-second is the **split**, which separates the pixels of a mask the camera really
-saw from the pixels the model only asserts, and neither way could be let near
-the arm without it.
+Two pieces of code carry this solution. The first is the **fine-tune**. It turns
+a model fitted on ordinary photos into a finder of glasses in this cell. The
+second is the **split**. It separates the pixels the camera really saw from the
+pixels the model only claims. Neither way could be used near the arm without
+the split.
 
-The fine-tune is four steps, in `06-rf-detr-fine-tuned/rf_detr_seg.py`, and the
-first of them is the borrowing.
+The fine-tune is in `06-rf-detr-fine-tuned/rf_detr_seg.py`. It has four steps.
 
-1. Point the package's own weight cache at a folder beside the code, and build
-   the model Roboflow publishes. Building it is when the borrowed weights come
-   down over the network.
-2. Pick a working folder for this target, so the two targets never share a
-   dataset or a run, split the stream of scenes into the ones to fit on and the
-   ones held back to watch the fit on, and write both splits out as pictures and
-   labels in the layout the package reads. Writing them is the one place the
-   choice of target acts.
-3. Build the borrowed model, which is where step 1 runs, and hand the folder to
-   the package's own training loop with the list of classes cut down to one
-   entry.
-4. Pick out the checkpoint the run calls its best, and copy that one file to the
-   name the finder reads back later.
+1. Point the package's weight cache at a folder beside the code. Then build the
+   model Roboflow publishes. The borrowed weights download at this point.
+2. Pick a working folder for this target, so the two targets never share data.
+   Split the scenes into ones to train on and ones kept back to check the
+   training. Write both sets as pictures and labels. This is the only step where
+   the choice of target matters.
+3. Build the borrowed model, which runs step 1. Hand the folder to the
+   package's own training loop, with one class.
+4. Take the checkpoint the run calls its best. Copy it to the file name the
+   finder reads later.
 
 ```python
 def fresh():
@@ -77,22 +70,20 @@ def fit(examples, *, amodal: bool, save: Path, epochs: int = EPOCHS, batch: int 
     shutil.copyfile(best, save)
 ```
 
-The split is this project's own arithmetic, in the same file, and it asks the
-simulator nothing. A camera looking down throws every outline outwards from the
-point below it, so of two reports whose masks overlap the one standing nearer
-that point is the one in front, and every pixel the two both claim belongs to
-it. What comes back is, per report, the pixels of it some nearer report covers.
+The split is this project's own arithmetic, in the same file. It does not ask
+the simulator anything. Here is the rule it uses. When two masks overlap, the
+glass nearer the point below the camera is the one in front. So every pixel both
+masks claim belongs to that nearer glass. For each report, the split returns the
+pixels that a nearer report covers.
 
 It takes two more steps.
 
-5. Drop the pixels of every mask that came back without a depth reading, and
-   mark the pixels more than one report claims. Those marked pixels are the
-   contested ones.
-6. Place each report from the pixels it holds alone, which are the pixels
-   nothing can be hiding it at, measure how far that place is from the point
-   below the camera, and gather for each report the masks of every report
-   standing nearer that point. The pixels that are both contested and covered by
-   one of those nearer reports are the pixels this report only asserts.
+5. Drop every mask pixel that has no depth reading. Mark the pixels that more
+   than one report claims. These are the contested pixels.
+6. Place each report using only the pixels it holds alone. Measure how far that
+   place is from the point below the camera. For each report, collect the masks
+   of all reports nearer that point. A pixel that is contested and also covered
+   by a nearer report is a pixel this report only claims.
 
 ```python
 def hidden_by_others(picture, masks: list[np.ndarray], nadir: tuple[float, float]) -> list[np.ndarray]:
@@ -123,90 +114,69 @@ def hidden_by_others(picture, masks: list[np.ndarray], nadir: tuple[float, float
 
 ![Two reports claiming the same pixels, with the middle of each report's own uncontested part marked and its distance from the point below the camera written beside it.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/10-who-owns-a-contested-pixel.png)
 
-The two blocks are the two halves of what this solution costs. The first is the
-borrowed work: the `rfdetr` package with PyTorch under it, and one `train` call
-doing everything this document means by fine-tuning. The second is the part
-nobody can borrow, and what it returns is handed to
-`masks_to_glasses.one_glass` as pixels whose depth readings are to be left out
-of the measurement. A second, smaller set of asserted pixels is named by the
-check described further down, and it is left out the same way.
+The first block is borrowed work. One `train` call from the `rfdetr` package
+does all the fine-tuning. The second block is the part nobody can borrow. Its
+output goes to `masks_to_glasses.one_glass` as pixels whose depth readings must
+be left out. A second, smaller set of claimed pixels comes from a check
+described in [how the concepts fit
+together](#3-how-the-concepts-fit-together). It is left out the same way.
 
-The split is not only for the second way. On the crowded arrangements, where the
-model is trained against the pixels the camera can see, 876 of 1313 reports
-across the five scored blocks still had an asserted part named and left out, and
-the least visible of them was 11% observed. A predicted mask bleeds over the
-glass in front of it whether or not it was trained to, and the reading under the
-bleed belongs to that other glass either way.
+The split is not only for the second way. On the crowded arrangements, the model
+is trained on the pixels the camera can see. Even so, 876 of 1313 reports across
+the five scored blocks had a claimed part that was named and left out. The least
+visible of them was 11% seen. A predicted mask spreads over the glass in front
+of it either way. The depth reading under that spread belongs to the other
+glass.
+
+The next section says where this solution's job ends.
 
 ## 2. The masks are what this contributes
 
-Everything above is about producing masks, and this section says plainly where
-this solution stops, because it is the same place all six stop and it is what
-makes the six comparable at all.
+The code above produces masks, and this section says what happens to them next.
 
-Turning a mask into a place on the table and a rough width is **the examiner's job,
-not this solution's**. [How a mask becomes a record](../12_how-a-mask-becomes-a-record.md) sets that
-step out in full. The same function does it for every one of the six.
+This solution gives only masks. The examiner's shared arithmetic turns each mask
+into a place and a width, the same way for all six solutions. [What must come
+back](../03_the-examiner/01_the-examiner.md#6-what-must-come-back) explains why,
+and [how a mask becomes a record](../12_how-a-mask-becomes-a-record.md) shows
+the arithmetic.
 
-Two things follow and neither is re-derived here. **A difference in the score
-belongs to the mask**, because nothing else is allowed to differ, so no solution
-can win by measuring more cleverly and none can lose by measuring worse. And
-**no model in this book produces a pose.** Models produce masks. The place
-comes from the depth readings and the camera's own pose, by arithmetic, and a
-glass standing upright on a flat table has no orientation left to find.
+This solution owes that arithmetic one more thing. When a mask claims pixels the
+camera never saw the glass at, it must name them. [Why a mask that asserts
+pixels must say which
+ones](../12_how-a-mask-becomes-a-record.md#4-why-a-mask-that-asserts-pixels-must-say-which-ones)
+measures what happens if it does not.
 
-The one thing this solution owes that step, beyond the masks themselves, is the
-split described in [the
-trap](../12_how-a-mask-becomes-a-record.md#4-why-a-mask-that-asserts-pixels-must-say-which-ones): when a mask
-claims pixels the camera never saw the glass at, it must say which ones. That
-page measures what skipping it costs — with exact masks and no model anywhere, a
-partly hidden glass lands 12.2 mm from the truth when the asserted pixels are
-named and 42.7 mm when they are fed in.
+The next section puts the parts of this page in order, from picture to record.
 
 ## 3. How the concepts fit together
 
-Everything above is one chain, and it is worth reading in order, because each
-stage inherits what the one before it produced.
+The two sections above showed the parts one at a time. Here they are as one
+chain.
 
-A **grey picture**, shaded from the depth reading at every pixel, goes in. The
-body of the model reads it and produces a description of every part of it, using
-weights that arrived fitted to a large collection of ordinary pictures and were
-then nudged on this cell's own pictures. A fixed number of **queries** read that
-description, and each one returns either "nothing" or one object: a class, which
-here is only ever "glass", a rectangle, and a **mask** computed pixel by pixel
-over the whole picture rather than inside the rectangle. Because the training
-matched queries to real glasses **one to one**, the filled slots do not
-duplicate each other, so no step afterwards has to reduce overlapping claims to
-one answer.
+1. A **grey picture**, shaded from depth, goes in.
+2. The body of the model reads it. Its weights came from ordinary photos and
+   were then adjusted on this cell's pictures.
+3. A fixed number of **queries** read the result. Each returns "nothing" or one
+   glass, with a rectangle and a **mask** over the whole picture.
+4. Training matched queries to glasses **one to one**. So two queries do not
+   report the same glass, and no cleanup step is needed.
+5. Each mask is split into its **observed part** and its **asserted part**. The
+   asserted part is the pixels a nearer report also claims.
+6. The observed pixels go to the shared arithmetic. They give a **place** and a
+   **rough width**. The asserted pixels are left out, because their depth
+   readings belong to the glass in front.
+7. Each report also carries its **visible fraction**. This is the share of its
+   mask that was observed. Later steps use it to decide how much to trust the
+   report.
+8. Two checks follow, and each can only refuse. The width must be one the kind
+   allows, unless the mask reaches the edge of the picture. And no asserted
+   pixel may lie where the camera clearly saw something else. A report that
+   fails a check is marked as doubtful.
+9. If two reports give the same place, only the surer one keeps it. Every
+   solution in this book ends with this rule.
 
-On the second way the mask covers the glass's **whole silhouette** rather than
-only what the camera saw. Either way it is then split into its **observed
-part**, where no nearer report claims the pixel, and its **asserted part**,
-which is the rest. The observed pixels go to the shared
-arithmetic and become points on the table. The asserted pixels are named and
-excluded, because the reading under each of them belongs to whatever stood in
-front. Out of that come a **place** and a **rough width**, both measurements of
-the part that was seen, and the **visible fraction**, which is the observed
-share of a report's own mask. Every report carries it, because every consumer
-further down has its own tolerance for how much of an answer was asserted and
-none of them can apply it once the two parts have been merged.
-
-Then the two checks, each of which can only refuse. The width must lie inside
-the range the kind allows, unless the mask it was measured from reaches the edge
-of the frame, where the width belongs to the part of the glass the picture held.
-And no part of the mask may be asserted over a patch the camera plainly saw
-something else at. A glass passing both is reported with its place, its width
-and its visible fraction; a glass failing either is reported as doubtful, with
-the check it failed. Last, where two surviving reports land at one place on the
-table only the surer of them keeps the place, which is the shared rule every
-solution in this book ends with.
-
-Three things are worth holding on to. The **shape of the output** is what
-answers the hardest part of the problem, because a fixed set of slots filled one
-to one holds separate objects without anything having to divide a joined region.
-The **absence of a rectangle round each mask** is what makes the second way a
-change of target rather than a change of architecture. And the **separation of
-observed from asserted pixels** is what keeps either way honest, because the
-arithmetic and both checks need the two kinds of pixel kept apart.
+The shape of the output and the missing rectangle are what make this solution
+work. The split between observed and asserted pixels is what keeps it honest.
+[How it works](03_how-it-works.md) explains each of these in turn.
 
 ← [What it is](01_what-it-is.md) · [How it works](03_how-it-works.md) →

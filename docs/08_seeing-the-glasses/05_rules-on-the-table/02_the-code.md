@@ -1,10 +1,8 @@
 # The code
 
-This page shows the code at the heart of this solution, and says what the
-solution hands back to the rest of the cell. It follows [what it
-is](01_what-it-is.md), and [how it works](03_how-it-works.md) explains, part by
-part, what the code below is doing. The second explains the first,
-which is why they are on one page.
+This page shows the core of this solution's code. It also says what the
+solution hands back to the rest of the cell. [How it works](03_how-it-works.md)
+then explains each part of this code in plain words.
 
 ## Contents
 
@@ -14,33 +12,30 @@ which is why they are on one page.
 
 ## 1. The rule, in the code
 
-Before going into why the method is built this way, it is worth seeing it. The
-rule the introduction describes is written out in
-`src/08_seeing-the-glasses/01-rules-on-the-table/`, and two short pieces of it
-carry the whole method: the circle fitted to a group, and the question the fit
-is asked again of every part a split produces.
-Everything else in the folder is the arithmetic that turns pixels into dots and
-the plumbing that hands masks to the examiner.
+It helps to see the method before reading why it is built this way. The rule is
+in `src/08_seeing-the-glasses/01-rules-on-the-table/`. Two short pieces carry
+the whole method. One fits a circle to a group of dots. The other asks the width
+question again of every part a split makes. The rest of the folder turns pixels
+into dots and hands masks to the examiner.
 
-Both pieces are in `01-rules-on-the-table/find.py`, and together they run in
-five steps. The comments in the code carry the same numbers, so a step in the
-list below can be found in the code by searching for its number.
+Both pieces are in `01-rules-on-the-table/find.py`, and they run in five steps.
+The comments in the code use the same step numbers, so you can search for them.
 
-1. Write each dot as one row of an equation and solve every row at once, because
-   the circle equation multiplied out is a straight line in three unknowns and
-   NumPy's `lstsq` needs no starting guess for one of those.
-2. Read the circle off that solution, by halving two of the unknowns to get the
-   centre and then turning the third unknown and the centre into a width.
-3. Hand the solve the outline of the patch rather than every dot in it, using
-   OpenCV's `convexHull`, because a solve given every dot reads too narrow.
-4. Measure the patch and judge its width against the kind of glass, where a
-   width the kind allows is one glass, a wider patch is sent to be split, and a
-   narrower one is forgiven only when the frame cut it short.
-5. Split a patch that is too wide, by cutting its dots in two with k-means and
-   handing each half to the examiner, then ask step 4 again of each half.
+1. Write each dot as one row of an equation, and solve all the rows at once.
+   The circle equation, multiplied out, is linear in three unknowns, so NumPy's
+   `lstsq` needs no starting guess.
+2. Read the circle off the solution. Half of two unknowns gives the centre. The
+   third unknown and the centre give the width.
+3. Give the solve only the outline of the patch, found with OpenCV's
+   `convexHull`. A solve given every dot reads too narrow.
+4. Judge the width against the kind of glass. A width the kind allows is one
+   glass. A wider patch is sent to be split. A narrower one is accepted only when
+   the frame edge cut it short.
+5. Split a patch that is too wide into two halves with k-means. Hand each half to
+   the examiner, then ask step 4 again of each half.
 
-The first two steps are the solve itself, and the third is the one line that
-decides which dots the solve is given.
+Steps 1 and 2 are the solve. Step 3 is the one line that chooses which dots the
+solve gets.
 
 ```python
 def circle_width(dots: np.ndarray) -> float:
@@ -64,11 +59,9 @@ def footprint(dots: np.ndarray) -> float:
     return circle_width(cv2.convexHull(dots.astype(np.float32)).reshape(-1, 2).astype(float))
 ```
 
-Steps 4 and 5 are the check itself, from the same file, and they are the four
-outcomes described below. Step 4 is the judgement, with one line for each of the
-three widths it can meet. Step 5 is the split, and its last line is where the
-question of step 4 is asked again of a half, so a patch holding three glasses is
-cut more than once.
+Steps 4 and 5 are the check, from the same file. Step 4 has one line for each
+of the three possible widths. Step 5 is the split. Its last line asks step 4
+again of each half, so a patch holding three glasses is cut more than once.
 
 ```python
 def as_glasses(picture: Picture, one: Found, widths: tuple[float, float]) -> list[Found] | None:
@@ -110,78 +103,66 @@ def come_apart(picture: Picture, one: Found, widths: tuple[float, float]) -> lis
     return parts
 ```
 
-Two things are worth reading off that. The borrowed work is two library calls,
-one solve and one hull, and everything around them is this project's own; and
-the fitted width never leaves these functions, because the only thing it is
-allowed to decide is whether a patch comes apart. The width that goes into the
-record is measured by the examiner, from the pixels these functions hand back.
+The borrowed work is just two library calls, one solve and one hull. The rest
+is this project's own code. The fitted width never leaves these functions. It
+only decides whether a patch is split. The width in the final record is
+measured by the examiner, from the pixels these functions hand back.
+
+The next section says what those pixels are worth.
 
 ## 2. The masks are what this contributes
 
-Every one of the six solutions is given the same input and judged on the same
-output, and the step that turns a mask into a place and a rough width belongs to
-the [examiner](../03_the-examiner/01_the-examiner.md) rather than to any solution. So this solution
-contributes **only the masks**, and a difference in its score belongs to the
-mask. It cannot win by measuring more cleverly and it cannot lose by measuring
-worse.
+The code above ends by handing pixels to the examiner, so this section says what
+those masks are like. Every solution hands back only masks, and the examiner
+does the measuring for all six. [What must come
+back](../03_the-examiner/01_the-examiner.md#6-what-must-come-back) explains
+this. So a difference in this solution's score is a difference in its masks.
 
-There is one thing about this solution's masks that is true of no other of the
-six, and it has to be said plainly because it cuts both ways.
+This solution's masks have one property that no other solution's masks have.
+**The mask is a side effect of the grouping.** The other five run a model that
+is built to draw an outline. Here, no step ever asks where a glass ends. One
+step keeps the pixels that stand above the table. Another step decides which of
+those pixels belong together. The mask is just the pixels that fed one group.
+Nobody chose its edge.
 
-**This solution's masks are a consequence of the grouping rather than the thing
-the method produces.** The other five run a model whose job is to draw an
-outline: the outline is what they are trained or built to get right, and every
-pixel of it is a decision the model made. Here, no step ever asks where a glass
-ends. One step decides which pixels stand above the table, and a quite different
-step decides which of those pixels belong together. The mask that comes out is
-simply the picture pixels that fed one group, collected afterwards. Nobody chose
-its edge.
+This has one good effect and one bad effect. They show up in the two mask
+numbers that [the examiner](../03_the-examiner/04_comparing-the-outputs.md#6-how-good-was-the-mask)
+uses.
 
-That has a good consequence and a bad one, and they land on the two different
-numbers the examiner takes for mask quality.
+**The mask almost never claims too much.** A pixel joins the wrong glass only if
+its dot chains into the wrong group. The two groups are a whole strip of bare
+table apart, so that needs a line of stray dots across the strip. The method
+also never claims a pixel it did not see.
 
-**How much of the mask was not that glass** should be very good, which is the
-good consequence. A pixel is put in the wrong glass's mask only if its dot
-chained into the wrong group, and the two groups are a whole strip of bare table
-apart, so it takes a line of stray dots across that strip for this to happen at
-all. The method also never asserts a pixel it did not see, so it never falls
-into the trap the examiner warns about, where a mask claims pixels the camera
-never saw the glass at and the depth reading at such a pixel belongs to whatever
-stood in front.
+**The mask always claims a little too little.** The edge of each mask is set by
+the test that keeps pixels above the table, not by the grouping. So every mask
+loses two things. It loses a thin band at the bottom of the glass, where the
+wall is too close to the table to tell apart. It also loses every pixel with no
+depth reading. Those pixels are gone before the grouping starts, so no better
+grouping can bring them back.
 
-**How much of the real glass the mask covered** is where the consequence is bad,
-and it is bad in a way that no better grouping can repair. The edge of every
-mask here was fixed by the step that kept pixels standing above the table, not
-by the grouping, so the mask loses two things by construction. It loses the band
-at the very bottom of the glass, where the wall is too close to the table to be
-told apart from it, and it loses every pixel the depth camera returned no
-reading for. It loses nothing else, but those two are enough: the shortfall is a
-thin rim round the base of every glass in every picture, and the grouping rule
-never had a chance to recover it, because those pixels were gone before the
-grouping started.
+The results show both effects. Over the five blocks of spaced arrangements, the
+masks cover 99.1 per cent of the glass at the median. At the median, 0.0 per
+cent of a mask is not the glass. The lost band is the missing one per cent. On the
+crowded arrangements, coverage falls to 91.9 per cent. That loss has a
+different cause. A mask cut out of a run-together group holds only part of a
+glass. That is the cost of splitting, not of the depth test.
 
-The measurement bears both out. Over the five blocks of spaced arrangements
-these masks cover 99.1 per cent of the glass at the median, and 0.0 per cent of
-a mask is not the glass. The lost band is the missing per cent. On the crowded
-arrangements the coverage falls to 91.9 per cent, and that is a different loss
-with a different cause: a mask cut out of a run-together group holds part of a
-glass rather than all of it, which is the price of the splitting rather than a
-property of the depth test.
+This tells you how to read the scores. A model can learn an outline that goes
+right down to the table, so a model can beat this solution on coverage. A model
+can also learn an outline that spills onto the table or a neighbour, and this
+solution almost never does that. **So the two mask numbers can disagree about
+which method is better, and that disagreement is useful.** A model may look good
+because it learned where the table is, not because it learned glasses.
 
-One thing follows that is about how to read the scores rather than about the
-method. A model can learn an outline that follows the glass right down to the
-table, so a model has room to beat this solution on coverage; a model can also
-learn an outline that wanders onto the table or swallows a neighbour, which this
-solution has almost no way to do. **So the two mask numbers are expected to
-disagree about which method is better, and that disagreement is itself the
-useful result.** It is easy to credit a model with understanding glasses when
-what it actually learned was where the table is.
+The next section puts all the parts of the method into one picture.
 
 ## 3. How the concepts fit together
 
-Put in order, the five concepts make one flow with two branches that share only
-their inputs. The left branch groups what was seen. The right branch works out
-what could not have been seen. They meet only in the report.
+This section joins the steps from the code and the masks it makes into one flow.
+The flow has two branches that share only their inputs. The left branch groups
+what was seen. The right branch works out what could not have been seen. They
+meet only in the report.
 
 ```mermaid
 flowchart TD
@@ -206,11 +187,9 @@ flowchart TD
     PAT -- yes --> SUS["report it as an unsearched patch, and ask for a look"]
 ```
 
-The right-hand branch is the part of that flow worth looking at twice. It takes
-its input from the **glasses found** rather than from the pixels, and it needs
-their positions, widths and heights and nothing else, which is why it can say
-something about a glass that produced no pixels at all. It is also the one
-branch of this chart that is arithmetic set out in this chapter rather than code
-that runs. [A worked example](04_a-worked-example.md) is where it is worked out.
+The right-hand branch starts from the **glasses found**, not from the pixels.
+It needs only their places, widths and heights. That is why it can say
+something about a glass that left no pixels. It is also the only branch that is
+not yet code. [A worked example](04_a-worked-example.md) works it through.
 
 ← [What it is](01_what-it-is.md) · [How it works](03_how-it-works.md) →

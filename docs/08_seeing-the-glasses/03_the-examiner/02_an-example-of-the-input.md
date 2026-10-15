@@ -2,24 +2,19 @@
 
 ## 1. Introduction
 
-The previous page, [the examiner](01_the-examiner.md), said in general terms
-what the examiner puts on the table and what it hands over. This page does the
-same thing once, on one real arrangement, so that you can see the input rather
-than read a description of it.
+The previous page, [the examiner](01_the-examiner.md), described the input in
+general terms. This page shows it once, on one real arrangement.
 
-The arrangement is the examiner's own number 10038. It is one of the
-arrangements held back for testing, so it is what the cell's spawner really
-produces rather than anything built for a diagram. It holds four glasses, which
-is the smallest number the spawner draws and the number that makes a picture of
-every glass readable. Every picture on this page was made by running the
-examiner's own code on that arrangement, and every number was measured rather
-than chosen.
+The arrangement is the examiner's number 10038. It comes from the test half, so
+it is what the cell's spawner really makes. It was not built for a diagram. It
+holds four glasses, which is the smallest number the spawner draws. Every
+picture on this page was made by the examiner's own code. Every number was
+measured.
 
-By the end of this page you will have seen the three things that go in: the
-glasses standing on the table, the three pictures the three camera stations take
-of them, and one of those pictures taken apart into the parts a solution is
-given. What comes back is the next page, [an example of the
-output](03_an-example-of-the-output.md).
+This page shows three things in order. First come the glasses on the table.
+Then come the three pictures the camera takes. Last, one picture is split into
+the parts a solution is given. What comes back is on the next page,
+[an example of the output](03_an-example-of-the-output.md).
 
 ## Contents
 
@@ -31,27 +26,20 @@ output](03_an-example-of-the-output.md).
 
 ## 2. The glasses on the table
 
-Everything starts with what is really there. The picture below is the
-arrangement seen from straight above, before any photograph has been taken.
-Each shaded circle is the part of the table one glass covers, the cross at its
-middle is where that glass stands, and the dotted rectangle is the glass zone,
-which is the 320 mm by 360 mm part of the table that glasses are put on. Only
-the examiner knows this, and it is what everything reported later is marked
-against.
+We start with what is really on the table, because everything is marked against
+it. The picture below shows the arrangement from straight above, before any
+picture is taken. Each shaded circle is the part of the table one glass covers.
+The cross in its middle is where that glass stands. The dotted rectangle is the
+glass zone, the 320 mm by 360 mm part of the table where glasses are placed.
+Only the examiner knows this layout.
 
 ![Arrangement 10038 seen from straight above: four stemmed glasses inside the glass zone, with the three camera stations marked on a line down the middle of it.](../../images/seeing-the-glasses/the-examiner/03-example-on-the-table.png)
 
-All four glasses are **stemmed glasses**, because an arrangement holds four to
-six glasses of a single kind and the kind changes from one arrangement to the
-next. This one drew the stemmed kind, and a later arrangement draws another, so
-a run meets all four. [What is asked for](../02_the-problem/01_what-is-asked-for.md)
-explains the problem's difficulties with the tapered kind alone, because one
-telling is clearer than four, but nothing in the test is restricted to it. A
-stemmed glass in this cell may be 165 to 230 mm tall with a bowl 60 to 100 mm
-across. The table below gives each glass the number the examiner's
-answer key gives it, and that number is used in every picture that follows.
-Read across a row for how tall that glass is, how wide its bowl is, and where it
-stands on the table.
+All four glasses are **stemmed glasses**, because each arrangement holds one
+kind. A stemmed glass in this cell is 165 to 230 mm tall, with a bowl 60 to
+100 mm across. The table below gives each glass the number the answer key uses.
+Every later picture uses the same numbers. Read across a row for the glass's
+height, bowl width and place on the table.
 
 | glass | height | bowl across | stands at |
 |---|---|---|---|
@@ -60,69 +48,68 @@ stands on the table.
 | 3 | 189 mm | 80 mm | x = 477 mm, y = −116 mm |
 | 4 | 172 mm | 81 mm | x = 321 mm, y = −142 mm |
 
-The closest pair here stands 158 mm apart, against the 150 mm the spawner
-guarantees, so no glass touches another. Glass 1 is the tall one, and that
-matters later: the taller a glass is, the further its rim leans outwards in a
-picture taken from above, and the more of its neighbour it can cover.
+The closest pair stands 158 mm apart. The spawner keeps at least 150 mm, so no
+glass touches another. Glass 1 is the tallest, and this matters later. Seen from
+above, a tall glass's rim is drawn further outwards, so it can cover more of a
+neighbour. [The cell](../01_the-cell.md#3-the-glasses) explains this.
 
-The three black dots on the line down the middle of the picture are where the
-camera stands to take the three pictures. They are 93 mm apart, all 450 mm above
-the table, and all looking straight down.
+The three black dots on the middle line are the three camera stations. They are
+93 mm apart and 450 mm above the table, and the camera looks straight down from
+each.
+
+The next section shows what the camera sees from those three stations.
 
 ## 3. The three pictures
 
-The camera then takes one picture from each of those three stations, and those
-three pictures are the whole of what the examiner hands over for this
-arrangement. They are not interchangeable, which is the reason there are three
-of them rather than one.
+Now the camera takes one picture from each station. These three pictures are all
+the examiner hands over for this arrangement. Each one shows something the
+others do not.
 
 ![The same arrangement from each of the three stations, with the glasses keeping their numbers, a green outline where the picture holds a glass whole and a red one where the glass is cut off at the frame edge.](../../images/seeing-the-glasses/the-examiner/03-example-three-pictures.png)
 
-Read it by the colour of each outline. A green outline is a glass the picture
-holds whole; a red one is a glass that runs off the edge of the frame. **Station
-3 is the only one that holds any glass whole**, and the glass it holds is glass
-3. At stations 1 and 2 every one of the four glasses reaches a frame edge, and
-at station 3 the other three still do.
+Read the picture by the colour of each outline. A green outline is a glass the
+picture holds whole. A red outline is a glass cut off at the edge of the frame.
+**Only station 3 holds any glass whole**, and that glass is glass 3. Every other
+glass in every other picture touches a frame edge.
 
-That sounds like a poor result and is not, because the stations overlap on
-purpose. A glass cut off at the edge of one station's picture sits further
-inside the next station's, so what one picture loses another holds. The examiner
-later keeps one report per glass and takes it from the station that stood
-nearest that glass, which is how the overlap is cashed in.
+This is not a problem, because the stations overlap. A glass cut off in one
+picture is further inside the next one. The examiner keeps one report per glass,
+from the nearest station.
+[Comparing the outputs](04_comparing-the-outputs.md#3-which-report-the-examiner-keeps)
+explains this rule.
 
-One more thing is visible at station 1 and is worth naming, because it is the
-difficulty the whole book is about. **Glass 4 keeps only 730 pixels in that
-picture and loses 966 of them to glass 1**, whose bowl is thrown out over it. No
-method can recover a pixel that was never taken, so a glass standing behind
-another is read as a smaller glass in the wrong place by every one of the six
-solutions.
+Station 1 also shows the main difficulty of the book. **Glass 4 keeps only 730
+pixels in that picture and loses 966 to glass 1**, because glass 1's bowl covers
+it. No method can get back a pixel the camera never saw.
+[Looking again at what was hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md)
+explains this limit.
+
+The next section takes one of these pictures apart.
 
 ## 4. What one station hands over
 
-A picture is not one thing. The examiner renders three arrays for every station,
-and hands over two of them.
+Each picture is really three arrays, and this section shows them for station 2.
+The examiner makes all three and hands over two.
 
 ![Station 2's picture as its three parts: the grey picture, the depth reading at every pixel, and the id image, which the examiner keeps.](../../images/seeing-the-glasses/the-examiner/03-example-what-one-station-gives.png)
 
-The **grey picture** is 320 by 240 pixels with one shade per pixel, bright where
-the surface is near the lens. It is shaded by the examiner rather than by any
-solution, so all six are handed the same bytes.
+The **grey picture** is 320 by 240 pixels, with one shade per pixel. A pixel is
+bright where the surface is near the lens. The examiner makes this shading, so
+all six solutions get exactly the same picture.
 
-The **depth reading** gives the distance to whatever that pixel shows. Here the
-nearest rim reads 222 mm below the camera and the bare table reads 450 mm, which
-is the survey height. This is the array that turns a pixel into a point in the
-room, and so it is the array the places all come from.
+The **depth reading** gives the distance to what each pixel shows. Here the
+nearest rim is 222 mm below the camera. The bare table is 450 mm below, which
+is the survey height. This array turns a pixel into a point in the room, so all
+the places come from it.
 
-Those two go to the solution, together with the **camera's pose**, which for
-station 2 is x = 480 mm, y = −260 mm, 450 mm up, looking straight down. The arm
-knows that from its own joint encoders rather than from the picture. Those three
-things are the whole input, and the examiner hands them over rather than letting
-a solution fetch them, so no solution can quietly read anything else.
+These two arrays go to the solution with the **camera's pose**. For station 2
+the pose is x = 480 mm, y = −260 mm, 450 mm up, looking straight down.
 
-The **id image** is the third array and it stays with the examiner. At each
-pixel it says which glass that pixel shows, or nothing; 74 per cent of this
-picture is table. It is the answer key, and a solution that read it while
-answering would not be answering this problem at all.
+The **id image** is the third array, and the examiner keeps it. In this picture,
+74 per cent of the pixels show the table. [The examiner](01_the-examiner.md#5-what-the-examiner-keeps-to-itself)
+explains why a solution never sees this array.
+
+The next page shows what a solution hands back for these pictures.
 
 ## 5. Where to go next
 

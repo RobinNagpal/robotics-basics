@@ -1,10 +1,8 @@
 # The code
 
-This page shows the code at the heart of this solution, and says what the
-solution hands back to the rest of the cell. It follows [what it
-is](01_what-it-is.md), and [how it works](03_how-it-works.md) explains, part by
-part, what the code below is doing. The second explains the first,
-which is why they are on one page.
+This page shows the main code of this solution. It also says what the
+solution hands back. [How it works](03_how-it-works.md) explains each part of
+this code in more detail.
 
 ## Contents
 
@@ -15,38 +13,35 @@ which is why they are on one page.
 ## 1. The network, in the code
 
 The network is written in
-[`02-train-from-scratch/`](../../../code/src/08_seeing-the-glasses/02-train-from-scratch),
-and the piece worth seeing is not its shape but what it is asked for. It
-answers three numbers at every pixel of a half-size picture: one saying whether
-the pixel is glass, and two holding the arrow to the middle of that pixel's own
-glass.
+[`02-train-from-scratch/`](../../../code/src/08_seeing-the-glasses/02-train-from-scratch).
+The network works on a half-size picture. At every pixel it gives three
+numbers. The first says whether the pixel is glass. The other two hold the
+arrow to the middle of that pixel's own glass.
 
-The code runs in six steps, and the comments in it carry the same numbers. The
-first two build the answer the network is trained towards, the next two are the
-network that produces it, and the last two turn its answer into one glass's
-mask.
+The code runs in six steps. The comments in the code use the same step
+numbers. Steps 1 and 2 build the answer the network is trained to give. Steps 3
+and 4 are the network itself. Steps 5 and 6 turn its answer into one glass's
+mask. A **mask** is a picture where each pixel is marked glass or not glass.
 
-1. Build the first of the three numbers wanted at every pixel, which is one
-   where a glass was seen and zero on the table, read off the simulator's record
-   of which glass each pixel shows.
-2. Build the other two, which hold the arrow from a pixel to the middle of its
-   own glass's rim, divided by `VOTE_SCALE` so that the numbers sit near one.
-   This runs once for each glass in the scene.
-3. Go down the network, reading the picture at the size it arrived in and then
-   halving it twice, so that a unit at the bottom sees a wide patch of table.
-4. Come back up the network, enlarging twice and setting the kept copy from the
-   way down beside each enlargement, then collapsing the channels into the three
-   numbers asked for.
-5. Gather the votes that landed near one middle, and refuse a pile built from
-   too few of them to be a whole glass.
-6. Grow every voting pixel back into the block it stands for, keep those pixels
-   inside the picture, and mark them in a mask the size of the picture.
+1. Build the first number at each pixel. It is 1 where a glass was seen and 0
+   on the table. It comes from the simulator's record of which glass each pixel
+   shows.
+2. Build the other two numbers. They hold the arrow from a pixel to the middle
+   of its own glass's rim. The arrow is divided by `VOTE_SCALE` so the numbers
+   are near one. This runs once for each glass.
+3. Go down the network. Read the picture at its own size, then halve it twice.
+   A unit at the bottom then sees a wide patch of table.
+4. Come back up the network. Enlarge twice, and put the copy kept on the way
+   down beside each enlargement. Then reduce the channels to the three numbers.
+5. Gather the votes that landed near one middle. Refuse a pile with too few
+   votes to be a whole glass.
+6. Grow each voting pixel back into the block of pixels it stands for. Keep
+   those pixels inside the picture, and mark them in a full-size mask.
 
 Steps 1 to 4 are in ``02-train-from-scratch/models.py``. Steps 1 and 2 are the
-answer key, and the line that makes step 2 possible is the one noting the row
-and column of every pixel, because an arrow has to be measured from somewhere.
-Steps 3 and 4 are where PyTorch does the work, and the two `torch.cat` lines in
-step 4 are the copies carried from the way down across to the way up.
+answer key. Step 2 needs the row and column of every pixel, because an arrow
+is measured from somewhere. Steps 3 and 4 use PyTorch. The two `torch.cat`
+lines in step 4 bring the kept copies from the way down to the way up.
 
 ```python
 def top_target(picture: Picture, glasses) -> np.ndarray:
@@ -95,13 +90,12 @@ class TopNet(nn.Module):
         return self.head(self.up_full(torch.cat([up, full], 1)))
 ```
 
-Steps 5 and 6 are where the votes become one glass's mask, in
-``02-train-from-scratch/pipeline.py``. Step 6 is worth reading closely, because
-the growing happens in two lines: each voting pixel is multiplied by `SHRINK`,
-which is how much the picture was shrunk by, to get the corner of the block that
-pixel stands for, and then `_BLOCK`, the offsets of one shrunk pixel's own
-block, is added to every corner. That is what makes the mask claim the whole
-block rather than the one sampled pixel.
+Steps 5 and 6 are in ``02-train-from-scratch/pipeline.py``. There the votes
+become one glass's mask. In step 6, the growing takes two lines. Each voting
+pixel is multiplied by `SHRINK`, the amount the picture was shrunk by. This
+gives the corner of the block that pixel stands for. Then `_BLOCK`, the list
+of offsets inside one block, is added to every corner. So the mask claims the
+whole block, not just one pixel.
 
 ```python
 def pile_mask(picture: Picture, votes: Votes, middle) -> np.ndarray | None:
@@ -126,66 +120,36 @@ def pile_mask(picture: Picture, votes: Votes, middle) -> np.ndarray | None:
     return mask
 ```
 
-Two things are worth reading off those. The borrowed library supplies the
-layers and the training loop, while the idea — an arrow at every glass pixel
-instead of a label — lives in the twelve lines that build the target, which is
-this project's own arithmetic. And a mask here is a set of votes rather than a
-drawn outline: nothing in either piece asks where a glass ends, and the only
-line that mentions a boundary is the clipping line in step 6, which keeps a
-block inside the picture.
+PyTorch gives the layers and the training loop. The main idea, an arrow at
+every glass pixel, is in the twelve lines that build the target. Those lines
+are this project's own arithmetic. Also, nothing in this code asks where a
+glass ends. The only line about an edge is the clipping line in step 6. It
+keeps a block inside the picture.
+
+The next section says what happens to the masks this code makes.
 
 ## 2. The masks are what this contributes
 
-Everything above produces one thing, and it is worth being plain about what
-happens to it.
+The code above ends with masks. This section says where they go.
 
-This solution contributes **only the masks**: which pixels in which picture are
-which glass. Turning a mask into a place on the table and a rough width is the
-examiner's job, done by one shared piece of arithmetic that every one of the six
-solutions goes through, and it is described in the [test
-examiner](../03_the-examiner/01_the-examiner.md). So a difference in the score belongs to the mask. This
-solution cannot win by measuring more cleverly and it cannot lose by measuring
-worse.
+This solution hands back only masks. The examiner's shared arithmetic turns
+each mask into a place and a width, the same way for all six solutions. [The
+examiner](../03_the-examiner/01_the-examiner.md#6-what-must-come-back)
+explains this. So any score difference comes from the masks.
 
-One consequence follows, and it is the same for all six. **No model here
-produces a pose.** Models produce masks. The place comes from the depth
-readings under the mask together with the camera's own pose, by arithmetic, and
-a glass standing upright on a flat table has no orientation left to find.
+The next section puts the code's steps in one line.
 
 ## 3. How the concepts fit together
 
-Everything above is one chain, and it is worth seeing the whole of it in order
-before the failure cases, because each stage inherits what the last one got
-wrong.
+The two sections above showed the code and its output. This section joins
+them into one chain.
 
-A **survey picture** goes in, as a height-like channel made from the depth
-reading and two channels saying where in the frame each pixel sits. The
-**network**, whose down path and up path are shaped so that a unit near the
-output can see 205 mm of table at once, produces two things at every pixel: a
-**probability** that the pixel is glass, and an **arrow** towards the middle of
-that pixel's own glass. The probability is thresholded into a **mask**. Every
-mask pixel adds its arrow to its own position and casts a **vote**. The votes
-pile up, one pile per glass, and the piles are counted without anything having
-been told how many to expect. A pile with too few votes is doubted; a pile whose
-fitted width is not one this kind of glass could have would be turned down by
-the check prescribed above. What survives is one mask per glass, handed to the
-examiner's shared arithmetic.
+A survey picture goes in. The network gives each pixel a chance of being glass
+and an arrow. A threshold on the chance gives the glass pixels. Each glass
+pixel adds its arrow to its position and casts a vote. The votes form piles,
+one per glass. A pile with too few votes is refused. Each pile that is left
+becomes one mask, and the masks go to the examiner.
 
-Three things in that chain are worth holding on to.
-
-**The output shape is what makes the merge answerable.** A class map has
-nowhere to record which glass a pixel belongs to, so no amount of training
-could make one separate two joined glasses. An arrow has somewhere to record
-it, and the separation falls out of counting rather than out of cutting.
-
-**The loss is what most often goes wrong.** Most pixels in these pictures are
-table, so a measure of success that counts pixels rewards a network for saying
-nothing, and the fix is to score the overlap of the shape rather than the count
-of the pixels.
-
-**The arithmetic after the network is what keeps the whole thing honest.** The
-network proposes; the vote count and the kind's own range of widths dispose. A
-pile of votes implying a footprint no glass of this kind could have is turned
-down by a rule nobody trained.
+[How it works](03_how-it-works.md) explains each link in this chain.
 
 ← [What it is](01_what-it-is.md) · [How it works](03_how-it-works.md) →

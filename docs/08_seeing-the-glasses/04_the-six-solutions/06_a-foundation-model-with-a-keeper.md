@@ -1,15 +1,11 @@
 # A foundation model with a keeper
 
-This page describes the fifth of the six solutions in about eight minutes of
-reading. It is the one that splits the job in two and borrows only half of it:
-a large model that somebody else trained outlines every region in the picture
-and names none of them, and a small model fitted here decides which of those
-outlines are glasses. By the end of this page you will know what a foundation
-model is, why the naming half is the half worth replacing, how little training
-data this needs, what it scored on the shared examiner, and why it still does
-not survive real glassware. The full treatment is in [the chapter on this
-solution](../09_a-foundation-model-with-a-keeper/01_what-it-is.md), which is
-about an hour of reading.
+This page is a short summary of the fifth of the six solutions. This solution
+splits the job in two. A large borrowed model draws outlines but does not name
+them. A small model trained here decides which outlines are glasses. The page
+says what it is, what it needs, what it scored and when to choose it. The full
+story is in [the chapter on this
+solution](../09_a-foundation-model-with-a-keeper/01_what-it-is.md).
 
 ## Contents
 
@@ -22,194 +18,94 @@ about an hour of reading.
 
 ## 1. What it is
 
-A **foundation model** is a model fitted once, at great expense, on a very
-broad collection of data, and then used for many different jobs without being
-fitted again. The one used here is **SAM 2**, the second generation of the
-Segment Anything model. Its job is narrow and unusual: pointed at a place in a
-picture, it outlines whatever is at that place, and it does not say what the
-thing is. It outlines without naming.
+A **foundation model** is a large model trained once on very broad data and
+then used for many jobs. The one here is **SAM 2** (Segment Anything Model 2).
+It outlines whatever is at a point in a picture. It does not say what the thing
+is.
 
-That missing half is the reason this solution exists. Every segmenter has to do
-two things, find shapes and decide what they are, and the two transfer very
-differently from one kind of picture to another. A boundary between one surface
-and the surface behind it looks much the same in a photograph and in a grey
-picture shaded from depth, so the shape-finding half transfers well. What counts
-as a cup, on the other hand, is somebody else's judgement fitted to somebody
-else's photographs, so the naming half transfers badly — which is exactly what
-[a borrowed model, as it
-downloads](04_a-borrowed-model-as-it-downloads.md) demonstrated when it found
-ten glasses out of a hundred.
-
-So this solution borrows the half that transfers and replaces the half that does
-not. The replacement is a small model fitted in this cell, and this project
-calls it the **keeper**, because its whole job is to decide which outlines to
-keep.
+Finding shapes works on new kinds of pictures. Naming them does not, as
+[solution 3](04_a-borrowed-model-as-it-downloads.md) showed with 6.4 glasses
+per 100. So this solution borrows the finding and replaces the naming. A small
+model trained here does the naming. This book calls it the **keeper**, because
+it decides which outlines to keep. The next section shows the steps of a run.
 
 ![The run in three bands: the part borrowed whole and never trained here, the keeper fitted in this cell, and the width check nobody fitted.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/keeper-flow-what-it-does.png)
 
 ## 2. How it works
 
-The work runs in five steps.
+A run has four steps.
 
-**The depth readings are shaded into a grey picture**, and SAM 2 reads that
-picture once. This single pass is the largest cost in the solution, and
-everything after it is cheap.
+1. SAM 2 is pointed at a grid of points across the grey picture. It outlines
+   everything it finds.
+2. Duplicates and weak outlines are removed. Each one left is a **proposal**.
+3. The keeper reads a few measurements of each proposal, such as its width and
+   height. It answers keep, drop, or more than one glass.
+4. A kept proposal must still pass a width check for the known kind of glass.
 
-**A grid of point prompts turns into a heap of outlines.** The model is pointed
-at a plain grid of places spread evenly over the whole picture, with no idea
-where the glasses are, so it outlines everything the picture contains: the
-glasses, the table, the rim of one glass on its own, two glasses that ran
-together into a single shape. Asking a model that answers one prompt at a time
-to describe the whole scene is done by asking it everywhere.
-
-**The heap is cut down to a shortlist.** Scoring, a stability check and the
-removal of near-duplicates leave a manageable list, and this project calls each
-survivor a **proposal**.
-
-**Each proposal becomes a handful of measurements on the table.** Its pixels and
-their depth readings are turned into points in the room, which gives quantities
-such as the width of its footprint and its height above the table top. The
-keeper reads that short list of named numbers and answers one of three things:
-keep it, drop it, or this is more than one glass. Three answers rather than two
-is deliberate, because it lets the solution report doubt instead of guessing.
-
-**What the keeper keeps still has to pass a width check** against the range of
-widths the known kind of glass is allowed. The proposals that survive all of
-that are the masks this solution reports.
-
-The keeper is small on purpose. It learns from a short table of numbers rather
-than from pictures, so it is fitted with scikit-learn in seconds on an ordinary
-processor, and printing its inputs beside its answer is an explanation a person
-can read. Its training labels cost nothing either, because the examiner's answer
-key turns a proposal into a label by arithmetic: a proposal whose pixels mostly
-belong to one glass is a keep, and one spread across two is a more-than-one.
-
-The borrowed model is never trained here, and that is a decision rather than an
-omission. Leaving it untouched is what keeps the solution's data cost almost
-nothing and its weights free of any dependence on this cell; the cost is that
-its domain gap cannot be closed from inside.
-
-![The six steps that fit the keeper, with the one that costs nearly all the time marked, and the one that takes seconds.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/keeper-flow-fitting-the-keeper.png)
+SAM 2 is never trained here. [How it
+works](../09_a-foundation-model-with-a-keeper/03_how-it-works.md#5-the-keeper)
+explains the keeper in full. The next section lists what these steps need.
 
 ## 3. What it needs
 
-It needs a **deep learning framework** and the environment to run it, which is a
-large dependency for a cell whose simplest answer is a page of arithmetic. It
-needs **a weights file this project does not own** and cannot produce, so the
-file has to be fetched, pinned to a version, and stored where a run can find it.
-This is a real difference from the solutions whose weights are produced here and
-can be produced again at any time.
+This section lists what the steps above need. It needs a deep learning framework
+and a SAM 2 weights file that this project cannot make. It needs a set of
+labelled proposals for the keeper. The examiner makes these labels for free. It
+needs far fewer of them than a network trained from scratch. Fitting the keeper
+takes seconds. Running SAM 2 over the pictures takes most of the time.
 
-It needs **arrangements for the keeper**, which the examiner renders and labels for
-nothing, and **far fewer of them than a network fitted from scratch needs**,
-because the keeper learns from a short table of numbers rather than from
-pictures. Fitting the keeper then takes seconds with no graphics card. What takes
-the time is running the borrowed model over those arrangements to collect the
-proposals, and that is where nearly all of this solution's cost sits, at fitting
-time and at run time both.
-
-It needs **the shading got right**, which is the only part where a careless
-choice makes everything after it worse without anything complaining.
-
-And its **licence is permissive**, which is a real advantage rather than a
-footnote. The two solutions built on Ultralytics YOLO26-seg are covered by the
-Affero General Public License, so on the day this cell becomes a product rather
-than an experiment those
-two have a question to answer and this one does not.
+Its licence is permissive, unlike the two solutions built on YOLO. [What it
+needs](../09_a-foundation-model-with-a-keeper/05_what-it-needs.md) gives the
+details. The next section shows what it scored.
 
 ## 4. What it scored
 
-**Every solution is run twice**, so there are two rows: one on spawned layouts,
-at the cell's own spacing, and one on crowded layouts, closer than that.
+Every solution is run on a spawned set at the cell's own spacing and a crowded
+set that is closer. Each row gives the count per 100 glasses, with the lowest
+and highest block in brackets.
 
 | | found per 100 | missed | merged | place | mask covered | mask not the glass |
 |---|---|---|---|---|---|---|
 | spawned | 83.0 (78.0–86.1) | 17.0 | 0.0 | 5.6 mm | 97.2% | 0.0% |
 | crowded | 73.6 (71.9–76.6) | 26.4 | 0.0 | 0.8 mm | 98.3% | 0.0% |
 
-**The result to take seriously is the last column.** None of its masks leaked
-onto a neighbouring glass or onto the table, in either set, and it merged
-nothing and split nothing. That is what the keeper and the width check are for:
-every doubtful case was turned into a dropped proposal rather than into a wrong
-glass. It is also the best crowded mask coverage of the six after the fine-tuned
-model, which is a good showing for a model that was never trained on these
-pictures at all.
-
-What it pays for that caution is in the first column. It finds 83.0 glasses per
-100 on the spawned set, so about one glass in six arrived as a proposal the
-keeper would not keep or as no proposal at all. The borrowed model is being
-shown a kind of picture it has never seen, and nothing in this solution can
-teach it otherwise. The full table for all six is in [the
-results](../11_the-results.md).
+The last column is the result to notice. None of its masks spread onto a
+neighbour or the table, and it merged no glasses. The keeper and the width check
+drop a doubtful proposal instead of making a wrong report. The cost is in the
+first column. About one glass in six is missed on the spawned set. [The
+results](../11_the-results.md) compare all six. The next section sums up what
+this means.
 
 ## 5. Where it is strong and where it breaks
 
-**Almost nothing is fitted here, and what is fitted is small, fast and can be
-inspected.** The borrowed half cannot fall out of step with this cell, because
-it never knew anything about it. No other solution in this book has that
-property.
+This section turns the scores above into strengths and weaknesses. It is strong
+because almost nothing is trained here. The keeper is small, fast and easy to
+check. It needs the least data of the solutions that train anything. It also
+sees objects that are not glasses, such as a spoon, and says "not a glass".
 
-**It needs the least data of the four that fit anything.** **It splits the job
-along the line that transfers**, which is the clearest reason to prefer it to
-solution 3. **It notices things nobody described**, because the grid proposes
-every region in the scene, so a spoon left on the table arrives as a proposal
-and is answered "not a glass" rather than passed over in silence; every other
-solution here is blind to whatever falls outside the one class it knows. And
-**its doubt is cheap and explicit**, which is what the zero in the last column
-of the table is made of.
-
-Against those, the weaknesses are not small.
-
-**The domain gap is the largest risk and it cannot be closed from inside.** The
-only levers available are the shading and the grid, because nothing here is
-trained. Where those are not enough, the answer is one of the fine-tuned
-solutions.
-
-**It cannot be taught this cell's hard cases.** Pairs standing closer than the
-rule allows, pairs actually touching, a glass half hidden behind another: all of
-those can go into a training set for the fine-tuned solutions, and none of them
-can be communicated to the borrowed model at all.
-
-**It depends on depth twice over.** The keeper's best inputs come from depth
-readings, and so does the picture itself, because the picture *is* shaded depth.
-So on the day the glasses become real transparent glass and the depth camera
-stops returning anything through them, this solution has no input at all, not
-even a picture. It is not the solution that survives real glassware; it is the
-solution that survives having almost no training data, which is a different and
-narrower virtue.
-
-**It is blind to a glass hidden completely**, which is a fact about the input
-rather than about the model, and is answered by geometry instead in [looking
+It has four weaknesses. First, the domain gap cannot be closed, because SAM 2 is
+never trained here. Second, it cannot be taught this cell's hard cases, such as
+glasses that touch. Third, it needs depth twice, for the picture and for the
+keeper's measurements. Real clear glass gives no depth, so it would have no
+input. Fourth, a glass hidden completely is not in the picture, as [looking
 again at what was
-hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md).
+hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md) explains. The
+next section says when to choose it anyway.
 
 ## 6. When to choose it
 
-Choose this when labelled examples are scarce and a large promptable segmenter
-is available. It is the right shape whenever the shapes in your pictures are
-ordinary but the categories are not: industrial parts, medical structures, or
-anything a public model has never been asked to name. A keeper fitted on a few
-hundred proposals is a day's work, where fine-tuning a whole model on hand-drawn
-outlines is weeks.
+This section turns the points above into advice. Choose it when labelled
+examples are scarce. Choose it also when a wrong answer costs more than a
+missing one.
 
-Choose it also when a wrong answer is more expensive than a missing one, because
-the three-answer keeper and the width check after it are built to turn doubt
-into silence.
-
-Do not choose it when the pictures themselves are far from what the borrowed
-model was fitted on and accuracy matters more than setup cost, because then the
-gap has to be closed by training and only [the same model,
-fine-tuned](05_the-same-model-fine-tuned.md) or [a transformer segmenter,
-fine-tuned](07_a-transformer-segmenter-fine-tuned.md) can close it. And do not
-choose it if the sensor itself is the problem: this solution needs depth for
-both of its halves.
+Do not choose it when accuracy matters more than setup cost. Then use [the same
+model, fine-tuned](05_the-same-model-fine-tuned.md) or [a transformer segmenter,
+fine-tuned](07_a-transformer-segmenter-fine-tuned.md). Do not choose it when the
+sensor gives no depth.
 
 The code is in
-[`src/08_seeing-the-glasses/05-sam2-with-a-keeper/`](../../../code/src/08_seeing-the-glasses/05-sam2-with-a-keeper)
-and it writes its own `results.json` beside itself. The full treatment, with
-what a foundation model is, how a promptable model becomes a proposer of
-everything, the keeper's inputs in detail, and the second way that prompts with
-a word instead of a grid, starts at [what it
-is](../09_a-foundation-model-with-a-keeper/01_what-it-is.md).
+[`src/08_seeing-the-glasses/05-sam2-with-a-keeper/`](../../../code/src/08_seeing-the-glasses/05-sam2-with-a-keeper).
+It writes its own `results.json` beside itself. The full treatment starts at
+[what it is](../09_a-foundation-model-with-a-keeper/01_what-it-is.md).
 
 ← [The same model, fine-tuned](05_the-same-model-fine-tuned.md) · [A transformer segmenter, fine-tuned](07_a-transformer-segmenter-fine-tuned.md) →

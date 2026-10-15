@@ -1,9 +1,8 @@
 # The code
 
-This page shows the code at the heart of this solution, and says what the
-solution hands back to the rest of the cell. It follows [what it
-is](01_what-it-is.md), and [how it works](03_how-it-works.md) explains, part by
-part, what the code below is doing.
+This page shows the code at the heart of this solution. It also says what the
+solution hands back. It follows [what it is](01_what-it-is.md). [How it
+works](03_how-it-works.md) explains each part of this code in more detail.
 
 ## Contents
 
@@ -13,25 +12,22 @@ part, what the code below is doing.
 
 ## 1. The code at the heart of it
 
-This solution is two models meeting at one place, so that place is worth seeing.
-On one side a grid of point prompts goes into the borrowed model. On the other a
-short row of measurements comes back out of what the borrowed model returned,
-and that row is the only thing the fitted model ever reads.
+This solution is two models that meet at one place, so this section shows that
+place. A grid of points goes into the borrowed model. A short row of
+measurements comes out. That row is the only thing the keeper reads.
 
-Going in, in `05-sam2-with-a-keeper/sam_keeper.py`, four steps turn the kind of
+Going in, four steps in `05-sam2-with-a-keeper/sam_keeper.py` turn the kind of
 glass into masks.
 
-1. Measure the narrowest glass that kind allows, in pixels, and divide that
-   width so three prompt points land across such a glass. That division is the
-   grid's spacing.
-2. Pick the rows and the columns the grid falls on, starting half a step in from
-   the edge of the picture, and pair every row with every column to get the list
-   of points to prompt with.
-3. Wrap each point in a prompt of its own, so every point asks its own question,
-   scale those points to the size the picture encoder was given, and move them
-   onto the processor the model runs on.
-4. Send the prompts sixty-four at a time into the one call that reaches the
-   borrowed model, which answers each point with three masks.
+1. Measure the narrowest glass of that kind, in pixels. Divide that width so
+   three points land across it. The result is the spacing of the grid.
+2. Pick the rows and columns of the grid. Start half a step in from the edge.
+   Pair every row with every column to get the list of points.
+3. Wrap each point in its own prompt, so each point asks its own question.
+   Scale the points to the size the encoder used. Move them onto the processor
+   the model runs on.
+4. Send the prompts into the borrowed model, 64 at a time. The model answers
+   each point with three masks.
 
 ```python
 def prompt_spacing(kind: str) -> int:
@@ -66,13 +62,12 @@ def _grid(spacing: int, inside: np.ndarray | None = None) -> list[list[float]]:
                 out = self.model(image_embeddings=self.embeddings, input_points=chunk, multimask_output=True)
 ```
 
-Coming out, in the same file, one more step turns a region that survived the
-cleanup into numbers measured on the table rather than in the picture.
+Coming out, one more step in the same file turns a cleaned-up region into
+numbers measured on the table.
 
-5. Take the rows and the columns of the pixels the fitted footprint covers, turn
-   those pixels into real points on the table, find the one-pixel ring just
-   inside the mask, which is the mask's own outline, and hand back the six
-   numbers.
+5. Take the pixels the region covers and turn them into real points on the
+   table. Find the one-pixel ring just inside the mask, which is its outline.
+   Return six numbers.
 
 ```python
 def _measure(picture, mask, found, jumps, step, camera, widths) -> list[float]:
@@ -96,52 +91,46 @@ def _measure(picture, mask, found, jumps, step, camera, widths) -> list[float]:
     ]
 ```
 
-That function returns six numbers and the keeper reads eight, and the gap is not
-an oversight. Six of the eight can be worked out from one proposal on its own,
-and two of them cannot be worked out from one proposal at all. How many prompt
-points returned this same mask is a count the duplicate removal already made
-while comparing the whole shortlist. Whether another proposal contains this one,
-or this one contains another, is a statement about a pair. Both are added by
-`_proposals`, which holds the whole shortlist, after `_measure` has done its
-work on each region separately.
+This function returns six numbers, but the keeper reads eight. The other two
+need the whole shortlist, not one region. One is how many grid points returned
+the same mask. The duplicate removal counts this. The other is whether one
+region contains another, which is a fact about a pair. The function
+`_proposals` adds both, because it holds the whole shortlist.
 
 ![Six of the keeper's eight numbers are measured from one proposal on its own, while the vote count and the containment count exist only once the whole shortlist is laid side by side, which is why the measuring is split across two functions.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/09-where-the-eight-numbers-come-from.png)
 
-Two things show in those two blocks. The borrowed half is one call,
-`self.model(...)` on a `Sam2Model` loaded through Hugging Face `transformers`,
-and every line written around it belongs to this project. And the fitted half
-never sees a pixel: what reaches scikit-learn — a
-`HistGradientBoostingClassifier` wrapped in a `CalibratedClassifierCV` — is the
-list the second block returns. That is what borrowing the seeing and fitting the
-deciding looks like in code.
+Two things show in this code. The borrowed half is one call, `self.model(...)`,
+on a `Sam2Model` from Hugging Face `transformers`. Every line around it belongs
+to this project. The trained half never sees a pixel. It is a scikit-learn
+`HistGradientBoostingClassifier` inside a `CalibratedClassifierCV`, and it
+reads only the list of numbers.
+
+The next section says what all this code hands back.
 
 ## 2. The masks are what this contributes
 
-Everything above produces masks, and nothing above produces a place or a width.
+The code above gives masks, so this section says what happens to them next. The
+examiner turns every solution's masks into places and widths in the same way.
+So any difference in score comes from the mask. No model here gives a pose.
+[What must come back](../03_the-examiner/01_the-examiner.md#6-what-must-come-back)
+explains both points.
 
-Turning a mask into a place on the table and a rough width is the examiner's
-job, shared by all six solutions and set out in [how a mask becomes a
-record](../12_how-a-mask-becomes-a-record.md). **So this solution contributes
-only the masks, and any difference in its score belongs to the mask.** It
-cannot win by measuring more cleverly and it cannot lose by measuring worse.
-
-One consequence is worth stating because it removes a question this solution
-invites. **No model here produces a pose.** The borrowed model produces regions,
-the keeper produces a decision about a region, and the pose comes from depth and
-the camera's own pose by arithmetic. A glass standing upright on a flat table
-has no orientation left to find.
+The last section picks out three points to remember from this page.
 
 ## 3. Three things to hold on to
 
-**The only fitted stage is the keeper**, which reads a table of numbers rather
-than pictures, so everything that finds objects is borrowed and none of it knows
-anything about this cell.
+This section sums up the page in three points, before the next page explains
+each part.
 
-**The riskiest stage is the shading**, because it is the only place where a
-choice that no arithmetic can check changes what every later stage sees.
+**The keeper is the only trained part.** It reads numbers, not pictures. The
+part that finds shapes is borrowed and knows nothing about this cell.
 
-**The width check sits after the keeper rather than before it**, so a wrong
-answer from the keeper still has to get past a rule nobody fitted, and a wrong
-keep therefore becomes a doubtful report rather than a wrong glass.
+**The shading is the riskiest step.** It turns depth into a grey picture. It is
+the one choice that changes what every later step sees, and no check can catch
+a bad choice.
+
+**The width check comes after the keeper.** So a wrong "keep" must still pass a
+rule that nobody trained. A wrong keep becomes a doubtful report, not a wrong
+glass.
 
 ← [What it is](01_what-it-is.md) · [How it works](03_how-it-works.md) →

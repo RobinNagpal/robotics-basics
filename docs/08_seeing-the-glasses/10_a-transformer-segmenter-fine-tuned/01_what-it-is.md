@@ -1,42 +1,20 @@
 # What it is
 
-> **What it uses** — the RF-DETR package, with PyTorch underneath it, reaching
-> this machine's graphics processor through Metal Performance Shaders, Apple's
-> own layer for that, which PyTorch calls its MPS backend. The model is
-> **RF-DETR-Seg**, a transformer that detects and segments in one pass. It is
-> published under the Apache 2.0 licence and it is offered in a range of sizes,
-> so the size can be chosen to suit the machine.
-> **What it does** — it takes one picture from the top and returns one mask per
-> glass, with no step in between that has to cut a joined region apart. The
-> model arrives with its weights already fitted to a large collection of
-> ordinary labelled pictures, and training then continues on this cell's own
-> pictures with the list of classes cut down to the single class "glass". The
-> model carries a fixed number of **queries**, each of which either reports one
-> glass or reports nothing, and a mask is predicted over the whole picture
-> rather than inside a rectangle. Because of that, this is also the one solution
-> of the six that can be asked for the part of a glass nobody saw. That request
-> is its second way, and the second way was never fitted to completion.
-> **How the output is produced** — the grey picture shaded from depth goes in;
-> the model's body turns it into a description of every part of the picture; the
-> queries read that description and each returns a class, a rectangle and a mask
-> over the whole picture; the queries that report "nothing" are dropped; each
-> surviving mask is handed to the examiner, which back-projects its pixels with
-> their depth readings and the camera's own pose and returns a place and a rough
-> width.
-> **What it costs** — the labels cost nothing, because the examiner renders which
-> glass owns each pixel and a mask is a selection over that. The training time
-> is the time of a fine-tune rather than of a start from nothing, so it is far
-> less than building the same model from random numbers would take, and it is
-> still the largest single cost in this solution. The hardware is one laptop
-> with a graphics processor sharing the machine's memory, reached through
-> PyTorch's MPS backend; there is no NVIDIA card here and no CUDA. The licence
-> is Apache 2.0, which permits the model to be used without any obligation on
-> the code standing around it.
+> **What it uses.** It uses the RF-DETR package, with PyTorch under it. The model
+> is **RF-DETR-Seg**. It is a transformer that finds and outlines objects in one
+> pass. It comes in several sizes, and its licence is Apache 2.0.
+> **What it does.** It takes one picture from the top and returns one mask per
+> glass. The model starts with weights fitted to ordinary photos. Training then
+> continues on this cell's pictures, with one class, "glass".
+> **How the output is produced.** The grey picture goes in. A fixed number of
+> **queries** each return either one glass or nothing. Each query's mask covers
+> the whole picture, not just a rectangle. The examiner turns each mask into a
+> place and a rough width.
+> **What it costs.** The labels are free. The fine-tune is the largest cost. It
+> runs on one laptop. [What it needs](05_what-it-needs.md) lists every cost.
 
-> **The cell is described once, in [the cell](../01_the-cell.md)** — the
-> layout, the two places the camera works from, from the top and from the side,
-> all four sensors, and the words this project uses them with. What follows is
-> only what is specific to this solution.
+> **The cell is described once, in [the cell](../01_the-cell.md).** This chapter
+> covers only what is special to this solution.
 
 ## Contents
 
@@ -46,101 +24,72 @@
 
 ## 1. Introduction
 
-This document describes the sixth of the six answers this book gives, and it is
-the one built on the most modern of the architectures in the set. The problem asks
-which pixels belong to which glass, and this solution answers it by taking a
-transformer that detects and segments objects, RF-DETR-Seg, and continuing its
-training on this cell's own pictures with one class, "glass".
+This is the sixth of the six solutions in this book. It uses the newest design
+of the six. It takes a transformer segmenter, RF-DETR-Seg, and trains it further
+on this cell's pictures.
 
-Two things make it worth a document of its own rather than a line in a table.
-The first is the shape of its output. Older segmenters find a rectangle round an
-object first and then paint a mask inside that rectangle, so the mask can never
-reach past the rectangle's edge. This model has no such rectangle standing in
-the way of its masks, and that single structural fact is what the rest of this
-document builds on. The second is what that fact permits: this is the only one
-of the six that can reasonably be asked to mark the part of a glass that nothing
-in the picture shows, which is the **second way** of this solution and is
-described in full below.
+Two things make it different. First, older segmenters draw a rectangle round an
+object and paint the mask inside it. So the mask can never reach past that
+rectangle. This model has no such rectangle. Second, because of that, it is the
+only one of the six that can be asked to mark the hidden part of a glass. This
+book calls that the **second way** of this solution.
 
-One thing has to be said before the rest. The first way is built and has been
-scored by the examiner; the second way is not. Its fine-tune was started with
-the same settings as the first and stopped unfinished when the machine filled
-up, so no number is claimed for it anywhere, here or beside its code in
+The first way is built and scored. The second way is not. Its training was
+stopped before it finished, so no number is given for it, here or beside its
+code in
 [`06-rf-detr-fine-tuned/`](../../../code/src/08_seeing-the-glasses/06-rf-detr-fine-tuned).
-Where this chapter says what the second way would do, that is the design
-speaking and not a run. What the first way scored is in [how it
-compares](06_how-it-compares.md), and beside the other five in [the
-results](../11_the-results.md).
+When this chapter says what the second way would do, that is the design and not
+a test. The score of the first way is in [how it compares](06_how-it-compares.md).
 
-By the end you will understand what a query is and why a fixed number of them is
-a different idea from a search that proposes regions, what set prediction means
-and why it removes a cleanup step that other detectors need, what cutting the
-class list down to one class does and does not change, why this architecture
-suits the request for a glass's whole silhouette better than a rectangle-based
-one does, and the single mistake that would do the most damage if this solution
-were built carelessly.
+After this chapter you will know what a query is, what set prediction is, and
+what one class changes. You will also know why this design suits a mask of the
+whole glass, and which mistake does the most damage.
 
 ![A fixed number of queries read the model's description of the picture and each returns a class, a rectangle and a mask over the whole picture, the queries reporting nothing are dropped, and what is left is one mask per glass with nothing to cut apart.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/transformer-flow-what-it-does.png)
 
 ![The older shape proposes many candidate rectangles and prunes the ones that overlap too heavily, which needs a number saying how much is too much, while here the queries are matched to the glasses one to one during training, so there is nothing to prune and no rectangle to box a mask in.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/transformer-flow-set-prediction.png)
 
+The next section says which parts of the problem this solution is aimed at.
+
 ## 2. The problem this solves
 
-Four to six glasses stand on the table. They are all of one kind, the kind is
-known, and they are solid, so the depth camera reads them. The job, set out in
-full in [the problem](../02_the-problem/01_what-is-asked-for.md), is to say which pixels belong to which
-glass, to give each glass a place on the table, and to give each a rough
-footprint width. Nothing is picked up here and no shape is measured.
+Before the idea itself, it helps to name the two failures it is built to avoid.
+The task is set out in [what is asked for](../02_the-problem/01_what-is-asked-for.md).
 
-What makes that hard is **splay**, which [the cell](../01_the-cell.md)
-describes: a camera looking straight down throws a glass's outline outwards from
-the point directly below it, and the taller the glass the further out it goes.
-The kind on the table is drawn from a wide range of proportions, with its tall
-end more than twice the height of its short end, so a tall glass's stretched
-outline can reach across the ground where a shorter one stands.
+The first failure is the merge. Two glasses can stand apart on the table but
+their outlines can still meet in the picture. A simple method then reports one
+glass where there are two. [Glasses merge in the
+picture](../02_the-problem/01_what-is-asked-for.md#glasses-merge-in-the-picture-although-they-stand-apart-on-the-table)
+explains why.
 
-Two different failures follow from that, and this solution is aimed at both.
+The second failure is the slice. A glass can be partly covered by the glass in
+front of it. Its mask then holds only one side of the glass. [The second
+way](03_how-it-works.md#6-a-second-way--training-against-the-whole-silhouette)
+is about this case.
 
-The first is that two glasses standing clear of each other on the table can
-leave **one joined region** in the picture. A **mask** is a picture the same
-size as the photograph in which every pixel says yes or no, where yes means
-"this is glass". When two outlines meet, the yes pixels of the two glasses form
-one joined region, and the usual way of turning such a region into objects —
-spread out from a yes pixel to every yes pixel touching it, and call everything
-reached one object — returns one object where two glasses stand. That spreading
-answers only the question *are these pixels joined?*, and joined is exactly what
-the two outlines are.
+A glass that is covered completely is a third case. No picture method can find
+it. [When the glasses are completely
+hidden](04_a-worked-example.md#1-when-the-glasses-are-completely-hidden) says
+what this solution can and cannot do about it.
 
-The second is that a glass can be **partly covered** by the glass in front of
-it. Its mask then stops where the near glass begins, and what is left is not a
-smaller copy of the glass but a slice of it, lying all to one side. That failure
-is quiet rather than loud, and the whole of [the second
-way](03_how-it-works.md#6-a-second-way--training-against-the-whole-silhouette) is about it.
-
-There is a third difficulty neither of those reaches, which is a glass covered
-so completely that it contributes no pixels at all. [When the glasses are
-completely hidden](04_a-worked-example.md#1-when-the-glasses-are-completely-hidden) settles what this
-solution can and cannot do about it, and the answer is short.
+The next section gives the idea that answers the first two failures.
 
 ## 3. The main idea
 
-The main idea is to use a model whose output already holds separate objects, and
-to use one whose masks are not shut inside rectangles.
+The two failures above point to two needs, and the idea meets both.
 
-Those are two separate claims and it is worth keeping them apart. The first is
-shared with other solutions in this set: a model that returns one mask per
-object needs no step that divides a joined region, because the division never
-had to happen. The second belongs to this solution alone, and it is what the
-second way rests on, because a mask asked to cover more than the camera saw has
-to be free to grow.
+First, use a model whose output is already one mask per glass. Then no step has
+to cut a joined region apart. Other solutions in this book share this part.
 
-The second half of the main idea is where the numbers inside the model come
-from. A model of this kind holds a great many weights, and determining all of
-them from this cell's pictures alone would be unreasonable. It does not have to
-be done, because the weights arrive already fitted to a large collection of
-ordinary labelled pictures, and training continues from those weights on this
-cell's own pictures with the class list cut down to one entry. That is
-**fine-tuning**, and it is why a model this size is a sensible thing to put on
-one laptop.
+Second, use a model whose masks are not shut inside rectangles. Only this
+solution has this part. A mask that must cover more than the camera saw needs
+room to grow.
+
+The weights come from somewhere else. A model this large has too many weights
+to fit from this cell's pictures alone. So it starts from weights already fitted
+to ordinary photos, and training continues on this cell's pictures. This is
+called **fine-tuning**. [What fine-tuning
+is](../08_the-same-model-fine-tuned/03_how-the-model-is-trained.md#1-what-fine-tuning-is)
+explains it in full. [The code](02_the-code.md) shows how this solution does it.
 
 ← [SAM 2 with a keeper — how it compares](../09_a-foundation-model-with-a-keeper/06_how-it-compares.md) · [How it works](03_how-it-works.md) →

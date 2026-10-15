@@ -1,52 +1,47 @@
 # What it needs
 
-This page is the bill for this solution: the libraries it rests on, the
-machine it wants, the data somebody has to supply and, where there is one,
-the licence that comes with the weights.
+This page lists what this solution costs. It covers the libraries, the machine,
+the data and the licence.
 
 ## 1. What it needs
 
-This is one of the more demanding solutions in the set to set up, and it is
-worth being plain about that before anyone starts.
+This is one of the harder solutions in the set to set up. The list below says
+what it needs, from the largest cost to the smallest.
 
-It needs a **deep learning framework and the environment to run it in**, which
-is a large dependency for a cell whose simplest answer is a page of arithmetic.
-It needs a **downloaded file of weights**, 128 MB, which is fetched rather than
-committed with the code and which this project cannot produce, so it comes from
-outside and is taken on trust.
+- **A deep learning framework.** It needs PyTorch and the RF-DETR package. That
+  is a large dependency for a cell whose simplest solution is a page of
+  arithmetic.
+- **A downloaded weights file.** The borrowed weights are 128 MB. They are
+  fetched, not stored with the code. This project cannot make them, so they must
+  be trusted.
+- **A training set.** The examiner draws and labels it for free, including the
+  crowded arrangements. This is the cheap part, and it is why fine-tuning makes
+  sense here.
+- **Training time.** The fine-tune is the largest cost. It is far shorter than
+  training from random numbers. The one fine-tune measured here took 932
+  seconds. Other training runs shared the machine, so that is an upper limit.
+  The second way was stopped before it finished, so it has no time.
+- **Hardware it fits on.** The machine is a laptop. Its graphics processor
+  shares memory with the main processor. PyTorch reaches it through Apple's
+  Metal Performance Shaders, which PyTorch calls its MPS backend. The code uses
+  MPS when it can, and the main processor when it cannot. It prints which one it
+  got. There is no NVIDIA card and no CUDA. Shared memory helps the model fit.
+  If the model is still too large, a smaller size can be chosen.
+- **Weights kept in step with the cell.** Change the camera, the grey shading or
+  the range of a kind, and the weights file is out of date. No code test will
+  notice.
 
-It needs a **training set**, which the examiner renders and labels for nothing,
-including the crowded arrangements the cell's own rule would never produce. That
-is the genuinely cheap part and it is what makes fine-tuning reasonable here. It
-needs **time on the machine** for the fine-tune, far less than a start from
-random numbers would need but still the largest cost in the solution. The one
-fine-tune measured here took 932 seconds, on a machine shared with other
-training runs, so that is an upper bound. The second way is the same model on
-the same settings, and it was stopped unfinished rather than timed.
+Running the model is cheap. One pass over one picture takes a small part of the
+seconds an arm movement takes. So almost all of this solution's cost is in
+building it, not in running it.
 
-It needs **hardware it fits on**. The machine here is a laptop whose graphics
-processor shares memory with the main processor, and PyTorch reaches that
-graphics processor through Metal Performance Shaders, Apple's own layer for
-that, which PyTorch calls its MPS backend. The code picks MPS where it is
-available, falls back to the main processor otherwise, and says which it got.
-There is no NVIDIA card here and no CUDA. The shared memory is part of why a model of this size
-fits at all, and the model being offered in a range of sizes is the other part,
-because a smaller size can be chosen if the larger one does not fit.
+The licence is Apache 2.0. It lets you use, change and ship the model with no
+duty on the code around it. The two YOLO solutions use the AGPL instead, which
+[the licence section of solution
+3](../07_a-borrowed-model-as-it-downloads/03_results-and-comparison.md#6-what-it-costs-to-run-and-the-licence)
+explains.
 
-And once fine-tuned it needs **a file of weights kept in step with the world**.
-Change the camera, the way depth is shaded into grey, or the range of
-proportions a kind is drawn from, and the file is quietly out of date in a way
-no test of the code will notice. Against all that, what it needs at run time is
-modest: one pass over one picture is a small fraction of the seconds an arm
-movement costs, so the cost of this solution sits almost entirely in building it
-rather than in running it.
-
-The licence is the one thing it does not need to worry about. Apache 2.0 is
-permissive: the model may be used, changed and shipped inside other work without
-any obligation falling on the code around it. That is a real difference from
-[YOLO as it downloads](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md) and [the same YOLO fine-tuned
-here](../08_the-same-model-fine-tuned/01_what-it-is.md), both of which are
-covered by the Affero General Public License (AGPL), and it is worth knowing
-before a choice is made rather than after.
+[How it compares](06_how-it-compares.md) next weighs these costs against what
+the solution scores.
 
 ← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

@@ -107,13 +107,47 @@ view from the top when the push was chosen, the one instruction, and the arm's
 pose. The action is the path the jaw really followed. The examiner writes this
 down on every action. So no person had to draw, label or judge anything.
 
-Here is what that came to, measured. **800 training tables took 22 minutes of
-simulator time on this laptop and gave 2,012 demonstrations.** The teacher
-made 3,554 pushes. Of these, 1,533 were the 5 mm test pushes that check
-whether a glass slides. They belong to the shared tipping check, not to the
-chooser, so they are not demonstrations. Of the other 2,021 pushes, **only 9
-were thrown away**. Eight toppled a glass, and one pushed a glass out of the
-zone.
+The demonstrations come from a fixed set of tables, called a **band**. This
+solution has used two bands, so each number below says which band it comes
+from.
+
+**The first band was 800 tables, starting at table 0.** The teacher took 19
+minutes of simulator time on it. It gave **1,074 demonstrations from 430 of
+those tables**. On the other 370 tables it found nothing it could push. The
+teacher made 2,766 pushes. Of these, 1,663 were the 5 mm test pushes that
+check whether a glass slides. They belong to the shared tipping check, not to
+the chooser, so they are not demonstrations. Of the other 1,103 pushes, **29
+were thrown away**. Thirteen toppled a glass, twelve jammed, three pushed a
+glass out of the zone, and one was blocked on the way down. The project's
+[README for this
+solution](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/06-smolvla-fine-tuned/README.md)
+records these counts.
+The first result, in [how it
+compares](06_how-it-compares.md#3-where-it-sits-among-the-others), was
+fitted on this band.
+
+**The band then changed to solution 3's band: 5,200 tables, starting at table
+1,000.** Solution 3 and this solution are compared as a small model against a
+large one. That comparison is only about the models if both learn from the
+same tables. The new band also leaves out tables 0 to 199, where the teacher
+itself was fitted. These were a quarter of the first band. [Solution 3 explains
+why they must be left
+out](../06_imitation-from-demonstrations/03_how-it-works.md#2-where-the-demonstrations-come-from).
+
+**The change first went wrong, and tests now guard it.** The band's numbers
+were changed in the code. But the program that starts the collection still
+passed table 0. So the first large collection ran over tables 0 to 5,199, and
+nothing looked wrong. The project then made the band a named function. Four
+tests now check it. They check that the band is solution 3's, that the
+collection starts where the band says, that no band reaches the held-out
+tables, and that the two bands do not overlap. The wrong collection was kept.
+[How it compares](06_how-it-compares.md#4-more-demonstrations-and-a-result-that-did-not-come-back)
+uses it as a control.
+
+**On the new band the teacher gave 6,935 demonstrations from 2,796 of the
+5,200 tables.** This is six and a half times the first band. The project
+records it in
+[`demonstrations/collected.json`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/06-smolvla-fine-tuned/demonstrations/collected.json).
 
 Two facts limit what the model can learn from these recordings. First, the
 teacher works from the numbers `look()` hands over, but the student works from
@@ -131,9 +165,9 @@ The free data has two costs, and solution 3 explains both in full.
 because the model only copies solution 2 and nothing scores its own pushes.
 And [dropping the failed pushes thins out the hard
 cases](../06_imitation-from-demonstrations/03_how-it-works.md#3-choosing-which-demonstrations-to-keep-and-the-bias-it-buys).
-Here that thinning is tiny: 9 pushes in 2,021, or 0.4 per cent. So the real
-problem is that the teacher almost never meets a hard table. The student has
-never been shown one.
+Here that thinning is small: on the first band, 29 pushes in 1,103, or 2.6 per
+cent. So the real problem is that the teacher almost never meets a hard table.
+The student has never been shown one.
 
 The model cannot make better pushes than the best one in its training set.
 What it can add is steadiness where the teacher was fragile. For example, the
@@ -146,9 +180,9 @@ aggregation). It is cheap here because the teacher is a program. [Solution 3
 explains it](../06_imitation-from-demonstrations/03_how-it-works.md#6-compounding-error).
 It is a plan here, not code.
 
-Solution 3 learns from the same demonstrations, drawn from the same tables. So
-between those two the data is held still, and only the borrowing differs. This
-solution is in two pairs at once, and each pair asks a different question.
+On the new band, solution 3 learns from the same tables. So between those two
+the data is held still, and only the borrowing differs. This solution is in
+two pairs at once, and each pair asks a different question.
 
 The data is held still against solution 3. The next section checks that
 everything except the training is held still against solution 5.
@@ -224,10 +258,19 @@ five hundred training steps the median was 107 mm.
 
 ![The glass zone drawn to scale with a teacher's push on it, and two rings round that push: one of 331 mm, the median distance from the teacher's waypoints to the untrained model's, which is wider than the zone itself, and one of 107 mm, the same measurement after five hundred steps of training.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/finetuned-how-far-the-answer-was.png)
 
-The next five hundred steps cut it again, to 85 mm. **The error was still
-falling when the training budget ran out.** So a thousand steps is where this
-run stopped, not where the method stops improving. Read every number here as
-what a thousand steps buys.
+The next five hundred steps cut it again, to 85 mm. These three numbers come
+from the one fit on the first band. On that fit the error was still falling
+when the training budget ran out.
+
+**That claim did not survive three seeds.** A **seed** is the number that
+starts the training's random choices. On the new band the model was fitted
+three times, with three seeds. The error at step 500 was 92.6, 115.3 and
+77.0 mm. At step 1,000 it was 101.5, 106.1 and 90.0 mm. So it rose in two fits
+and fell in one. Between step 500 and step 1,000 the error is flat, inside its
+own noise. The fair statement is that the model was not clearly improving at
+the end. Each fit's numbers are in its `training.json`, for example
+[`correction-aligned-0/training.json`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/06-smolvla-fine-tuned/correction-aligned-0/training.json).
+Read every number here as what a thousand steps buys.
 
 Fine-tuning closes the gap because the model is trained on the same kind of
 input it will be shown. The pale blue glasses, the tan table and the view from
@@ -329,15 +372,18 @@ cost only simulator time, so the training set can be large.
 The two risks pull against the gain. More training closes the domain gap
 further, but it also makes both risks more likely. So there is a right amount
 of training, not a maximum, and the held-out tables decide it. Here, between
-step 500 and step 1,000, the training loss halved. The error on the tuning
-tables fell by only about a fifth, from 107 mm to 85 mm.
+step 500 and step 1,000, the training loss halved. On the first fit, the error
+on the tuning tables fell by only about a fifth, from 107 mm to 85 mm. On the
+three later fits it did not fall at all, as [the domain gap
+paragraph](#5-what-fine-tuning-closes-and-what-it-cannot-touch) shows.
 
 There is one more thing to know. The policy is random: asked the same question
 twice, it may act differently. Training also depends on its random seed. So
 [the examiner](../01_the-problem/03_the-examiner.md#6-two-things-this-scorecard-needs-that-the-camera-works-did-not)
-asks for several training seeds and several runs. **This matters most here,**
-because the thing measured is a gap between two solutions. A gap smaller than
-either solution's own spread has not been shown to exist.
+asks for several training seeds and several runs. The first fit used one seed.
+The re-fit on the new band used three. **This matters most here,** because the
+thing measured is a gap between two solutions. A gap smaller than either
+solution's own spread has not been shown to exist.
 
 These risks are about one model. The next section asks whether a larger model
 would do better.
@@ -357,5 +403,10 @@ running the evaluation all break in ways found only by a failed run. SmolVLA
 runs on a laptop, so those failures cost nothing. On the large model, each
 failed run would use rented time. A weekend of rented time costs about a
 hundred dollars, and could produce no comparison at all.
+
+**The question is now asked with a different model.** [Solution
+7](../10_a-newer-larger-model-fine-tuned-here/01_what-it-is.md) fits Evo-1, a
+newer and larger model that runs on this laptop. It is fitted exactly as this
+solution is. Its results are still being measured.
 
 ← [The code](02_the-code.md) · [A worked example](04_a-worked-example.md) →

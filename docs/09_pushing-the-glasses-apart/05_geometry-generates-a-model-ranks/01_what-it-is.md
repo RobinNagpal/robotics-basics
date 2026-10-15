@@ -64,7 +64,7 @@ glasses, but the model uses more pushes. [Where it is strong and where it
 breaks](06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks) gives
 the numbers and the reason.
 
-This solution also matters for a second reason. It is the teacher for two
+This solution also matters for a second reason. It is the teacher for three
 other solutions, which learn by copying its pushes. [It is the
 teacher](03_how-it-works.md#7-it-is-the-teacher) explains what that gives them
 and what it costs them.
@@ -95,8 +95,9 @@ choose from. On this table, the width and height of the hand rule out almost
 every push. So the model and the rule choose from the same very short list, and
 they choose the same push.
 
-All six solutions are filmed on this same table, so you can compare the films.
-[The six films](../10_the-results.md#3-the-six-films-all-of-the-same-table)
+The six solutions measured so far are filmed on this same table, so you can
+compare the films.
+[The six films](../11_the-results.md#3-the-six-films-all-of-the-same-table)
 collects them and says how the table was chosen.
 
 The film shows the method at work. The next section says which problem it is
@@ -167,4 +168,4 @@ keep safety in the arithmetic.
 
 The next page, [the code](02_the-code.md), shows how this idea is written.
 
-← [One fixed nudge — how it compares](../04_one-fixed-nudge/06_how-it-compares.md) · [How it works](03_how-it-works.md) →
+← [One fixed nudge — questions and answers](../04_one-fixed-nudge/07_questions-and-answers.md) · [The code](02_the-code.md) →

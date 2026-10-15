@@ -85,11 +85,11 @@ can choose a push that finishes the job, instead of nudging and looking again.
 
 This film shows one good table. Over all 50 test tables, the same planner
 topples a glass on 19 of them. [Where it sits among the other
-five](06_how-it-compares.md#3-where-it-sits-among-the-other-five) gives the
+five](06_how-it-compares.md#3-where-it-sits-among-the-others) gives the
 full score.
 
-All six solutions are filmed on this same table. [The six
-films](../10_the-results.md#3-the-six-films-all-of-the-same-table) puts them
+The six measured solutions are all filmed on this same table. [The six
+films](../11_the-results.md#3-the-six-films-all-of-the-same-table) puts them
 side by side and says how the table was chosen.
 
 The next section says which problem a learned model of the table is meant to
@@ -169,4 +169,4 @@ model's own prediction. **This is a gap in the solution, not a second opinion.**
 
 [The code](02_the-code.md) shows the model and the scoring as code.
 
-← [Imitation from demonstrations — how it compares](../06_imitation-from-demonstrations/06_how-it-compares.md) · [How it works](03_how-it-works.md) →
+← [Imitation from demonstrations — questions and answers](../06_imitation-from-demonstrations/07_questions-and-answers.md) · [The code](02_the-code.md) →

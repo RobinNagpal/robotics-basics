@@ -34,7 +34,7 @@ training tables. Giving extra weight to crowded tables is still a plan, as
 keep](03_how-it-works.md#3-choosing-which-demonstrations-to-keep-and-the-bias-it-buys)
 explains.
 
-It needs **compute**, and it is the cheapest of the six to train. **Training
+It needs **compute**, and it is the cheapest of the seven to train. **Training
 takes hours.** A transformer sounds costly, but three things keep this one
 small. The data is small: thousands of pushes, each a picture and a short chunk.
 The network is small next to the foundation models in the SmolVLA chapters. And
@@ -60,6 +60,6 @@ change how the top picture is drawn, or the macro that made the labels, or the
 error in the readings. Then the weights file is out of date, and no code test
 would notice.
 
-The next page judges this solution and places it beside the other five.
+The next page judges this solution and places it beside the other six.
 
 ← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

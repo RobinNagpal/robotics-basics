@@ -217,4 +217,6 @@ export const CHAPTER_TITLES: Record<string, string> = {
   'a-world-model-then-plan-with-it': 'Solution 4: A World Model, Then Plan With It',
   'a-foundation-model-as-it-downloads': 'Solution 5: A Foundation Model as It Downloads',
   'the-same-model-fine-tuned-here': 'Solution 6: The Same Model, Fine-Tuned Here',
+  'a-newer-larger-model-fine-tuned-here': 'Solution 7: A Newer, Larger Model, Fine-Tuned Here',
+  'the-seven-solutions': 'The Seven Solutions',
 };

@@ -2,13 +2,14 @@
 
 This page judges this solution. It says where the solution is strong and where
 it breaks. It names the general ideas behind it, and places it beside the
-other five.
+other solutions. Then it asks whether more demonstrations would help.
 
 ## Contents
 
 1. [Where it is strong and where it breaks](#1-where-it-is-strong-and-where-it-breaks)
 2. [The general ideas behind this](#2-the-general-ideas-behind-this)
-3. [Where it sits among the other five](#3-where-it-sits-among-the-other-five)
+3. [Where it sits among the others](#3-where-it-sits-among-the-others)
+4. [More demonstrations, and a result that did not come back](#4-more-demonstrations-and-a-result-that-did-not-come-back)
 
 ## 1. Where it is strong and where it breaks
 
@@ -131,20 +132,20 @@ explains](../06_imitation-from-demonstrations/03_how-it-works.md#4-action-chunki
 why it suits pushing and what it costs.
 
 These ideas explain the method. The next section shows where its score puts
-it among the six.
+it among the six solutions measured so far.
 
-## 3. Where it sits among the other five
+## 3. Where it sits among the others
 
 The ideas above explain how the solution behaves. This section places its
 measured score beside the others.
 
-[The six solutions](../03_the-six-solutions/01_how-the-six-compare.md) form a
+[The solutions](../03_the-seven-solutions/01_how-the-six-compare.md) form a
 ladder, ordered by how much of each one was fitted in this cell. This solution
 is at the top, because all of its fitting is done on a borrowed model.
 
 Against [solution 5](../08_a-foundation-model-as-it-downloads/01_what-it-is.md),
 only the training differs. [Solution 5's
-comparison](../08_a-foundation-model-as-it-downloads/06_how-it-compares.md#3-where-it-sits-among-the-other-five)
+comparison](../08_a-foundation-model-as-it-downloads/06_how-it-compares.md#3-where-it-sits-among-the-others)
 explains why this is the cleanest pair. Two limits apply. The correction is
 low-rank, so the gap is a lower bound. And the reading of the waypoints must be
 fair to both, or the gap measures that too.
@@ -152,8 +153,11 @@ fair to both, or the gap measures that too.
 **The measurement gives an answer this book did not expect.** The training
 worked as training. The trained model's chunks are much closer to the
 teacher's, and it brings the jaw down to the table. But it made the score
-worse. The numbers below are the median of three runs over the 50 held-out
-tables.
+worse. The numbers below come from the first fit, on the first band of 800
+tables, with one seed. Each is the median of three runs over the 50 held-out
+tables. [Where the demonstrations come
+from](03_how-it-works.md#3-where-the-demonstrations-come-from-and-what-they-cost)
+describes both bands.
 
 - About three pushes in five are **blocked on the way down**: 227 of 369. The
   jaw comes down onto a glass, because the model never learned where to put it
@@ -170,11 +174,13 @@ bought enough skill to act, but not enough to act safely. A toppled glass
 cannot be undone. **So a policy that does nothing scores better than a policy
 that does the wrong thing.** Any reading of this pair must keep that sentence.
 
-The verdict on the method is still open. Two things should be tried first. One
-is more training, because this run used [about one part in three hundred of
-the recipe's compute](05_what-it-needs.md). The other is DAgger. "The jaw came
-down on a glass" is a state the teacher never visits, so these demonstrations
-cannot teach it.
+The verdict on the method is still open. More demonstrations have now been
+tried, and they changed nothing, as [the next
+section](#4-more-demonstrations-and-a-result-that-did-not-come-back) shows. Two
+things are still untried. One is more training steps, because this run used
+[about one part in three hundred of the recipe's compute](05_what-it-needs.md).
+The other is DAgger. "The jaw came down on a glass" is a state the teacher
+never visits, so these demonstrations cannot teach it.
 
 Against [solution 3](../06_imitation-from-demonstrations/01_what-it-is.md),
 the question is borrowing against building. Both learn from the same
@@ -204,6 +210,77 @@ holds its whole answer in its weights. It can only change by training again.
 On the ladder, this solution is where all the fitting happens on borrowed
 weights. Solution 5, one step below, is where none of it does. The distance
 between those two is the most useful single number this book can give. [The
-results](../10_the-results.md) set all six scores side by side.
+results](../11_the-results.md) set the six measured scores side by side.
 
-← [What it needs](05_what-it-needs.md) · [The six solutions side by side](../10_the-results.md) →
+These scores came from 1,074 demonstrations. The next section asks whether six
+and a half times as many would change them.
+
+## 4. More demonstrations, and a result that did not come back
+
+The scores above say the model acts but does not act safely. Here pushes cost
+only simulator time. So the obvious question is whether more of them would
+help, and it can be measured.
+
+The model was fitted again on [the new
+band](03_how-it-works.md#3-where-the-demonstrations-come-from-and-what-they-cost).
+Everything else stayed the same: the model, the correction, the thousand
+steps and the held-out tables. This time there were three seeds, with one
+scoring run each.
+
+There are three columns, not two. The first large collection [ran over the
+wrong tables by mistake](03_how-it-works.md#3-where-the-demonstrations-come-from-and-what-they-cost).
+It is kept as a **control**. A control is a run that differs in only one
+thing. This one holds as much data as the new band, but from the old tables.
+So it separates how much the model learns from where it learns.
+
+In the table below, each column is one fitting. Each cell is the median over
+three runs, with the standard deviation in brackets. The standard deviation
+measures how far the runs spread.
+
+| | first band, 800 tables from 0, one seed | 5,200 tables from 0, three seeds (the control) | new band, 5,200 tables from 1,000, three seeds |
+|---|---|---|---|
+| Demonstrations | 1,074 | 6,907 | 6,935 |
+| Glasses racked, of 251 | 56 (±7.6) | 52 (±3.8) | 53 (±2.1) |
+| Glasses refused | 138 (±1.0) | 145 (±0.6) | 137 (±4.5) |
+| Glasses toppled | 40 (±5.6) | 40 (±3.6) | 42 (±3.6) |
+| Tables wrong, of 50 | 36 (±2.9) | 36 (±2.9) | 36 (±1.5) |
+| Pushes blocked on the way down | 227 (±8.9) | 217 (±32) | 229 (±45) |
+
+The three columns come from
+[`results.json`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/06-smolvla-fine-tuned/results.json),
+[`results-band0.json`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/06-smolvla-fine-tuned/results-band0.json)
+and
+[`results-aligned.json`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/06-smolvla-fine-tuned/results-aligned.json).
+
+**Six and a half times the data changed nothing that can be measured.** Compare
+the first column with the last. Each change is measured in standard errors of
+the difference. Racked glasses move by 0.7, toppled glasses by 1.0, wrong
+tables by 1.1 and blocked pushes by 0.1. None reaches two, the point at which
+the book calls a difference real. So the honest statement is "no change was
+detected". It is not "the scores are equal". [The
+results](../11_the-results.md) explain this rule.
+
+Two details make this reading stronger. The later columns use three separately
+trained models, so they include the spread between fits. They are still no
+worse. And leaving out the teacher's own tables changed nothing either.
+
+**The control's one striking result did not come back.** On the control,
+refusals rose from 138 to 145. That is ten standard errors, the largest effect
+in the whole comparison. On the new band, refusals were 137 again. So the
+effect came from those particular tables and fits, not from the amount of
+data. This is why the book never trusts a number from one run.
+
+The control also took 1.07 seconds a push, against 0.39 on the new band. That
+is not the model. The control shared the one graphics chip with another fit,
+so its clock measured both.
+
+**So the data was not the problem.** The model fails because its jaw comes
+down onto glasses. The teacher never does that. So no demonstration shows how
+to get out of that state, however many there are. DAgger would show it,
+because it records the teacher's answer in the states the student reaches.
+
+These results close this chapter's argument. The [questions and
+answers](07_questions-and-answers.md) gather the chapter's main points in
+short form.
+
+← [What it needs](05_what-it-needs.md) · [Questions and answers](07_questions-and-answers.md) →

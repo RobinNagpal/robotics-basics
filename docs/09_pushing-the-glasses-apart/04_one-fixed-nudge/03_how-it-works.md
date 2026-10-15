@@ -22,7 +22,7 @@ An **open loop** plan is worked out once and then carried out without checking
 anything. A **closed loop** plan measures, acts, and measures again. The new
 measurement changes what it does next.
 [The loop: plan, feel, look again](../01_the-problem/05_pushing-without-toppling.md#5-the-loop-plan-feel-look-again)
-explains the difference for all six solutions.
+explains the difference for every solution.
 
 A closed loop has three parts. The **measurement** says how things are. The
 **error** says how far that is from how things should be. The **correction**
@@ -40,7 +40,7 @@ rule that makes it less wrong. Here, nobody can say where a glass will stop.
 But anybody can measure how much room it is missing. And the rule that makes
 that smaller is to push it away from the glass that crowds it.
 
-All six solutions run inside a loop like this. In the other five, the loop
+Every solution runs inside a loop like this. In the other six, the loop
 holds something large, such as a model. Here, **the loop is the method**. There
 is nothing else inside it.
 
@@ -128,7 +128,7 @@ The cost of a small gain is more pushes. A smaller gain is safer and slower.
 There is one more point about the gain. You could pick it by trying many values
 on the training tables and keeping the best. That would be **fitting a number to
 data**, and this solution must not do that.
-[The overview of the six](../03_the-six-solutions/01_how-the-six-compare.md)
+[The overview of the solutions](../03_the-seven-solutions/01_how-the-six-compare.md)
 records that it fits nothing. A baseline that is tuned until it does well is no
 longer a baseline. So the gain is chosen by argument instead. It is small enough
 to shrink the shortfall across the whole likely friction range. Then it is
@@ -155,11 +155,11 @@ Any solution that fails because its model of pushing was wrong fails on a
 claim this one never makes.
 
 The price is more pushes, and so more arm time.
-[What it needs](05_what-it-needs.md) counts that cost. The other five solutions
+[What it needs](05_what-it-needs.md) counts that cost. The other six solutions
 each pay for a way to need fewer pushes. Solution 4 learns what a push does and
-plans with it. Solutions 3 and 6 learn a policy from many pushes. Solution 2
+plans with it. Solutions 3, 6 and 7 learn a policy from many pushes. Solution 2
 ranks many possible pushes and picks the best one. **The comparison between
-this solution and the other five measures what needing fewer pushes is
+this solution and the other six measures what needing fewer pushes is
 worth.**
 
 Repeating has a limit. Giving one glass room can take room from another. A loop
@@ -181,7 +181,7 @@ These parts are **built, in the repository, and run against the examiner**:
 - The room test, as `has_room()` in [`src/09_pushing-the-glasses-apart/bench/bench.py`](../../../code/src/09_pushing-the-glasses-apart/bench/bench.py).
 - The shortfall, as `shortfall()` in [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py).
 - The tipping rule, as `slides()` in the same file, with the short test push.
-- The loop, in [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py). It looks, racks every glass that has room, chooses one push, makes it, and looks again. The examiner sets the budget, so all six get the same number of tries. That is four pushes at one glass, and sixteen on one table.
+- The loop, in [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py). It looks, racks every glass that has room, chooses one push, makes it, and looks again. The examiner sets the budget, so every solution gets the same number of tries. That is four pushes at one glass, and sixteen on one table.
 - The refusal reasons, and the scorecard that counts them.
 
 These parts are **a design, not code**:

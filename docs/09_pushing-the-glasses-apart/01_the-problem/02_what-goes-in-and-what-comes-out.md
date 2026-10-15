@@ -16,7 +16,7 @@ examiner](03_the-examiner.md), which draws the tables and marks the result.
 
 The examiner's code carries out everything on this page. That code is in
 `code/src/09_pushing-the-glasses-apart/bench/`. So all of it is the same for
-all six solutions.
+every solution.
 
 ## Contents
 
@@ -78,12 +78,12 @@ is the largest. The position error is the smallest.
 
 The error is new on every look, so looking twice tells you more. The error is
 drawn from the table's number and the number of the look. This means the first
-look at a table is the same for all six solutions. No solution gets an easier
+look at a table is the same for every solution. No solution gets an easier
 first reading.
 
 **Solutions that read pictures also get a picture of the table from above.**
-Three of the six read pictures, not numbers. They are an imitation policy
-trained on images and the two vision-language models. A list of numbers is no
+Four of the seven read pictures, not numbers. They are an imitation policy
+trained on images and the three vision-language models. A list of numbers is no
 use to them. So the examiner draws a picture of the same table at the same
 moment. The information is the same. Only its form is different.
 
@@ -95,7 +95,7 @@ only so that people can watch a run.
 
 Keeping the two cameras apart matters. A solution that reads a picture decides
 from that picture. If filming a table changed anything in the simulated world,
-a filmed table could differ from the table that was scored. Then the six would
+a filmed table could differ from the table that was scored. Then the solutions would
 no longer be compared fairly. So the films are drawn in a second, separate
 world that is never simulated. The scored world is the same whether a table is
 filmed or not. A test checks this. It runs one table both ways and requires
@@ -277,7 +277,7 @@ what it gives back.
 ## 6. What must come out
 
 The inputs are the same for every solution. This section fixes the output.
-This is harder, because the six do not naturally give back the same kind of
+This is harder, because the solutions do not naturally give back the same kind of
 thing.
 
 **The shared output is a path for the hand.** The hand follows one path, then

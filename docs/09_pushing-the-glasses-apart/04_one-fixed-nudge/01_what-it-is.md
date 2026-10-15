@@ -37,7 +37,7 @@
 ## 1. Introduction
 
 This page describes the simplest way to move a crowded glass away from its
-neighbour. It is for a reader who wants to see the baseline before the five
+neighbour. It is for a reader who wants to see the baseline before the six
 solutions that try to beat it. The method is one subtraction, one
 multiplication and a loop. It measures how much room a glass is missing. It
 pushes the glass a fixed share of that amount, straight away from the glass
@@ -45,8 +45,8 @@ that crowds it. Then it looks again. Nothing in it is fitted, searched for or
 predicted.
 
 This solution is **the control**. A control is the plain method that every
-other method is measured against. Four of the other five solutions pay for data,
-training and hardware. The fifth uses a large model that someone else trained.
+other method is measured against. Five of the other six solutions pay for data,
+training and hardware. The sixth uses a large model that someone else trained.
 You can only judge those costs against a method that costs nothing. So every
 other solution must beat a fixed nudge. If it cannot, it has earned nothing.
 
@@ -109,8 +109,8 @@ again. But here it rarely gets the chance. The hand is too wide to stand beside
 most of these glasses. It is also too high to push them without tipping them.
 So the loop runs out of safe pushes long before it runs out of budget.
 
-All six solutions are filmed on this same table.
-[The six films](../10_the-results.md#3-the-six-films-all-of-the-same-table)
+The six solutions measured so far are filmed on this same table.
+[The six films](../11_the-results.md#3-the-six-films-all-of-the-same-table)
 collects them and says how the table was chosen.
 
 The film shows what the method does. The next section says what problem such a
@@ -178,4 +178,4 @@ tens of millimetres. One distance cannot suit both. What is fixed is the
 chosen once by argument and never changed. It is the only free number in the
 whole method.
 
-← [The same model, fine-tuned here](../03_the-six-solutions/07_the-same-model-fine-tuned-here.md) · [How it works](03_how-it-works.md) →
+← [The seven solutions — questions and answers](../03_the-seven-solutions/09_questions-and-answers.md) · [The code](02_the-code.md) →

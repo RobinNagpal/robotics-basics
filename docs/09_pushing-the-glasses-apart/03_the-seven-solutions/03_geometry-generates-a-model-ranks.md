@@ -1,6 +1,6 @@
 # Geometry generates, a model ranks
 
-This page is a short summary of the second of the six solutions. Here, plain
+This page is a short summary of the second of the seven solutions. Here, plain
 geometry lists every safe push, and a small fitted model only puts that list in
 order. The page says what it does, what makes it different, what it scored and
 one lesson. The full method is in
@@ -87,7 +87,7 @@ Given that safety, use this design when a mistake cannot be undone. The lesson
 is to check two things before you fit a ranker. Check that the choices really
 differ. Check that the label you train on is the thing you are scored on.
 
-[The results](../10_the-results.md#5-what-the-comparison-says) compares this
+[The results](../11_the-results.md#5-what-the-comparison-says) compares this
 solution with the world model, which learns what a push does.
 
 The code is in

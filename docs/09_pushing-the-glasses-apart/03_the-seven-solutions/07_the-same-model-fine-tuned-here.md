@@ -72,9 +72,13 @@ brought the jaw down from hovering too high to the right height for a push. But
 the model did not learn where to put the jaw down. So about three in five of
 its pushes hit a neighbour on the way down.
 
+These numbers come from the first fit, on 1,074 demonstrations. A later fit
+used six and a half times as many, with three seeds. [It changed
+nothing](../09_the-same-model-fine-tuned-here/06_how-it-compares.md#4-more-demonstrations-and-a-result-that-did-not-come-back).
+
 [How it compares](../09_the-same-model-fine-tuned-here/06_how-it-compares.md)
-shows where the pushes went. All six scores are in [the
-results](../10_the-results.md). The next section says what this score teaches.
+shows where the pushes went. The six measured scores are in [the
+results](../11_the-results.md). The next section says what this score teaches.
 
 ## 5. Where it is strong and where it breaks
 
@@ -96,7 +100,8 @@ checks whether a glass may be pushed. Nothing checks whether the model's own
 path is safe. That gap cost 40 toppled glasses in a run.
 
 Do not judge the method on this much training. One part in 300 is not a fair
-test.
+test. More demonstrations did not help, so more training steps and DAgger are
+the next things to try.
 
 The main lesson is this. A model that does nothing can score better than a
 model that does the wrong thing. The training gave the model enough skill to
@@ -107,4 +112,4 @@ The code is in
 The full chapter starts at [what it
 is](../09_the-same-model-fine-tuned-here/01_what-it-is.md).
 
-← [A foundation model as it downloads](06_a-foundation-model-as-it-downloads.md) · [One fixed nudge — what it is](../04_one-fixed-nudge/01_what-it-is.md) →
+← [A foundation model as it downloads](06_a-foundation-model-as-it-downloads.md) · [A newer, larger model, fine-tuned here](08_a-newer-larger-model-fine-tuned-here.md) →

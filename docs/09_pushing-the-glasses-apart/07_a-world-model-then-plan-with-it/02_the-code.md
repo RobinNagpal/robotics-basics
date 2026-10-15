@@ -206,11 +206,11 @@ The search chooses the other three numbers.
 ![A push on one glass drawn from above with its five numbers marked: the fingertips come down 20 mm behind the widest edge and the jaw feels forward to 10 mm past the middle, both of which are arithmetic on the measured width, while the heading, the offset across the glass and the travel are the three numbers the search is free to choose.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-pages-what-the-push-says.png)
 
 **The height is not a choice.** [Pushing without
-toppling](../01_the-problem/05_pushing-without-toppling.md) sets it for all six
+toppling](../01_the-problem/05_pushing-without-toppling.md) sets it for all seven
 solutions.
 
 **The solution does not choose where the glasses should end up.** [The target
-layout](../01_the-problem/04_the-target-layout.md) sets that for all six.
+layout](../01_the-problem/04_the-target-layout.md) sets that for all seven.
 
 So this solution adds one thing: **which push, out of all the pushes allowed,
 is worth making.** It is scored on the table afterwards, like every other
@@ -228,7 +228,7 @@ stands, how tall it is, how wide it is at its widest and at its foot, and
 whether it is standing. Every reading carries the error measured in [telling
 the glasses apart](../../08_seeing-the-glasses/11_the-results.md).
 
-**Apply the shared topple limit.** This step belongs here for all six
+**Apply the shared topple limit.** This step belongs here for all seven
 solutions, but the built planner does not have it yet. [The main
 idea](01_what-it-is.md#4-the-main-idea) explains this gap.
 
@@ -259,7 +259,7 @@ left behind is reported with its reason.
 Two counters stop the loop from running for ever. A glass may be pushed only a
 few times before it is refused. The table also has a budget of pushes for the
 whole run. Both counters belong to the loop, not to the model. The budget must
-be the same for all six solutions, or their push counts cannot be compared.
+be the same for all seven solutions, or their push counts cannot be compared.
 
 [How it works](03_how-it-works.md) explains each of these ideas in turn.
 

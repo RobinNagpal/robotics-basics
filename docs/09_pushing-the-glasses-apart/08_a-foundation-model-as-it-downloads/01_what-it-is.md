@@ -37,7 +37,7 @@ and asked for actions. Whatever it returns is carried out.
 
 **This solution is built and has run.** The code is in
 [`05-smolvla-as-it-downloads/`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads).
-It runs on the same 50 held-out tables as the other five solutions. It did
+It runs on the same 50 held-out tables as the other solutions. It did
 badly, and in an unexpected way: most of its pushes pass high above the glasses
 and touch nothing. [How it
 works](03_how-it-works.md#8-what-was-expected-and-what-happened) gives the
@@ -79,8 +79,8 @@ The model draws a fresh answer each time, so the film is one draw, not an
 average. The scored runs on this table racked one glass each and made thirteen
 pushes on average. So the film is a little busier than a typical run.
 
-All six solutions are filmed on this same table. [The six
-films](../10_the-results.md#3-the-six-films-all-of-the-same-table) collects
+The six measured solutions are all filmed on this same table. [The six
+films](../11_the-results.md#3-the-six-films-all-of-the-same-table) collects
 them and says how the table was chosen.
 
 The film shows a capable model acting in the wrong place. The next section says
@@ -140,4 +140,4 @@ So this solution has no fitted numbers, no hand-written geometry and no search.
 It has a download, a sentence and a loop. **Keep this in mind on the pages that
 follow**, because almost every strength and weakness comes from it.
 
-← [A world model, then plan with it — how it compares](../07_a-world-model-then-plan-with-it/06_how-it-compares.md) · [How it works](03_how-it-works.md) →
+← [A world model, then plan with it — questions and answers](../07_a-world-model-then-plan-with-it/07_questions-and-answers.md) · [The code](02_the-code.md) →

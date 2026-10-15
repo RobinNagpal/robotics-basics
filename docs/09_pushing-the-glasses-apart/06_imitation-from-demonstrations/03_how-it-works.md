@@ -74,7 +74,7 @@ carries out each push and records the waypoints the jaw followed. Then it marks
 what happened to the table. So **every push the teacher makes is already a
 finished example**: a picture before the push, the waypoints, and the verdict.
 
-Five things follow from this.
+Six things follow from this.
 
 **The only cost is simulated arm time.** There is no human operator and no
 teleoperation rig. The examiner runs in MuJoCo, which is fast. [The
@@ -89,11 +89,24 @@ stored.
 dividing line. Tests use only tables above it. So no policy is ever marked on a
 table it learned from.
 
+**The examples come from one fixed band of tables.** A **demonstration band**
+is the run of table numbers that a solution's examples come from. This
+solution's band is tables 1000 to 6199. It starts at 1000 for a reason. The
+teacher's own ranker was fitted on tables 0 to 199. On those tables the teacher
+is at its best, so they would flatter the examples. A second band, from table
+8000, is kept back to check the student against the teacher. Both bands are
+set in `collect.py`.
+
+Two solutions that learn from examples must use the same band before they are
+compared. If the bands differ, the comparison measures the data as well as the
+method. [SmolVLA fine-tuned](../09_the-same-model-fine-tuned-here/03_how-it-works.md#3-where-the-demonstrations-come-from-and-what-they-cost)
+now uses this band for that reason.
+
 **The teacher can be asked again, about any table.** A person cannot say what
 they would have done on a table they never saw. A program can, at no cost.
 [Compounding error](#6-compounding-error) uses this.
 
-**The teacher is one of the six.** So student and teacher can be compared on
+**The teacher is one of the seven.** So student and teacher can be compared on
 the same tables, with the same scorecard.
 
 There is one limit to all of this. **It is true only in a simulator with a

@@ -53,7 +53,7 @@ way to put a borrowed model to work on one job.
 model with no training in this cell. This solution is the same model with
 training here. Everything else is held still, so the gap between the two
 scores measures what the training bought.
-[Solution 5's comparison](../08_a-foundation-model-as-it-downloads/06_how-it-compares.md#3-where-it-sits-among-the-other-five)
+[Solution 5's comparison](../08_a-foundation-model-as-it-downloads/06_how-it-compares.md#3-where-it-sits-among-the-others)
 explains why this is the cleanest pair in the book. [Whether anything but the
 training differs](03_how-it-works.md#4-whether-anything-but-the-training-differs)
 checks the few places where something else might.
@@ -70,15 +70,18 @@ push needs a sense of what a push does, and a picture does not show that.
 It records demonstrations from the teacher, fits the correction, and has been
 run on the examiner's held-out tables. Its numbers are in
 [its own README](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/README.md).
-Three things are still plans and not code: **DAgger**, the **second way on
-π0.5**, and **several training seeds**. Only one seed was fitted.
+**DAgger** is still a plan and not code. The first result came from one
+training seed on one set of tables. The model was later fitted again on
+solution 3's tables, with three seeds. [How it
+compares](06_how-it-compares.md#4-more-demonstrations-and-a-result-that-did-not-come-back)
+shows that this changed nothing.
 
 **The measured result is a bad one, so it is stated here at the start: the
 training made the score worse.** The model learned the height at which a push
 happens. Its chunks now come down to the height the gripper pushes at. But it
 did not learn where to put the jaw down. So many pushes come down onto a glass
 instead of behind it, and many glasses fall over. [How it
-compares](06_how-it-compares.md#3-where-it-sits-among-the-other-five) gives
+compares](06_how-it-compares.md#3-where-it-sits-among-the-others) gives
 the numbers and reads them in full.
 
 By the end you will know what fine-tuning is, and what low-rank adaptation
@@ -118,8 +121,8 @@ average. [The
 examiner](../01_the-problem/03_the-examiner.md#6-two-things-this-scorecard-needs-that-the-camera-works-did-not)
 explains why a filmed table can differ from the same table in a scored run.
 
-All six solutions are filmed on this same table. [The six
-films](../10_the-results.md#3-the-six-films-all-of-the-same-table) puts them
+The six measured solutions are filmed on this same table. [The six
+films](../11_the-results.md#3-the-six-films-all-of-the-same-table) puts them
 side by side.
 
 The film shows what happened. The next section says which problem this
@@ -184,4 +187,4 @@ again. And it still cannot refuse a glass.
 
 [How it works](03_how-it-works.md) takes each of these parts in turn.
 
-← [A foundation model as it downloads — how it compares](../08_a-foundation-model-as-it-downloads/06_how-it-compares.md) · [How it works](03_how-it-works.md) →
+← [A foundation model as it downloads — questions and answers](../08_a-foundation-model-as-it-downloads/07_questions-and-answers.md) · [The code](02_the-code.md) →

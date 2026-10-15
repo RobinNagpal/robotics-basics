@@ -5,9 +5,9 @@ survivors in order, and the arm makes the first push on the list. The model
 can never add a push and never bring back one the geometry refused, so a wrong
 answer costs one wasted push and nothing worse.
 
-This is solution 2 of [the six](../../../../docs/09_pushing-the-glasses-apart/03_the-six-solutions/01_how-the-six-compare.md),
+This is solution 2 of [the six](../../../../docs/09_pushing-the-glasses-apart/03_the-seven-solutions/01_how-the-six-compare.md),
 specified by [geometry generates, a model
-ranks](../../../../docs/09_pushing-the-glasses-apart/03_the-six-solutions/03_geometry-generates-a-model-ranks.md). Read that
+ranks](../../../../docs/09_pushing-the-glasses-apart/03_the-seven-solutions/03_geometry-generates-a-model-ranks.md). Read that
 for the reasoning; this file is what was built, how to run it, and what it
 measured.
 

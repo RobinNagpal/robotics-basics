@@ -13,7 +13,7 @@ checks, same marking. One thing differs, which is the training, and the gap
 between the two scores is what that training bought.
 
 Full explanation: [the
-document](../../../../docs/09_pushing-the-glasses-apart/03_the-six-solutions/07_the-same-model-fine-tuned-here.md).
+document](../../../../docs/09_pushing-the-glasses-apart/03_the-seven-solutions/07_the-same-model-fine-tuned-here.md).
 
 ## What is here
 

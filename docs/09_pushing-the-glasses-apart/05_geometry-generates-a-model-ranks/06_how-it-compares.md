@@ -2,13 +2,13 @@
 
 This page judges this solution. It says where the solution is strong and where
 it breaks. It names the general ideas behind it. Then it places it beside the
-other five solutions.
+other six solutions.
 
 ## Contents
 
 1. [Where it is strong and where it breaks](#1-where-it-is-strong-and-where-it-breaks)
 2. [The general ideas behind this](#2-the-general-ideas-behind-this)
-3. [Where it sits among the other five](#3-where-it-sits-among-the-other-five)
+3. [Where it sits among the others](#3-where-it-sits-among-the-others)
 
 ## 1. Where it is strong and where it breaks
 
@@ -22,7 +22,7 @@ runs the table. **It can be checked.** Every push can be printed with its score,
 every refusal has a reason, and the model reports which inputs mattered. So a
 person can find out why it chose wrong. **It is cheap.** It needs no
 accelerator, no licence condition and no human labelling. It is also [the
-teacher](03_how-it-works.md#7-it-is-the-teacher) for two other solutions.
+teacher](03_how-it-works.md#7-it-is-the-teacher) for three other solutions.
 
 Now the weaknesses, starting with the one that was measured.
 
@@ -199,12 +199,12 @@ uncertain is the numbers mechanics needs and nobody measured: the friction, and
 how the weight sits under the foot.
 
 These ideas apply beyond this cell. The next section returns to this cell and
-compares this solution with the other five.
+compares this solution with the other six.
 
-## 3. Where it sits among the other five
+## 3. Where it sits among the others
 
 The previous sections judged this solution alone. This section places it among
-the others. [The six solutions](../03_the-six-solutions/01_how-the-six-compare.md)
+the others. [The seven solutions](../03_the-seven-solutions/01_how-the-six-compare.md)
 form a ladder, ordered by how much of each solution is fitted here. This one is
 on the lowest step that fits anything at all.
 
@@ -227,12 +227,12 @@ teacher](03_how-it-works.md#7-it-is-the-teacher) explains why that is hard.
 
 Against [solution 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md),
 the question is which quantity deserved a model. This is the sharpest
-comparison of the six. This solution fits **how much a push would help**. The
+comparison of them all. This solution fits **how much a push would help**. The
 geometry already computes that well. Solution 4 fits **what a push will really
 do**. The geometry gets that wrong, because it needs the friction and the
 weight, which nobody here has. Solution 4 racked more glasses, but it also
 toppled more. [What the comparison
-says](../10_the-results.md#5-what-the-comparison-says) gives the numbers and
+says](../11_the-results.md#5-what-the-comparison-says) gives the numbers and
 the full argument.
 
 Against [solution
@@ -246,4 +246,8 @@ numbers, fitted on a laptop in about a second, with safety held by written
 arithmetic. If this solution ever scores close to those two, the lesson is not
 that the trees are clever. It is that the geometry was doing most of the work.
 
-← [What it needs](05_what-it-needs.md) · [Imitation from demonstrations — what it is](../06_imitation-from-demonstrations/01_what-it-is.md) →
+[Solution 7](../10_a-newer-larger-model-fine-tuned-here/01_what-it-is.md) asks
+the same question with a newer and larger borrowed model. Its results are still
+being measured.
+
+← [What it needs](05_what-it-needs.md) · [Questions and answers](07_questions-and-answers.md) →

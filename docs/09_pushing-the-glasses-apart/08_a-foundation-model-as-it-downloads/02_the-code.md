@@ -103,7 +103,9 @@ two standard deviations of output cover that frame. This makes one standard
 deviation equal to 179 mm across the table and 62 mm of height. With this
 choice, the model can put the jaw anywhere it can see, and nowhere it cannot.
 A join needs that property, so that the score measures the model and not the
-join.
+join. [Solution 7](../10_a-newer-larger-model-fine-tuned-here/01_what-it-is.md) imports this same
+`joining.py` and the loop in `clear.py`. So its model's actions are read in
+exactly the same way.
 
 This choice has a cost that is easy to miss. The examiner uses one waypoint
 every 50 milliseconds. So **the distance between waypoints sets how fast the
@@ -117,7 +119,7 @@ times the speed of the examiner's push macro.
 This solution does not slow that down to a gentler speed. A gentler limit would
 be a number chosen to make the solution look better, and this solution fits
 nothing. The examiner does hold every path to the fastest speed the cell ever
-moves the jaw. That limit belongs to the arm, and it applies to all six
+moves the jaw. That limit belongs to the arm, and it applies to all seven
 solutions.
 
 The code turns the model's answer into jaw waypoints. The next section says
@@ -126,7 +128,7 @@ where this solution's work stops and the examiner's begins.
 ## 2. The pushes are what this contributes
 
 The last section showed what the code produces. This section says where the
-solution stops, because that boundary is the same for all six solutions and
+solution stops, because that boundary is the same for all seven solutions and
 makes them comparable.
 
 [The examiner](../01_the-problem/02_what-goes-in-and-what-comes-out.md#3-what-look-hands-over)
@@ -141,7 +143,7 @@ examiner accepts both forms, because **it scores the table afterwards, not the
 push**.
 
 This changes how one column of the scores should be read. The examiner records
-how far a pushed glass ended from where the solution aimed it. The other five
+how far a pushed glass ended from where the solution aimed it. Most other
 solutions give that aim as a prediction. This model is never asked where a
 glass should end up. So the aim is taken as the end of the path. The median
 distance of 71.5 mm is therefore the distance from the end of a path to the

@@ -2,13 +2,13 @@
 
 This page judges this solution. It says where the solution is strong and where
 it breaks. It names the general ideas behind it. Then it places it beside the
-other five.
+other solutions.
 
 ## Contents
 
 1. [Where it is strong and where it breaks](#1-where-it-is-strong-and-where-it-breaks)
 2. [The general ideas behind this](#2-the-general-ideas-behind-this)
-3. [Where it sits among the other five](#3-where-it-sits-among-the-other-five)
+3. [Where it sits among the others](#3-where-it-sits-among-the-others)
 
 ## 1. Where it is strong and where it breaks
 
@@ -107,7 +107,7 @@ A run is right when the motion is smooth and steady, as a push is. It keeps the
 motion consistent from step to step. It is wrong when the scene can change
 faster than the run takes, because a run cannot react inside itself. [The early
 abort](../01_the-problem/05_pushing-without-toppling.md) covers that gap. It is
-shared by all six solutions, not part of this one.
+shared by all seven solutions, not part of this one.
 
 ### The domain gap, and the honest reading of a failure across one
 
@@ -123,12 +123,12 @@ really measured the gap. This chapter and the next are written as a pair to
 prevent that mistake.
 
 These are the ideas behind the solution. The last section places it among the
-other five.
+other solutions.
 
-## 3. Where it sits among the other five
+## 3. Where it sits among the others
 
 The last section named the ideas. This section places the solution on the one
-line that best sorts all six.
+line that best sorts all seven.
 
 That line is **where the numbers came from**. [Solution
 1](../04_one-fixed-nudge/01_what-it-is.md) has no fitted numbers and no model.
@@ -141,12 +141,14 @@ demonstrations recorded here. It borrows a design but no weights. [Solution
 table here and searches through it. This solution is the only one whose numbers
 all came from **somewhere else**. [Solution
 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md) is the same numbers
-with this cell's own pushes added on top.
+with this cell's own pushes added on top. [Solution
+7](../10_a-newer-larger-model-fine-tuned-here/01_what-it-is.md) adds this cell's pushes to a newer
+and larger borrowed model.
 
-Read in that order, [the six
-solutions](../03_the-six-solutions/01_how-the-six-compare.md) show what each
+Read in that order, [the seven
+solutions](../03_the-seven-solutions/01_how-the-six-compare.md) show what each
 kind of fitting gives. This one is the borrowed end of the line, and it racks
-the fewest glasses of the six. It racked 48 of 251 glasses and finished 1 table. The
+the fewest glasses of the six measured so far. It racked 48 of 251 glasses and finished 1 table. The
 arithmetic of solution 1 racked 107 and finished 14 tables. **The 48 it racked
 are exactly the 48 glasses that had room before anything was pushed.** Racking
 a glass gives its neighbours more room. So a solution that freed any glass would
@@ -173,4 +175,4 @@ isolates fine-tuning exactly. If it had scored well, solution 6 would have littl
 room to show anything. So a poor score here is not a disappointment. It is the
 measurement working.
 
-← [What it needs](05_what-it-needs.md) · [The same foundation model, fine-tuned here — what it is](../09_the-same-model-fine-tuned-here/01_what-it-is.md) →
+← [What it needs](05_what-it-needs.md) · [Questions and answers](07_questions-and-answers.md) →

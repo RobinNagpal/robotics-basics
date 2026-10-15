@@ -3,11 +3,11 @@
 ## 1. Introduction
 
 A push has two halves. One half is *how* to push a glass. Friction, tipping and
-the arm's clumsiness all belong to that half, and the six solutions are about
-it. The other half is *where to push it to*. This page is about that half.
+the arm's clumsiness all belong to that half, and the seven solutions are
+about it. The other half is *where to push it to*. This page is about that half.
 
 The target layout is the list of places where the glasses should end up. It is
-kept apart from the six solutions because **every solution needs it, and none of
+kept apart from the seven solutions because **every solution needs it, and none of
 them differs in it**. The camera work keeps its own shared step apart for the
 same reason, in [looking again at what was
 hidden](../../08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md).
@@ -15,7 +15,7 @@ hidden](../../08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-
 This page explains five things. Choosing the places is plain geometry, not a
 learning problem. Each condition on the answer has a picture. Four standard
 methods can solve that geometry. One layout is computed once and handed to all
-six solutions. And the same computation gives the least movement the task can
+seven solutions. And the same computation gives the least movement the task can
 need, called the displacement floor. The page ends with what the layout does not
 tell you.
 
@@ -301,10 +301,10 @@ then measure the targets, not the pushing skill. The comparison would be
 useless.
 
 So one layout is computed once, from the same measurements, and handed to all
-six. Every solution that aims at a target then aims at the same places. The
+seven. Every solution that aims at a target then aims at the same places. The
 only thing left to differ is how well each one gets the glasses there. This is
 what the book compares. A solution may also ignore the layout and push a glass
-away from its neighbour instead. One of the six does this. Its cost still shows
+away from its neighbour instead. One of the seven does this. Its cost still shows
 on the same scale, as travel compared with the floor.
 
 The camera work's [examiner](../../08_seeing-the-glasses/03_the-examiner/01_the-examiner.md#6-what-must-come-back)
@@ -379,7 +379,7 @@ leaves open.
 ## 8. What the layout does not tell you
 
 The layout says where the glasses should go. It says nothing about how to get
-them there. Everything it leaves open is the real work of the six solutions.
+them there. Everything it leaves open is the real work of the seven solutions.
 
 **A push is not a simple move.** The layout asks for each glass to move a
 certain distance in a certain direction, as if it could be lifted and put down.
@@ -399,7 +399,7 @@ rule.
 **Reaching a target takes several pushes, and their errors add up.** One push
 does not land exactly where it was aimed. So a glass reaches its target by
 being pushed, looked at and pushed again. Each push adds its own error. How a
-solution handles this is a large part of what makes the six different.
+solution handles this is a large part of what makes the seven different.
 
 **Other glasses are in the way, so the order matters.** The layout is the final
 arrangement, not a plan to reach it. A glass pushed first may need to pass
@@ -407,7 +407,7 @@ where another glass still stands. A glass pushed to its target may block the
 next glass's route. Choosing the order is a planning problem. The layout does
 not solve it.
 
-So the split is clear. Geometry says where. The six solutions say how.
+So the split is clear. Geometry says where. The seven solutions say how.
 
 ## 9. Where to go next
 
@@ -419,7 +419,7 @@ So the split is clear. Geometry says where. The six solutions say how.
   where the floor sits on the scorecard.
 - [Pushing without toppling](05_pushing-without-toppling.md) — how low a push has
   to be, why that is a property of the glass, and the refusal path.
-- [The six solutions](../03_the-six-solutions/01_how-the-six-compare.md) — what each one puts between the
+- [The seven solutions](../03_the-seven-solutions/01_how-the-six-compare.md) — what each one puts between the
   measurements and the pushes.
 
 ← [The examiner](03_the-examiner.md) · [Pushing without toppling](05_pushing-without-toppling.md) →

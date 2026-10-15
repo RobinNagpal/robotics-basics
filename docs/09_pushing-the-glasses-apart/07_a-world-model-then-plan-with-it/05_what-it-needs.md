@@ -48,7 +48,7 @@ of thinking per push**, in
 [`results.json`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/results.json).
 The machine was busy with other work, so this number is only rough. A real arm
 movement takes longer than this, so the arm does not wait. A two-push search
-would cost much more. [The results](../10_the-results.md#2-the-results) compare
+would cost much more. [The results](../11_the-results.md#2-the-results) compare
 this time with the other five solutions.
 
 **It needs weights that match the cell.** The weights record what the cell was

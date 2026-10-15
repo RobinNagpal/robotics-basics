@@ -289,7 +289,7 @@ second reason.
 ## 7. It is the teacher
 
 The previous section showed that this solution is safe. This section shows that
-two other solutions cannot start without it. This is the biggest thing it
+three other solutions cannot start without it. This is the biggest thing it
 gives.
 
 [Solution 3](../06_imitation-from-demonstrations/01_what-it-is.md) and [solution
@@ -306,10 +306,19 @@ person present. The pushes in it are safe, because the same filter protects
 them. Two hundred training tables gave 896 pushes in 52 seconds. So the only
 cost is simulator time.
 
+[Solution 7](../10_a-newer-larger-model-fine-tuned-here/01_what-it-is.md) learns
+from the same pushes too. It reads solution 6's demonstrations as they stand.
+The teacher's pushes are also used to test ideas about pushing itself. The
+project's
+[`measure_push_speed.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/02-geometry-ranked/measure_push_speed.py)
+replays the push it chose at five speeds. A slower push did not topple fewer
+glasses. [Pushing without toppling](../01_the-problem/05_pushing-without-toppling.md)
+gives that result.
+
 This is a real gift, but it has two costs. Both reach the solutions that learn
 from it.
 
-**The two students inherit this solution's ceiling.** A policy trained on
+**The students inherit this solution's ceiling.** A policy trained on
 demonstrations learns to copy them. Every demonstration here comes from the
 enumerator. So the demonstrations hold only pushes that the enumerator can
 list. Suppose the headings are too far apart to include the best push. Or

@@ -110,7 +110,7 @@ incomplete**, as [the problem](../01_the-problem/01_what-is-asked-for.md)
 explains.
 
 This page followed single tables. [Where it sits among the other
-five](06_how-it-compares.md#3-where-it-sits-among-the-other-five) gives the
+five](06_how-it-compares.md#3-where-it-sits-among-the-others) gives the
 score over all 50 tables.
 
 ← [How it works](03_how-it-works.md) · [What it needs](05_what-it-needs.md) →

@@ -65,11 +65,11 @@ answers this solution's main question. Both had the same 50 tables.
 | this solution (the first way) | **20** | 19 | **146** | 20 | 221 |
 | the ranked geometry | 14 | **1** | 107 | **1** | 182 |
 
-It racked more glasses than any other solution. It also toppled 20 glasses
+It racked more glasses than any other measured solution. It also toppled 20 glasses
 against the geometry's 1. Both facts have one cause. The geometry refuses a
 push when it cannot prove it is safe. This solution predicts the outcome and
-acts on it instead. [The results](../10_the-results.md#5-what-the-comparison-says)
-compares this with the other five. The next section says what this score
+acts on it instead. [The results](../11_the-results.md#5-what-the-comparison-says)
+compares this with the other measured solutions. The next section says what this score
 teaches.
 
 ## 5. Where it is strong and where it breaks

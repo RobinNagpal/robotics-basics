@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-This problem is answered in six different ways. Six answers can only be
+This problem is answered in seven different ways. Seven answers can only be
 compared if they get the same question and the same marking. The examiner gives
 them both. It draws the crowded tables. It runs the physics in which the
 glasses slide and tip. It gives each solution the same readings. It carries out
@@ -43,7 +43,7 @@ it says so.
 Without an examiner, each solution would bring its own tables. Each would have
 its own idea of a good push and its own way of counting success. Then nothing
 could be learned by comparing their results. The examiner removes every
-difference between the six except the method itself.
+difference between the solutions except the method itself.
 
 It does this by keeping three things fixed.
 
@@ -91,7 +91,7 @@ below the line. Testing uses only numbers above it. These test tables are
 called held-out tables. This means no solution is ever marked on a table it
 trained on. This matters more here than it did when [telling the glasses
 apart](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md),
-because four of the six solutions are trained. The test set has 50 tables with
+because five of the seven solutions are trained. The test set has 50 tables with
 251 glasses on them, and 203 of those glasses start without room.
 
 **The physics is MuJoCo, used in place of Gazebo.** There are two reasons. The
@@ -223,8 +223,8 @@ rarer than 5 in 19. The reason is that by the time a glass is racked, the
 solution has already pushed its neighbours away.
 
 This is a limit of the picking step, not of anything in this book. No
-solution's score depends on it, because the same examiner marks all six in the
-same way. The films say so too. Each drawn pick-up is a stand-in, and the line
+solution's score depends on it, because the same examiner marks every solution in
+the same way. The films say so too. Each drawn pick-up is a stand-in, and the line
 on screen says that the cell's own grip rule does the real pick. What this
 finding adds is that **spreading the glasses apart is not the whole job**. This
 book's half of the work can succeed fully and still leave a glass that the
@@ -238,12 +238,20 @@ down, never touching anything, or getting stuck.
 The budget is a fixed largest number of pushes per glass and per table. After
 that, the remaining glasses must be refused. The budget used to be set in each
 solution's own code, so the counts could not be compared. Now it is set in the
-examiner, as `PUSHES_PER_GLASS` and `PUSHES_PER_TABLE`. So all six get the same
-budget. When the two budgets were joined, the larger pair was kept: 4 and 16,
+examiner, as `PUSHES_PER_GLASS` and `PUSHES_PER_TABLE`. So every solution gets the
+same budget. When the two budgets were joined, the larger pair was kept: 4 and 16,
 not 3 and 15. This way no solution that already worked lost any pushes. The
 fixed nudge had been using the smaller pair. It was measured under both and
 scores the same either way. It refuses for lack of room long before it runs out
 of pushes.
+
+A glass refused because the budget ran out was not always cut short. The
+budget says where a run stopped, not why it went badly. For solution 3, eight
+times the budget racks only one or two more glasses of 251. [More pushes would
+not
+help](../06_imitation-from-demonstrations/04_a-worked-example.md#3-more-pushes-would-not-help)
+gives the measurement. The budget stayed at 4 and 16, because a number tuned on
+the test tables would bias every later result.
 
 **Refusals are counted with their reason, and a refusal is a result, not a
 failure.** Some glasses cannot be pushed safely at all, because they tip before
@@ -260,7 +268,7 @@ So saying "I cannot do this, and here is why" is part of a correct answer.
 **Last, the examiner records how far each glass ended from where the push aimed
 it.** Every push carries the place where the solution expects the glass to
 stop. Once the glass settles, the examiner measures the real distance between
-the two. It reports the middle value and the worst value. For most of the six,
+the two. It reports the middle value and the worst value. For most of the solutions,
 the expected place comes from [the target layout](04_the-target-layout.md).
 
 This number is **for reference, not a pass mark**. A push that stops some way
@@ -281,8 +289,8 @@ were used and how far the glasses moved in total.
 These rows let us choose a table because it is typical of the run, not because
 it makes the solution look good. This is how the film on each solution's own
 page was chosen. The typical table turns out to be different for each solution.
-So the one table on which all six are filmed was chosen by a rule that covers
-all six at once. [The six films](../10_the-results.md#3-the-six-films-all-of-the-same-table)
+Six solutions are filmed. The one table on which all six are filmed was chosen
+by a rule that covers all six at once. [The six films](../11_the-results.md#3-the-six-films-all-of-the-same-table)
 says more about this.
 
 The counts above are enough for a solution that is written, not trained. The
@@ -293,8 +301,8 @@ next section adds two things that trained solutions need.
 The examiner for [telling the glasses
 apart](../../08_seeing-the-glasses/03_the-examiner/01_the-examiner.md) could run
 each solution once and read the result. This examiner cannot, for two reasons.
-Both reasons come from the fact that four of the six solutions are trained, not
-written. Both are now in `scoring.py`. `Repeats` holds several runs and reports
+Both reasons come from the fact that five of the seven solutions are trained,
+not written. Both are now in `scoring.py`. `Repeats` holds several runs and reports
 the spread of every number. `Scorecard` reports the time per push beside the
 counts.
 
@@ -321,7 +329,7 @@ solution filmed one table at a time will not always do what the scorecard says
 it did.
 
 **The cost of running each solution differs hugely, so it belongs on the
-scorecard.** The six do not cost the same for one push. A fixed nudge is simple
+scorecard.** The solutions do not cost the same for one push. A fixed nudge is simple
 arithmetic and costs almost nothing. A planner that uses a learned world model
 tries many candidate pushes at run time. It tests each one inside the model
 before it acts. So each push costs hundreds or thousands of times more than the
@@ -334,7 +342,8 @@ not be usable at all. The fair question is not "which scored best?" It is
 "which scored best for what it cost?" So each solution reports what hardware it
 needs and roughly what renting it costs, as it also states its licence. The
 time per push sits on the scorecard beside the counts. [The
-results](../10_the-results.md) compare these times across the six.
+results](../11_the-results.md) compare these times for the six that have been measured.
+The seventh is still being measured.
 
 This completes the scorecard. The next section says where to read on.
 
@@ -345,7 +354,7 @@ This completes the scorecard. The next section says where to read on.
 - [Pushing without toppling](05_pushing-without-toppling.md) — how low the push
   has to be, why that depends on the glass, the refusal path, and the loop of
   plan, feel and look again.
-- [The six solutions](../03_the-six-solutions/01_how-the-six-compare.md) — what
+- [The seven solutions](../03_the-seven-solutions/01_how-the-six-compare.md) — what
   each method puts between the input and the output.
 
 ← [What goes in and what comes out](02_what-goes-in-and-what-comes-out.md) · [The target layout](04_the-target-layout.md) →

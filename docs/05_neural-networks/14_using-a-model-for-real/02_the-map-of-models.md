@@ -487,7 +487,7 @@ This is the last page of the book, so these links point outwards rather than onw
 - [Seeing the glasses](../../08_seeing-the-glasses/04_the-six-solutions/01_how-the-six-compare.md)
   takes one perception problem and answers it six ways, written and learned side by side,
   and measures all six on one bench.
-- [Pushing the glasses apart](../../09_pushing-the-glasses-apart/03_the-six-solutions/01_how-the-six-compare.md)
+- [Pushing the glasses apart](../../09_pushing-the-glasses-apart/03_the-seven-solutions/01_how-the-six-compare.md)
   does the same for one manipulation problem, where the written rule wins.
 
 ---

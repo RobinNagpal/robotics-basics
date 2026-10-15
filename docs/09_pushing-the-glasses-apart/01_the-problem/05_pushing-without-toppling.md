@@ -9,7 +9,7 @@ worked out again for every glass. It explains why some glasses must be refused.
 It also explains what the arm does about friction, a number in the rule that
 nothing in this cell can measure.
 
-All six solutions need this page, and none of them differs in it. By the end
+All seven solutions need this page, and none of them differs in it. By the end
 you will know four things. The height that matters is not the height the arm
 aims at. A refusal is a result, not a failure. Every solution acts and then
 measures, instead of trusting a prediction. And a trained model can help inside
@@ -27,16 +27,16 @@ that loop without being able to break it.
 
 ## 2. Why no solution can answer this on its own
 
-The six solutions differ in how they choose a push. They choose which glass to
+The seven solutions differ in how they choose a push. They choose which glass to
 move, in which direction, and how far. That difference stops at this page, for
 two reasons.
 
 First, the table does not know which method chose the push. A glass touched too
 high falls over, whether simple geometry chose the contact or a large trained
 model did. The contact and the glass decide the outcome. So the limit belongs to
-the situation, not to the method, and it must be the same for all six.
+the situation, not to the method, and it must be the same for all seven.
 
-Second, none of the six can predict exactly where a pushed glass will stop.
+Second, none of the seven can predict exactly where a pushed glass will stop.
 Friction is not the same everywhere under the foot of a glass. The flat jaw
 touches the curved glass on a small patch, not at one point. And a glass turns
 as well as moves. A precise prediction needs numbers that nobody here has. So
@@ -82,10 +82,12 @@ and cancels. So **the limit does not depend on how heavy the glass is**. This
 is good, because nothing weighs a glass before it is pushed. Second, the rule
 does not depend on how hard or how fast the jaw pushes. So a gentle push does
 not make a high contact safe. A push that is too high tips the glass slowly
-instead of quickly.
+instead of quickly. This was also tested, and [a slower push does not topple
+fewer glasses](#a-slower-push-does-not-topple-fewer-glasses) gives the result.
 
 The rule uses three numbers, and the next three parts look at them in turn:
-the foot, the height, and the case where no height works.
+the foot, the height, and the case where no height works. A fourth part then
+checks the claim about speed.
 
 ### The push height is worked out per glass
 
@@ -164,12 +166,50 @@ doubtful ends with the glass untouched and a line in the report. No solution
 may add a fallback that tries anyway.
 
 **The safety check sits outside the policy.** A policy is the part of a
-solution that chooses the push. Five of the six solutions check the rule from
+solution that chooses the push. Six of the seven solutions check the rule from
 the measured foot width before any model is asked. So a bad model cannot
 approve a push that tips a glass. The world-model solution is different. It
 holds no friction value, so it cannot use the rule. It refuses a glass when its
 own learned model turns down every push it tried. The limit is the same in
 both cases. Only the thing trusted to apply it is different.
+
+### A slower push does not topple fewer glasses
+
+A refusal leaves a glass unmoved, so a gentler push may sound like a better
+answer. The rule above says it is not. Speed does not appear in `h < a / μ`.
+So the rule predicts that a slow push tips a glass just as often as a fast one.
+
+The project tested this prediction with
+[`measure_push_speed.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/02-geometry-ranked/measure_push_speed.py).
+Solution 2 chose one push on each of 367 tables. The same push was then made
+on fresh copies of each table, at five speeds. The examiner's own speed is
+20 mm per second.
+
+In the table below, each row is one speed. The middle column counts the glasses
+that toppled. The last column is how far the pushed glass moved, as a median.
+
+| push speed | glasses toppled, of 367 | median distance moved |
+|---|---|---|
+| 5 mm/s, a quarter of the examiner's speed | 73, or 19.9% | 34.7 mm |
+| 10 mm/s | 71, or 19.3% | 41.9 mm |
+| 20 mm/s, the examiner's speed | **66, or 18.0%** | **45.5 mm** |
+| 40 mm/s | 73, or 19.9% | 41.3 mm |
+| 80 mm/s, four times the examiner's speed | 92, or 25.1% | 32.2 mm |
+
+**The slowest push toppled slightly more glasses, not fewer.** The difference
+is 1.9 percentage points. Its standard error is 2.9 points. A standard error
+says how much a number would change by chance alone. So this difference is
+noise, as the rule predicted.
+
+Two more things show in the table. Four times the speed is really worse. It
+toppled 7.1 points more, which is 2.3 standard errors. And slow pushes moved
+the glass less far, 34.7 mm against 45.5 mm. A push exists to make room, so a
+slow push costs room and buys no safety. These numbers are from [the project's
+own page on
+toppling](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/docs/03-push-glasses-apart/pushing-without-toppling.md#pushing-more-slowly-does-not-help-and-that-has-been-measured).
+
+So the refusal rule is the only defence against toppling here. Speed is not a
+way round it.
 
 All of this depends on `μ`. The next section looks at where that number comes
 from.
@@ -198,7 +238,7 @@ asks one of three questions about each glass:
   and after. A glass that slid has moved. A glass that leaned has fallen back
   to where it stood.
 
-All six solutions also follow two habits.
+All seven solutions also follow two habits.
 
 **They always push as low as the gripper can reach.** The height is already the
 lowest the hardware allows. So there is nothing to tune. Pushing higher never
@@ -344,7 +384,7 @@ cases where the rule said yes because of a wrong guess at friction.
 - [The examiner](03_the-examiner.md) — the crowded tables, the physics and the marking.
 - [The target layout](04_the-target-layout.md) — where the glasses should end up,
   and the least movement the task needs.
-- [The six solutions](../03_the-six-solutions/01_how-the-six-compare.md) — what each one puts between the
+- [The seven solutions](../03_the-seven-solutions/01_how-the-six-compare.md) — what each one puts between the
   measurements and the pushes.
 
-← [The target layout — where the glasses should end up](04_the-target-layout.md) · [Questions and answers — the exact sizes of a look, a push and a run](06_questions-and-answers.md) →
+← [The target layout — where the glasses should end up](04_the-target-layout.md) · [Questions and answers — the problem in short answers](06_questions-and-answers.md) →

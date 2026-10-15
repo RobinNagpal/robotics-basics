@@ -68,7 +68,7 @@ jaw meets the glass on the way down, and `follow()` reports the chunk
 **blocked on the way down**. Either the jaw goes straight back up without
 pushing, or the glass falls over. The model learned the height but not the
 place. [How it
-compares](06_how-it-compares.md#3-where-it-sits-among-the-other-five) shows how
+compares](06_how-it-compares.md#3-where-it-sits-among-the-others) shows how
 often this happens.
 
 ![One glass seen from the side with the jaw coming down to its first waypoint from two places: behind the glass, where the jaw reaches 75 mm in open table and the rest of the chunk pushes, and over the glass, where the jaw meets the rim on the way down and the chunk is abandoned without a push.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/finetuned-where-the-jaw-comes-down.png)

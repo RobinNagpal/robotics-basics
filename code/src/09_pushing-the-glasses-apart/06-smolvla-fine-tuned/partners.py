@@ -1,7 +1,7 @@
 """Everything this solution runs with and did not write, loaded rather than copied.
 
 Three other folders are involved, and each is here for a reason
-[the document](../../../../docs/09_pushing-the-glasses-apart/03_the-six-solutions/07_the-same-model-fine-tuned-here.md)
+[the document](../../../../docs/09_pushing-the-glasses-apart/03_the-seven-solutions/07_the-same-model-fine-tuned-here.md)
 gives.
 
 **Solution 5**, which is this solution's matched partner. Its ``joining.py``

@@ -18,8 +18,8 @@ check that runs before the model is asked.
 Some glasses tip over before they slide, and the only correct answer for them
 is to refuse. [Pushing without
 toppling](../01_the-problem/05_pushing-without-toppling.md) explains the rule
-in full. All six solutions use the same rule, `slides()`, from solution 1's
-`plan.py`. This solution imports it instead of writing its own. So all six
+in full. All seven solutions use the same rule, `slides()`, from solution 1's
+`plan.py`. This solution imports it instead of writing its own. So all seven
 refuse exactly the same glasses.
 
 **It is good that this check is plain arithmetic.** The limit depends on the
@@ -74,7 +74,7 @@ toppled 12 glasses, and the three runs toppled between 10 and 14.
 
 Such a table ends with its free glasses racked, its crowded ones refused, and
 the outcome *incomplete*. [How it
-compares](06_how-it-compares.md#3-where-it-sits-among-the-other-five) shows
+compares](06_how-it-compares.md#3-where-it-sits-among-the-others) shows
 that the glasses racked are only the ones that already had room.
 
 The lesson is in what did **not** happen. This page expected a well-formed push

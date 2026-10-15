@@ -24,7 +24,9 @@ from [LeRobot](https://github.com/huggingface/lerobot). It runs on a laptop.
 This solution is in the book mainly for one reason. [The same model, fine-tuned
 here](07_the-same-model-fine-tuned-here.md) uses the same model and the same
 starting weights. The only difference is extra training on this cell's pushes.
-So the gap between the two scores shows what that training did.
+So the gap between the two scores shows what that training did. [A newer,
+larger model](../10_a-newer-larger-model-fine-tuned-here/01_what-it-is.md) is then fitted
+the same way, as solution 7.
 
 ![The view from the top, one instruction in plain English and the arm's joint readings go into the downloaded model, which returns a run of actions that are read as waypoints and carried out, with no training step, no data collection and no fitted parameter anywhere in the chain.](../../images/pushing-the-glasses-apart/a-foundation-model-as-it-downloads/smolvla-flow-what-it-does.png)
 
@@ -71,8 +73,8 @@ most of its pushes touch nothing.
 
 [What was expected, and what
 happened](../08_a-foundation-model-as-it-downloads/03_how-it-works.md#8-what-was-expected-and-what-happened)
-gives the measured heights. All six scores are in [the
-results](../10_the-results.md). The next section says what this score teaches.
+gives the measured heights. The six measured scores are in [the
+results](../11_the-results.md). The seventh is still being measured. The next section says what this score teaches.
 
 ## 5. Where it is strong and where it breaks
 

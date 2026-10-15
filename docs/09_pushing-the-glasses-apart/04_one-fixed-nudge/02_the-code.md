@@ -160,12 +160,12 @@ too fast.
 
 After the push, the jaw reports what it felt, including the force. **This
 solution uses almost none of that report.** It only checks whether the jaw
-touched anything. This is the main reason it is the weakest of the six.
+touched anything. This is the main reason it is the weakest of the solutions.
 [Where it is strong and where it breaks](06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks)
 explains why.
 
 Pushing is not the whole run. Before any push, the runner racks every glass
-that already has room. That step is shared by all six solutions. This page only
+that already has room. That step is shared by every solution. This page only
 describes what happens to the glasses that are left.
 
 The next section puts all these parts in the order the arm meets them.

@@ -2,13 +2,13 @@
 
 This page judges this solution. It says where the solution is strong and where
 it breaks. It names the published ideas behind it, and it places it beside the
-other five.
+other solutions.
 
 ## Contents
 
 1. [Where it is strong and where it breaks](#1-where-it-is-strong-and-where-it-breaks)
 2. [The general ideas behind this](#2-the-general-ideas-behind-this)
-3. [Where it sits among the other five](#3-where-it-sits-among-the-other-five)
+3. [Where it sits among the others](#3-where-it-sits-among-the-others)
 
 ## 1. Where it is strong and where it breaks
 
@@ -56,7 +56,7 @@ numbers describe that glass only as three widths.
 
 **It spends more computing time per push than the geometry solutions.** It
 searches before every push, while they compute an answer directly. [The
-results](../10_the-results.md#2-the-results) compare the times.
+results](../11_the-results.md#2-the-results) compare the times.
 
 **Its error grows with depth.** This limits how far ahead a sequence could be
 planned. [Compounding error over a
@@ -68,7 +68,7 @@ answers and what really happened, and then you have to work out the cause.
 That is much better than nothing, and better than the second way. But it is
 not an explanation.
 
-**It needs the most machinery of the six.** It has a data collector, a trainer,
+**It needs the most machinery of the seven.** It has a data collector, a trainer,
 five copies of a model, a search and a loop. [One fixed
 nudge](../04_one-fixed-nudge/01_what-it-is.md) is a page of arithmetic. This
 extra setup cost is real, and it should be weighed against the scores.
@@ -97,7 +97,7 @@ and when the goal may change. It is usually wrong when interactions are cheap
 and the goal never changes. In that case the extra machinery adds nothing that
 a policy would not learn anyway. In this cell, a topple cannot be undone, which
 favours model-based. But simulator pushes are cheap and the goal has not
-changed, which favours model-free. The comparison with the other five is meant
+changed, which favours model-free. The comparison with the other solutions is meant
 to test this.
 
 ### Fitting a dynamics model to recorded interaction
@@ -194,12 +194,12 @@ surface. This solution cannot ask that, because its examiner has one table with
 one friction. The cost of such data is a robot, a motion-capture system and
 months of work.
 
-The next section places this solution beside the other five.
+The next section places this solution beside the other solutions.
 
-## 3. Where it sits among the other five
+## 3. Where it sits among the others
 
 The ideas above explain how this solution works. This section compares its
-result with the other five. It is the only solution that learns what will
+result with the other measured solutions. It is the only solution that learns what will
 happen instead of what to do.
 
 The scores come from one run on the 50 test tables, in
@@ -222,7 +222,7 @@ and both score them with something learned. The ranker returns a score. A score
 can choose among candidates, but it cannot say what the table will look like.
 So the ranker can never chain two pushes or aim at a new goal. This solution's
 model returns a table, which costs more to train and allows both. [What the
-comparison says](../10_the-results.md#5-what-the-comparison-says) compares the
+comparison says](../11_the-results.md#5-what-the-comparison-says) compares the
 two scores.
 
 **Against [imitation from
@@ -239,11 +239,13 @@ downloads](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) and
 the contrast is size. This solution is small and knows only this table.
 SmolVLA is large, has seen many real robot datasets, and knows almost nothing
 about this table. Both SmolVLA solutions are policies, so the contrast with
-imitation above applies to them too.
+imitation above applies to them too. [Solution
+7](../10_a-newer-larger-model-fine-tuned-here/01_what-it-is.md) is a newer and larger borrowed model, fitted
+the same way as solution 6. It is still being measured.
 
 **Inside this solution**, the comparison is the hand-built model against
 TD-MPC2. It would show whether building the model by hand was worth it. In a
 cell this narrow, with the state already measured, the hand-built model should
 do about as well. Building the second way is how to find out.
 
-← [What it needs](05_what-it-needs.md) · [A foundation model as it downloads — what it is](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) →
+← [What it needs](05_what-it-needs.md) · [Questions and answers](07_questions-and-answers.md) →

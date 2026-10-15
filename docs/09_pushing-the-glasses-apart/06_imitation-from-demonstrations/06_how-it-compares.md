@@ -2,13 +2,13 @@
 
 This page judges this solution. It says where the solution is strong and where
 it breaks, names the general ideas behind it, and places it beside the other
-five.
+six.
 
 ## Contents
 
 1. [Where it is strong and where it breaks](#1-where-it-is-strong-and-where-it-breaks)
 2. [The general ideas behind this](#2-the-general-ideas-behind-this)
-3. [Where it sits among the other five](#3-where-it-sits-among-the-other-five)
+3. [Where it sits among the others](#3-where-it-sits-among-the-others)
 
 ## 1. Where it is strong and where it breaks
 
@@ -17,8 +17,8 @@ It has five strengths.
 
 **Nothing about pushing has to be written.** There is no friction model, no
 candidate generator, no hand-chosen features and no geometry. The method is a
-data set and a training run. A program that already exists made the data. Of
-the six, this one needs the least knowledge from its builder.
+data set and a training run. A program that already exists made the data. So
+its builder needs to know very little about pushing.
 
 **The output fits the examiner as it is.** The policy gives a chunk, and the
 examiner accepts chunks. Nothing is squeezed or expanded on the way out.
@@ -162,13 +162,13 @@ to beat the teacher, because copying has a ceiling. Here the teacher is not
 slow. So this pair is used to measure something: whether a good push can be
 learned at all.
 
-The next section places this solution beside the other five.
+The next section places this solution beside the other six.
 
-## 3. Where it sits among the other five
+## 3. Where it sits among the others
 
 The general ideas above explain this solution on its own, and this section
 compares it with the rest. [The six
-solutions](../03_the-six-solutions/01_how-the-six-compare.md) form a ladder,
+solutions](../03_the-seven-solutions/01_how-the-six-compare.md) form a ladder,
 ordered by how much of each one was trained in this cell. This solution is the
 first where everything was trained here.
 
@@ -199,8 +199,11 @@ measure, with the student on the left and the teacher on the right.
 The student clears far fewer tables and topples far more glasses. Most of its
 pushes are stopped on the way down, for the reason [the worked
 example](04_a-worked-example.md#2-a-worked-example) gives. It is faster to
-think, but the arm, not the thinking, sets the pace. [The
-results](../10_the-results.md#2-the-results) compare all six.
+think, but the arm, not the thinking, sets the pace. A variant told where the
+glasses are scored about the same, as [telling the policy where the glasses
+are](04_a-worked-example.md#5-telling-the-policy-where-the-glasses-are) shows.
+[The results](../11_the-results.md#2-the-results) compare the six measured so
+far.
 
 Against [a world model, then plan with
 it](../07_a-world-model-then-plan-with-it/01_what-it-is.md), the question is
@@ -223,9 +226,15 @@ copying examples made here. But it starts from SmolVLA's borrowed weights, not
 from random numbers. So the pair separates what the examples are worth from
 what the pretraining is worth.
 
+The seventh solution, Evo-1, is a newer and larger borrowed model. It is
+fitted the same way as SmolVLA fine-tuned. Its results are still being measured.
+
 On the ladder, this solution is the first rung where all the learning happens
 here, from nothing, on free examples. It is the cheapest real attempt at
 learning this task in the book. Its limits are also the easiest to state in
 advance.
 
-← [What it needs](05_what-it-needs.md) · [A world model, then plan with it — what it is](../07_a-world-model-then-plan-with-it/01_what-it-is.md) →
+The next page answers common questions about this solution, each with a link to
+the full explanation.
+
+← [What it needs](05_what-it-needs.md) · [Questions and answers](07_questions-and-answers.md) →

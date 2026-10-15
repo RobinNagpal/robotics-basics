@@ -7,8 +7,8 @@ shown the table from straight above, told in one plain English sentence what
 to do, handed the jaw's own pose, and whatever trajectory it returns is
 carried out.
 
-This is [solution 5](../../../../docs/09_pushing-the-glasses-apart/03_the-six-solutions/06_a-foundation-model-as-it-downloads.md)
-of [the six](../../../../docs/09_pushing-the-glasses-apart/03_the-six-solutions/01_how-the-six-compare.md). The
+This is [solution 5](../../../../docs/09_pushing-the-glasses-apart/03_the-seven-solutions/06_a-foundation-model-as-it-downloads.md)
+of [the six](../../../../docs/09_pushing-the-glasses-apart/03_the-seven-solutions/01_how-the-six-compare.md). The
 document is the specification and carries the reasoning; this file carries the
 numbers and the decisions the document left open.
 
@@ -132,7 +132,7 @@ Nothing in this solution is fitted, so there is no training to describe. What
 there is instead is the join between a model fitted on somebody else's arm and
 a jaw on this table, and it turned out to carry far more weight than the
 document expected. All of it is in `joining.py`, written down once so that
-[solution 6](../../../../docs/09_pushing-the-glasses-apart/03_the-six-solutions/07_the-same-model-fine-tuned-here.md)
+[solution 6](../../../../docs/09_pushing-the-glasses-apart/03_the-seven-solutions/07_the-same-model-fine-tuned-here.md)
 can hold it still.
 
 Everything below was read off the checkpoint, not assumed.

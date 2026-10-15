@@ -45,6 +45,16 @@ part only ranks them. Here one network does the whole job. So one downloaded
 file can be a complete answer. It also means there is no small part to fix when
 the answer is wrong.
 
+### How the model draws its answer: flow matching
+
+SmolVLA does not work out one fixed answer. It draws one, by a method called
+**flow matching**. In training, the model sees a real run of actions with noise
+mixed in. It learns which way leads back to the real run. To answer, it starts
+from fresh random noise and moves it towards a run of actions in a fixed number
+of steps. The noise is new each time, so the same picture can get a different
+answer. This is why one run of this solution is not a measurement, and the runs
+are repeated.
+
 A model that knows nothing about this cell is only worth trying if it knows
 something general. The next section says where that general knowledge comes
 from.
@@ -308,8 +318,8 @@ no special hardware. Nothing is collected and nothing is trained. So this is
 download.
 
 What it does cost is time per push. Each answer took about 0.3 seconds, measured
-on this laptop's Metal. [The results](../10_the-results.md) compare that time
-with the other five solutions.
+on this laptop's Metal. [The results](../11_the-results.md) compare that time
+with the other measured solutions.
 
 **Why not a larger model?** Larger robot models exist. The obvious one here is
 π0, with about 3.3 billion parameters, roughly seven times the size. Running it
@@ -320,6 +330,8 @@ can be built. So **SmolVLA was chosen because its fine-tuning is affordable**.
 [Solution 6 shows how
 little](../09_the-same-model-fine-tuned-here/03_how-it-works.md#2-low-rank-adaptation--a-small-correction-instead-of-a-large-change)
 memory that fine-tune needed. π0.5 appears in this book only inside solution 6,
-as a way to ask whether a much larger model is worth it.
+as a way to ask whether a much larger model is worth it. [Solution
+7](../10_a-newer-larger-model-fine-tuned-here/01_what-it-is.md) later tries a newer and larger
+model, Evo-1, fitted the same way as solution 6.
 
 ← [The code](02_the-code.md) · [A worked example](04_a-worked-example.md) →

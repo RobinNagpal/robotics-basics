@@ -2,13 +2,13 @@
 
 This page judges this solution. It says where the solution is strong and where
 it breaks. It names the older ideas behind it. Then it places it beside the
-other five.
+other six.
 
 ## Contents
 
 1. [Where it is strong and where it breaks](#1-where-it-is-strong-and-where-it-breaks)
 2. [The general ideas behind this](#2-the-general-ideas-behind-this)
-3. [Where it sits among the other five](#3-where-it-sits-among-the-other-five)
+3. [Where it sits among the others](#3-where-it-sits-among-the-others)
 
 ## 1. Where it is strong and where it breaks
 
@@ -93,7 +93,7 @@ far the glass moved. Both depend on the friction. So they are the only clue
 about the friction that this cell gives.
 [Why the force reading matters](../01_the-problem/02_what-goes-in-and-what-comes-out.md#why-the-force-reading-matters)
 explains this. This method reads none of it. It only checks whether the jaw
-touched anything. This is the deepest reason it is the weakest of the six.
+touched anything. This is the deepest reason it is the weakest of the solutions.
 Every solution that does better reads that report in some way.
 
 **It pays in pushes, and the budget is limited.** Its only way to recover is to
@@ -123,7 +123,7 @@ It has two known weak points. First, it is slow when a good model exists,
 because a model can do in one step what the controller does in several.
 Second, it leaves a steady error if something keeps pulling against it. The
 second point does not apply here, because nothing pulls the glass back. The
-first point applies fully. The six solutions exist to find out what a good
+first point applies fully. The other solutions exist to find out what a good
 model is worth.
 
 ### Singulation
@@ -203,16 +203,16 @@ the same way, as the methods meant to beat it. [The
 examiner](../01_the-problem/03_the-examiner.md) does that.
 
 These ideas say what kind of method this is. The next section places it beside
-the other five solutions.
+the other six solutions.
 
-## 3. Where it sits among the other five
+## 3. Where it sits among the others
 
 The last section named the ideas inside the method. This section compares it
-with the other five. [The overview of the
-six](../03_the-six-solutions/01_how-the-six-compare.md) states the question it
+with the other six. [The overview of the
+solutions](../03_the-seven-solutions/01_how-the-six-compare.md) states the question it
 answers: **does any learning beat a fixed nudge?** [What it
 is](01_what-it-is.md#1-introduction) says why a solution that cannot beat it has
-earned nothing. The scores are in [the results](../10_the-results.md#2-the-results).
+earned nothing. The scores are in [the results](../11_the-results.md#2-the-results).
 
 **Against [solution 2](../05_geometry-generates-a-model-ranks/01_what-it-is.md),**
 the difference is a search and a ranker. Solution 2 uses the same input, room
@@ -242,6 +242,10 @@ constant. Solution 5 uses a large model trained somewhere else.
 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md),** which is that same
 model trained further here, the fixed nudge is the floor. Both solutions 5 and 6
 must clear it before the difference between them matters.
+**Against [solution
+7](../10_a-newer-larger-model-fine-tuned-here/01_what-it-is.md),** which swaps in a
+newer and larger borrowed model, the fixed nudge is the same floor. Its results
+are still being measured.
 
 So think of this method as **the first thing to build and the last thing to
 ship**. Build it first. It is the cheapest way to get a real push against a
@@ -256,8 +260,8 @@ method works at all only because of four promises. The glasses stand upright on
 a flat table. The gripper's clear room is a known constant. [The camera
 work](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md)
 reports a position and a width for every glass. And a refusal is an acceptable
-answer. Each of the other five needs fewer of these promises. So if a fixed
+answer. Each of the other six needs fewer of these promises. So if a fixed
 nudge looks good to you, that says how generous this book's promises are. The
-value of the other five is what they do when those promises fail.
+value of the other six is what they do when those promises fail.
 
-← [What it needs](05_what-it-needs.md) · [Geometry generates, a model ranks — what it is](../05_geometry-generates-a-model-ranks/01_what-it-is.md) →
+← [What it needs](05_what-it-needs.md) · [Questions and answers](07_questions-and-answers.md) →

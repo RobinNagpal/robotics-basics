@@ -73,8 +73,11 @@ direction. So the long jaw came down on a neighbour glass, and nothing moved.
 ![The teacher's heading and a heading twenty-five degrees off it, with the jaw's own 266 mm of tool drawn on both: the teacher's clears the neighbour and the policy's comes down on it.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-what-the-heading-error-does.png)
 
 [A worked example](../06_imitation-from-demonstrations/04_a-worked-example.md)
-shows this error on one table. All six scores are in [the
-results](../10_the-results.md). The next section says what this score teaches.
+shows this error on one table. Giving the policy the glass positions made it
+more consistent but did not raise its score, as [telling the policy where the
+glasses are](../06_imitation-from-demonstrations/04_a-worked-example.md#5-telling-the-policy-where-the-glasses-are)
+shows. The six scores measured so far are in [the
+results](../11_the-results.md). The next section says what this score teaches.
 
 ## 5. Where it is strong and where it breaks
 

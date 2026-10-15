@@ -1,7 +1,7 @@
 # One fixed nudge
 
-This page is a short summary of the first of the six solutions. This solution
-fits no model at all. It also broke the fewest glasses of the six. The page says
+This page is a short summary of the first of the seven solutions. This solution
+fits no model at all. Of the six measured so far, it broke the fewest glasses. The page says
 what it does, what makes it different, what it scored and one lesson. The full
 method is in [the chapter on this solution](../04_one-fixed-nudge/01_what-it-is.md).
 
@@ -22,7 +22,7 @@ to predict it. It pushes a glass a short way, away from the neighbour that
 crowds it, and then looks again. That direction always helps, and the short
 distance cannot overshoot.
 
-This makes it the baseline for the other five. Any other solution must beat it,
+This makes it the baseline for the other six. Any other solution must beat it,
 or the extra cost buys nothing.
 [What it is](../04_one-fixed-nudge/01_what-it-is.md#4-the-main-idea) explains
 this idea in full. The next section shows the loop it runs.
@@ -66,10 +66,10 @@ the run ends in a state the cell should never reach.
 |---|---|---|---|---|
 | 14 | **1** | 107 | **1** | **173** |
 
-It toppled only one glass, which is the best of the six. It refused 143 glasses,
+It toppled only one glass, which is the best of the six measured so far. It refused 143 glasses,
 and most of those refusals come from the gripper, not the method. The hand is too
 wide to stand beside some glasses. It also cannot push low enough to slide some
-others. [The results](../10_the-results.md) compares all six. The next section
+others. [The results](../11_the-results.md) compares them all. The next section
 looks at where this method is strong and where it fails.
 
 ## 5. Where it is strong and where it breaks
@@ -94,4 +94,4 @@ The code is in
 [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge).
 The full treatment starts at [what it is](../04_one-fixed-nudge/01_what-it-is.md).
 
-← [The six solutions — same table, six ways to push](01_how-the-six-compare.md) · [Geometry generates, a model ranks](03_geometry-generates-a-model-ranks.md) →
+← [How the solutions compare](01_how-the-six-compare.md) · [Geometry generates, a model ranks](03_geometry-generates-a-model-ranks.md) →

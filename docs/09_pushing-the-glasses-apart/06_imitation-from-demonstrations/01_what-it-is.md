@@ -53,14 +53,14 @@ above (`bench/top_view.py`). The other is a way to follow a chunk of waypoints
 (`Bench.follow`). ACT was trained here and tested on tables it never saw. The
 code is in `code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/`.
 This chapter gives the score once, in [how it
-compares](06_how-it-compares.md#3-where-it-sits-among-the-other-five). The
+compares](06_how-it-compares.md#3-where-it-sits-among-the-others). The
 code folder's `README.md` has every count.
 
 Three parts are still plans, not code. They are the DAgger round, the force
 monitor that would watch a chunk while it runs, and giving extra weight to
 crowded tables. Each page says so where it comes up.
 
-This solution asks a question the other five cannot ask. The teacher is a
+This solution asks a question the other six cannot ask. The teacher is a
 program that chooses pushes well. If a network that only copies it comes
 close to it, then a good push can be learned from a picture. If the network
 falls far short, that tells us something about this kind of policy. We learn
@@ -88,7 +88,7 @@ something and goes back up. Then it asks for a new chunk from the same picture.
 So the film shows the same attempt again and again.
 
 The film is from seed 0, one of three trained copies. [The six
-films](../10_the-results.md#3-the-six-films-all-of-the-same-table) shows all
+films](../11_the-results.md#3-the-six-films-all-of-the-same-table) shows all
 six solutions on this same table and explains how it was chosen.
 
 The next section says which problem copying examples is meant to solve.
@@ -155,4 +155,4 @@ error](03_how-it-works.md#6-compounding-error) explains.
 
 The next pages show the code and explain how each part works.
 
-← [Geometry generates, a model ranks — how it compares](../05_geometry-generates-a-model-ranks/06_how-it-compares.md) · [How it works](03_how-it-works.md) →
+← [Geometry generates, a model ranks — questions and answers](../05_geometry-generates-a-model-ranks/07_questions-and-answers.md) · [The code](02_the-code.md) →

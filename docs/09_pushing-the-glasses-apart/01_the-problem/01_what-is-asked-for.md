@@ -10,8 +10,8 @@ The gripper cannot get round one of them without hitting its neighbour.
 So the arm has to **move them apart by dragging them across the table**. It does
 not lift them. Dragging is the whole point of this problem.
 
-This page states the question that all six answers in this book get. The same
-question lets us compare six very different methods. The page is for anyone
+This page states the question that all seven answers in this book get. The same
+question lets us compare seven very different methods. The page is for anyone
 who wants to read those answers. It covers these things:
 
 - why the arm drags instead of lifting;
@@ -37,7 +37,7 @@ who wants to read those answers. It covers these things:
 ## 2. A film of the job
 
 Words are easier to follow after you have seen the job once. This film shows
-one of the six solutions clearing one crowded table in the simulator. It plays
+one of the solutions clearing one crowded table in the simulator. It plays
 at one and a half times real speed.
 
 [The job done once: a learned world model clears one table, 44 seconds and no sound](https://docs.dodao.io/videos/pushing-the-glasses-apart/04-a-world-model.mp4 "video")
@@ -76,9 +76,9 @@ simulator uses for collisions. The shell fills the 82 mm gap between the two
 fingers, because a glass in that gap would be pushed along too. So every
 solution has to plan its pushes around the shell.
 
-This film is the only one of the six in which the table is finished. So it
-shows success, not an average attempt. [The six solutions side by
-side](../10_the-results.md) shows all six films.
+Six of the solutions have been filmed. This is the only film in which the
+table is finished. So it shows success, not an average attempt. [The
+results](../11_the-results.md) shows all six films.
 
 The film shows the arm dragging. The next section says why it cannot lift.
 
@@ -126,7 +126,7 @@ gets the force that the hand felt. Nothing else goes in.
 is done or the pushes run out. An answer may also refuse a glass that it cannot
 move safely. It must give the reason.
 
-The same input and output go to every answer. This is what makes the six
+The same input and output go to every answer. This is what makes the
 answers comparable. [The examiner](03_the-examiner.md) makes sure of it.
 
 The input includes each glass's width. The next section explains why that width
@@ -284,7 +284,7 @@ That is the whole question. The next section says where to read on.
 
 ## 11. Where to go next
 
-Five pages describe what every answer shares. Read them before any of the six
+Five pages describe what every answer shares. Read them before any of the seven
 answers.
 
 - [What goes in and what comes out](02_what-goes-in-and-what-comes-out.md) —
@@ -297,12 +297,12 @@ answers.
 - [Pushing without toppling](05_pushing-without-toppling.md) — the height limit
   that decides whether a glass slides or tips, and the loop of plan, feel and
   look again.
-- [Questions and answers](06_questions-and-answers.md) — the exact shape of a
-  look and a push, how many of each a solution may use, and how many times the
-  set is run.
+- [Questions and answers](06_questions-and-answers.md) — short answers to the
+  common questions about this problem, each with a link to the full
+  explanation.
 
-Then read the six answers themselves:
+Then read the seven answers themselves:
 
-→ [The six solutions](../03_the-six-solutions/01_how-the-six-compare.md)
+→ [The seven solutions](../03_the-seven-solutions/01_how-the-six-compare.md)
 
 [What goes in and what comes out](02_what-goes-in-and-what-comes-out.md) →

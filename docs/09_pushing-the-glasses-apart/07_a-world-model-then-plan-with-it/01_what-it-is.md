@@ -63,7 +63,9 @@ pages assume you know `look()` and `push()`. Also read [pushing without
 toppling](../01_the-problem/05_pushing-without-toppling.md), because it states
 the shared rule for refusing a glass.
 
-![Thousands of pushes are made in the simulator and nobody labels any of them, because the answer to every example is what the second look found; five copies of a small network are fitted to say what the table looks like after a push; and before every push the arm makes, candidates are drawn, put to all five, filtered and scored, and only the best one is carried out.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-flow-what-it-does.png)
+![The eleven steps of the world-model solution: collect pushes, train five copies of a network, then search for the best push before every push the arm makes.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-flow-what-it-does.png)
+
+Each numbered box is explained, one by one, on [the summary of this solution](../03_the-seven-solutions/05_a-world-model-then-plan-with-it.md).
 
 ![Five networks fitted on the same data from different random starts agree where the training data covered that kind of push and diverge where it did not, which is a measure of ignorance that costs almost nothing — and where the data was thin in a way none of them noticed, all five agree and are wrong together.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-flow-the-five-copies.png)
 

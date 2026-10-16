@@ -361,7 +361,7 @@ def worldmodel_what_it_does() -> None:
     than as one chain of eleven boxes. The planning lane is the long one on
     purpose: it is where this solution spends its run time.
     """
-    sheet = Sheet(11.6, 13.4)
+    sheet = Sheet(11.6, 8.6)
     wide = 70.0
     y = sheet.top - 3.0
 
@@ -369,26 +369,17 @@ def worldmodel_what_it_does() -> None:
     collect_top = y
     y = sheet.box(
         50.0, y, wide,
-        f"Round one: {ROUND_ONE_PUSHES} pushes are made at random on {ROUND_ONE_TABLES} tables in the simulator.\n"
-        "Every example is one push really made — look, push, look again.",
-    )
-    y = sheet.link(
-        y,
-        note="The push is made because nobody can say in advance what it will do. The\n"
-             "friction between a glass and this table is not measured anywhere in the cell.",
-    )
-    y = sheet.box(
-        50.0, y, wide,
-        f"Round two: {ROUND_TWO_PUSHES} more pushes on {ROUND_TWO_TABLES} new tables, mostly chosen by the planner\n"
-        "using the round-one model. The planner finds the pushes that model is wrong\n"
-        "about in its own favour, and making those pushes fills exactly those holes.",
+        "1. Round one: random pushes in the simulator",
     )
     y = sheet.link(y)
     y = sheet.box(
         50.0, y, wide,
-        "Nobody labels any of it. The answer to every example is what the second look\n"
-        "found, so the model is fitted to predict what the camera will report rather\n"
-        "than what the simulator knows.",
+        "2. Round two: pushes the planner picks",
+    )
+    y = sheet.link(y)
+    y = sheet.box(
+        50.0, y, wide,
+        "3. Nobody labels the pushes",
         edge=GOOD, face=_tint(GOOD, 0.88), lw=1.6,
     )
     sheet.band(collect_top + 1.4, y - 1.4, MUTED, "collecting, once")
@@ -398,15 +389,10 @@ def worldmodel_what_it_does() -> None:
     fit_top = y
     y = sheet.box(
         50.0, y, wide,
-        f"{COPIES} copies of the same small network are trained on those {ALL_PUSHES} pushes, each\n"
-        f"from its own random starting weights. Each copy answers one question: given\n"
-        f"this table and this push, what does the table look like afterwards. {INPUTS} numbers\n"
-        f"in — the glasses as the camera measured them, and the push — and {OUTPUTS} out: a\n"
-        f"displacement for every glass, whether anything toppled, and whether the jaw\n"
-        f"was blocked on the way down. About {TRAIN_MINUTES} minutes on a laptop processor.",
+        f"4. Train {COPIES} copies of one small network",
         edge=GLASS, face=_tint(GLASS, 0.80), size=LABEL_SIZE, lw=1.8,
     )
-    sheet.band(fit_top + 1.4, y - 1.4, GLASS, "fitting, once")
+    sheet.band(fit_top + 1.4, y - 1.4, GLASS, "fitting")
 
     # ------------------------------------------------------------- planning
     y = sheet.link(y, gap=3.4)
@@ -414,46 +400,35 @@ def worldmodel_what_it_does() -> None:
     draw_top = y
     y = sheet.box(
         50.0, y, wide,
-        "Candidate pushes are drawn for every crowded glass: which way the jaw points,\n"
-        "where across the glass it meets it, and how far it travels.",
+        "5. Draw candidate pushes",
     )
     y = sheet.link(y)
     y = sheet.box(
         50.0, y, wide,
-        f"Every candidate is put to all {COPIES} copies at once. Asking the model is arithmetic,\n"
-        "so a search that would be reckless against the table is ordinary against it.",
+        f"6. Put every candidate to all {COPIES} copies",
     )
     y = sheet.link(y)
     y = sheet.box(
         50.0, y, wide,
-        f"A candidate is thrown away if any one copy gives it more than a {TOPPLE_LIMIT} chance of\n"
-        f"toppling something — on the table as seen, and on {JITTERS} copies of it moved by about\n"
-        "the camera's error, so that a push which only looks safe by luck does not survive.",
+        "7. Drop candidates that might topple a glass",
         edge=WARN, face=_tint(WARN, 0.88), lw=1.6,
     )
     y = sheet.link(y)
     y = sheet.box(
         50.0, y, wide,
-        "A candidate is thrown away if the predicted table breaks the map: a glass it moves\n"
-        "lands outside the zone glasses may stand in, or the jaw leaves the arm's reach.\n"
-        "That map is written-down arithmetic, because reach is not the same in every\n"
-        "direction and the model was never shown it.",
+        "8. Drop candidates that break the map",
         edge=WARN, face=_tint(WARN, 0.88), lw=1.6,
     )
     y = sheet.link(y)
     y = sheet.box(
         50.0, y, wide,
-        "The survivors are scored on the table the model predicts for them: how much clear\n"
-        "room is still missing around every glass, plus a small penalty for each millimetre\n"
-        "pushed, so the shortest push that does the job wins.",
+        "9. Score the survivors",
     )
     y = sheet.link(y)
     refine_top = y
     y = sheet.box(
         50.0, y, wide,
-        f"A sampling search refines the good ones. {FIRST_DRAWS} draws spread over the whole range,\n"
-        f"then {LATER_DRAWS} more in each of three further rounds, each round drawn around the best\n"
-        f"{ELITES} of the round before — about {CANDIDATES} candidates for every crowded glass.",
+        "10. Refine the good ones, in rounds",
     )
     refine_bottom = y
 
@@ -475,22 +450,14 @@ def worldmodel_what_it_does() -> None:
     y = sheet.link(y, gap=3.0)
     y = sheet.box(
         50.0, y, wide,
-        "The best push over all the crowded glasses is handed to the examiner, and only\n"
-        "that one push is made. Then the arm looks again and the whole search runs afresh,\n"
-        "so whatever the model got wrong is measured away instead of being inherited.",
+        "11. Make the one best push, then look again",
         edge=GOOD, face=_tint(GOOD, 0.84), size=LABEL_SIZE, lw=1.8, weight="bold",
     )
     sheet.band(plan_top + 1.4, y - 1.4, GOOD, "planning, before every push the arm makes")
 
-    sheet.note(
-        50.0, y - 3.2,
-        "Nothing in the chain holds a friction value or a tipping rule. What a push does is a regularity in the\n"
-        "recorded pushes, and what counts as a good table is plain arithmetic kept outside the model.",
-        colour=INK, ha="center",
-    )
-
+    
     sheet.finish(
-        "Solution 4: thousands of recorded pushes, five copies of one network, and a search run before every push",
+        "Solution 4: record pushes, fit five copies, search before every push",
         "worldmodel-flow-what-it-does.png",
     )
 

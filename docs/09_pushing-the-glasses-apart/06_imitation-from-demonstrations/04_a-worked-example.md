@@ -97,22 +97,25 @@ Nothing the policy learned could improve it, and nothing it produced could make
 it worse.
 
 **What really happened.** The refusal works as described. The first push does
-not. The trained policy starts its chunk in about the right place, within a
-centimetre or two of the teacher's fingertips. But it points about 25 degrees
-away from the teacher. Across the three seeds, this error is 22 to 27 degrees on
-tables the policy never saw. On tables it was trained on, it is under 4 degrees.
+not. The trained policy starts its chunk in roughly the right place. But it
+points about 25 degrees away from the teacher. Across the three seeds, this
+error is 22 to 27 degrees on tables the policy never saw. On tables it was
+trained on, it is under 4 degrees. Its waypoints sit 48 to 52 mm from the
+teacher's at the median. These figures are in the project's
+[`README.md`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/03-imitation-from-demonstrations/README.md#what-the-fitting-cost-and-what-it-bought).
 
 This matters because the hand is long. It reaches 266 mm back behind its
 fingertips. Turning it 25 degrees about the fingertips swings the far end of the
-wrist 135 mm sideways. On a crowded table, that puts the 90 mm body over a glass
-that the teacher's heading cleared.
+wrist about 115 mm sideways. On a crowded table, that puts the 89 mm wrist over
+a glass that the teacher's heading cleared.
 
 ![The same fingertip at the teacher's heading and at twenty-five degrees off it, with a third glass twenty millimetres clear of the jaw's body in the first and underneath it in the second.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-the-heading-error.png)
 
 The examiner brings the jaw down to the first waypoint, and stops if it touches
 anything. So most pushes end there, before any glass is touched. The curved
-slide and the slow finish were never reached. The code folder's `README.md` has
-the counts.
+slide and the slow finish were never reached. In the run, 331 of 438 pushes
+ended this way, at the median of the three seeds. The counts are in
+[`results.json`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/results.json).
 
 The next section asks whether more pushes would let the policy recover from
 these failed descents.

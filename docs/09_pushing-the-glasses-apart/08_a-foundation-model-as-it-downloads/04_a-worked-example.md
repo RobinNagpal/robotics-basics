@@ -19,7 +19,8 @@ Some glasses tip over before they slide, and the only correct answer for them
 is to refuse. [Pushing without
 toppling](../01_the-problem/05_pushing-without-toppling.md) explains the rule
 in full. All seven solutions use the same rule, `slides()`, from solution 1's
-`plan.py`. This solution imports it instead of writing its own. So all seven
+[`plan.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py).
+This solution imports it instead of writing its own. So all seven
 refuse exactly the same glasses.
 
 **It is good that this check is plain arithmetic.** The limit depends on the
@@ -32,7 +33,10 @@ There is a second check. A refused glass is still in the picture, so the model
 can still aim at it. **So each answer is checked before it is used.** An answer
 that would reach a refused glass is thrown away. The heights in the other
 answers are held inside the range the jaw rides at. Both checks are in this
-solution's own folder, in `clear.py` and `joining.py`.
+solution's own folder, in
+[`clear.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/clear.py)
+and
+[`joining.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/joining.py).
 
 The first check was almost never needed. Over three runs the model was asked
 1,855 times. Only 5 answers were thrown away for reaching a refused glass. [The

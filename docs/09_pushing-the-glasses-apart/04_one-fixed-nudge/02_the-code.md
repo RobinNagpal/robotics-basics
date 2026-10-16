@@ -21,7 +21,7 @@ reuse the first piece. The second piece is the only place where the arm checks
 the world before it decides, not after.
 
 The tipping test comes from
-[`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py).
+[`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py).
 No library decides anything in it. It is three divisions, three comparisons and
 two arctangents from Python's own `math`. The rule behind it is set out in
 [pushing without toppling](../01_the-problem/05_pushing-without-toppling.md#3-the-limit-slide-or-tip).
@@ -123,6 +123,16 @@ def needs_probe(glass: Seen, proven: set[int]) -> bool:
 Together, the two blocks show the whole idea of this solution. Where the
 arithmetic can answer, it answers. Where it cannot, because the friction is
 unknown, the method makes one short push to find out. It does not guess.
+
+With this gripper, the test push rarely gets a clear answer. The jaw touches
+the glass at 107 mm, so a glass leans before it slides. The lean uses up the
+whole 5 mm. A glass that the full push would slide moves less than a
+millimetre under the test push. That is smaller than the error in the looks. So the test push
+often says "it tipped" about a glass that would have slid. Its mistakes all
+point that way. It refuses glasses it could have moved, but it never calls a
+glass safe and then tips it.
+[`test_programmed.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/test_programmed.py)
+checks that direction and nothing else.
 
 Note which fixed nudge this is. The share-of-the-gap nudge in
 [the main idea](01_what-it-is.md#4-the-main-idea) has no constant in the

@@ -41,7 +41,7 @@ most 72 of these. Each one is the shortest push that works along its line.
 glass still crowded is kept if it cuts the table's total lack of room by at
 least 10 mm. The printed rule uses these pushes only when no push on the table
 finishes the job. This set is large, because it holds every 2 mm step up to the
-first clash. `spread.json` gives the counts. Over 269 crowded glasses on the
+first clash. [`spread.json`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/02-geometry-ranked/spread.json) gives the counts. Over 269 crowded glasses on the
 training tables, the middle glass gets 84 candidates. Over 101 whole-table
 decisions, the middle decision gets 261.
 
@@ -168,7 +168,7 @@ section gives.
 The previous section chose a short list of numbers as the input. This section
 says which numbers, and why **none of them is a position on the table**.
 
-For each push, `features.py` gives the model these eight numbers, in this order.
+For each push, [`features.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/02-geometry-ranked/features.py) gives the model these eight numbers, in this order.
 
 - **The contact angle.** It is measured from the line between the glass and the
   nearest neighbour's edge. So "push straight away from the crowd" is always the
@@ -332,7 +332,7 @@ imitation learning, and it costs much more.
 natural to keep the runs that finished the table and throw away the rest. But
 the finished runs are not a fair sample of the tables. They are the tables this
 solution is good at. The hard tables are the ones where the geometry runs out
-of useful pushes. In this solution's own `results.json`, 43 of its 143 refused
+of useful pushes. In this solution's own [`results.json`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/02-geometry-ranked/results.json), 43 of its 143 refused
 glasses were still without room after pushing. Those hard tables are the ones
 most likely to be thrown away. So a student trained only on successes learns
 from easier tables than the ones it is tested on. It looks better in training

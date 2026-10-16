@@ -21,7 +21,7 @@ looking at the table afterwards. The candidate pushes come from solution 1's
 code, unchanged. So only the choice is new.
 
 The model code is in
-`src/09_pushing-the-glasses-apart/02-geometry-ranked/ranker.py`. It has four
+[`src/09_pushing-the-glasses-apart/02-geometry-ranked/ranker.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/02-geometry-ranked/ranker.py). It has four
 steps, and the code marks them with the same numbers. Steps 1 and 2 run once,
 before the arm moves. Steps 3 and 4 run once for each push.
 
@@ -74,7 +74,7 @@ def ranked(
 ```
 
 The label is the most important design choice. It is made in
-`src/09_pushing-the-glasses-apart/02-geometry-ranked/rollout.py`, which tries
+[`src/09_pushing-the-glasses-apart/02-geometry-ranked/rollout.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/02-geometry-ranked/rollout.py), which tries
 one candidate push and measures what it did. Its steps are numbered from one
 again, because it is a separate file. It runs before any of the steps above.
 

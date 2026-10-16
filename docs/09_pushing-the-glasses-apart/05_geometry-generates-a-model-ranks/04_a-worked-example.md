@@ -25,7 +25,7 @@ candidate pushes. **Ranking an empty list still gives an empty list.**
 
 The refusals were counted. Over the fifty held-out tables, this solution refused
 143 of the 251 glasses, the same number as the printed rule. Its own
-`results.json` gives the reasons:
+[`results.json`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/02-geometry-ranked/results.json) gives the reasons:
 
 - 47 glasses tipped when the 5 mm test push was tried;
 - 41 glasses would tip before they slide, so they were not pushed;
@@ -74,11 +74,10 @@ round the neighbour the other way. Each heading gives at most one such push, so
 each glass has at most 72.
 
 **All of them score the same.** Each one leaves both glasses with room, so each
-gets the same label. Each one ends just past the line it had to clear, plus the
-10 mm aiming margin, because the enumerator stops each heading as soon as the
-push works. Over 161 such groups on the training tables, the best and worst
-push in a group differ by 0.0 mm of room at the median. They differ only in how
-far the glass travels, and the geometry already knows that distance.
+gets the same label. [What the geometry
+proposes](03_how-it-works.md#1-what-the-geometry-proposes) explains why. Over
+161 such groups on the training tables, the best and worst push in a group
+differ by 0.0 mm of room at the median.
 
 **The printed rule takes the shortest one.** A model can agree with that choice.
 It can disagree and pick a longer push. Or it can take longer to give the same

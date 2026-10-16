@@ -23,10 +23,16 @@ Some parts of this solution are running code, and some are only described.
 This section says which is which, before any of the ideas.
 
 **The first way is built.** It is in
-`code/src/09_pushing-the-glasses-apart/04-a-world-model/`. It collects its own
-training data and trains on it. It was run on the examiner's 50 test tables,
-and its results are in that folder's `results.json`. The model is `model.py`,
-what it is shown is `features.py`, and the search and the loop are `plan.py`.
+[`code/src/09_pushing-the-glasses-apart/04-a-world-model/`](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/04-a-world-model).
+It collects its own training data and trains on it. It was run on the
+examiner's 50 test tables. Its results are in that folder's
+[`results.json`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/04-a-world-model/results.json).
+The model is
+[`model.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/04-a-world-model/model.py).
+What it is shown is
+[`features.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/04-a-world-model/features.py).
+The search and the loop are
+[`plan.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/04-a-world-model/plan.py).
 Everything this page says about those three files describes real code.
 
 **Planning a sequence is a design.** The built planner chooses one push at a
@@ -321,27 +327,29 @@ call before got slightly wrong.** So the errors do not just add up. They grow.
 A model asked about a table unlike its training data answers worse. That gives a
 table even further from its training data, which it answers worse again.
 
-The numbers show the size of this. The first way's README gives a median error
-of about 4.5 mm for where a pushed glass lands, on tables it never trained on.
-That is a useful one-step model. If the error only added up, a plan three
-pushes deep would be about 13.5 mm out. The gaps this problem depends on are
-tens of millimetres. And the real error grows faster than that simple sum.
-**So a model that is good at one step can be useless at five.**
+The numbers show the size of this. The project's
+[`README.md`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/04-a-world-model/README.md)
+for the first way records the model's error on 628 pushes from tables it never
+trained on. The median error for where a pushed glass lands is 6.5 mm. That is
+a useful one-step model. If the error only added up, a plan three pushes deep
+would be about 19.5 mm out. The gaps this problem depends on are tens of
+millimetres. And the real error grows faster than that simple sum. **So a model
+that is good at one step can be useless at five.**
 
 The picture below draws three sizes as rings around the point a push aimed at.
 The inner ring is the model's one-step error. The two outer rings are the simple
 sum after two pushes and after three. The small green disc in the middle is the
 error of the geometry, which predicts a slide by arithmetic instead of learning
-it.
+it. On the 50 test tables, [one fixed
+nudge](../04_one-fixed-nudge/01_what-it-is.md) landed its pushed glass 1.7 mm
+from its aim at the median, in its
+[`results.json`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/results.json).
 
-![Three dashed rings at 4.5, 9.0 and 13.5 millimetres round the point a push was aimed at, with a small green disc of 1.07 millimetres at the middle of them.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/10-how-far-out-each-prediction-is.png)
+![Three dashed rings round the point a push was aimed at: the learned model's median one-push error, and that error added up after two and after three pushes, with a much smaller green disc for the geometry's error at the middle.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/10-how-far-out-each-prediction-is.png)
 
-These millimetres matter because the gaps are small. In the table behind the
-picture, the push aimed to leave glass B 120.9 mm from glass C. The jaw needs
-119.4 mm. Suppose the learned model's median error falls in the worst
-direction. Then the glass lands at 116.4 mm, which is 2.9 mm short, and the next
-look has to catch it. With the geometry's error instead, it lands at 119.9 mm,
-which still leaves room.
+These millimetres matter because the gaps are small. A push may aim to leave
+only a few millimetres more than the jaw needs. A miss of 6.5 mm in the wrong
+direction then leaves the glass short of room. The next look has to catch it.
 
 This is why the built planner looks only one push ahead. Every training example
 is a single push. So the model was never asked to be right about a table that

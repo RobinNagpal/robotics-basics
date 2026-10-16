@@ -81,7 +81,7 @@ shortfall in both directions for every pair. A method that only compares the
 distance between middles can miss a glass that cannot be gripped.
 
 **The shortfall is already in the repository.** The function `shortfall()` in
-[`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py)
+[`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py)
 computes the expression above. It adds it up over the whole table to measure
 how crowded the table is. This solution uses the same number for one glass at
 a time.
@@ -177,11 +177,11 @@ exist as code. It would be easy to claim too much here.
 
 These parts are **built, in the repository, and run against the examiner**:
 
-- The examiner itself, in [`src/09_pushing-the-glasses-apart/bench/`](../../../code/src/09_pushing-the-glasses-apart/bench). It has the crowded tables, the measurement error, `look()`, `push()`, `take()` and the scorecard.
-- The room test, as `has_room()` in [`src/09_pushing-the-glasses-apart/bench/bench.py`](../../../code/src/09_pushing-the-glasses-apart/bench/bench.py).
-- The shortfall, as `shortfall()` in [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py).
+- The examiner itself, in [`src/09_pushing-the-glasses-apart/bench/`](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/bench). It has the crowded tables, the measurement error, `look()`, `push()`, `take()` and the scorecard.
+- The room test, as `has_room()` in [`src/09_pushing-the-glasses-apart/bench/bench.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/bench/bench.py).
+- The shortfall, as `shortfall()` in [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py).
 - The tipping rule, as `slides()` in the same file, with the short test push.
-- The loop, in [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py). It looks, racks every glass that has room, chooses one push, makes it, and looks again. The examiner sets the budget, so every solution gets the same number of tries. That is four pushes at one glass, and sixteen on one table.
+- The loop, in [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py). It looks, racks every glass that has room, chooses one push, makes it, and looks again. The examiner sets the budget, so every solution gets the same number of tries. That is four pushes at one glass, and sixteen on one table.
 - The refusal reasons, and the scorecard that counts them.
 
 These parts are **a design, not code**:
@@ -193,7 +193,7 @@ These parts are **a design, not code**:
 - The repeats and the compute column that [the examiner](../01_the-problem/03_the-examiner.md) describes for the scorecard.
 
 One measurement from the built code is useful. The run in
-[`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/results.json`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/results.json)
+[`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/results.json`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/results.json)
 reports how far each pushed glass stopped from its aim. The median is 1.7 mm,
 and the worst is 57.6 mm. **That run uses the searching planner, not this
 solution's rule.** So it says something about the simulator, not about this

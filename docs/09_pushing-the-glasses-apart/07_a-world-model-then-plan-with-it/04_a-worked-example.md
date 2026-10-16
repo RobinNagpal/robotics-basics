@@ -4,7 +4,7 @@ This page starts with this solution's refusals, because an example that shows
 only the easy case teaches the wrong lesson. Then it follows the solution
 through three of the examiner's 50 test tables. Each number for a table comes
 from the run recorded in
-[`results-tables.json`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/results-tables.json).
+[`results-tables.json`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/04-a-world-model/results-tables.json).
 
 ## Contents
 
@@ -33,7 +33,7 @@ glass in two ways, and it records which one.
 
 **On the 50 test tables, only the second kind ever happened.** The run left 85
 glasses behind, and
-[`results.json`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/results.json)
+[`results.json`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/04-a-world-model/results.json)
 gives each one's reason:
 
 - 53 were on a table where a glass had fallen over. Nothing more is touched on

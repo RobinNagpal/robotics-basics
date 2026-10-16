@@ -95,7 +95,7 @@ solution's band is tables 1000 to 6199. It starts at 1000 for a reason. The
 teacher's own ranker was fitted on tables 0 to 199. On those tables the teacher
 is at its best, so they would flatter the examples. A second band, from table
 8000, is kept back to check the student against the teacher. Both bands are
-set in `collect.py`.
+set in [`collect.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/collect.py).
 
 Two solutions that learn from examples must use the same band before they are
 compared. If the bands differ, the comparison measures the data as well as the
@@ -134,12 +134,17 @@ Most of its pushes there fail and are dropped. So the data holds few examples of
 that kind of table. The student learns most about tables where the teacher was
 already strong. It learns least where help was most needed.
 
-On these tables, this bias turned out to be small. Most of what is dropped is
-not a failure at all. It is the teacher's 5 mm test push, which only checks
-whether a glass slides. Of the real pushes, only a few in a hundred were
-dropped. The code folder's `README.md` gives the counts.
+On these tables, the bias is small in total but uneven. Most of what is dropped
+is not a failure at all. It is the teacher's 5 mm test push, which only checks
+whether a glass slides. Of the 7,171 real pushes, 512 were dropped, which is
+7%. The kinds of glass differ much more. The straight glass keeps 3,940 of its
+7,131 pushes. The tapered glass keeps only 360 of its 1,656. The teacher
+refuses most tapered glasses, because they tip before they slide. So the policy
+sees the tapered glass least. These counts come from the collection behind the
+reported fit, in the project's
+[`README.md`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/03-imitation-from-demonstrations/README.md#where-the-demonstrations-come-from).
 
-The bias is small but not zero, so there are three ways to reduce it. Two are
+The bias is not zero, so there are three ways to reduce it. Two are
 done and one is still a plan.
 
 **Keep the teacher's refusals as refusals.** A glass the teacher declined to
@@ -149,7 +154,7 @@ refusals and their reasons are counted beside the examples.
 
 **Count what was dropped, by kind of table.** The thinning is invisible unless
 it is counted. **Done:** the collection writes this table, and it gave the
-small numbers above.
+numbers above.
 
 **Give extra weight to crowded tables, and collect more of them.** Tables come
 from numbers and cost only time. So a thin region can be filled by drawing more
@@ -256,7 +261,7 @@ ACT's measured heading error, about 25 degrees, fits this kind of averaging.
 measurement.
 
 **Diffusion Policy is written and it runs, but it has not been trained here.**
-It is in `policy.py` beside ACT and uses the same examples. The two models are
+It is in [`policy.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/policy.py) beside ACT and uses the same examples. The two models are
 about the same size. The reason is compute. One training step costs about twice
 as much. One chunk at run time needs sixteen denoising passes instead of one.
 And a result needs several seeds. So it has no score yet.

@@ -91,7 +91,7 @@ differ. Check that the label you train on is the thing you are scored on.
 solution with the world model, which learns what a push does.
 
 The code is in
-[`src/09_pushing-the-glasses-apart/02-geometry-ranked/`](../../../code/src/09_pushing-the-glasses-apart/02-geometry-ranked).
+[`src/09_pushing-the-glasses-apart/02-geometry-ranked/`](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/02-geometry-ranked).
 The full treatment starts at
 [what it is](../05_geometry-generates-a-model-ranks/01_what-it-is.md).
 

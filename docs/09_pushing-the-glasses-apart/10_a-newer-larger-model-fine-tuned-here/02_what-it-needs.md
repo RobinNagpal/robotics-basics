@@ -1,8 +1,8 @@
 # What it needs
 
 This page lists what solution 7 costs. Every number here was measured while
-the project built it. The score is not known yet, so this page says nothing
-about it.
+the project built and fitted it. The fits did not learn the task, so there
+is no score. [The results](03_results.md) say why.
 
 ## Contents
 
@@ -17,8 +17,10 @@ parts that must exist before it runs.
 - **Solution 6's demonstrations.** Solution 7 trains on that folder. So it
   must be made first.
 - **The Evo-1 weights.** They download once, the first time training runs.
-- **About an hour of training for each seed.** A seed is the number that
-  starts the random parts of one training run. There are three seeds.
+- **About 100 minutes of training for each seed.** A seed is the number that
+  starts the random parts of one training run. There are three seeds. The
+  fitting is done by
+  [`train.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/07-evo1-fine-tuned/train.py).
 
 It does not need an NVIDIA graphics card. Evo-1's code names NVIDIA's CUDA
 system in three places. None of them stops it running on this Mac. Three
@@ -42,9 +44,11 @@ The next section gives the measured costs.
 The parts are listed. This section says how much memory and time the model
 takes.
 
-The table has one row for each measurement. The numbers come from the
+The table has one row for each measurement. Most numbers come from the
 project's
 [README for this solution](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/07-evo1-fine-tuned/README.md).
+The training rows come from each fit's
+[`training.json`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/07-evo1-fine-tuned/fitted-0/training.json).
 
 | | |
 |---|---|
@@ -53,11 +57,13 @@ project's
 | memory held while answering | 3.60 GiB |
 | one forward pass | 1.7 s |
 | one backward pass | 0.1 s |
+| memory held while training | 4.26 to 4.36 GiB |
+| one fit of 1,000 steps | 98 to 100 minutes |
 
 A forward pass runs a picture through the model. A backward pass works out how
 to change the fitted numbers. Solution 6 fits only 3.8 million numbers, so
 solution 7 changes about 30 times as many.
 
-The next page, [the results](03_results.md), says what is still being measured.
+The next page, [the results](03_results.md), says what the three fits reached.
 
 ← [What it is](01_what-it-is.md) · [Results](03_results.md) →

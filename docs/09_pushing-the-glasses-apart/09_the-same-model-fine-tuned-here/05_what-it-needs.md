@@ -14,7 +14,7 @@ licence. It also needs **PyTorch**, which runs both the training and the
 model.
 
 It needs **two parts of the examiner**, and both exist now. The first is a view
-looking straight down, in `bench/top_view.py`. A camera is fixed 750 mm above
+looking straight down, in [`bench/top_view.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/bench/top_view.py). A camera is fixed 750 mm above
 the middle of the glass zone. It returns a 384 by 384 picture of the whole
 zone. It is not the camera the films use, which looks down at a steep angle
 from the arm's side. The second part is `Bench.follow()`, which carries out a
@@ -32,17 +32,16 @@ keeps that split.
 
 **It does not need a rented accelerator.** This page first said it would. The
 training runs on this machine, an Apple Silicon Mac with no NVIDIA card,
-through Metal. It held **1.02 GiB** of memory while it ran. That includes the
-borrowed weights, the correction, its gradients and the optimiser's running
-averages. [Low-rank
+through Metal. It held **1.02 GiB** of memory while it ran. [Low-rank
 adaptation](03_how-it-works.md#2-low-rank-adaptation--a-small-correction-instead-of-a-large-change)
-is the reason. Memory was never the problem. The trained model also runs here,
+explains why so little. Memory was never the problem. The trained model also runs here,
 because SmolVLA needs only a few gigabytes to answer.
 
 **Renting would buy time, not memory, and time is what this solution lacks.**
-One training step on Metal took about four seconds. The laptop was also
-training three other solutions at the time. An NVIDIA card would take a
-fraction of a second. LeRobot's own SmolVLA recipe is twenty thousand steps at
+The thousand steps took 47 minutes on Metal, about three seconds a step.
+[`correction/training.json`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/correction/training.json)
+records this. The laptop was also running other training at the time. An
+NVIDIA card would take a fraction of a second. LeRobot's own SmolVLA recipe is twenty thousand steps at
 a batch of sixty-four. This run was a thousand steps at a batch of four. That
 is **about one part in three hundred of the recipe's compute**, and every
 number this solution reports carries that limit. To spend real compute, you

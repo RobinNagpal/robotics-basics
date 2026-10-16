@@ -70,7 +70,8 @@ gives the bands.
 
 Dropping failed pushes also drops the tables where the teacher often fails. So
 the student sees fewest examples where help is most needed. Here the effect is
-small. Of 13,063 real pushes, only 407 were dropped, about 3%. [Choosing which
+small in total: 512 of 7,171 real pushes were dropped, about 7%. But it is
+uneven, and the policy sees the tapered glass least. [Choosing which
 demonstrations to keep](03_how-it-works.md#3-choosing-which-demonstrations-to-keep-and-the-bias-it-buys)
 explains the bias.
 

@@ -220,7 +220,8 @@ fifty waypoints, which is the borrowed model's own number. The examiner uses
 waypoints at a fixed rate, so a chunk is always two and a half seconds of
 motion. The teacher's push has a hundred waypoints or more, because the
 teacher feels forward at 10 mm/s and pushes at 20 mm/s. Fitting that push into
-fifty waypoints makes the student's jaw move at about 31 mm/s. So **the
+fifty waypoints makes the student's jaw move at about 31 mm/s on the tuning
+tables. Over the training tables the project measures 32 mm/s. So **the
 student makes its teacher's pushes faster**, and the jaw hits the glasses
 harder. The examiner caps a path at the jaw's top speed of 200 mm/s, and a
 chunk the model invents can reach that cap. There are two other choices. One
@@ -268,7 +269,7 @@ three times, with three seeds. The error at step 500 was 92.6, 115.3 and
 77.0 mm. At step 1,000 it was 101.5, 106.1 and 90.0 mm. So it rose in two fits
 and fell in one. Between step 500 and step 1,000 the error is flat, inside its
 own noise. The fair statement is that the model was not clearly improving at
-the end. Each fit's numbers are in its `training.json`, for example
+the end. Each fit records its numbers in its own training file, for example
 [`correction-aligned-0/training.json`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/06-smolvla-fine-tuned/correction-aligned-0/training.json).
 Read every number here as what a thousand steps buys.
 
@@ -287,8 +288,8 @@ the height the gripper pushes at. The model learned that a push happens on the
 table, not above it. This is the clearest sign that the domain gap closed.
 
 The *length* was not learned. The trained chunks still cover about 320 mm of
-table, where the teacher's covered 75 mm. The jaw moves at a median of about
-92 mm/s, where the demonstrations move at 31 mm/s. This is better than solution
+table. The teacher's pushes on the tuning tables covered 75 mm. The jaw moves
+at a median of about 92 mm/s, where those demonstrations move at 31 mm/s. This is better than solution
 5's 868 mm, but still more than four times too far. A push that is too long, on
 a crowded table, runs into a neighbour.
 
@@ -406,7 +407,10 @@ hundred dollars, and could produce no comparison at all.
 
 **The question is now asked with a different model.** [Solution
 7](../10_a-newer-larger-model-fine-tuned-here/01_what-it-is.md) fits Evo-1, a
-newer and larger model that runs on this laptop. It is fitted exactly as this
-solution is. Its results are still being measured.
+newer and larger model that runs on this laptop. It used the same 6,935
+demonstrations and the same thousand steps, with three seeds. It did not learn
+the task, while this solution's fits on the same data did. [Solution 7's
+results](../10_a-newer-larger-model-fine-tuned-here/03_results.md) give the
+numbers, and say why this does not show that the newer model is worse.
 
 ← [The code](02_the-code.md) · [A worked example](04_a-worked-example.md) →

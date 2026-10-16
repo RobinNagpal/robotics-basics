@@ -108,7 +108,7 @@ model that does the wrong thing. The training gave the model enough skill to
 act, but not enough to act safely.
 
 The code is in
-[`src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/`](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned).
+[`src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/`](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned).
 The full chapter starts at [what it
 is](../09_the-same-model-fine-tuned-here/01_what-it-is.md).
 

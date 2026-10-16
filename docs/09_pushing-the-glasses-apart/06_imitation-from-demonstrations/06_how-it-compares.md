@@ -46,8 +46,8 @@ make motions the macro cannot make. [A world model, then plan with
 it](../07_a-world-model-then-plan-with-it/01_what-it-is.md) can compare
 outcomes. That is the sharpest difference between the two.
 
-**Keeping only good pushes biases its data.** Here that bias turned out small,
-and it did not hold this solution back. [Choosing which examples to
+**Keeping only good pushes biases its data.** Here the bias is small in total
+but uneven: the policy sees the tapered glass least. [Choosing which examples to
 keep](03_how-it-works.md#3-choosing-which-demonstrations-to-keep-and-the-bias-it-buys)
 explains it.
 
@@ -226,8 +226,10 @@ copying examples made here. But it starts from SmolVLA's borrowed weights, not
 from random numbers. So the pair separates what the examples are worth from
 what the pretraining is worth.
 
-The seventh solution, Evo-1, is a newer and larger borrowed model. It is
-fitted the same way as SmolVLA fine-tuned. Its results are still being measured.
+The seventh solution, Evo-1, is a newer and larger borrowed model. It was
+fitted three times, the same way as SmolVLA fine-tuned, and did not learn the
+task. So it has no score. [A newer, larger model fine-tuned
+here](../10_a-newer-larger-model-fine-tuned-here/01_what-it-is.md) explains why.
 
 On the ladder, this solution is the first rung where all the learning happens
 here, from nothing, on free examples. It is the cheapest real attempt at

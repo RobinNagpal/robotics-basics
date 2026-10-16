@@ -19,7 +19,7 @@ borrowed model the correction may change. The second turns a real push into a
 training example.
 
 The first piece is in
-[`06-smolvla-fine-tuned/correction.py`](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/correction.py).
+[`06-smolvla-fine-tuned/correction.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/correction.py).
 It runs in three steps.
 
 1. Set the three choices this project makes about the correction. These are
@@ -66,7 +66,7 @@ adaptation](03_how-it-works.md#2-low-rank-adaptation--a-small-correction-instead
 explains this trade.
 
 The training targets are built in
-[`06-smolvla-fine-tuned/chunks.py`](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/chunks.py).
+[`06-smolvla-fine-tuned/chunks.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/chunks.py).
 This is a separate file, so its steps start from one again. It has four steps.
 None of them invents a path.
 
@@ -109,8 +109,8 @@ every fifty milliseconds, however far apart they are.
 ![One recorded push of 75 mm drawn twice: as the teacher made it, where no waypoint is more than 1.0 mm from the last because the teacher never pushes faster than 20 mm/s, and as the fifty waypoints the model is trained to emit, 1.5 mm apart, which the examiner eats at the same rate and therefore carries out at 31 mm/s.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/finetuned-the-same-push-in-fewer-waypoints.png)
 
 The second block also borrows its arithmetic from solution 5. `as_action` and
-`drift` call `to_state` and `to_jaw`, which are solution 5's own. `partners.py`
-re-exports them here, along with solution 5's `clear` loop. `correction.py`
+`drift` call `to_state` and `to_jaw`, which are solution 5's own. [`partners.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/partners.py)
+re-exports them here, along with solution 5's `clear` loop. [`correction.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/correction.py)
 declares `class Fitted(Downloaded)`, so the asking is inherited too. So the
 targets use the same units as solution 5's answers, through the same code. The
 only difference between the two solutions is the training.

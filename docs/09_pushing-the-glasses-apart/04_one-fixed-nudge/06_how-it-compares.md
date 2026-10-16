@@ -244,8 +244,8 @@ model trained further here, the fixed nudge is the floor. Both solutions 5 and 6
 must clear it before the difference between them matters.
 **Against [solution
 7](../10_a-newer-larger-model-fine-tuned-here/01_what-it-is.md),** which swaps in a
-newer and larger borrowed model, the fixed nudge is the same floor. Its results
-are still being measured.
+newer and larger borrowed model, the fixed nudge is the same floor. Its three
+fits did not learn the task, so its scoring run was stopped.
 
 So think of this method as **the first thing to build and the last thing to
 ship**. Build it first. It is the cheapest way to get a real push against a

@@ -49,12 +49,16 @@ All of this is built. The [examiner](../01_the-problem/03_the-examiner.md) is
 built. So is the teacher, [geometry generates, a model
 ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md). The examiner
 also gained the two parts this policy needs. One is a picture from straight
-above (`bench/top_view.py`). The other is a way to follow a chunk of waypoints
-(`Bench.follow`). ACT was trained here and tested on tables it never saw. The
-code is in `code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/`.
+above ([`bench/top_view.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/bench/top_view.py)).
+The other is a way to follow a chunk of waypoints (`Bench.follow`, in
+[`bench/bench.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/bench/bench.py)).
+ACT was trained here and tested on tables it never saw. The code is in
+[`code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/`](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations).
 This chapter gives the score once, in [how it
 compares](06_how-it-compares.md#3-where-it-sits-among-the-others). The
-code folder's `README.md` has every count.
+project's
+[`README.md`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/03-imitation-from-demonstrations/README.md)
+has every count.
 
 Three parts are still plans, not code. They are the DAgger round, the force
 monitor that would watch a chunk while it runs, and giving extra weight to

@@ -91,7 +91,7 @@ every other solution must beat. The lesson is simple. If a model cannot beat
 this fixed nudge, the model adds nothing.
 
 The code is in
-[`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge).
+[`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/`](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge).
 The full treatment starts at [what it is](../04_one-fixed-nudge/01_what-it-is.md).
 
 ← [How the solutions compare](01_how-the-six-compare.md) · [Geometry generates, a model ranks](03_geometry-generates-a-model-ranks.md) →

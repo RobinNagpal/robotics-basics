@@ -37,6 +37,7 @@ Each pair differs in one thing, so the gap in score is that thing's worth.
 Solution 1 against 2 asks whether ranking safe pushes helps. Solution 3 against
 4 asks whether to copy pushes or to plan with a model. Solution 5 against 6 asks
 what training buys. Solution 6 against 7 asks what a newer, larger model buys.
+That pair has no answer yet, because solution 7's fits did not learn the task.
 A ranking says who won. A pair says why. [What the comparison
 says](../11_the-results.md#5-what-the-comparison-says) reads each pair.
 

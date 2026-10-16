@@ -23,7 +23,9 @@ the table from straight above**. The examiner gave only numbers. It did render
 the world, but from the arm's side, and only for films. The second was **a way
 to follow a chunk of waypoints**. `push()` takes a few push numbers and expands
 them itself, so a full path had no way in. Both parts are now built, as
-`bench/top_view.py` and `Bench.follow`. Every LeRobot policy expects pictures
+[`bench/top_view.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/bench/top_view.py)
+and `Bench.follow` in
+[`bench/bench.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/bench/bench.py). Every LeRobot policy expects pictures
 and waypoints, so these two parts were the real cost of using LeRobot. [One
 fixed nudge](../04_one-fixed-nudge/01_what-it-is.md) and the teacher need
 neither.
@@ -43,10 +45,12 @@ it learns only this cell's pictures, not vision in general.
 **In the end nothing was rented.** This page first budgeted tens of dollars for
 a rented accelerator. That is still the right figure for anybody who wants one.
 But the network has a few tens of millions of parameters, and the data is a few
-thousand small pictures. That fits on the graphics processor of an Apple M4, in
-about an hour per training seed. So all of it was made on the project's own
-machine: the examples, several training seeds, and the test run. Two choices
-made this possible, and the code folder's `README.md` records both. First, the
+thousand small pictures. That fits on the graphics processor of an Apple M4.
+Each of the three seeds took 54 to 78 minutes. So all of it was made on the
+project's own machine: the examples, three training seeds, and the test run.
+Two choices made this possible, and the project's
+[`README.md`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/03-imitation-from-demonstrations/README.md#does-it-train-on-this-machine)
+records both. First, the
 policy reads the picture at half the size the examiner draws it. The vision part
 is most of the cost of a training step, so this saves a lot. Second, the example set had to be four
 times larger than the first try before the network stopped memorising it.

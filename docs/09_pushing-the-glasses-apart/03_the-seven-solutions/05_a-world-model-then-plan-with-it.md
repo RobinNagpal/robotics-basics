@@ -49,8 +49,9 @@ explains each step. The next section says what this costs.
 
 This section lists the cost of the solution before we look at its score.
 
-It needs tens of thousands of pushes made in the simulator. Nobody has to label
-them, because the answer is what the camera saw after each push. Training takes
+It needs about 15,000 pushes made in the simulator. The project's
+[`README.md`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/04-a-world-model/README.md) records 15,379. Nobody has to label them, because the
+answer is what the camera saw after each push. Training takes
 about half an hour on a laptop. [What it
 needs](../07_a-world-model-then-plan-with-it/05_what-it-needs.md) gives the
 details. The next section shows what this cost bought.
@@ -96,7 +97,7 @@ it. The main lesson is about what to learn. The learning that helped was aimed
 at what the geometry gets wrong.
 
 The code is in
-[`src/09_pushing-the-glasses-apart/04-a-world-model/`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model).
+[`src/09_pushing-the-glasses-apart/04-a-world-model/`](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/04-a-world-model).
 The full chapter starts at [what it
 is](../07_a-world-model-then-plan-with-it/01_what-it-is.md).
 

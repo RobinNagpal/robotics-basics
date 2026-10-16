@@ -24,7 +24,7 @@ out](02_what-goes-in-and-what-comes-out.md), describes `look()`, `push()` and
 `take()`. This page assumes you have read it.
 
 The examiner is built. Its code is in
-`code/src/09_pushing-the-glasses-apart/bench/`, and every solution in this book
+[`code/src/09_pushing-the-glasses-apart/bench/`](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/bench), and every solution in this book
 runs on it. Where this page describes a decision that is not yet working code,
 it says so.
 
@@ -177,7 +177,7 @@ that clears the table has shown that every glass was grippable.
 asks only whether the glass had room around it. It never asks whether the cell
 could really pick that glass up. These are two different questions, and the
 difference is large. The cell has its own rule for where to hold a glass, in
-[`glasses/rules.py`](../../../code/src/08_seeing-the-glasses/work_cell/work_cell/glasses/rules.py).
+[`glasses/rules.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/08_seeing-the-glasses/work_cell/work_cell/glasses/rules.py).
 We can ask that rule directly. We give it the real gripper's size and each test
 glass's shape. **It finds a place to hold only 97 of the 251 glasses.**
 
@@ -278,6 +278,12 @@ its glasses stop close to the aim, it understands what a push does. If its
 glasses scatter, it succeeds by looking again, not by predicting. That is a real
 strategy, but a different one.
 
+**The examiner also adds up how far the glasses really moved.** It sums this
+over every push and every table. The total alone says little, because a
+solution that pushes nothing scores best. It means something only beside the
+[displacement floor](04_the-target-layout.md#6-the-displacement-floor). That is
+the least movement any legal layout of the same glasses needs.
+
 **The scorecard also keeps one row for each table.** Everything above is a
 total over the whole run. A total says how a solution did overall, but not how
 it did on any one table. For example, a run that finishes 14 tables out of 50
@@ -302,7 +308,7 @@ The examiner for [telling the glasses
 apart](../../08_seeing-the-glasses/03_the-examiner/01_the-examiner.md) could run
 each solution once and read the result. This examiner cannot, for two reasons.
 Both reasons come from the fact that five of the seven solutions are trained,
-not written. Both are now in `scoring.py`. `Repeats` holds several runs and reports
+not written. Both are now in [`scoring.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/bench/scoring.py). `Repeats` holds several runs and reports
 the spread of every number. `Scorecard` reports the time per push beside the
 counts.
 
@@ -342,8 +348,10 @@ not be usable at all. The fair question is not "which scored best?" It is
 "which scored best for what it cost?" So each solution reports what hardware it
 needs and roughly what renting it costs, as it also states its licence. The
 time per push sits on the scorecard beside the counts. [The
-results](../11_the-results.md) compare these times for the six that have been measured.
-The seventh is still being measured.
+results](../11_the-results.md) compare these times for six solutions. Solution 7
+has no time. Its three fits did not learn the task, so its scoring run was
+stopped. [Its results](../10_a-newer-larger-model-fine-tuned-here/03_results.md)
+explain why.
 
 This completes the scorecard. The next section says where to read on.
 

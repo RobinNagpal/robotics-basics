@@ -20,12 +20,14 @@ into one decision about a candidate. The candidate is kept or dropped, and it
 gets a cost. Nothing else in the solution knows anything about pushing.
 
 The model is in
-[`code/src/09_pushing-the-glasses-apart/04-a-world-model/model.py`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/model.py).
+[`code/src/09_pushing-the-glasses-apart/04-a-world-model/model.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/04-a-world-model/model.py).
 The library, PyTorch, does its work in the four `nn.Linear` lines. Everything
 around them is the set of five copies.
 
-The whole of it runs in six steps. Steps 1 and 2 are the model, in `model.py`.
-Steps 3 to 6 are the planning that uses it, in `plan.py`.
+The whole of it runs in six steps. Steps 1 and 2 are the model, in
+[`model.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/04-a-world-model/model.py).
+Steps 3 to 6 are the planning that uses it, in
+[`plan.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/04-a-world-model/plan.py).
 
 1. Stack the four layers of the network. Store the average and the spread of
    the training inputs beside the weights. Every input is scaled by those two
@@ -90,7 +92,7 @@ class Ensemble:
 ```
 
 The five answers are used in
-[`code/src/09_pushing-the-glasses-apart/04-a-world-model/plan.py`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/plan.py).
+[`code/src/09_pushing-the-glasses-apart/04-a-world-model/plan.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/04-a-world-model/plan.py).
 There every candidate push is scored at once, and the unacceptable ones get a
 cost of infinity.
 

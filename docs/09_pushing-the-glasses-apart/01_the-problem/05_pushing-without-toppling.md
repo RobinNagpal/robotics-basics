@@ -112,8 +112,8 @@ The middle of the jaw rides at 75 mm above the table. This is as low as the
 hand can go. The front part of the jaw is 63 mm tall, so its top edge stands at
 107 mm. These numbers come from the gripper, and they do not change between
 glasses. They are large because the hand is turned on its side to fit between
-the glasses. [The gap that
-matters](01_what-is-asked-for.md#6-the-gap-that-matters-is-not-the-gap-between-the-glasses)
+the glasses. [How low the push has to
+be](01_what-is-asked-for.md#7-how-low-the-push-has-to-be-and-why-it-is-a-property-of-the-glass)
 explains why it is turned.
 
 A glass that is wider higher up touches the top edge of the jaw first. The
@@ -160,8 +160,8 @@ glass tips before it slides, whatever the arm does.
 standing where it was, and the report gives the reason. The run then ends as
 *correct but incomplete*. [The
 examiner](03_the-examiner.md#5-what-the-examiner-measures) explains how
-refusals are counted, and why a refusal is a result. A refused glass is still
-standing, so something later may move it. A fallen glass is lost. So anything
+refusals are counted, and why a refusal is a result. A fallen glass cannot be
+recovered, as [the honest limit](#6-the-honest-limit) explains. So anything
 doubtful ends with the glass untouched and a line in the report. No solution
 may add a fallback that tries anyway.
 
@@ -339,8 +339,8 @@ while the glass is still starting to move. So **an early abort is the only
 thing here that could prevent a topple, instead of reporting one.** That is the
 reason to build it. But it is only a design. Nothing in this project
 implements it. The solutions that topple glasses do so partly because it is
-missing. [Solution 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md)
-topples glasses most often, so it shows what the missing monitor costs.
+missing. Solutions 4 and 6 topple the most, 20 and 40 glasses of 251. [The
+results](../11_the-results.md) show what the missing monitor costs.
 
 The monitor has very little power on purpose. It cannot steer, choose a target
 or approve a push. It can only stop a push. If it fires when it should not, it

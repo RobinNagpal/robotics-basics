@@ -36,7 +36,7 @@ or fitted in this cell. The model is shown the table, told in words what to do,
 and asked for actions. Whatever it returns is carried out.
 
 **This solution is built and has run.** The code is in
-[`05-smolvla-as-it-downloads/`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads).
+[`05-smolvla-as-it-downloads/`](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads).
 It runs on the same 50 held-out tables as the other solutions. It did
 badly, and in an unexpected way: most of its pushes pass high above the glasses
 and touch nothing. [How it

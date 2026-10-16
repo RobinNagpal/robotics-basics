@@ -6,8 +6,8 @@ This page is the scoreboard for the seven solutions in this book. It answers one
 question. On the same crowded tables, with the same marking, how many glasses
 did each method clear, and how many did it knock over? It is for a reader who
 has already met the seven. Come back to it whenever a page says one method did
-better than another. Six solutions have been measured. Solution 7 is still being
-measured, so it has no score here yet.
+better than another. Six solutions have been measured. Solution 7 has no score,
+because its scoring run was stopped.
 
 The six are tested on the same 50 tables. The tables hold 251 glasses, and 203
 of them have no room at the start. Every solution gets the same push budget and
@@ -48,15 +48,15 @@ is the one failure this cell cannot undo.
 
 | | tables done | tables wrong | glasses racked | toppled | pushes | travel | thinking per push |
 |---|---|---|---|---|---|---|---|
-| [1 one fixed nudge](../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge) | 14 | **1** | 107 | **1** | **173** | 0.87× | 93 ms |
-| [2 geometry ranked](../../code/src/09_pushing-the-glasses-apart/02-geometry-ranked) | 14 | **1** | 107 | **1** | 182 | 1.32× | 102 ms |
-| [3 imitation, ACT](../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations) | 2 (1–3) | 11 (7–13) | 63 (51–64) | 12 (7–13) | 438 (414–497) | 0.87× | **11 ms** |
-| [4 a world model](../../code/src/09_pushing-the-glasses-apart/04-a-world-model) | **20** | 19 | **146** | 20 | 221 | 1.98× | 374 ms |
-| [5 SmolVLA as it downloads](../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads) | 1 (0–1) | 9 (6–10) | 48 (46–51) | 12 (10–14) | 620 (589–641) | 0.42× | 286 ms |
-| [6 SmolVLA fine-tuned](../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned) | 1 (0–2) | **36** (31–36) | 56 (50–65) | **40** (33–44) | 369 (351–374) | 1.68× | 404 ms |
+| [1 one fixed nudge](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge) | 14 | **1** | 107 | **1** | **173** | 0.87× | 93 ms |
+| [2 geometry ranked](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/02-geometry-ranked) | 14 | **1** | 107 | **1** | 182 | 1.32× | 102 ms |
+| [3 imitation, ACT](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations) | 2 (1–3) | 11 (7–13) | 63 (51–64) | 12 (7–13) | 438 (414–497) | 0.87× | **11 ms** |
+| [4 a world model](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/04-a-world-model) | **20** | 19 | **146** | 20 | 221 | 1.98× | 374 ms |
+| [5 SmolVLA as it downloads](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads) | 1 (0–1) | 9 (6–10) | 48 (46–51) | 12 (10–14) | 620 (589–641) | 0.42× | 286 ms |
+| [6 SmolVLA fine-tuned](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned) | 1 (0–2) | **36** (31–36) | 56 (50–65) | **40** (33–44) | 369 (351–374) | 1.68× | 404 ms |
 | 3 with the camera's readings, [later run](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/03-imitation-from-demonstrations/results-act-readings.json) | 3 (3–3) | 11 (8–12) | 61 (58–65) | 12 (6–13) | 434 (417–482) | 0.57× | 11 ms |
 | 6 on solution 3's band, [later run](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/06-smolvla-fine-tuned/results-aligned.json) | 1 (0–1) | 36 (35–38) | 53 (52–56) | 42 (40–47) | 360 (295–411) | 2.23× | 387 ms |
-| [7 Evo-1 fine-tuned](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/07-evo1-fine-tuned/README.md) | being measured | | | | | | |
+| [7 Evo-1 fine-tuned](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/07-evo1-fine-tuned/README.md) | not scored | | | | | | |
 
 A table is **done** when every glass on it was picked up. It is **wrong** when
 the run ended in a state the cell should never reach. In practice this means a
@@ -74,7 +74,14 @@ tables: 6,935 demonstrations from 5,200 tables, against 1,074 from 800. In
 both, the brackets come from three training seeds, each run once. Neither
 solution's score changed detectably from its first row. [How a result is
 claimed](#8-how-a-result-is-claimed) explains what "detectably" means here.
-Solution 7 has no score yet.
+
+Solution 7 has no numbers. It was fitted three times, with three seeds. Its
+answers stayed about 288 mm from the teacher's waypoints, against 302 mm at the
+start. Solution 6, fitted on the same demonstrations for the same thousand
+steps, reached 90 to 106 mm. So
+solution 7 did not learn the task, and its scoring run was stopped. [Its
+results page](10_a-newer-larger-model-fine-tuned-here/03_results.md) explains why this does not show that the newer model is
+worse.
 
 Read the brackets before the ranking. Solution 6 racks between 50 and 65
 glasses. Solution 3 racks between 51 and 64. So this test does not separate
@@ -108,7 +115,7 @@ one table on film.
 
 This section shows each solution clearing one table, so you can see the numbers
 above in action. The six measured solutions were filmed on the same table, so
-the films can be compared. Solution 7 has no film yet. Each film is recorded
+the films can be compared. Solution 7 was not scored, so it has no film. Each film is recorded
 from the simulator, runs at one and a half times real speed, and has no sound.
 
 Two things are the same in all six films. The hand stays shut while it pushes,
@@ -276,8 +283,8 @@ it than it shows.
   weaker claim than the examiner asks for. Solution 3 was trained three times,
   and its three seeds differ by more than a little. Solution 6's later run also
   used three seeds.
-- **No score for solution 7 yet.** Its three fits and its scoring run are still
-  in progress.
+- **No score for solution 7.** Nobody yet knows whether its model could learn
+  this task with more training. [Its results page](10_a-newer-larger-model-fine-tuned-here/03_results.md) says what would tell.
 - **One kind of glass per table**, because that is what the cell's own layout
   makes.
 
@@ -294,7 +301,7 @@ pixi run python 01-one-fixed-nudge/run.py
 The same line works for each of the other five. Solution 7's code is only in
 [the
 project](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/07-evo1-fine-tuned/README.md) for now. Run it from
-`code/src/09_pushing-the-glasses-apart/`. The solutions that learn something
+[`code/src/09_pushing-the-glasses-apart/`](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart). The solutions that learn something
 need their training step first. Each solution folder's own README says which
 step that is and what it costs.
 
@@ -421,8 +428,8 @@ tables wrong.
 
 ### Which questions are still open, and what would settle each one?
 
-Three are open. Is a newer, larger model worth its cost? Solution 7's scores
-will settle it. Can a copying policy learn not to bring the jaw down on a glass?
+Three are open. Is a newer, larger model worth its cost? Solution 7 did not
+settle it, because its fits did not learn the task. A longer fit would. Can a copying policy learn not to bring the jaw down on a glass?
 Its teacher never makes that mistake, so the demonstrations never show the way
 out. [DAgger](06_imitation-from-demonstrations/07_questions-and-answers.md#8-what-is-dagger)
 would test it. Would stopping a push early save glasses? Building [the

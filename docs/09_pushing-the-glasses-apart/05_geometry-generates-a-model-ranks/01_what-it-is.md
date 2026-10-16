@@ -118,7 +118,7 @@ is not how to find a safe push. It is **how to choose among safe pushes**.
 
 The problem is not safety. The geometry in this repository toppled only one
 glass over the examiner's fifty held-out tables, as
-`01-one-fixed-nudge/results.json` records. The problem is the number of pushes.
+[`01-one-fixed-nudge/results.json`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/results.json) records. The problem is the number of pushes.
 That run made **173 pushes, and 63 of them were repeat pushes of a glass it had
 already moved**. A repeat push means the first push did not do its job. A
 better choice among the same pushes should need fewer of them. That is the gap
@@ -150,14 +150,14 @@ model does not need to predict the result correctly. It only needs to put the
 pushes in the right order.
 
 Third, **without the model, you still have a working system.** Delete the model
-and keep the printed rule, and you get the geometry in
-`src/09_pushing-the-glasses-apart/01-one-fixed-nudge` exactly. So you can try
-this solution and drop it at no cost.
+and keep the printed rule. What is left is exactly the geometry in
+[`src/09_pushing-the-glasses-apart/01-one-fixed-nudge`](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge).
+So you can try this solution and drop it at no cost.
 
 The obvious alternative is a model that chooses the push directly. It reads the
 table and outputs a direction and a distance. That model can output **any push
 at all, safe or not**. So a safety check must be added after it, and that check
-does the same work as the geometry here. Solutions 3, 5 and 6 work this way.
+does the same work as the geometry here. Solutions 3, 5, 6 and 7 work this way.
 [Solution 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md) uses a
 fitted model of what a push will do to judge safety. Those designs are not
 wrong. A model that chooses the push can make pushes that the geometry never

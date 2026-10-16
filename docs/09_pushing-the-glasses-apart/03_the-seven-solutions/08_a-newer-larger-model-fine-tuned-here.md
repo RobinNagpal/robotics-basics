@@ -2,8 +2,8 @@
 
 This page is a short summary of the seventh solution. It is [the same model,
 fine-tuned here](07_the-same-model-fine-tuned-here.md) with one change: a newer
-and larger borrowed model, Evo-1. **This solution is still being measured.** So
-this page has no score yet. The full story is in [the chapter on this
+and larger borrowed model, Evo-1. **Its fits did not learn the task, so it has
+no score.** The full story is in [the chapter on this
 solution](../10_a-newer-larger-model-fine-tuned-here/01_what-it-is.md).
 
 ## Contents
@@ -17,8 +17,8 @@ solution](../10_a-newer-larger-model-fine-tuned-here/01_what-it-is.md).
 
 Evo-1 is a vision-language-action model, like SmolVLA. It was published in
 November 2025. It has about 775 million numbers, about 70% more than SmolVLA.
-Solution 7 changes only the model. So the gap from solution 6 shows what the
-model is worth.
+Solution 7 changes only the model. The plan was that the gap from solution 6
+would show what the model is worth.
 
 The next section says how it is trained.
 
@@ -45,9 +45,8 @@ details. The next section says what it scored.
 
 ## 4. What it scored
 
-**Being measured.** The three fits and the scoring run are under way. [The
-results page of this
-chapter](../10_a-newer-larger-model-fine-tuned-here/03_results.md) says where
-the score will appear.
+**No score.** It was fitted three times, with three seeds. None of the fits
+learned the task, so its scoring run was stopped. [The results page of
+this chapter](../10_a-newer-larger-model-fine-tuned-here/03_results.md) says why this is not a verdict on the model.
 
 ← [The same model, fine-tuned here](07_the-same-model-fine-tuned-here.md) · [Questions and answers](09_questions-and-answers.md) →

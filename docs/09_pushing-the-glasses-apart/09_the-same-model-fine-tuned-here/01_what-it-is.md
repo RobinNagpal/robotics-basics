@@ -66,10 +66,10 @@ glass in a picture and still choose bad pushes. This is because choosing a
 push needs a sense of what a push does, and a picture does not show that.
 
 **Most of this solution is built.** The code is in
-[`06-smolvla-fine-tuned/`](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned).
+[`06-smolvla-fine-tuned/`](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned).
 It records demonstrations from the teacher, fits the correction, and has been
 run on the examiner's held-out tables. Its numbers are in
-[its own README](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/README.md).
+[its own README](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/README.md).
 **DAgger** is still a plan and not code. The first result came from one
 training seed on one set of tables. The model was later fitted again on
 solution 3's tables, with three seeds. [How it

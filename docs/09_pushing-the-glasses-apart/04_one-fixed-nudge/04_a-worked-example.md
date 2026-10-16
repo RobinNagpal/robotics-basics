@@ -75,10 +75,11 @@ answers, and the narrow glass is the one with the problem.
 
 **Can A be pushed?** A's foot is broad for its kind, but still not broad enough
 to settle the question. At the high end of the friction range, A would tip. So
-the answer is **try**. The arm pushes A 5 mm, and looks before and after. A
-moved, so it slid and did not lean. Now A is proven, and the real push follows.
-The test push counts against the four pushes allowed at one glass, so three
-are left.
+the answer is **try**. The arm pushes A 5 mm, and looks before and after. Say
+A clearly moved. Then it slid, A is proven, and the real push follows. In the
+measured runs a clear move like this is rare, and
+[the code](02_the-code.md#1-the-code-at-the-heart-of-it) says why. The test
+push counts against the four pushes allowed at one glass, so three are left.
 
 **The push.** The blocking neighbour is B. So the direction is the line from
 B's middle through A's middle. The push length is the gain times A's
@@ -92,7 +93,7 @@ The second pass does the same sum on the smaller shortfall, so its push is
 shorter. The third pass finds A's shortfall at zero or below, and stops
 pushing. Then A, B and C are all racked.
 
-**What that cost.** It cost one test push, three real pushes, and a look after
+**What that cost.** It cost one test push, two real pushes, and a look after
 each one. A method that knew the right distance would have used one push. Each
 push was shorter than the one before. Nothing was knocked over, nothing left
 the glass zone, and no claim about friction was made.

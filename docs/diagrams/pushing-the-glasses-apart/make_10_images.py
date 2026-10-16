@@ -34,8 +34,8 @@ worst case of that, for two of the widest glasses the kind allows.
 **Nothing here is a trained model's output.** There is no model in this file.
 Where a picture needs a prediction, the prediction is a stand-in stated in the
 caption: the glass slides the full length of the push along the push, and the
-error between prediction and outcome is the 4.5 mm median that
-``code/src/09_pushing-the-glasses-apart/04-a-world-model``'s README records for its own model on unseen tables.
+error between prediction and outcome is the 6.5 mm median that the project's
+``04-a-world-model`` README records for its own model on unseen tables.
 
     pixi run python ../docs/diagrams/pushing-the-glasses-apart/make_10_images.py
 """
@@ -109,27 +109,24 @@ TRAVEL_RANGE = (10.0, 100.0)
 # the shortest push that does the job wins. plan.py TRAVEL_COST.
 TRAVEL_COST = 0.1
 
-# What code/src/09_pushing-the-glasses-apart/04-a-world-model's README records for its own model on tables it was
-# not trained on: the pushed glass lands this far from where the model said it
-# would, median. It is train.py's ``landing_mm_median``, printed at the end of
-# a training run; it is in that README and nowhere else, and it was not
-# re-derived here, because the training data is not kept in the repository.
-MEASURED_ONE_PUSH_ERROR = 4.5
+# What the project's 04-a-world-model README records for its own model on
+# pushes it was not trained on: the pushed glass lands this far from where the
+# model said it would, median. It is train.py's ``landing_mm_median``, printed at
+# the end of a training run (robot-arm-projects, v5-pick-glasses/
+# 03-push-glasses-apart/04-a-world-model/README.md).
+MEASURED_ONE_PUSH_ERROR = 6.5
 
 # The same question asked of the geometry, which predicts a slide instead of
-# learning one: how far from its aim a pushed glass really stopped. Measured
-# here, by running code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge's planner over bench tables 10100 to
-# 10349 and comparing every push's ``aim`` with the simulator's record of where
-# the glass landed. 564 pushes that ran their full length, median 1.07 mm,
-# 3.00 mm at the ninetieth percentile, 34.40 mm at worst. The throwaway script
-# is measure_programmed.py; re-run it from code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge.
-MEASURED_GEOMETRY_ERROR = 1.07
+# learning one: how far from its aim a pushed glass really stopped, median, over
+# solution 1's pushes on the 50 held-out tables. It is ``aim_mm_median`` in
+# code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/results.json.
+MEASURED_GEOMETRY_ERROR = 1.7
 
-# What that README records about the training set. These are read here rather
+# What the project's 04-a-world-model README records about the training set. These are read here rather
 # than recomputed, because collecting them again takes a physics engine this
 # environment does not have.
-ROUND_ONE = (4_000, 24_759)      # tables, pushes
-ROUND_TWO = (5_000, 13_253)
+ROUND_ONE = (4_000, 7_686)      # tables, pushes
+ROUND_TWO = (5_000, 7_693)
 PUSHES_PER_TABLE = 12            # code/src/09_pushing-the-glasses-apart/04-a-world-model/collect.py
 
 # Measured against code/src/09_pushing-the-glasses-apart/bench/bench.py, which is the crowded-table generator
@@ -714,12 +711,12 @@ def picture_planning(crowded: list[dict], pair: tuple[int, int], plan: dict) -> 
                           edgecolor=GOOD, lw=1.0, zorder=7))
     done.plot(0, 0, marker="+", ms=10, mew=1.3, color=MUTED, zorder=8)
     done.annotate("", xy=(-MEASURED_GEOMETRY_ERROR * 0.7, -MEASURED_GEOMETRY_ERROR * 0.7),
-                  xytext=(-6.0, -5.0),
+                  xytext=(-7.0, -21.5),
                   arrowprops={"arrowstyle": "->", "color": GOOD, "lw": 0.8}, zorder=8)
-    note(done, -14.0, -17.0, f"{MEASURED_GEOMETRY_ERROR:.2f} mm: the geometry,\nno model at all",
-         GOOD, ha="left", va="bottom")
+    note(done, -7.0, -21.8, f"{MEASURED_GEOMETRY_ERROR:.1f} mm: the geometry,\nno model at all",
+         GOOD, ha="center", va="top")
     note(done, 0, 19.5, "+ is where the push was aimed", MUTED, va="bottom")
-    frame_close(done, (0.0, 0.0), 23.0)
+    frame_close(done, (0.0, 0.0), 27.0)
 
     neighbour = (crowded[pair[1]]["x"], crowded[pair[1]]["y"])
     span = math.dist(real, neighbour)
@@ -729,8 +726,7 @@ def picture_planning(crowded: list[dict], pair: tuple[int, int], plan: dict) -> 
            f"The {MEASURED_ONE_PUSH_ERROR:.1f} mm ring is the median one-push error that project's "
            "README records for its own model on unseen tables,\nand the green disc is what the "
            "geometry, which predicts a slide instead of learning one, does without a model at all: "
-           f"{MEASURED_GEOMETRY_ERROR:.2f} mm,\nre-measured here over 564 pushes on 250 tables of "
-           "this project's own bench.")
+           f"{MEASURED_GEOMETRY_ERROR:.1f} mm,\nsolution 1's median over its pushes on the 50 held-out tables.")
     figure.subplots_adjust(bottom=0.20, top=0.92)
     save(figure, "10-how-far-out-each-prediction-is.png")
     print(f"  landing aimed ({landing[0]:.1f}, {landing[1]:.1f}), reached ({real[0]:.1f}, {real[1]:.1f}), "
@@ -915,7 +911,7 @@ def picture_the_data(crowded: list[dict]) -> None:
     footer(figure,
            f"The two panels are the same table. Training pushes are cheap because the reset is "
            f"amortised and no push has to be a good one; run-time pushes are scarce because a run "
-           f"makes as few\nas it can. The learned pipeline in this repository was fitted to "
+           f"makes as few\nas it can. The project's world model was fitted to "
            f"{ROUND_ONE[1]:,} pushes on {ROUND_ONE[0]:,} tables and then {ROUND_TWO[1]:,} more on "
            f"{ROUND_TWO[0]:,}: {rows:,} rows. At {per_run:.2f} rows a run, gathering that from\n"
            f"ordinary runs would take about {runs_needed:,.0f} of them. One push in this project's "

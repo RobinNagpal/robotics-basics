@@ -131,7 +131,7 @@ says how many standard deviations a value is from the mean. Nothing says what
 one standard deviation is in millimetres.
 
 So the scale had to be **chosen**, because there was nothing to convert from.
-[`joining.py`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/joining.py)
+[`joining.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/joining.py)
 makes that choice and explains it. [The code](02_the-code.md) shows the four
 lines that use it.
 
@@ -161,10 +161,10 @@ does no work here.
 
 **The pose never changes either, and this was not expected.** The cause is the
 cell, not the model. The chosen scale lets the model describe one box. The box
-is the frame of the top-down picture, 717 mm across the table. Its heights run
+is the frame of the top-down picture, 727 mm across the table. Its heights run
 from 75 mm, where the jaw must be to move a glass, up to 300 mm, where the jaw
-travels. Between actions, the examiner parks the jaw 500 mm along the table from
-the frame and 550 mm up. That spot is outside the box on all three axes. So all
+travels. Between actions, the examiner parks the jaw outside the frame and
+550 mm above the table. That spot is outside the box on all three axes. So all
 three values are cut back to the edge of the box. This means the model is told
 the same thing every time: the jaw is in the far corner, as high as it goes.
 Only the heading changes.
@@ -172,12 +172,15 @@ Only the heading changes.
 ![The box the reading can describe, seen from above, with the glass zone inside it and the place the examiner parks the jaw far outside it, so the pose the model is handed clips to the same corner on every ask.](../../images/pushing-the-glasses-apart/a-foundation-model-as-it-downloads/smolvla-the-parked-jaw.png)
 
 This explains part of the result. SmolVLA gives target positions that stay near
-the state it is given. So when it is told the jaw is high, it answers high. The
-code folder measured this. The same picture was asked six times. With the parked
-pose, the lowest point of an answer had a median of 182 mm. With a pose of all
-zeros, it was 122 mm. So the parked pose raises the answers by about 60 mm. That
-is not the whole story, because 122 mm is still far above the 75 mm the jaw
-needs.
+the state it is given. So when it is told the jaw is high, it answers high. [The
+project's
+`README.md`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/05-smolvla-as-it-downloads/README.md#the-state-which-no-statistics-describe-and-which-barely-varies)
+records a test of this, made with the real gripper. The same picture was asked
+six times. With the parked pose, the lowest point of an answer had a median of
+205 mm. With a pose of all zeros, it was 138 mm. All zeros puts every slot in
+the middle of its range. So the parked pose raises the
+answers by about 70 mm. That is not the whole story, because 138 mm is still far
+above the 75 mm the jaw needs.
 
 Two things follow from both inputs being constant.
 
@@ -295,7 +298,8 @@ nothing like the model's own. Only the guess about how the gap would show was
 wrong.
 
 This failure is also easy to notice. The examiner counts every push that touched
-nothing, and the count is in the results file. So a reader of the scores can see
+nothing, and the count is in
+[`results.json`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/results.json). So a reader of the scores can see
 at once that the problem is not aim.
 
 **This solution's job is to be a baseline, not to score well.** Solution 6 uses
@@ -332,6 +336,7 @@ little](../09_the-same-model-fine-tuned-here/03_how-it-works.md#2-low-rank-adapt
 memory that fine-tune needed. π0.5 appears in this book only inside solution 6,
 as a way to ask whether a much larger model is worth it. [Solution
 7](../10_a-newer-larger-model-fine-tuned-here/01_what-it-is.md) later tries a newer and larger
-model, Evo-1, fitted the same way as solution 6.
+model, Evo-1, fitted the same way as solution 6. It did not learn the task, and
+[its results](../10_a-newer-larger-model-fine-tuned-here/03_results.md) say why.
 
 ← [The code](02_the-code.md) · [A worked example](04_a-worked-example.md) →

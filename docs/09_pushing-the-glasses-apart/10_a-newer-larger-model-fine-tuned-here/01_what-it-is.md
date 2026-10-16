@@ -3,13 +3,13 @@
 This page explains the seventh solution. It is for a reader who has read the
 chapter on [solution 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md).
 Solution 7 is solution 6 with one change: a newer and larger borrowed model.
-**This solution is still being measured.** Its code is written and runs. Its
-three fits and its scoring run are not finished. So this chapter has no score
-yet, and it says so wherever a score would go.
+It was fitted three times and **did not learn the task**. So its scoring run
+was stopped, and it has no score. [The results](03_results.md) give the
+numbers and say why this does not show the newer model is worse.
 
 The code is in the project's
-[`07-evo1-fine-tuned/`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/07-evo1-fine-tuned/README.md)
-folder. It is not yet copied into this repository.
+[`07-evo1-fine-tuned/`](https://github.com/RobinNagpal/robot-arm-projects/tree/main/v5-pick-glasses/03-push-glasses-apart/07-evo1-fine-tuned)
+folder. This repository has no copy of it.
 
 ## Contents
 
@@ -48,8 +48,8 @@ possible reason is that SmolVLA is too small or too old. Solution 7 tests that
 reason.
 
 It changes the model and **holds everything else still**. So the gap between
-the scores of solutions 6 and 7 shows what the model is worth, and nothing
-else. Solution 6's chapter planned this test with a different large model, in
+the scores of solutions 6 and 7 was meant to show what the model is worth,
+and nothing else. Solution 6's chapter planned this test with a different large model, in
 [a second way](../09_the-same-model-fine-tuned-here/03_how-it-works.md#7-a-second-way--the-same-fine-tune-on-a-larger-model).
 
 The next section says which part of Evo-1 is trained here.
@@ -73,6 +73,8 @@ laptop.
 
 The training effort is solution 6's effort: 1000 steps, batch 4, learning rate
 0.0001. More training for the newer model would measure the training too.
+[The results](03_results.md#1-what-is-being-measured) show that equal steps
+were still not a fair match.
 
 The next section names two ways the model is not the only difference.
 
@@ -105,10 +107,13 @@ rest.
 - **The reading of an answer as jaw waypoints** is solution 5's own function.
   It is imported, not copied.
 - **The loop over a table** is solution 5's own loop, also imported.
-- **The test** is the same 50 held-out tables, with 251 glasses.
+- **The test** was to be the same 50 held-out tables, with 251 glasses. That
+  run was stopped.
 
 The model runs on this Mac with no change to its code. Three settings were
-enough. [What it needs](02_what-it-needs.md) gives them, with the measured
+enough. They are in
+[`evo.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/07-evo1-fine-tuned/evo.py), and the shared parts are loaded in
+[`partners.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/07-evo1-fine-tuned/partners.py). [What it needs](02_what-it-needs.md) gives them, with the measured
 costs.
 
 ← [The same model, fine-tuned here — questions and answers](../09_the-same-model-fine-tuned-here/07_questions-and-answers.md) · [What it needs](02_what-it-needs.md) →

@@ -10,13 +10,16 @@ takes to build and run it.
 
 **It needs a physics engine and thousands of pushes in it.** This is the main
 cost. Every training example is one real push in the simulator: look, push,
-look again. The first way's README records 38,012 of them, collected in two
-rounds:
+look again. The project's
+[`README.md`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/04-a-world-model/README.md)
+for the first way records 15,379 of them, collected in two rounds:
 
-- 24,759 random pushes on 4,000 tables;
-- then 13,253 pushes on 5,000 new tables. Three quarters of these were chosen by
+- 7,686 random pushes on 4,000 tables;
+- then 7,693 pushes on 5,000 new tables. Three quarters of these were chosen by
   the planner, using the first round's model. This fills the gaps the search
   would otherwise use.
+
+Every push is also used mirrored, so the 15,379 pushes give 30,758 examples.
 
 **Nobody labels any of it.** The answer for each example is the difference
 between two looks, one before the push and one after. So the model learns to
@@ -27,10 +30,10 @@ never see would predict the wrong thing. It also means the data costs simulator
 time and no human time. This is the biggest practical advantage over any
 method trained on demonstrations.
 
-![One training table yields a dozen examples, because the table is built once and the state after each push starts the next and no push has to be a useful one; a real run makes as few pushes as it can, so gathering the same 38,012 rows from ordinary runs would take about sixteen thousand tables, where the simulator produces them in about fifty core-minutes and nobody labels any of it.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/10-the-data-it-takes.png)
+![One training table yields a dozen examples, because the table is built once and the state after each push starts the next and no push has to be a useful one; a real run makes as few pushes as it can, so gathering the same rows from ordinary runs would take thousands of tables, where the simulator produces them in minutes of processor time and nobody labels any of it.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/10-the-data-it-takes.png)
 
 **It needs a training run before it can answer anything.** The first way trains
-five small networks. Its README says the pushes and the training together take
+five small networks. The same README says the pushes and the training together take
 about half an hour on a laptop processor. **The first way needs no accelerator
 at all.** This is because the model is small, and its input is 34 numbers, not
 a picture.
@@ -45,7 +48,7 @@ for about a month, which is about five hundred dollars.
 the model about 1,500 candidates for every crowded glass. Each candidate goes to
 five networks. The topple question is asked on five readings of the table. The run measured **0.37 seconds
 of thinking per push**, in
-[`results.json`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/results.json).
+[`results.json`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/04-a-world-model/results.json).
 The machine was busy with other work, so this number is only rough. A real arm
 movement takes longer than this, so the arm does not wait. A two-push search
 would cost much more. [The results](../11_the-results.md#2-the-results) compare

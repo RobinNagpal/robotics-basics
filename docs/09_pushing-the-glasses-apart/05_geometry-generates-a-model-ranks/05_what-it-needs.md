@@ -9,7 +9,7 @@ It needs **scikit-learn and NumPy**. Both are small, and both are under the BSD
 3-clause licence. So there is no licence condition to follow.
 
 It needs the **enumerator**, which is the code that lists the pushes. It lives
-in `src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`. This solution
+in [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py). This solution
 loads it from there and does not copy it. So the headings, the steps, the four
 tests and the tipping rule are written in one place only. The enumerator also
 sets the limit on how good this solution can be.

@@ -28,8 +28,8 @@ Now the weaknesses, starting with the one that was measured.
 
 **The pushes that finish the job are tied, and this was measured.** [What the
 geometry proposes](03_how-it-works.md#1-what-the-geometry-proposes) explains
-why they tie. `spread.py` checked it with 4,511 real pushes over 60 training
-tables, and wrote `spread.json`. Within one glass's job-finishing pushes, the
+why they tie. [`spread.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/02-geometry-ranked/spread.py) checked it with 4,511 real pushes over 60 training
+tables, and wrote [`spread.json`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/02-geometry-ranked/spread.json). Within one glass's job-finishing pushes, the
 room gained differs by **0.0 mm at the median**, over 161 groups. That is an
 exact tie. The pushes that only ease the crowding differ by 11.9 mm. For one
 glass, the printed rule already picks the best push in **159 of 206 groups**.
@@ -47,7 +47,7 @@ They differ only in how many pushes they used.
 The reason is the label, not the trees. The model is fitted on **room gained**.
 The run is scored on **glasses that can be gripped**. A push that spreads a
 little room over three glasses gains more room than a push that frees one glass
-fully. So the model prefers it. On the validation tables in `training.json`,
+fully. So the model prefers it. On the validation tables in [`training.json`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/02-geometry-ranked/training.json),
 the ranker picks a job-finishing push in **47 of the 83 decisions that offer
 one**. The rule picks one every time. By its own label, the ranker chooses
 better: it loses 4.4 mm of room against the best push, and the rule loses
@@ -247,7 +247,8 @@ arithmetic. If this solution ever scores close to those two, the lesson is not
 that the trees are clever. It is that the geometry was doing most of the work.
 
 [Solution 7](../10_a-newer-larger-model-fine-tuned-here/01_what-it-is.md) asks
-the same question with a newer and larger borrowed model. Its results are still
-being measured.
+the same question with a newer and larger borrowed model. Its three fits did
+not learn the task, so it was not scored. [Its
+results](../10_a-newer-larger-model-fine-tuned-here/03_results.md) say why.
 
 ← [What it needs](05_what-it-needs.md) · [Questions and answers](07_questions-and-answers.md) →

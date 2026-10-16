@@ -97,10 +97,11 @@ to leave it alone. So a chunk whose path runs into a refused glass is not
 carried out, and the loop asks again. The check needs the path, so it can only
 run after the model has answered. A rejected chunk is a wasted answer. It is
 **not** counted against the push budget, because it never touches the table.
-A separate cap allows three times the push budget in answers per table. The
-counts in each folder's `asking.json` show how often that cap was reached. It
-ended 5 tables in this solution's 1,515 answers over three runs, and none in
-solution 5's 1,855.
+A separate cap allows three times the push budget in answers per table. Each
+solution's record of its answers counts how often that cap was reached. It
+ended 5 tables in [this solution's 1,515 answers](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/asking.json)
+over three runs. It ended none in [solution 5's
+1,855](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/asking.json).
 
 So the training changes the first half of the example and not the second. The
 chunk now comes down at push height, in units this cell can carry out. But it

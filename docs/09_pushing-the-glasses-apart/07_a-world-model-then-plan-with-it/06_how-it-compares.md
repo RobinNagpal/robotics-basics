@@ -203,7 +203,7 @@ result with the other measured solutions. It is the only solution that learns wh
 happen instead of what to do.
 
 The scores come from one run on the 50 test tables, in
-[`results.json`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/results.json).
+[`results.json`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/04-a-world-model/results.json).
 It racks 146 of the 251 glasses in 221 pushes. It finishes 20 tables and leaves
 19 tables wrong. It topples 20 glasses.
 
@@ -241,7 +241,9 @@ SmolVLA is large, has seen many real robot datasets, and knows almost nothing
 about this table. Both SmolVLA solutions are policies, so the contrast with
 imitation above applies to them too. [Solution
 7](../10_a-newer-larger-model-fine-tuned-here/01_what-it-is.md) is a newer and larger borrowed model, fitted
-the same way as solution 6. It is still being measured.
+the same way as solution 6. It was fitted three times, and no fit learned the
+task, so it has no score here. [Its
+results](../10_a-newer-larger-model-fine-tuned-here/03_results.md) explain why.
 
 **Inside this solution**, the comparison is the hand-built model against
 TD-MPC2. It would show whether building the model by hand was worth it. In a

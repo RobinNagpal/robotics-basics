@@ -15,7 +15,7 @@ why the arm drags the glasses. It comes before [the
 examiner](03_the-examiner.md), which draws the tables and marks the result.
 
 The examiner's code carries out everything on this page. That code is in
-`code/src/09_pushing-the-glasses-apart/bench/`. So all of it is the same for
+[`code/src/09_pushing-the-glasses-apart/bench/`](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/bench). So all of it is the same for
 every solution.
 
 ## Contents
@@ -87,10 +87,10 @@ trained on images and the three vision-language models. A list of numbers is no
 use to them. So the examiner draws a picture of the same table at the same
 moment. The information is the same. Only its form is different.
 
-The picture comes from `bench/top_view.py`. A camera is fixed 750 mm above the
+The picture comes from [`bench/top_view.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/bench/top_view.py). A camera is fixed 750 mm above the
 middle of the glass zone, looking straight down. It returns a colour picture,
 384 by 384 pixels, that shows the whole zone. This camera is not the one that
-`film.py` uses. The film camera looks down from the arm's side, and it exists
+[`film.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/bench/film.py) uses. The film camera looks down from the arm's side, and it exists
 only so that people can watch a run.
 
 Keeping the two cameras apart matters. A solution that reads a picture decides
@@ -194,7 +194,7 @@ fixed straight to it. A force sensor sits between them. So anything that pushes
 on the hand also pushes on the sensor. "Six-axis" means the sensor reports six
 numbers. Three are forces along three directions. Three are twists about those
 directions. The cell names this sensor `wrist_force` in
-[`arm/gripper.urdf.xacro`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/src/work_cell/work_cell/arm/gripper.urdf.xacro).
+[`arm/gripper.urdf.xacro`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/08_seeing-the-glasses/work_cell/work_cell/arm/gripper.urdf.xacro).
 In the Gazebo cell it reports 100 times a second.
 
 The camera cannot measure force. The cell's two other sensors are in the
@@ -217,7 +217,7 @@ gives the published figures of one such sensor.
 tested in MuJoCo, not Gazebo. [The
 examiner](03_the-examiner.md#3-what-the-examiner-draws) gives the reasons.
 MuJoCo has no sensor model to read. So the examiner in
-[`bench.py`](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/03-push-glasses-apart/bench/bench.py)
+[`bench.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/bench/bench.py)
 does the work itself. Every 2 milliseconds, it finds every contact that
 involves the hand. It adds up their forces and reports the total in newtons.
 This is what the wrist sensor would read after the gripper's weight is
@@ -284,9 +284,9 @@ thing.
 another, until the table is done or the pushes run out.
 
 Some solutions do not think in paths at all. A geometric solution thinks in a
-**parameterised push**. This is a few numbers that describe one push: which
-glass to move, where to put the hand down, which way to point, how far to feel
-forward, and how far to push. `push()` accepts exactly these numbers. `push()`
+**parameterised push**. This is a few numbers that describe one push. They
+say which glass to move, where to put the hand down and which way to point.
+They also say how far to feel forward and how far to push. `push()` accepts exactly these numbers. `push()`
 then turns them into the steps described above: come down, feel, push, back
 off and lift.
 

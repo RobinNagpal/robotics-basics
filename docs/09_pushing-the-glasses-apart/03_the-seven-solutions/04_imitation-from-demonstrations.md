@@ -105,7 +105,7 @@ model that can hold more than one answer, such as Diffusion Policy, is the
 right fix.
 
 The code is in
-[`src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/`](../../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations).
+[`src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/`](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations).
 The full chapter starts at [what it
 is](../06_imitation-from-demonstrations/01_what-it-is.md).
 

@@ -74,7 +74,7 @@ most of its pushes touch nothing.
 [What was expected, and what
 happened](../08_a-foundation-model-as-it-downloads/03_how-it-works.md#8-what-was-expected-and-what-happened)
 gives the measured heights. The six measured scores are in [the
-results](../11_the-results.md). The seventh is still being measured. The next section says what this score teaches.
+results](../11_the-results.md). The next section says what this score teaches.
 
 ## 5. Where it is strong and where it breaks
 
@@ -99,7 +99,7 @@ The main lesson is that a poor score here is still useful. It gives the
 fine-tuned model a clear starting point to compare against.
 
 The code is in
-[`src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads).
+[`src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/`](https://github.com/RobinNagpal/robotics-basics/tree/main/code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads).
 The full chapter starts at [what it
 is](../08_a-foundation-model-as-it-downloads/01_what-it-is.md).
 

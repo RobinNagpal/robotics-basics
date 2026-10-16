@@ -209,7 +209,7 @@ The problem first assumed a thin made-up blade. The real Robotiq 2F-85 is
 139 mm across when held normally. It could hardly fit between the glasses. So
 the hand is turned on its side, where it is 27 mm across. But then it rides at
 75 mm instead of 50 mm, which makes tipping more likely. [The
-jaw](../../../code/src/09_pushing-the-glasses-apart/bench/README.md#the-jaw)
+jaw](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/bench/README.md#the-jaw)
 gives the measurements.
 
 ← [Pushing without toppling](05_pushing-without-toppling.md) · [The seven solutions — same table, seven ways to push](../03_the-seven-solutions/01_how-the-six-compare.md) →

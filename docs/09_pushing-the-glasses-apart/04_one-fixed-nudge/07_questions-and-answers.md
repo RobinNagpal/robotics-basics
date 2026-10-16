@@ -12,7 +12,7 @@ It links to the place in this chapter that explains it in full.
 It pushes a crowded glass a short way from the neighbour that crowds it, then
 looks again. That direction helps whatever the friction is. The safe parts,
 such as the tipping check, are shared by every solution. On 50 tables it racked
-107 of 251 glasses and toppled one. See [where it is strong and where it
+107 of 251 glasses, finished 14 tables and toppled one glass. See [where it is strong and where it
 breaks](06_how-it-compares.md#1-where-it-is-strong-and-where-it-breaks).
 
 ← [How it compares](06_how-it-compares.md) · [Geometry generates, a model ranks — what it is](../05_geometry-generates-a-model-ranks/01_what-it-is.md) →

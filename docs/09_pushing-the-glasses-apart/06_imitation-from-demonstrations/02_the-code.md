@@ -38,9 +38,12 @@ The join has six steps.
    one angle, and hand the examiner waypoints in its own shape.
 
 Steps 1 to 3 are in
-[`code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/chunks.py`](../../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/chunks.py).
+[`code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/chunks.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/chunks.py).
 That file holds no model and no geometry of pushing. Steps 4 and 5 are in
-`policy.py`. Step 6 is in `chunks.py` again. The code blocks below carry the
+[`policy.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/policy.py).
+Step 6 is in
+[`chunks.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/chunks.py)
+again. The code blocks below carry the
 same step numbers.
 
 Steps 1 and 2 are one function, `push_segment`. It drops the parts of a path
@@ -97,7 +100,7 @@ pushes. The cosine and sine do not wrap, so the jump goes away.
 ![The same two pushes, two degrees apart on the table, drawn as one angle in degrees, where they sit at opposite ends of the range, and as a cosine and sine pair, where they sit on top of each other.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-heading-as-cosine-and-sine.png)
 
 The borrowed model is used in one file,
-[`code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/policy.py`](../../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/policy.py).
+[`code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/policy.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/policy.py).
 Step 4 builds LeRobot's ACT with four settings. Two settings fix the length of
 an answer and say that all of it is carried out. The other two switch off
 LeRobot defaults. Step 5 asks the trained model for one chunk from one picture.
@@ -145,7 +148,8 @@ LeRobot's own.
 - `n_action_steps` is set to the full chunk length. One push is one chunk, and
   nothing re-plans in the middle.
 
-Step 6 is the way back, in `to_waypoints` in `chunks.py`. A network can ask for
+Step 6 is the way back, in `to_waypoints` in
+[`chunks.py`](https://github.com/RobinNagpal/robotics-basics/blob/main/code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/chunks.py). A network can ask for
 a position the arm cannot reach. So step 6 pulls every waypoint back onto the
 table and into the jaw's height range. It counts the waypoints it pulled in, so
 that a bad chunk is reported and not hidden. Then it turns the cosine and sine
